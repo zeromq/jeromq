@@ -8,7 +8,8 @@ public class Pair extends SocketBase {
 		super(parent_, tid_, sid_);
 	}
 
-	void xattach_pipe (Pipe pipe_, boolean icanhasall_)
+	@Override
+	protected void xattach_pipe (Pipe pipe_, boolean icanhasall_)
 	{     
 	    assert (pipe_ != null);
 	          
@@ -20,7 +21,8 @@ public class Pair extends SocketBase {
 	        pipe_.terminate (false);
 	}
 	
-	void xterminated (Pipe pipe_) {
+	@Override
+	protected void xterminated (Pipe pipe_) {
 	    if (pipe_ == pipe)
 	        pipe = null;
 	}

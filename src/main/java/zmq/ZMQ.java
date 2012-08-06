@@ -180,4 +180,47 @@ public class ZMQ {
         return s_.bind(addr_);
     }
 
+    public static boolean zmq_send(SocketBase s_, byte[] buf_, int len_,
+            int flags_) {
+        if (s_ == null || !s_.check_tag ()) {
+            throw new IllegalStateException();
+        }
+        
+        Msg msg = new Msg();
+        zmq_msg_init_size (msg, len_);
+        Utils.memcpy (zmq_msg_data (msg), buf_, len_);
+
+        int rc = s_sendmsg (s_, msg, flags_);
+        if (rc < 0) {
+            zmq_msg_close (msg);
+            return false;
+        }
+        
+        return true;
+    }
+
+    private static void zmq_msg_close(Msg msg) {
+        msg.close();
+    }
+
+    private static int s_sendmsg(SocketBase s_, Msg msg_, int flags_) {
+        int sz = zmq_msg_size (msg_);
+        int rc = s_.send ( msg_, flags_);
+        if ( rc < 0)
+            return -1;
+        return sz;
+    }
+
+    private static int zmq_msg_size(Msg msg_) {
+        return msg_.size();
+    }
+
+    private static byte[] zmq_msg_data(Msg msg) {
+        return msg.data();
+    }
+
+    private static void zmq_msg_init_size(Msg msg, int len_) {
+        msg.init_size(len_);
+    }
+
 }

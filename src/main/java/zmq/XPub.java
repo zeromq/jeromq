@@ -38,7 +38,8 @@ public class XPub extends SocketBase {
 		pending = new ArrayDeque<Blob>();
 	}
 	
-	void xattach_pipe (Pipe pipe_, boolean icanhasall_)
+	@Override
+	protected void xattach_pipe (Pipe pipe_, boolean icanhasall_)
 	{
 	    assert (pipe_ != null);
 	    dist.attach (pipe_);

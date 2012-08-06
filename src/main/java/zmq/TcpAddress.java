@@ -1,17 +1,44 @@
 package zmq;
 
+import java.net.Inet6Address;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.NetworkInterface;
 import java.net.SocketAddress;
+import java.net.SocketException;
+import java.net.UnknownHostException;
+import java.util.Collections;
+import java.util.Enumeration;
 
 public class TcpAddress implements Address.IZAddress {
 
-    private InetSocketAddress address;
+    public static class TcpAddressMask extends TcpAddress {
+        public boolean match_address(SocketAddress addr_) {
+            return address.equals(addr_); 
+        }
+    }
+
+    protected InetSocketAddress address;
     
+    public TcpAddress(String addr_) {
+        resolve(addr_, false, false);
+    }
+    public TcpAddress() {
+    }
     @Override
     public String toString(String addr_) {
-        // TODO Auto-generated method stub
-        return null;
+        if (address == null) {
+            resolve(addr_, false, false);
+        }
+        
+        if (address.getAddress() instanceof Inet6Address) {
+            return "tcp://[" + address.getAddress().getCanonicalHostName() + "]:" + address.getPort();
+        } else {
+            return "tcp://" + address.getAddress().getCanonicalHostName() + ":" + address.getPort();
+        }
+        
     }
+    
 
     @Override
     public void resolve(String name_, boolean local_, boolean ipv4only_) {
@@ -42,26 +69,46 @@ public class TcpAddress implements Address.IZAddress {
                 throw new IllegalArgumentException(name_);
             }
         }
-        //  Resolve the IP address.
-        /*
-        int rc;
-        if (local_)
-            rc = resolve_interface (addr_str, ipv4only_);
-        else
-            rc = resolve_hostname (addr_str, ipv4only_);
-        if (rc != 0)
-            return -1;
 
-        //  Set the port into the address structure.
-        if (address ... Inet6Address)
-            address.ipv6.sin6_port = htons (port);
-        else
-            address.ipv4.sin_port = htons (port);
-        */
-        address = new InetSocketAddress(addr_str, port);
-        if (address.getAddress() == null) {
+        InetAddress addr_net = null;
+
+        if (local_) {
+            try {
+                Enumeration<NetworkInterface> nets = NetworkInterface.getNetworkInterfaces();
+                for (NetworkInterface netint : Collections.list(nets)) {
+                    if (netint.getName().equals(addr_str)) {
+                        for (InetAddress ia: Collections.list(netint.getInetAddresses())){
+                            if (ipv4only_ && (ia instanceof Inet6Address)) {
+                                continue;
+                            }
+                            addr_net = ia;
+                            break;
+                        }
+                    }
+                }
+            } catch (SocketException e) {
+                throw new IllegalArgumentException(name_);
+            }
+        } else {
+        
+            try {
+                for(InetAddress ia: InetAddress.getAllByName(addr_str)) {
+                    if (ipv4only_ && (ia instanceof Inet6Address)) {
+                        continue;
+                    }
+                    addr_net = ia;
+                    break;
+                }
+            } catch (UnknownHostException e) {
+                throw new IllegalArgumentException(name_);
+            }
+        }
+        
+        if (addr_net == null) {
             throw new IllegalArgumentException(name_);
         }
+
+        address = new InetSocketAddress(addr_net, port);
 
     }
 

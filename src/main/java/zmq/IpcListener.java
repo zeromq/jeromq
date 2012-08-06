@@ -11,7 +11,12 @@ public class IpcListener extends Own  {
         return 0;
     }
 
-    public void get_address(String last_endpoint) {
+    public String get_address(String last_endpoint) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    public void close() {
         // TODO Auto-generated method stub
         
     }

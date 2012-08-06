@@ -85,7 +85,7 @@ public class Options {
 
     // TCP accept() filters
     //typedef std::vector <tcp_address_mask_t> tcp_accept_filters_t;
-    final List<TcpAddressMask> tcp_accept_filters;
+    final List<TcpAddress.TcpAddressMask> tcp_accept_filters;
     
     //  ID of the socket.
     int socket_id;
@@ -121,7 +121,7 @@ public class Options {
         socket_id = 0;
         
     	identity = new byte[256];
-    	tcp_accept_filters = new ArrayList<TcpAddressMask>();
+    	tcp_accept_filters = new ArrayList<TcpAddress.TcpAddressMask>();
     }
 
     public void setsockopt(int option_, int optval_) {

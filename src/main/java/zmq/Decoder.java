@@ -36,9 +36,10 @@ public class Decoder {
         maxmsgsize = maxmsgsize_;
         buf = ByteBuffer.allocate(bufsize_);
         tmpbuf = ByteBuffer.allocate(8);
+        
+        in_progress = new Msg();
 
-        int rc = in_progress.init ();
-        Errno.errno_assert (rc == 0);
+        in_progress.init ();
     
         //  At the beginning, read one byte and go to one_byte_size_ready state.
         next_step (tmpbuf, 0, 1, Step.one_byte_size_ready);

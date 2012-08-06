@@ -47,7 +47,7 @@ public class Poller extends PollerBase implements Runnable {
         }
     }
 
-    SelectableChannel add_fd (SelectableChannel fd_, IPollEvents events_)
+    public SelectableChannel add_fd (SelectableChannel fd_, IPollEvents events_)
     {
         
         //  If the file descriptor table is too small expand it.
@@ -57,6 +57,7 @@ public class Poller extends PollerBase implements Runnable {
         pollset.put(fd_, 0);
         
         adjust_load (1);
+        
         return fd_;
     }
     

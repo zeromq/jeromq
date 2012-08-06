@@ -102,7 +102,7 @@ public class Msg {
     }
 
     
-    int init_size (int size_)
+    void init_size (int size_)
     {
         if (size_ <= max_vsm_size) {
             type = type_vsm;
@@ -120,7 +120,6 @@ public class Msg {
             //content.hint = null;
             //content.refcnt = new AtomicLong(); 
         }
-        return 0;
     }
 
     byte flags ()
@@ -179,7 +178,7 @@ public class Msg {
         }
     }
 
-    int close ()
+    void close ()
     {
         //  Check the validity of the message.
         if (!check ()) {
@@ -207,8 +206,6 @@ public class Msg {
         //  Make the message invalid.
         type = 0;
 
-        return 0;
-
     }
 
     public int init() {
@@ -229,6 +226,10 @@ public class Msg {
         size = m.size;
         data = m.data;
         content = m.content;
+    }
+
+    public void reset_flags(byte f) {
+        flags = (byte) (flags & (~f));
     }
 
 }

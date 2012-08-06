@@ -17,48 +17,68 @@ public class Utils {
         return random.nextInt();
     }
 
-    public static void tune_tcp_socket(SocketChannel fd) throws SocketException {
+    public static void tune_tcp_socket(SocketChannel ch) throws SocketException {
+        tune_tcp_socket(ch.socket());
+    }
+    
+    public static void tune_tcp_socket(Socket fd) throws SocketException {
         //  Disable Nagle's algorithm. We are doing data batching on 0MQ level,
         //  so using Nagle wouldn't improve throughput in anyway, but it would
         //  hurt latency.
         
-        fd.socket().setTcpNoDelay(true);
+        fd.setTcpNoDelay(true);
 
     }
+
     
-    public static void tune_tcp_keepalives(SocketChannel fd, int tcp_keepalive,
+    public static void tune_tcp_keepalives(SocketChannel ch, int tcp_keepalive,
             int tcp_keepalive_cnt, int tcp_keepalive_idle,
             int tcp_keepalive_intvl) throws SocketException {
 
-        Socket s = fd.socket();
+        tune_tcp_keepalives(ch.socket(), tcp_keepalive, tcp_keepalive_cnt,
+                tcp_keepalive_idle, tcp_keepalive_intvl);
+    }
+    
+    public static void tune_tcp_keepalives(Socket fd, int tcp_keepalive,
+            int tcp_keepalive_cnt, int tcp_keepalive_idle,
+            int tcp_keepalive_intvl) throws SocketException {
+
         if (tcp_keepalive != -1) {
-            s.setKeepAlive(true);
+            fd.setKeepAlive(true);
         }
     }
-
+    
     public static void unblock_socket(SelectableChannel s) throws IOException {
         s.configureBlocking(false);
     }
     
     @SuppressWarnings("unchecked")
-    public static <T> T[] realloc(Class<T> klass, T[] table, short size, boolean ended) {
-        T[] newTable = (T[])(Array.newInstance(klass, size));
+    public static <T> T[] realloc(Class<T> klass, T[] src, int size, boolean ended) {
+        T[] dest;
         
-        if (size > table.length) {
+        if (size > src.length) {
+            dest = (T[])(Array.newInstance(klass, size));
             if (ended)
-                System.arraycopy(table, 0, newTable, 0, table.length);
+                System.arraycopy(src, 0, dest, 0, src.length);
             else
-                System.arraycopy(table, 0, newTable, size-table.length, table.length);
-        } else if (size < table.length) {
+                System.arraycopy(src, 0, dest, size-src.length, src.length);
+        } else if (size < src.length) {
+            dest = (T[])(Array.newInstance(klass, size));
             if (ended)
-                System.arraycopy(table, table.length - size, newTable, 0, size);
+                System.arraycopy(src, 0, dest, 0, size);
             else
-                System.arraycopy(table, 0, newTable, 0, size);
+                System.arraycopy(src, src.length - size, dest, 0, size);
+
+        } else {
+            dest = src;
         }
-        return newTable;
+        return dest;
     }
     
     public static <T> void swap(List<T> items, int index1_, int index2_) {
+        if (index1_ == index2_) 
+            return;
+                    
         T item1 = items.get(index1_);
         T item2 = items.get(index2_);
         if (item1 != null)
@@ -66,5 +86,13 @@ public class Utils {
         if (item2 != null)
             items.set(index1_, item2);
     }
+
+    public static void memcpy(byte[] dest, byte[] src, int size) {
+        if (src == null)
+            return;
+        
+        System.arraycopy(src, 0, dest, 0, size);
+    }
+
 
 }

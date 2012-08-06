@@ -20,26 +20,29 @@ public class TestHwm {
         ZMQ.zmq_setsockopt (sb, ZMQ.ZMQ_RCVHWM, hwm);
         
         rc = ZMQ.zmq_bind (sb, "inproc://a");
-        /*
         assertThat (rc, is(0));
-
+        
         SocketBase sc = ZMQ.zmq_socket (ctx, ZMQ.ZMQ_PUSH);
         assertThat (sc, notNullValue());
-        rc = ZMQ.zmq_setsockopt (sc, ZMQ.ZMQ_SNDHWM, hwm);
-        assertThat (rc, is(0));
+        
+        ZMQ.zmq_setsockopt (sc, ZMQ.ZMQ_SNDHWM, hwm);
+        
         rc = ZMQ.zmq_connect (sc, "inproc://a");
         assertThat (rc, is(0));
 
+        
         //  Try to send 10 messages. Only 4 should succeed.
         for (int i = 0; i < 10; i++)
         {
-            rc = ZMQ.zmq_send (sc, null, 0, ZMQ.ZMQ_DONTWAIT);
+            boolean sent = ZMQ.zmq_send (sc, null, 0, ZMQ.ZMQ_DONTWAIT);
+            System.out.println("" + i + ":" + sent);
             if (i < 4)
-                assertThat (rc, is(0));
+                assertThat (sent, is(true));
             else
-                assert (rc < 0 && errno == EAGAIN);
+                assertThat (sent, is(false));
         }
 
+        /*
         // There should be now 4 messages pending, consume them.
         for (int i = 0; i != 4; i++) {
             rc = ZMQ.zmq_recv (sb, null, 0, 0);

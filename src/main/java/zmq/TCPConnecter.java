@@ -171,6 +171,8 @@ public class TcpConnecter extends Own implements IPollEvents {
             fd = connect ();
         } catch (ConnectException e) {
             err = true;
+        } catch (SocketException e) {
+            err = true;
         } catch (IOException e) {
             throw new ZException.IOException(e);
         }
@@ -193,7 +195,7 @@ public class TcpConnecter extends Own implements IPollEvents {
         }
 
         //  Create the engine object for this connection.
-        StreamEngine engine = new StreamEngine (fd, options, endpoint);
+        StreamEngine engine = new StreamEngine (fd.socket(), options, endpoint);
         //alloc_assert (engine);
 
         //  Attach the engine to the corresponding session object.

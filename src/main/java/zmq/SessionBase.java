@@ -104,10 +104,12 @@ public class SessionBase extends Own implements Pipe.IPipeEvents {
             s = new (std::nothrow) xsub_session_t (io_thread_, connect_,
                 socket_, options_, addr_);
             break;
-        case ZMQ_PUSH:
-            s = new (std::nothrow) push_session_t (io_thread_, connect_,
+            */
+        case ZMQ.ZMQ_PUSH:
+            s = new Push.PushSession (io_thread_, connect_,
                 socket_, options_, addr_);
             break;
+            /*
         case ZMQ_PULL:
             s = new (std::nothrow) pull_session_t (io_thread_, connect_,
                 socket_, options_, addr_);

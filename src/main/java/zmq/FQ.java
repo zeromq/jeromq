@@ -87,8 +87,7 @@ public class FQ {
 
     private int recvpipe(Msg msg_, Pipe[] pipe_) {
         //  Deallocate old content of the message.
-        int rc = msg_.close ();
-        assert (rc == 0);
+        msg_.close ();
 
         //  Round-robin over the pipes to get the next message.
         while (active > 0) {
@@ -121,8 +120,7 @@ public class FQ {
 
         //  No message is available. Initialise the output parameter
         //  to be a 0-byte message.
-        rc = msg_.init ();
-        assert (rc == 0);
+        msg_.init ();
         return -1;
     }
 

@@ -1,15 +1,17 @@
 package zmq;
 
 import java.io.IOException;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.channels.SelectableChannel;
+import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 
 public class StreamEngine implements IEngine {
     
     //final private IOObject io_object;
     //  Underlying socket.
-    final private SocketChannel s;
+    final private Socket s;
 
     private SelectableChannel handle;
 
@@ -31,12 +33,12 @@ public class StreamEngine implements IEngine {
     Options options;
 
     // String representation of endpoint
-    final String endpoint;
+    String endpoint;
 
     boolean plugged;
     
     
-    public StreamEngine (SocketChannel fd_, final Options options_, final String endpoint_) {
+    public StreamEngine (Socket fd_, final Options options_, final String endpoint_) {
         s = fd_;
         inpos = null;
         insize = 0;
@@ -49,24 +51,23 @@ public class StreamEngine implements IEngine {
         options = options_;
         plugged = false;
         endpoint = endpoint_;
+
         
         //  Put the socket into non-blocking mode.
         try {
-            Utils.unblock_socket (s);
+            Utils.unblock_socket (s.getChannel());
             
             //  Set the socket buffer limits for the underlying socket.
-            Socket socket = s.socket();
             if (options.sndbuf != 0) {
-                socket.setSendBufferSize(options.sndbuf);
+                s.setSendBufferSize(options.sndbuf);
             }
             if (options.rcvbuf != 0) {
-                socket.setReceiveBufferSize(options.rcvbuf);
+                s.setReceiveBufferSize(options.rcvbuf);
             }
 
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new ZException.IOException(e);
         }
-        
 
     }
 }

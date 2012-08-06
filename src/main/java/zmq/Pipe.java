@@ -205,6 +205,7 @@ public class Pipe extends ZObject {
             return false;
 
         boolean full = hwm > 0 && msgs_written - peers_msgs_read == (long) (hwm);
+        System.out.println("FULL? " + hwm + " " + msgs_written + " " + peers_msgs_read);
 
         if (full) {
             out_active = false;
@@ -309,8 +310,7 @@ public class Pipe extends ZObject {
 	    if (outpipe!= null) {
 	        while ((msg = outpipe.unwrite ()) != null) {
 	            assert ((msg.flags () & Msg.more) > 0);
-	            int rc = msg.close ();
-	            Errno.errno_assert (rc == 0);
+	            msg.close ();
 	        }
 	    }
 	}
@@ -425,8 +425,7 @@ public class Pipe extends ZObject {
         //  the ypipe itself.
         Msg msg;
         while ((msg = inpipe.read ()) != null) {
-           int rc = msg.close ();
-           Errno.errno_assert (rc == 0);
+           msg.close ();
         }
         
         LOG.debug( "{} <= {} <- {}", new Object[] {parent, msg, peer.get_parent()});
