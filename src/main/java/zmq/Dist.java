@@ -42,13 +42,13 @@ public class Dist {
         if (more) {
             pipes.add (pipe_); 
             //pipes.swap (eligible, pipes.size () - 1);
-            Array.swap(pipes, eligible, pipes.size () - 1);
+            Utils.swap(pipes, eligible, pipes.size () - 1);
             eligible++;
         }
         else {
             pipes.add (pipe_);
             //pipes.swap (active, pipes.size () - 1);
-            Array.swap(pipes, active, pipes.size () - 1);
+            Utils.swap(pipes, active, pipes.size () - 1);
             active++;
             eligible++;
         }

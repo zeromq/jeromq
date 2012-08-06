@@ -223,4 +223,12 @@ public class Msg {
         return super.toString() + "[" + type + "]";
     }
 
+    public void clone(Msg m) {
+        type = m.type;
+        flags = m.flags;
+        size = m.size;
+        data = m.data;
+        content = m.content;
+    }
+
 }

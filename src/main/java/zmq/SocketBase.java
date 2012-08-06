@@ -79,6 +79,7 @@ public abstract class SocketBase extends Own
     
     abstract void xattach_pipe (Pipe pipe_, boolean icanhasall_);
     abstract void xterminated(Pipe pie_);
+    void xsetsockopt(int option_, int optval_) {};
     
     boolean check_tag ()
     {
@@ -117,9 +118,11 @@ public abstract class SocketBase extends Own
         case ZMQ.ZMQ_ROUTER:
             s = new Router (parent_, tid_, sid_);
             break;     
+            */
         case ZMQ.ZMQ_PULL:
             s = new Pull (parent_, tid_, sid_);
             break;
+            /*
         case ZMQ.ZMQ_PUSH:
             s = new Push (parent_, tid_, sid_);
             break;
@@ -140,8 +143,7 @@ public abstract class SocketBase extends Own
     int connect (String addr_)
     {
         if (ctx_terminated) {
-            Errno.set(Errno.ETERM);
-            return -1;
+            throw new IllegalStateException();
         }
 
         //  Process pending commands, if any.
@@ -154,7 +156,7 @@ public abstract class SocketBase extends Own
         try {
             uri = new URI(addr_);
         } catch (URISyntaxException e) {
-            return -1;
+            throw new IllegalArgumentException(e);
         }
         String protocol = uri.getScheme();
         String address = uri.getHost();
@@ -323,17 +325,14 @@ public abstract class SocketBase extends Own
             cmd = mailbox.recv (0);
         }
 
-        System.out.println("SocketBase0 " + cmd);
         //  Process all the commands available at the moment.
         while (true) {
             if (cmd == null)
                 break;
             cmd.destination().process_command (cmd);
             cmd = mailbox.recv (0);
-            System.out.println("SocketBase1 " + cmd);
          }
         if (ctx_terminated) {
-            //Errno.set(Errno.ETERM);
             return -1;
         }
 
@@ -532,5 +531,109 @@ public abstract class SocketBase extends Own
     @Override
     public String toString() {
         return super.toString() + "[" + name + "]";
+    }
+
+    public void setsockopt(int option_, int optval_) {
+        if (ctx_terminated) {
+            throw new IllegalStateException();
+        }
+
+        //  First, check whether specific socket type overloads the option.
+        xsetsockopt (option_, optval_);
+
+        //  If the socket type doesn't support the option, pass it to
+        //  the generic option parser.
+        options.setsockopt (option_, optval_);
+
+    }
+
+    abstract protected void xread_activated(Pipe pipe_) ;
+
+    abstract protected int xrecv(Msg msg_, int flags_) ;
+
+    abstract protected boolean xhas_in();
+
+    public int bind(final String addr_) {
+        if (ctx_terminated) {
+            throw new IllegalStateException();
+        }
+
+        //  Process pending commands, if any.
+        int rc = process_commands (0, false);
+        if (rc != 0)
+            return -1;
+
+        //  Parse addr_ string.
+        URI uri;
+        try {
+            uri = new URI(addr_);
+        } catch (URISyntaxException e) {
+            throw new IllegalArgumentException(e);
+        }
+        String protocol = uri.getScheme();
+        String address = uri.getHost();
+        if (uri.getPort() > 0) {
+            address = address + ":" + uri.getPort();
+        }
+
+
+        rc = check_protocol (protocol);
+        if (rc != 0)
+            return -1;
+
+        if (protocol == "inproc") {
+            Ctx.Endpoint endpoint = new Ctx.Endpoint(this, options);
+            register_endpoint (addr_, endpoint);
+                // Save last endpoint URI
+            options.last_endpoint = addr_;
+            return 0;
+        }
+        if (protocol.equals("pgm") || protocol.equals("epgm")) {
+            //  For convenience's sake, bind can be used interchageable with
+            //  connect for PGM and EPGM transports.
+            return connect (addr_);
+        }
+
+        //  Remaining trasnports require to be run in an I/O thread, so at this
+        //  point we'll choose one.
+        IOThread io_thread = choose_io_thread (options.affinity);
+        if (io_thread == null) {
+            throw new IllegalStateException("Empty IO Thread");
+        }
+
+        if (protocol.equals("tcp")) {
+            TcpListener listener = new TcpListener (
+                io_thread, this, options);
+            rc = listener.set_address (address);
+            if (rc != 0) {
+                monitor_event (ZMQ.ZMQ_EVENT_BIND_FAILED, addr_, rc);
+                return -1;
+            }
+
+            // Save last endpoint URI
+            listener.get_address (options.last_endpoint);
+
+            add_endpoint (addr_, listener);
+            return 0;
+        }
+
+        if (protocol.equals("ipc")) {
+            IpcListener listener = new IpcListener (
+                io_thread, this, options);
+            rc = listener.set_address (address);
+            if (rc != 0) {
+                monitor_event (ZMQ.ZMQ_EVENT_BIND_FAILED, addr_, rc);
+                return -1;
+            }
+
+            // Save last endpoint URI
+            listener.get_address (options.last_endpoint);
+
+            add_endpoint (addr_, listener);
+            return 0;
+        }
+
+        assert (false);
+        return -1;
     }
 }

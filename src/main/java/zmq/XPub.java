@@ -53,14 +53,15 @@ public class XPub extends SocketBase {
 	    xread_activated (pipe_);
 	}
 
-	void xread_activated (Pipe pipe_)
+	@Override
+	protected void xread_activated (Pipe pipe_)
 	{
 	    //  There are some subscriptions waiting. Let's process them.
-	    Msg sub;
+	    Msg sub = new Msg();
 	    while (true) {
 
 	        //  Grab next subscription.
-	        if ((sub = pipe_.read ()) == null)
+	        if (!pipe_.read (sub))
 	            return;
 
 	        //  Apply the subscription to the trie.
@@ -85,7 +86,8 @@ public class XPub extends SocketBase {
 
 	}
 	
-	void xterminated (Pipe pipe_)
+	@Override
+	protected void xterminated (Pipe pipe_)
 	{
 	    //  Remove the pipe from the trie. If there are topics that nobody
 	    //  is interested in anymore, send corresponding unsubscriptions
@@ -116,5 +118,15 @@ public class XPub extends SocketBase {
 	    dist.terminated (pipe_);
 	}
 
+
+    @Override
+    protected int xrecv(Msg msg_, int flags_) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    protected boolean xhas_in() {
+        throw new UnsupportedOperationException();
+    }
 
 }

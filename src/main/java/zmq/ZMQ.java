@@ -161,4 +161,23 @@ public class ZMQ {
         return rc;
     }
 
+    public static void zmq_setsockopt(SocketBase s_, int option_, int optval_) {
+
+        if (s_ == null || !s_.check_tag ()) {
+            throw new IllegalStateException();
+        }
+
+        s_.setsockopt (option_, optval_);
+
+    }
+
+    public static int zmq_bind(SocketBase s_, final String addr_) {
+        
+        if (s_ == null || !s_.check_tag ()) {
+            throw new IllegalStateException();
+        }
+        
+        return s_.bind(addr_);
+    }
+
 }

@@ -123,4 +123,19 @@ public class Options {
     	identity = new byte[256];
     	tcp_accept_filters = new ArrayList<TcpAddressMask>();
     }
+
+    public void setsockopt(int option_, int optval_) {
+        // TODO Auto-generated method stub
+        switch (option_) {
+
+        case ZMQ.ZMQ_SNDHWM:
+            sndhwm = optval_;
+            return;
+        case ZMQ.ZMQ_RCVHWM:
+            rcvhwm = optval_;
+            return;
+        default:
+            throw new IllegalArgumentException("option=" + option_);
+        }
+    }
 }

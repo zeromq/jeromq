@@ -6,7 +6,7 @@ import java.net.SocketException;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SocketChannel;
 
-public class TCPConnecter extends Own implements IPollEvents {
+public class TcpConnecter extends Own implements IPollEvents {
 
     private final static int reconnect_timer_id = 1;
     
@@ -37,7 +37,7 @@ public class TCPConnecter extends Own implements IPollEvents {
     // String representation of endpoint to connect to
     private String endpoint;
     
-    public TCPConnecter (IOThread io_thread_,
+    public TcpConnecter (IOThread io_thread_,
       SessionBase session_, final Options options_,
       final Address addr_, boolean wait_) {
         

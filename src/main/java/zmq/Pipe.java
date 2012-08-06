@@ -159,21 +159,22 @@ public class Pipe extends ZObject {
 	    sink = sink_;
 	}
 	
-    Msg read()
+    boolean read(Msg msg_)
 	{
-	    Msg msg_;
 	    if (!in_active || (state != State.active && state != State.pending))
-	        return null;
+	        return false;
 
-	    if ((msg_ = inpipe.read ()) == null) {
+	    Msg read;
+	    if ((read = inpipe.read ()) == null) {
 	        in_active = false;
-	        return null;
+	        return false;
 	    }
+	    msg_.clone(read);
 
 	    //  If delimiter was read, start termination process of the pipe.
 	    if (msg_.is_delimiter ()) {
 	        delimit ();
-	        return null;
+	        return false;
 	    }
 
 	    if ((msg_.flags () & Msg.more) == 0)
@@ -182,7 +183,7 @@ public class Pipe extends ZObject {
 	    if (lwm > 0 && msgs_read % lwm == 0)
 	        send_activate_write (peer, msgs_read);
 
-	    return msg_;
+	    return true;
 	}
     
     boolean write (Msg msg_)
@@ -442,5 +443,7 @@ public class Pipe extends ZObject {
             sink.read_activated (this);
         }
     }
+
+
 
 }

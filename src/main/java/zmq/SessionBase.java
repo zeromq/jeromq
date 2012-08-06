@@ -149,7 +149,7 @@ public class SessionBase extends Own implements Pipe.IPipeEvents {
         //  Create the connecter object.
 
         if (addr.protocol().equals("tcp")) {
-            TCPConnecter connecter = new TCPConnecter (
+            TcpConnecter connecter = new TcpConnecter (
                 io_thread, this, options, addr, wait_);
             //alloc_assert (connecter);
             launch_child (connecter);
@@ -157,7 +157,7 @@ public class SessionBase extends Own implements Pipe.IPipeEvents {
         }
         
         if (addr.protocol().equals("ipc")) {
-            IPCConnecter connecter = new IPCConnecter (
+            IpcConnecter connecter = new IpcConnecter (
                 io_thread, this, options, addr, wait_);
             //alloc_assert (connecter);
             launch_child (connecter);

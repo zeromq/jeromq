@@ -15,6 +15,8 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import zmq.Ctx.Endpoint;
+
 
 public class Ctx {
 	
@@ -366,16 +368,31 @@ public class Ctx {
         
         endpoints_sync.lock ();
 
-        Iterator<Entry<String, Endpoint>> it = endpoints.entrySet().iterator();
-        while (it.hasNext()) {
-            Entry<String, Endpoint> e = it.next();
-            if (e.getValue().socket == socket_) {
-                it.remove();
-                continue;
+        try {
+            Iterator<Entry<String, Endpoint>> it = endpoints.entrySet().iterator();
+            while (it.hasNext()) {
+                Entry<String, Endpoint> e = it.next();
+                if (e.getValue().socket == socket_) {
+                    it.remove();
+                    continue;
+                }
             }
+        } finally {
+            endpoints_sync.unlock ();
         }
+    }
+    public void register_endpoints(String addr_, Endpoint endpoint_) {
+        endpoints_sync.lock ();
 
-        endpoints_sync.unlock ();
+        Endpoint inserted = null;
+        try {
+            inserted = endpoints.put(addr_, endpoint_);
+        } finally {
+            endpoints_sync.unlock ();
+        }
+        if (inserted != null) {
+            throw new ZException.AddrInUse();
+        }
     }
 
 }

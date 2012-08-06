@@ -16,7 +16,7 @@ public enum Errno {
 	EPROTONOSUPPORT(53, "Protocol not supported"),
 	ECONNREFUSED(71, "Connection refused"),
 	ENOCOMPATPROTO(156384712 + 52, "Not Compatible Protocol"),
-	ETERM(156384712 + 53, "Terminated"),
+	//ETERM(156384712 + 53, "Terminated"),
 	EMTHREAD(156384712 + 54, "Thread Error");
 
 

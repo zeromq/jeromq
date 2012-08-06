@@ -2,7 +2,7 @@ package zmq;
 
 import java.nio.channels.SelectableChannel;
 
-public class IPCConnecter extends Own {
+public class IpcConnecter extends Own {
     
     private final int reconnect_timer_id = 1;
     
@@ -33,7 +33,7 @@ public class IPCConnecter extends Own {
     // String representation of endpoint to connect to
     private String endpoint;
 
-    public IPCConnecter (IOThread io_thread_,
+    public IpcConnecter (IOThread io_thread_,
             SessionBase session_, final Options options_,
             final Address addr_, boolean wait_)  {
         

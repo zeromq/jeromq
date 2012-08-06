@@ -38,6 +38,11 @@ public class ZObject {
         ctx.destroy_socket (socket_);
     }
 
+    void register_endpoint (String addr_, Ctx.Endpoint endpoint_)
+    {
+        ctx.register_endpoints (addr_, endpoint_);
+    }
+    
     void unregister_endpoints (SocketBase socket_)
     {
         ctx.unregister_endpoints (socket_);

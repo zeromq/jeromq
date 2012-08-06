@@ -5,7 +5,12 @@ import java.util.concurrent.atomic.AtomicReference;
 public class ZException  {
 
     //private static final AtomicReference<Errno> errno = new AtomicReference<Errno>();
-    
+
+    public static class AddrInUse extends RuntimeException {
+
+        private static final long serialVersionUID = 8574207129098333986L;
+
+    }
     public static class NoFreeSlot extends RuntimeException {
         private static final long serialVersionUID = -8599234879594535002L;
     }
