@@ -19,4 +19,9 @@ public class Pair extends SocketBase {
 	    else
 	        pipe_.terminate (false);
 	}
+	
+	void xterminated (Pipe pipe_) {
+	    if (pipe_ == pipe)
+	        pipe = null;
+	}
 }

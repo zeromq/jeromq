@@ -8,15 +8,15 @@ public class Msg {
     //  rather than being reference-counted.
     private final static int max_vsm_size = 29;
     
-    public final static short more = 1;
-    public final static short identity = 64;
-    public final static short shared = 128;
+    public final static byte more = 1;
+    public final static byte identity = 64;
+    public final static byte shared = -128;
     
-    private final static int type_min = 101;
-    private final static int type_vsm = 101;
-    private final static int type_lmsg = 102;
-    private final static int type_delimiter = 103;
-    private final static int type_max = 103;
+    private final static byte type_min = 101;
+    private final static byte type_vsm = 101;
+    private final static byte type_lmsg = 102;
+    private final static byte type_delimiter = 103;
+    private final static byte type_max = 103;
     
     //  Shared message buffer. Message data are either allocated in one
     //  continuous block along with this structure - thus avoiding one
@@ -28,11 +28,24 @@ public class Msg {
     class Content
     {
         byte[] data;
-        int size;
-        //msg_free_fn *ffn;
+        final int size;
+        IMsgFree ffn;
         byte[] hint;
-        AtomicLong refcnt;
+        final AtomicLong refcnt;
+        
+        public Content(int size_) {
+            size = size_;
+            data = new byte[size_];
+            refcnt = new AtomicLong();
+            hint = null;
+            ffn = null;
+        }
+
     };
+    
+    interface IMsgFree {
+        void free(Content c);
+    }
     
     //  Note that fields shared between different message types are not
     //  moved to tha parent class (msg_t). This way we ger tighter packing
@@ -64,116 +77,65 @@ public class Msg {
         } delimiter;
     } u;
     */
-    class Base {
-        byte[] unused;
-        byte type;
-        short flags;
-        Base() {
-            //XXX unused = ByteBuffer.allocate(max_vsm_size + 1);
-        }
-    } ;
-    
-    class Vsm {
-        byte[] data;
-        byte size;
-        byte type;
-        byte flags;
-        
-        Vsm() {
-            //XXX data = ByteBuffer.allocate(max_vsm_size);
-        }
-    };
-    class Lmsg {
-        Content content;
-        byte[] unsigned; 
-        byte type;
-        byte flags;
-        
-        Lmsg() {
-            //XXX unsigned = ByteBuffer.allocate(max_vsm_size + 1 - 4 ) ; //sizeof (content_t*));
-        }
-    } ;
-    
-    class Delimiter {
-        byte[] unused ; // [max_vsm_size + 1];
-        byte type;
-        byte flags;
-    };
 
-    Base _base;
-    Vsm _vsm;
-    Lmsg _lmsg;
-    Delimiter _delimiter;
+    private byte type;
+    private byte flags;
+    private byte size;
+    private byte[] data;
+    private Content content;
     
     Msg() {
+        data = new byte[max_vsm_size];
+        content = null;
+        size = -1;
     }
     
     boolean is_delimiter ()
     {
-        return base().type == type_delimiter;
+        return type == type_delimiter;
     }
 
 
     boolean check ()
     {
-         return base().type >= type_min && base().type <= type_max;
+         return type >= type_min && type <= type_max;
     }
 
-    private Base base() {
-        if (_base == null) _base = new Base();
-        return _base;
-    }
-
-    private Vsm vsm() {
-        if (_vsm == null) _vsm = new Vsm();
-        return _vsm;
-    }
-
-    private Lmsg lmsg() {
-        if (_lmsg == null) _lmsg = new Lmsg();
-        return _lmsg;
-    }
-    
-    private Delimiter delimiter() {
-        if (_delimiter == null) _delimiter = new Delimiter();
-        return _delimiter;
-    }
-    
     
     int init_size (int size_)
     {
         if (size_ <= max_vsm_size) {
-            vsm().type = type_vsm;
-            vsm().flags = 0;
-            vsm().size = (byte) size_;
+            type = type_vsm;
+            flags = 0;
+            size = (byte) size_;
         }
         else {
-            lmsg().type = type_lmsg;
-            lmsg().flags = 0;
-            lmsg().content = null ; //XXX (content_t*) malloc (sizeof (content_t) + size_);
-            if (lmsg().content == null) {
-                Errno.set(Errno.ENOMEM);
-                return -1;
-            }
+            type = type_lmsg;
+            flags = 0;
+            content = new Content(size_); 
 
-            lmsg().content.data = null ; //XXX lmsg().content + 1;
-            lmsg().content.size = size_;
-            //lmsg().content.ffn = null;
-            lmsg().content.hint = null;
-            lmsg().content.refcnt = null; // XXX
-            //new (&lmsg.content->refcnt) zmq::atomic_counter_t ();
+            //content.data = null ; //XXX lmsg().content + 1;
+            //content.size = size_;
+            //content.ffn = null;
+            //content.hint = null;
+            //content.refcnt = new AtomicLong(); 
         }
         return 0;
     }
 
-    short flags ()
+    byte flags ()
     {
-        return base().flags;
+        return flags;
     }
     
-    void set_flags (short flags_)
+    byte type ()
     {
-        base().flags |= flags_;
+        return type;
+    }
+    
+    void set_flags (byte flags_)
+    {
+        flags |= flags_;
     }
 
     
@@ -182,11 +144,11 @@ public class Msg {
         //  Check the validity of the message.
         assert (check ());
 
-        switch (base().type) {
+        switch (type) {
         case type_vsm:
-            return vsm().size;
+            return size;
         case type_lmsg:
-            return lmsg().content.size;
+            return content.size;
         default:
             assert (false);
             return 0;
@@ -195,8 +157,8 @@ public class Msg {
     
     
     public int init_delimiter() {
-        delimiter().type = type_delimiter;
-        delimiter().flags = 0;
+        type = type_delimiter;
+        flags = 0;
         return 0;
     }
 
@@ -206,11 +168,11 @@ public class Msg {
         //  Check the validity of the message.
         assert (check ());
 
-        switch (base().type) {
+        switch (type) {
         case type_vsm:
-            return vsm().data;
+            return data;
         case type_lmsg:
-            return lmsg().content.data;
+            return content.data;
         default:
             assert (false);
             return null;
@@ -221,35 +183,44 @@ public class Msg {
     {
         //  Check the validity of the message.
         if (!check ()) {
-            Errno.set(Errno.EFAULT);
-            return -1;
+            throw new IllegalStateException();
         }
 
-        if (base().type == type_lmsg) {
+        if (type == type_lmsg) {
 
             //  If the content is not shared, or if it is shared and the reference
             //  count has dropped to zero, deallocate it.
-            if ((lmsg().flags & shared) == 0 ||
-                  lmsg().content.refcnt.decrementAndGet() == 0) {
+            if ((flags & shared) == 0 ||
+                  content.refcnt.decrementAndGet() == 0) {
 
                 //  We used "placement new" operator to initialize the reference
                 //  counter so we call the destructor explicitly now.
-                lmsg().content.refcnt = null; //.~atomic_counter_t ();
+                //content.refcnt = null; //.~atomic_counter_t ();
 
-                //if (u.lmsg.content->ffn)
-                //    u.lmsg.content->ffn (u.lmsg.content->data,
-                //        u.lmsg.content->hint);
-                //free (u.lmsg.content);
-                lmsg().content = null;  
+                if (content.ffn != null)
+                    content.ffn.free (content);
+                content.data = null;
+                content = null;  
             }
         }
 
         //  Make the message invalid.
-        base().type = 0;
+        type = 0;
 
         return 0;
 
     }
 
+    public int init() {
+        type = type_vsm;
+        flags = 0;
+        size = 0;
+        return 0;
+    }
+
+    @Override
+    public String toString() {
+        return super.toString() + "[" + type + "]";
+    }
 
 }

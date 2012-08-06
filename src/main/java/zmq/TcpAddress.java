@@ -1,6 +1,7 @@
 package zmq;
 
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 
 public class TcpAddress implements Address.IZAddress {
 
@@ -13,11 +14,11 @@ public class TcpAddress implements Address.IZAddress {
     }
 
     @Override
-    public int resolve(String name_, boolean local_, boolean ipv4only_) {
+    public void resolve(String name_, boolean local_, boolean ipv4only_) {
         //  Find the ':' at end that separates address from the port number.
         int delimiter = name_.lastIndexOf(':');
         if (delimiter < 0) {
-            Errno.set(Errno.EINVAL);
+            throw new IllegalArgumentException(name_);
         }
 
         //  Separate the address/port.
@@ -38,8 +39,7 @@ public class TcpAddress implements Address.IZAddress {
             //  Parse the port number (0 is not a valid port).
             port = Integer.parseInt(port_str);
             if (port == 0) {
-                Errno.set(Errno.EINVAL);
-                return -1;
+                throw new IllegalArgumentException(name_);
             }
         }
         //  Resolve the IP address.
@@ -60,11 +60,14 @@ public class TcpAddress implements Address.IZAddress {
         */
         address = new InetSocketAddress(addr_str, port);
         if (address.getAddress() == null) {
-            Errno.set(Errno.EINVAL);
-            return -1;
+            throw new IllegalArgumentException(name_);
         }
-        return 0;
 
+    }
+
+    @Override
+    public SocketAddress address() {
+        return address;
     }
 
 }

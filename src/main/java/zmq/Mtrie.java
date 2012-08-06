@@ -11,26 +11,51 @@ public class Mtrie {
     byte min;
     short count;
     short live_nodes;
+    
+    public static interface IMtrieHandler {
+        void removed(byte[] data, Object arg);
+    }
     /*
     union {
         class mtrie_t *node;
         class mtrie_t **table;
     } next;
     */
+    /*
     class Next {
-    	public Mtrie node;
-    	public ArrayList<Mtrie> table;
-    	
+        private boolean empty;
+        private Mtrie[] table;
+        
+        public Next() {
+            empty = true;
+            table = null;
+        }
+        public Mtrie node() {
+            if (empty) {
+                return null;
+            }
+            return table[0];
+        }
+        public void node(Mtrie val) {
+            if (val == null) {
+                empty = true;
+                table = null;
+            } else {
+                table = new Mtrie[1];
+                table[0] = val;
+            }
+        }
     };
-    final Next next;
+    */
+    Mtrie[] next;
     
     public Mtrie() {
-    	min = 0;
-    	count = 0;
-    	live_nodes = 0;
-    	
-    	pipes = new HashSet<Pipe>();
-    	next = new Next();
+        min = 0;
+        count = 0;
+        live_nodes = 0;
+        
+        pipes = null;
+        next = null;
     }
     
     boolean is_redundant ()
@@ -38,22 +63,21 @@ public class Mtrie {
         return pipes == null && live_nodes == 0;
     }
     
-    public boolean add (byte[] prefix_, int size_, Pipe pipe_)
+    public boolean add (byte[] prefix_, Pipe pipe_)
     {
-        return add_helper (prefix_, 0, size_, pipe_);
+        return add_helper (prefix_, 0, pipe_);
     }
     
-    public boolean add (byte[] prefix_, int start_, int size_, Pipe pipe_)
+    public boolean add (byte[] prefix_, int start_, Pipe pipe_)
     {
-        return add_helper (prefix_, start_, size_, pipe_);
+        return add_helper (prefix_, start_, pipe_);
     }
 
 
-    private boolean add_helper (byte[] prefix_, int start_, int size_,
-    	    Pipe pipe_)
+    private boolean add_helper (byte[] prefix_, int start_, Pipe pipe_)
     {
         //  We are at the node corresponding to the prefix. We are done.
-        if (size_ == 0) {
+        if (prefix_ == null || prefix_.length == start_) {
             boolean result = pipes == null;
             if (pipes == null)
                 pipes = new HashSet<Pipe>();
@@ -69,81 +93,176 @@ public class Mtrie {
             if (count == 0) {
                 min = c;
                 count = 1;
-                next.node = null;
+                next = null;
             }
             else if (count == 1) {
                 byte oldc = min;
-                Mtrie oldp = next.node;
+                Mtrie oldp = next[0];
                 count = (short) ((min < c ? c - min : min - c) + 1);
-                //next.table = (mtrie_t**)
-                //    malloc (sizeof (mtrie_t*) * count);
-                //alloc_assert (next.table);
-                next.table = new ArrayList<Mtrie>();
-                for (short i = 0; i != count; ++i)
-                    next.table.add(null);
+                next = new Mtrie[count];
                 min = (byte)Math.min ((byte)min, (byte)c);
-                next.table.set(oldc - min, oldp);
+                next[oldc - min] = oldp;
             }
             else if (min < c) {
 
                 //  The new character is above the current character range.
-                short old_count = count;
                 count = (short) (c - min + 1);
-                //next.table = (mtrie_t**) realloc ((void*) next.table,
-                //    sizeof (mtrie_t*) * count);
-                //alloc_assert (next.table);
-                next.table = new ArrayList<Mtrie>();
-                for (short i = old_count; i != count; i++)
-                	next.table.add(null);
+                next = realloc(next, count, true);
             }
             else {
 
                 //  The new character is below the current character range.
-                short old_count = count;
-                count = (short) ((min + old_count) - c);
-                //next.table = (mtrie_t**) realloc ((void*) next.table,
-                //    sizeof (mtrie_t*) * count);
-                //alloc_assert (next.table);
-                //memmove (next.table + min - c, next.table,
-                //    old_count * sizeof (mtrie_t*));
-                for (short i = 0; i < old_count; i++) {
-                	next.table.set(min-c+i, next.table.get(i));
-                }
-                for (short i = 0; i != min - c; i++)
-                	next.table.add(null);
+                count = (short) ((min + count) - c);
+                next = realloc(next, count, false);
                 min = c;
             }
         }
 
         //  If next node does not exist, create one.
         if (count == 1) {
-            if (next.node != null) {
-                next.node = new Mtrie();
+            if (next == null) {
+                next = new Mtrie[1];
+                next[0] = new Mtrie();
                 ++live_nodes;
                 //alloc_assert (next.node);
             }
-            return next.node.add_helper (prefix_, start_ + 1, size_ - 1, pipe_);
+            return next[0].add_helper (prefix_, start_ + 1, pipe_);
         }
         else {
-            if (next.table.get(c - min) != null) {
-                next.table.set(c - min, new Mtrie());
+            if (next[c - min] == null) {
+                next[c - min] = new Mtrie();
                 ++live_nodes;
                 //alloc_assert (next.table [c - min]);
             }
-            return next.table.get(c - min).add_helper (prefix_ , start_ + 1, size_ - 1, pipe_);
+            return next[c - min].add_helper (prefix_ , start_ + 1, pipe_);
         }
     }
+    
+    private Mtrie[] realloc(Mtrie[] table, short size, boolean ended) {
+        return Utils.realloc(Mtrie.class, table, size, ended);
+    }
+    
+    public boolean rm (Pipe pipe_, IMtrieHandler func, Object arg) {
+        return rm_helper(pipe_, null, 0, 0, func, arg );
+    }
 
-    public boolean rm (byte[] prefix_, int start_, int size_, Pipe pipe_)
+    private boolean rm_helper(Pipe pipe_, byte[] buff_, int buffsize_, int maxbuffsize_,
+            IMtrieHandler func_, Object arg_) {
+        
+        //  Remove the subscription from this node.
+        if (pipes != null && pipes.remove(pipe_) && pipes.isEmpty()) {
+            func_.removed(buff_, arg_);
+            pipes = null;
+        }
+
+        //  Adjust the buffer.
+        if (buffsize_ >= maxbuffsize_) {
+            maxbuffsize_ = buffsize_ + 256;
+            byte[] old = buff_;
+            buff_ = new byte[maxbuffsize_];
+            if (old != null)
+                System.arraycopy(old, 0, buff_, 0, old.length);
+        }
+
+        //  If there are no subnodes in the trie, return.
+        if (count == 0)
+            return true;
+
+        //  If there's one subnode (optimisation).
+        if (count == 1) {
+            buff_[buffsize_] = min;
+            buffsize_ ++;
+            next[0].rm_helper (pipe_, buff_, buffsize_, maxbuffsize_,
+                func_, arg_);
+
+            //  Prune the node if it was made redundant by the removal
+            if (next[0].is_redundant ()) {
+                next = null;
+                count = 0;
+                --live_nodes;
+                assert (live_nodes == 0);
+            }
+            return true;
+        }
+
+        //  If there are multiple subnodes.
+        //
+        //  New min non-null character in the node table after the removal
+        byte new_min = (byte) (min + count - 1);
+        //  New max non-null character in the node table after the removal
+        byte new_max = min;
+        for (short c = 0; c != count; c++) {
+            buff_[buffsize_] = (byte) (min + c);
+            if (next[c] != null) {
+                next[c].rm_helper (pipe_, buff_, buffsize_ + 1,
+                    maxbuffsize_, func_, arg_);
+
+                //  Prune redundant nodes from the mtrie
+                if (next[c].is_redundant ()) {
+                    next[c] = null;
+
+                    assert (live_nodes > 0);
+                    --live_nodes;
+                }
+                else {
+                    //  The node is not redundant, so it's a candidate for being
+                    //  the new min/max node.
+                    //
+                    //  We loop through the node array from left to right, so the
+                    //  first non-null, non-redundant node encountered is the new
+                    //  minimum index. Conversely, the last non-redundant, non-null
+                    //  node encountered is the new maximum index.
+                    if (c + min < new_min)
+                        new_min = (byte) (c + min);
+                    if (c + min > new_max)
+                        new_max = (byte) (c + min);
+                }
+            }
+        }
+
+        assert (count > 1);
+
+        //  Compact the node table if possible
+        if (live_nodes == 1) {
+            //  If there's only one live node in the table we can
+            //  switch to using the more compact single-node
+            //  representation
+            assert (new_min == new_max);
+            assert (new_min >= min && new_min < min + count);
+            Mtrie node = next [new_min - min];
+            assert (node != null);
+            next = null;
+            next = new Mtrie[]{node};
+            count = 1;
+            min = new_min;
+        }
+        else if (live_nodes > 1 && (new_min > min || new_max < min + count - 1)) {
+            assert (new_max - new_min + 1 > 1);
+
+            Mtrie[] old_table = next;
+            assert (new_min > min || new_max < min + count - 1);
+            assert (new_min >= min);
+            assert (new_max <= min + count - 1);
+            assert (new_max - new_min + 1 < count);
+            count = (short) (new_max - new_min + 1);
+            next = new Mtrie[count];
+
+            System.arraycopy(old_table, (new_min - min), next, 0, count);
+
+            min = new_min;
+        }
+        return true;
+    }
+
+    public boolean rm (byte[] prefix_, int start_, Pipe pipe_)
     {
-        return rm_helper (prefix_, start_, size_, pipe_);
+        return rm_helper (prefix_, start_,  pipe_);
     }
 
 
-    private boolean rm_helper (byte[] prefix_, int start_, int size_,
-            Pipe pipe_)
+    private boolean rm_helper (byte[] prefix_, int start_, Pipe pipe_)
     {
-        if (size_ == 0) {
+        if (prefix_ == null || prefix_.length == start_) {
             if (pipes != null) {
                 boolean erased = pipes.remove(pipe_);
                 assert (erased);
@@ -155,28 +274,28 @@ public class Mtrie {
         }
 
         byte c = prefix_[ start_ ];
-        if (count != 0 || c < min || c >= min + count)
+        if (count == 0 || c < min || c >= min + count)
             return false;
 
         Mtrie next_node =
-            count == 1 ? next.node : next.table.get(c - min);
+            count == 1 ? next[0] : next[c - min];
 
         if (next_node == null)
             return false;
 
-        boolean ret = next_node.rm_helper (prefix_ , start_ + 1, size_ - 1, pipe_);
+        boolean ret = next_node.rm_helper (prefix_ , start_ + 1, pipe_);
         if (next_node.is_redundant ()) {
             //delete next_node;
             assert (count > 0);
 
             if (count == 1) {
-                next.node = null;
+                next = null;
                 count = 0;
                 --live_nodes;
                 assert (live_nodes == 0);
             }
             else {
-                next.table.set(c - min, null) ; 
+                next[c - min] = null ; 
                 assert (live_nodes > 1);
                 --live_nodes;
 
@@ -187,8 +306,8 @@ public class Mtrie {
                     //  representation
                     Mtrie node = null;
                     for (short i = 0; i < count; ++i) {
-                        if (next.table.get(i) != null) {
-                            node = next.table.get(i);
+                        if (next[i] != null) {
+                            node = next[i];
                             min = (byte)(i + min);
                             break;
                         }
@@ -196,43 +315,34 @@ public class Mtrie {
 
                     assert (node != null);
                     //free (next.table);
-                    next.table = null;
-                    next.node = node;
+                    next = null;
+                    next = new Mtrie[]{node};
                     count = 1;
                 }
                 else if (c == min) {
                     //  We can compact the table "from the left"
                     byte new_min = min;
                     for (short i = 1; i < count; ++i) {
-                        if (next.table.get(i) != null) {
+                        if (next[i] != null) {
                             new_min = (byte) (i + min);
                             break;
                         }
                     }
                     assert (new_min != min);
 
-                    List<Mtrie> old_table = next.table;
                     assert (new_min > min);
                     assert (count > new_min - min);
                     count = (short) (count - (new_min - min));
-                    //next.table = (mtrie_t**) malloc (sizeof (mtrie_t*) * count);
-                    //alloc_assert (next.table);
-
-                    //memmove (next.table, old_table + (new_min - min),
-                    //         sizeof (mtrie_t*) * count);
-                    //free (old_table);
-
-                    for (short i = 0; i < count; i++) {
-                        next.table.set(i, old_table.get(new_min - min + i));
-                    }
                     
+                    next = realloc(next, count, true);
+
                     min = new_min;
                 }
                 else if (c == min + count - 1) {
                     //  We can compact the table "from the right"
                     short new_count = count;
                     for (short i = 1; i < count; ++i) {
-                        if (next.table.get(count - 1 - i) != null) {
+                        if (next[count - 1 - i] != null) {
                             new_count = (short) (count - i);
                             break;
                         }
@@ -240,13 +350,7 @@ public class Mtrie {
                     assert (new_count != count);
                     count = new_count;
 
-                    //List<Mtrie> old_table = next.table;
-                    //next.table = (mtrie_t**) malloc (sizeof (mtrie_t*) * count);
-                    //alloc_assert (next.table);
-
-                    //memmove (next.table, old_table, sizeof (mtrie_t*) * count);
-                    //free (old_table);
-                    next.table.ensureCapacity(count);
+                    next = realloc(next, count, false);
                 }
             }
         }

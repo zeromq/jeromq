@@ -1,5 +1,7 @@
 package zmq;
 
+import java.net.SocketAddress;
+
 public class Address {
 
     /*
@@ -12,16 +14,17 @@ public class Address {
     public static interface IZAddress {
 
         String toString(String addr_);
-        int resolve(String name_, boolean local_, boolean ip4only_);
+        void resolve(String name_, boolean local_, boolean ip4only_);
+        SocketAddress address();
     };
     
-    final String protocol;
-    final String address;
+    final private String protocol;
+    final private String address;
     
     //TcpAddress tcp_addr;
     //IpcAddress ipc_addr;
     
-    public IZAddress resolved;
+    private IZAddress resolved;
     
     public Address(String protocol, String address) {
         this.protocol = protocol;
@@ -45,6 +48,23 @@ public class Address {
         }
         
         return addr_;
+    }
+
+    public String protocol() {
+        return protocol;
+    }
+    
+    public String address() {
+        return address;
+    }
+
+    public IZAddress resolved() {
+        return resolved;
+    }
+
+    public IZAddress resolved(IZAddress value) {
+        resolved = value;
+        return resolved;
     }
 
 }

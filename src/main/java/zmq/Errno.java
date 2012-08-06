@@ -8,9 +8,10 @@ public enum Errno {
     EINTR(4, "Interrupted system call"),
     EAGAIN(11, "Resource temporarily unavailable"),
     ENOMEM(12, "Cannot allocate memory"),
-	EFAULT(14, "Bad address"),
-	EINVAL(22, "Invalid argument"),
+	//EFAULT(14, "Bad address"),
+	//EINVAL(22, "Invalid argument"),
 	EMFILE(24, "Too many files open"),
+	EINPROGRESS(46, "Operation now in progress"),
 	ENOTSOCK(48, "Socket operation on nonsocket"),
 	EPROTONOSUPPORT(53, "Protocol not supported"),
 	ECONNREFUSED(71, "Connection refused"),
@@ -67,8 +68,16 @@ public enum Errno {
         }
     }
 
-	public static Errno get() {
-		return errno.get();
+    public static Errno get() {
+        return errno.get();
+    }
+	
+    public static int getErrorCode() {
+        return get().getCode();
+    }
+	
+	public int getCode() {
+	    return code;
 	}
 	
 	public static void throwException() {
@@ -88,6 +97,11 @@ public enum Errno {
 			throwException();
 		}
 	}
+
+
+    public static boolean is(Errno target) {
+        return get() == target;
+    }
 
 }
 

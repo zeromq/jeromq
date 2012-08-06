@@ -26,9 +26,9 @@ public class TestConnectResolve {
 	    try {
 	        rc = ZMQ.zmq_connect (sock, "tcp://foobar123xyz:1234");
 	        assertTrue(false);
-	    } catch (Errno.ErrnoException e) {
-	        assertThat (e.getErrno(), is(Errno.EINVAL));
+	    } catch (IllegalArgumentException e) {
 	    }
+	    
 	    
 	    rc = ZMQ.zmq_close (sock);
 	    assertThat (rc, is(0));

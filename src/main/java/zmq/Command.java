@@ -1,9 +1,10 @@
 package zmq;
 
+
 public class Command {
 
-    public ZObject destination;
-    public Type type;
+    private final ZObject destination;
+    private final Type type;
     
     public enum Type {
         stop,
@@ -31,5 +32,23 @@ public class Command {
     Object hiccup_pipe;
     int linger;
     SocketBase socket;
+
+    public Command (ZObject destination, Type type) {
+        this.destination = destination;
+        this.type = type;
+    }
+    
+    public ZObject destination() {
+        return destination;
+    }
+
+    public Type type() {
+        return type;
+    }
+    
+    @Override
+    public String toString() {
+        return super.toString() + "[" + type + ", " + destination + "]";
+    }
 
 }

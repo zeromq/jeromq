@@ -46,7 +46,7 @@ public class XPub extends SocketBase {
 	    //  If icanhasall_ is specified, the caller would like to subscribe
 	    //  to all data on this pipe, implicitly.
 	    if (icanhasall_)
-	        subscriptions.add (null, 0, pipe_);
+	        subscriptions.add (null, pipe_);
 
 	    //  The pipe is active when attached. Let's read the subscriptions from
 	    //  it, if any.
@@ -70,19 +70,51 @@ public class XPub extends SocketBase {
 	        if (size > 0 && (data[0] == 0 || data[0] == 1)) {
 	            boolean unique;
 	            if (data[0] == 0)
-	                unique = subscriptions.rm (data , 1, size - 1, pipe_);
+	                unique = subscriptions.rm (data , 1, pipe_);
 	            else
-	                unique = subscriptions.add (data , 1, size - 1, pipe_);
+	                unique = subscriptions.add (data , 1, pipe_);
 
 	            //  If the subscription is not a duplicate store it so that it can be
 	            //  passed to used on next recv call.
 	            if (unique && options.type != ZMQ.ZMQ_PUB)
-	                pending.add(new Blob (sub.data (),sub.size ()));
+	                pending.add(new Blob (sub.data ()));
 	        }
 
 	        sub.close();
 	    }
 
 	}
+	
+	void xterminated (Pipe pipe_)
+	{
+	    //  Remove the pipe from the trie. If there are topics that nobody
+	    //  is interested in anymore, send corresponding unsubscriptions
+	    //  upstream.
+	    
+	    Mtrie.IMtrieHandler send_unsubscription = new Mtrie.IMtrieHandler() {
+            
+            @Override
+            public void removed(byte[] data_, Object arg_) {
+                XPub self = (XPub) arg_;
+
+                if (self.options.type != ZMQ.ZMQ_PUB) {
+
+                    //  Place the unsubscription to the queue of pending (un)sunscriptions
+                    //  to be retrived by the user later on.
+                    Blob unsub = new Blob (data_.length + 1);
+                    unsub.put((byte)0);
+                    unsub.put(data_);
+                    //unsub [0] = 0;
+                    //memcpy (&unsub [1], data_, size_);
+                    self.pending.add (unsub);
+                }
+
+            }
+        };
+	    subscriptions.rm (pipe_, send_unsubscription, this);
+
+	    dist.terminated (pipe_);
+	}
+
 
 }

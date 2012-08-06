@@ -1,7 +1,19 @@
 package zmq;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class Pipe extends ZObject {
 
+    Logger LOG = LoggerFactory.getLogger(Pipe.class);
+    
+    public interface IPipeEvents {
+
+        void terminated(Pipe pipe);
+
+        void read_activated(Pipe pipe);
+
+    }
     //  Underlying pipes for both directions.
     YPipe<Msg> inpipe;
     YPipe<Msg> outpipe;
@@ -57,6 +69,9 @@ public class Pipe extends ZObject {
     //  Identity of the writer. Used uniquely by the reader side.
     Blob identity;
     
+    // JeroMQ only
+    private ZObject parent;
+    
 	Pipe (ZObject parent_, YPipe<Msg> inpipe_, YPipe<Msg> outpipe_,
 		      int inhwm_, int outhwm_, boolean delay_) {
 		super(parent_);
@@ -73,6 +88,8 @@ public class Pipe extends ZObject {
 		sink = null ;
 		state = State.active;
 		delay = delay_;
+		
+		parent = parent_;
 	}
 	
 	public static int pipepair(ZObject[] parents_, Pipe[] pipes_, int[] hwms_,
@@ -83,10 +100,10 @@ public class Pipe extends ZObject {
 	            
 	    //Pipe.Upipe upipe1 = new Pipe.Upipe ();
 	    //alloc_assert (upipe1);
-		YPipe<Msg> upipe1 = new YPipe<Msg>(Config.message_pipe_granularity);
+		YPipe<Msg> upipe1 = new YPipe<Msg>(Msg.class, Config.message_pipe_granularity);
 	    //pipe_t::upipe_t *upipe2 = new (std::nothrow) pipe_t::upipe_t ();
 	    //alloc_assert (upipe2);
-		YPipe<Msg> upipe2 = new YPipe<Msg>(Config.message_pipe_granularity);
+		YPipe<Msg> upipe2 = new YPipe<Msg>(Msg.class, Config.message_pipe_granularity);
 	            
 	    pipes_ [0] = new Pipe(parents_ [0], upipe1, upipe2,
 	        hwms_ [1], hwms_ [0], delays_ [0]);
@@ -270,15 +287,21 @@ public class Pipe extends ZObject {
 
 	        //  Write the delimiter into the pipe. Note that watermarks are not
 	        //  checked; thus the delimiter can be written even when the pipe is full.
+	        
 	        Msg msg = new Msg();
 	        msg.init_delimiter ();
 	        outpipe.write (msg, false);
 	        flush ();
+	        
+	        LOG.debug( "{} -> {} => {}", new Object[] {parent, msg, peer.get_parent()});
 	    }
 	}
 
+	private ZObject get_parent() {
+        return parent;
+    }
 
-	void rollback ()
+    void rollback ()
 	{
 	    //  Remove incomplete message from the outbound pipe.
 	    Msg msg;
@@ -310,5 +333,114 @@ public class Pipe extends ZObject {
         sink = sink_;
     }
 
+    public boolean check_read() {
+        if (!in_active || (state != State.active && state != State.pending))
+            return false;
+
+        //  Check if there's an item in the pipe.
+        if (!inpipe.check_read ()) {
+            in_active = false;
+            return false;
+        }
+
+        //  If the next item in the pipe is message delimiter,
+        //  initiate termination process.
+        if (is_delimiter(inpipe.probe ())) {
+            Msg msg = inpipe.read ();
+            assert (msg != null);
+            delimit ();
+            return false;
+        }
+
+        return true;
+    }
+
+    private boolean is_delimiter(Msg msg_) {
+        return msg_.is_delimiter ();
+    }
+
+    protected void process_pipe_term ()
+    {
+        //  This is the simple case of peer-induced termination. If there are no
+        //  more pending messages to read, or if the pipe was configured to drop
+        //  pending messages, we can move directly to the terminating state.
+        //  Otherwise we'll hang up in pending state till all the pending messages
+        //  are sent.
+        if (state == State.active) {
+            if (!delay) {
+                state = State.terminating;
+                outpipe = null;
+                send_pipe_term_ack (peer);
+            }
+            else
+                state = State.pending;
+            return;
+        }
+
+        //  Delimiter happened to arrive before the term command. Now we have the
+        //  term command as well, so we can move straight to terminating state.
+        if (state == State.delimited) {
+            state = State.terminating;
+            outpipe = null;
+            send_pipe_term_ack (peer);
+            return;
+        }
+
+        //  This is the case where both ends of the pipe are closed in parallel.
+        //  We simply reply to the request by ack and continue waiting for our
+        //  own ack.
+        if (state == State.terminated) {
+            state = State.double_terminated;
+            outpipe = null;
+            send_pipe_term_ack (peer);
+            return;
+        }
+
+        //  pipe_term is invalid in other states.
+        assert (false);
+    }
+    
+    protected void process_pipe_term_ack ()
+    {
+        //  Notify the user that all the references to the pipe should be dropped.
+        assert (sink!=null);
+        sink.terminated (this);
+
+        //  In terminating and double_terminated states there's nothing to do.
+        //  Simply deallocate the pipe. In terminated state we have to ack the
+        //  peer before deallocating this side of the pipe. All the other states
+        //  are invalid.
+        if (state == State.terminated) {
+            outpipe = null;
+            send_pipe_term_ack (peer);
+        }
+        else
+            assert (state == State.terminating || state == State.double_terminated);
+
+        //  We'll deallocate the inbound pipe, the peer will deallocate the outbound
+        //  pipe (which is an inbound pipe from its point of view).
+        //  First, delete all the unread messages in the pipe. We have to do it by
+        //  hand because msg_t doesn't have automatic destructor. Then deallocate
+        //  the ypipe itself.
+        Msg msg;
+        while ((msg = inpipe.read ()) != null) {
+           int rc = msg.close ();
+           Errno.errno_assert (rc == 0);
+        }
+        
+        LOG.debug( "{} <= {} <- {}", new Object[] {parent, msg, peer.get_parent()});
+        
+        inpipe = null;
+
+        //  Deallocate the pipe object
+    }
+
+    protected void process_activate_read ()
+    {
+        if (!in_active && (state == State.active || state == State.pending)) {
+            in_active = true;
+            sink.read_activated (this);
+        }
+    }
 
 }

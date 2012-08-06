@@ -4,8 +4,13 @@ import java.nio.channels.SelectableChannel;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class Mailbox {
 
+    Logger LOG = LoggerFactory.getLogger(Mailbox.class);
+    
     //  The pipe to store actual commands.
     //typedef ypipe_t <command_t, command_pipe_granularity> cpipe_t;
     final YPipe<Command> cpipe;
@@ -22,55 +27,80 @@ public class Mailbox {
     //  True if the underlying pipe is active, ie. when we are allowed to
     //  read commands from it.
     boolean active;
+    
+    // mailbox name, for better debugging
+    final String name;
 
-    public Mailbox() {
-    	cpipe = new YPipe<Command>(Config.command_pipe_granularity);
-    	sync = new ReentrantLock();
-    	signaler = new Signaler();
+    public Mailbox(String name_) {
+        cpipe = new YPipe<Command>(Command.class, Config.command_pipe_granularity);
+        sync = new ReentrantLock();
+        signaler = new Signaler();
+        
+        Command cmd = cpipe.read ();
+        assert (cmd == null);
+        active = false;
+        
+        name = name_;
     }
     
-	public SelectableChannel get_fd ()
-	{
-	    return signaler.get_fd ();
-	}
-	
-	void send (final Command cmd_)
-	{   
-	    sync.lock ();
-	    cpipe.write (cmd_, false);
-	    boolean ok = cpipe.flush ();
-	    sync.unlock ();
-	    if (!ok)
-	        signaler.send ();
-	}
-	
-	Command recv ( int timeout_)
-	{
-	    Command cmd_ = null;
-	    //  Try to get the command straight away.
-	    if (active) {
-	        cmd_ = cpipe.read ();
-	        if (cmd_ != null)
-	            return cmd_;
+    public SelectableChannel get_fd ()
+    {
+        return signaler.get_fd ();
+    }
+    
+    void send (final Command cmd_)
+    {   
+        boolean ok;
+        sync.lock ();
+        try {
+            cpipe.write (cmd_, false);
+            ok = cpipe.flush ();
+        } finally {
+            sync.unlock ();
+        }
+        
+        if (LOG.isDebugEnabled())
+            LOG.debug( "{} -> {}", new Object[] { Thread.currentThread().getName(), cmd_ });
+        
+        if (!ok) {
+            signaler.send ();
+        }
+    }
+    
+    Command recv (long timeout_)
+    {
+        Command cmd_ = null;
+        //  Try to get the command straight away.
+        if (active) {
+            cmd_ = cpipe.read ();
+            if (cmd_ != null) {
+                
+                return cmd_;
+            }
 
-	        //  If there are no more commands available, switch into passive state.
-	        active = false;
-	        signaler.recv ();
-	    }
+            //  If there are no more commands available, switch into passive state.
+            active = false;
+            signaler.recv ();
+        }
 
-	    //  Wait for signal from the command sender.
-	    int rc = signaler.wait (timeout_);
-	    if (rc != 0 && (Errno.get() == Errno.EAGAIN || Errno.get() == Errno.EINTR))
-	        return null;
 
-	    //  We've got the signal. Now we can switch into active state.
-	    active = true;
+        //  Wait for signal from the command sender.
+        boolean rc = signaler.wait_event (timeout_);
+        if (!rc)
+            return null;
 
-	    //  Get a command.
-	    Errno.errno_assert (rc == 0);
-	    cmd_ = cpipe.read ();
-	    assert (cmd_ != null);
-	    return cmd_;
-	}
+        //  We've got the signal. Now we can switch into active state.
+        active = true;
 
+        //  Get a command.
+        cmd_ = cpipe.read ();
+        assert (cmd_ != null);
+        
+        return cmd_;
+    }
+
+    @Override
+    public String toString() {
+        return super.toString() + "[" + name + "]";
+    }
 }

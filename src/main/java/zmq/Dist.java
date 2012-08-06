@@ -53,4 +53,17 @@ public class Dist {
             eligible++;
         }
     }
+
+    public void terminated(Pipe pipe_) {
+        //  Remove the pipe from the list; adjust number of matching, active and/or
+        //  eligible pipes accordingly.
+        if (pipes.indexOf (pipe_) < matching)
+            matching--;
+        if (pipes.indexOf (pipe_) < active)
+            active--;
+        if (pipes.indexOf (pipe_) < eligible)
+            eligible--;
+        pipes.remove(pipe_);
+    }
+
 }

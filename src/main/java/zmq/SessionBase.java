@@ -1,6 +1,6 @@
 package zmq;
 
-public class SessionBase extends Own implements IPipeEvents {
+public class SessionBase extends Own implements Pipe.IPipeEvents {
 
     //  If true, this session (re)connects to the peer. Otherwise, it's
     //  a transient session created by the listener.
@@ -41,6 +41,8 @@ public class SessionBase extends Own implements IPipeEvents {
     final Address addr;
 
     IOObject io_object;
+
+    private final String name ;
     
     public SessionBase(IOThread io_thread_, boolean connect_,
             SocketBase socket_, Options options_, Address addr_) {
@@ -58,6 +60,8 @@ public class SessionBase extends Own implements IPipeEvents {
         send_identity = options_.send_identity;
         recv_identity = options_.recv_identity;
         addr = addr_;
+        
+        name = "session-" + socket_.id();
     }
 
     public static SessionBase create(IOThread io_thread_, boolean connect_,
@@ -114,10 +118,8 @@ public class SessionBase extends Own implements IPipeEvents {
             break;
         */
         default:
-            Errno.set(Errno.EINVAL);
-            return null;
+            throw new IllegalArgumentException("type=" + options_.type);
         }
-        //alloc_assert (s);
         return s;
     }
 
@@ -127,6 +129,111 @@ public class SessionBase extends Own implements IPipeEvents {
         assert (pipe_ != null);
         pipe = pipe_;
         pipe.set_event_sink (this);
+    }
+    
+    protected void process_plug ()
+    {
+        if (connect)
+            start_connecting (false);
+    }
+
+    private void start_connecting (boolean wait_)
+    {
+        assert (connect);
+
+        //  Choose I/O thread to run connecter in. Given that we are already
+        //  running in an I/O thread, there must be at least one available.
+        IOThread io_thread = choose_io_thread (options.affinity);
+        assert (io_thread != null);
+
+        //  Create the connecter object.
+
+        if (addr.protocol().equals("tcp")) {
+            TCPConnecter connecter = new TCPConnecter (
+                io_thread, this, options, addr, wait_);
+            //alloc_assert (connecter);
+            launch_child (connecter);
+            return;
+        }
+        
+        if (addr.protocol().equals("ipc")) {
+            IPCConnecter connecter = new IPCConnecter (
+                io_thread, this, options, addr, wait_);
+            //alloc_assert (connecter);
+            launch_child (connecter);
+            return;
+        }
+        
+        assert (false);
+    }
+    
+    public void monitor_event (int event_, Object ... args)
+    {
+        socket.monitor_event (event_, args);
+    }
+
+    protected void process_term (int linger_)
+    {
+        assert (!pending);
+
+        //  If the termination of the pipe happens before the term command is
+        //  delivered there's nothing much to do. We can proceed with the
+        //  stadard termination immediately.
+        if (pipe == null) {
+            proceed_with_term ();
+            return;
+        }
+
+        pending = true;
+
+        //  If there's finite linger value, delay the termination.
+        //  If linger is infinite (negative) we don't even have to set
+        //  the timer.
+        if (linger_ > 0) {
+            assert (!has_linger_timer);
+            io_object.add_timer (linger_, linger_timer_id);
+            has_linger_timer = true;
+        }
+
+        //  Start pipe termination process. Delay the termination till all messages
+        //  are processed in case the linger time is non-zero.
+        pipe.terminate (linger_ != 0);
+
+        //  TODO: Should this go into pipe_t::terminate ?
+        //  In case there's no engine and there's only delimiter in the
+        //  pipe it wouldn't be ever read. Thus we check for it explicitly.
+        pipe.check_read ();
+    }
+
+    private void proceed_with_term() {
+        //  The pending phase have just ended.
+        pending = false;
+
+        //  Continue with standard termination.
+        super.process_term (0);
+    }
+
+    @Override
+    public void terminated(Pipe pipe_) {
+        //  Drop the reference to the deallocated pipe.
+        assert (pipe == pipe_);
+        pipe = null;
+
+        //  If we are waiting for pending messages to be sent, at this point
+        //  we are sure that there will be no more messages and we can proceed
+        //  with termination safely.
+        if (pending)
+            proceed_with_term ();
+    }
+
+    @Override
+    public void read_activated(Pipe pipe) {
+        throw new UnsupportedOperationException();
+    }
+    
+    @Override
+    public String toString() {
+        return super.toString() + "[" + name + "]";
     }
 
 }

@@ -1,17 +1,22 @@
 package zmq;
 
+import java.net.SocketAddress;
+
 public class IpcAddress implements Address.IZAddress {
 
     @Override
     public String toString(String addr_) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
-    public int resolve(String name_, boolean local_, boolean ip4only_) {
-        // TODO Auto-generated method stub
-        return 0;
+    public void resolve(String name_, boolean local_, boolean ip4only_) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public SocketAddress address() {
+        throw new UnsupportedOperationException();
     }
 
 }

@@ -1,8 +1,11 @@
 package zmq;
 
-public class IOObject {
+import java.nio.channels.SelectableChannel;
 
-    Poller poller;
+public class IOObject implements IPollEvents {
+
+    private Poller poller;
+    private IPollEvents handler;
     
     public IOObject(IOThread io_thread_) {
         if (io_thread_ != null) {
@@ -17,5 +20,62 @@ public class IOObject {
         //  Retrieve the poller from the thread we are running in.
         poller = io_thread_.get_poller ();    
     }
+
+    public SelectableChannel add_fd (SelectableChannel fd_)
+    {
+        return poller.add_fd (fd_, this);
+    }
+    
+    public void rm_fd(SelectableChannel handle) {
+        poller.rm_fd(handle);
+    }
+    
+    public void set_pollin (SelectableChannel handle_)
+    {
+        poller.set_pollin (handle_);
+    }
+
+    public void set_pollout (SelectableChannel handle_)
+    {
+        poller.set_pollout (handle_);
+    }
+
+    public void set_pollconnect(SelectableChannel handle) {
+        poller.set_pollconnect(handle);
+    }
+    
+    @Override
+    public void in_event() {
+        handler.in_event();
+    }
+
+    @Override
+    public void out_event() {
+        handler.out_event();
+    }
+    
+    @Override
+    public void connect_event() {
+        handler.connect_event();
+    }
+
+    @Override
+    public void timer_event(int id_) {
+        handler.timer_event(id_);
+    }
+    
+    public void add_timer (int timeout_, int id_)
+    {
+        poller.add_timer (timeout_, this, id_);
+    }
+
+
+    public void set_handler(IPollEvents handler) {
+        this.handler = handler;
+    }
+
+
+
+
 
 }
