@@ -57,6 +57,11 @@ public class IOThread extends ZObject implements IPollEvents {
     }
 
     @Override
+    public void accept_event() {
+        throw new UnsupportedOperationException();
+    }
+    
+    @Override
     public void timer_event(int id_) {
         throw new UnsupportedOperationException();
     }
@@ -83,6 +88,7 @@ public class IOThread extends ZObject implements IPollEvents {
     protected void process_stop ()
     {
         poller.rm_fd (mailbox_handle);
+        
         poller.stop ();
     }
 

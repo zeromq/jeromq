@@ -88,11 +88,14 @@ public class Utils {
     }
 
     public static void memcpy(byte[] dest, byte[] src, int size) {
-        if (src == null)
-            return;
-        
-        System.arraycopy(src, 0, dest, 0, size);
+        memcpy(dest, 0, src, 0, size);
     }
 
+    public static void memcpy(byte[] dest, int to, byte[] src, int from, int size) {
+        if (src == null || dest == null)
+            return;
+        
+        System.arraycopy(src, from, dest, to, size);
+    }
 
 }

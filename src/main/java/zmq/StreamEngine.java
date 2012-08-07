@@ -11,7 +11,7 @@ public class StreamEngine implements IEngine {
     
     //final private IOObject io_object;
     //  Underlying socket.
-    final private Socket s;
+    private Socket s;
 
     private SelectableChannel handle;
 
@@ -37,6 +37,8 @@ public class StreamEngine implements IEngine {
 
     boolean plugged;
     
+    private IOObject io_object;
+    
     
     public StreamEngine (Socket fd_, final Options options_, final String endpoint_) {
         s = fd_;
@@ -52,7 +54,7 @@ public class StreamEngine implements IEngine {
         plugged = false;
         endpoint = endpoint_;
 
-        
+        // io_object = new IOObject(); xxxx at plug call
         //  Put the socket into non-blocking mode.
         try {
             Utils.unblock_socket (s.getChannel());
@@ -70,4 +72,60 @@ public class StreamEngine implements IEngine {
         }
 
     }
+    
+    public void close() {
+        if (s != null) {
+            try {
+                s.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            s = null;
+        }
+    }
+
+    @Override
+    public void activate_in ()
+    {
+        if (input_error) {
+            //  There was an input error but the engine could not
+            //  be terminated (due to the stalled decoder).
+            //  Flush the pending message and terminate the engine now.
+            decoder.process_buffer (inpos, 0, 0);
+            assert (!decoder.stalled ());
+            session.flush ();
+            error ();
+            return;
+        }
+
+        io_object.set_pollin (handle);
+
+        //  Speculative read.
+        io_object.in_event ();
+    }
+
+    private void error() {
+        assert (session!=null);
+        session.monitor_event (ZMQ.ZMQ_EVENT_DISCONNECTED, endpoint, s);
+        session.detach ();
+        unplug ();
+        close();
+    }
+
+    private void unplug() {
+        assert (plugged);
+        plugged = false;
+
+        //  Cancel all fd subscriptions.
+        io_object.rm_fd (handle);
+
+        //  Disconnect from I/O threads poller object.
+        io_object.unplug ();
+
+        //  Disconnect from session object.
+        encoder.set_session (null);
+        decoder.set_session (null);
+        session = null;
+    }
+
 }

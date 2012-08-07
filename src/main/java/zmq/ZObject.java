@@ -183,6 +183,13 @@ public class ZObject {
         ctx.send_command(Ctx.term_tid, cmd);
     }
 
+    protected void send_hiccup (Pipe destination_, Object pipe_)
+    {
+        Command cmd = new Command(destination_, Command.Type.hiccup);
+        cmd.hiccup_pipe = pipe_;
+        send_command (cmd);
+    }
+
 
 
     protected void process_command(Command cmd_) {

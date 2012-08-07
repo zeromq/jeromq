@@ -234,8 +234,106 @@ public class SessionBase extends Own implements Pipe.IPipeEvents {
     }
     
     @Override
+    public void write_activated (Pipe pipe_)
+    {
+        assert (pipe == pipe_);
+
+        if (engine != null)
+            engine.activate_in ();
+    }
+
+    
+    @Override
     public String toString() {
         return super.toString() + "[" + name + "]";
+    }
+
+    public void flush() {
+        if (pipe != null)
+            pipe.flush ();
+    }
+
+    public void detach() {
+        //  Engine is dead. Let's forget about it.
+        engine = null;
+
+        //  Remove any half-done messages from the pipes.
+        clean_pipes ();
+
+        //  Send the event to the derived class.
+        detached ();
+
+        //  Just in case there's only a delimiter in the pipe.
+        if (pipe != null)
+            pipe.check_read ();
+    }
+
+    private void detached() {
+        //  Transient session self-destructs after peer disconnects.
+        if (!connect) {
+            terminate ();
+            return;
+        }
+
+        reset ();
+
+        //  Reconnect.
+        if (options.reconnect_ivl != -1)
+            start_connecting (true);
+
+        //  For subscriber sockets we hiccup the inbound pipe, which will cause
+        //  the socket object to resend all the subscriptions.
+        if (pipe != null && (options.type == ZMQ.ZMQ_SUB || options.type == ZMQ.ZMQ_XSUB))
+            pipe.hiccup ();
+
+    }
+
+    private void reset() {
+        //  Restore identity flags.
+        send_identity = options.send_identity;
+        recv_identity = options.recv_identity;
+    }
+
+    private void clean_pipes() {
+        if (pipe != null) {
+
+            //  Get rid of half-processed messages in the out pipe. Flush any
+            //  unflushed messages upstream.
+            pipe.rollback ();
+            pipe.flush ();
+
+            //  Remove any half-read message from the in pipe.
+            while (incomplete_in) {
+                Msg msg = new Msg();
+                msg.init ();
+                if (!read (msg)) {
+                    assert (!incomplete_in);
+                    break;
+                }
+                msg.close ();
+            }
+        }
+    }
+
+    private boolean read(Msg msg_) {
+        
+        //  First message to send is identity (if required).
+        if (send_identity) {
+            assert ((msg_.flags () & Msg.more) == 0);
+            msg_.init_size (options.identity_size);
+            Utils.memcpy (msg_.data (), options.identity, options.identity_size);
+            send_identity = false;
+            incomplete_in = false;
+            return true;
+        }
+
+        if (pipe == null || pipe.read (msg_)) {
+            return false;
+        }
+        incomplete_in = (msg_.flags () & Msg.more) > 0 ? true : false;
+
+        return true;
+
     }
 
 }

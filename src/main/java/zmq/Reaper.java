@@ -96,6 +96,7 @@ public class Reaper extends ZObject implements IPollEvents {
         if (sockets == 0 && terminating) {
             send_done ();
             poller.rm_fd (mailbox_handle);
+            
             poller.stop ();
         }
     }
@@ -108,6 +109,11 @@ public class Reaper extends ZObject implements IPollEvents {
     
     @Override
     public void connect_event() {
+        throw new UnsupportedOperationException();    
+    }
+    
+    @Override
+    public void accept_event() {
         throw new UnsupportedOperationException();    
     }
 

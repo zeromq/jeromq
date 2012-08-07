@@ -13,6 +13,8 @@ public class Pipe extends ZObject {
 
         void read_activated(Pipe pipe);
 
+        void write_activated(Pipe pipe);
+
     }
     //  Underlying pipes for both directions.
     YPipe<Msg> inpipe;
@@ -92,30 +94,23 @@ public class Pipe extends ZObject {
 		parent = parent_;
 	}
 	
-	public static int pipepair(ZObject[] parents_, Pipe[] pipes_, int[] hwms_,
+	public static void pipepair(ZObject[] parents_, Pipe[] pipes_, int[] hwms_,
 			boolean[] delays_) {
 		
 	    //   Creates two pipe objects. These objects are connected by two ypipes,
 	    //   each to pass messages in one direction.
 	            
-	    //Pipe.Upipe upipe1 = new Pipe.Upipe ();
-	    //alloc_assert (upipe1);
 		YPipe<Msg> upipe1 = new YPipe<Msg>(Msg.class, Config.message_pipe_granularity);
-	    //pipe_t::upipe_t *upipe2 = new (std::nothrow) pipe_t::upipe_t ();
-	    //alloc_assert (upipe2);
 		YPipe<Msg> upipe2 = new YPipe<Msg>(Msg.class, Config.message_pipe_granularity);
 	            
 	    pipes_ [0] = new Pipe(parents_ [0], upipe1, upipe2,
 	        hwms_ [1], hwms_ [0], delays_ [0]);
-	    //alloc_assert (pipes_ [0]);
 	    pipes_ [1] = new Pipe(parents_ [1], upipe2, upipe1,
 	        hwms_ [0], hwms_ [1], delays_ [1]);
-	    //alloc_assert (pipes_ [1]);
 	            
 	    pipes_ [0].set_peer (pipes_ [1]);
 	    pipes_ [1].set_peer (pipes_ [0]);
 
-		return 0;
 	}
 	
 	int compute_lwm (int hwm_)
@@ -149,13 +144,13 @@ public class Pipe extends ZObject {
 	void set_peer (Pipe peer_)
 	{
 	    //  Peer can be set once only.
-	    assert (peer != null);
+	    assert (peer_ != null);
 	    peer = peer_;
 	}
 
 	public void set_event_sink(SocketBase sink_) {
 	    // Sink can be set once only.
-	    assert (sink != null);
+	    assert (sink_ != null);
 	    sink = sink_;
 	}
 	
@@ -205,7 +200,6 @@ public class Pipe extends ZObject {
             return false;
 
         boolean full = hwm > 0 && msgs_written - peers_msgs_read == (long) (hwm);
-        System.out.println("FULL? " + hwm + " " + msgs_written + " " + peers_msgs_read);
 
         if (full) {
             out_active = false;
@@ -441,6 +435,35 @@ public class Pipe extends ZObject {
             in_active = true;
             sink.read_activated (this);
         }
+    }
+
+    protected void process_activate_write (long msgs_read_)
+    {
+        //  Remember the peers's message sequence number.
+        peers_msgs_read = msgs_read_;
+
+        if (!out_active && state == State.active) {
+            out_active = true;
+            sink.write_activated (this);
+        }
+    }
+
+    public void hiccup() {
+        //  If termination is already under way do nothing.
+        if (state != State.active)
+            return;
+
+        //  We'll drop the pointer to the inpipe. From now on, the peer is
+        //  responsible for deallocating it.
+        inpipe = null;
+
+        //  Create new inpipe.
+        inpipe = new YPipe<Msg>(Msg.class, Config.message_pipe_granularity);
+        in_active = true;
+
+        //  Notify the peer about the hiccup.
+        send_hiccup (peer, inpipe);
+
     }
 
 

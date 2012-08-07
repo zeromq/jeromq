@@ -59,7 +59,7 @@ public class TcpListener extends Own implements IPollEvents {
         //  Start polling for incoming connections.
         io_object.set_handler(this);
         handle = io_object.add_fd (s);
-        io_object.set_pollin (handle);
+        io_object.set_pollaccept (handle);
     }
 
     protected void process_term (int linger_)
@@ -70,7 +70,8 @@ public class TcpListener extends Own implements IPollEvents {
         super.process_term (linger_);
     }
 
-    public void in_event ()
+    @Override
+    public void accept_event ()
     {
         Socket fd = null ;
         
@@ -161,6 +162,12 @@ public class TcpListener extends Own implements IPollEvents {
         return sock;
     }
 
+    @Override
+    public void in_event() {
+        throw new UnsupportedOperationException();
+    }
+
+    
     @Override
     public void out_event() {
         throw new UnsupportedOperationException();

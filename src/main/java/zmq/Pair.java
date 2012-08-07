@@ -41,4 +41,12 @@ public class Pair extends SocketBase {
     protected boolean xhas_in() {
         throw new UnsupportedOperationException();
     }
+    
+    @Override
+    protected void xwrite_activated (Pipe pipe_)
+    {
+        //  There's just one pipe. No lists of active and inactive pipes.
+        //  There's nothing to do here.
+    }
+
 }

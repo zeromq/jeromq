@@ -19,12 +19,13 @@ public class TestConnectResolve {
 	    assertThat (sock, notNullValue());
 	
 	    
-	    int rc = ZMQ.zmq_connect (sock, "tcp://localhost:1234");
-	    assertThat (rc, is(0));
+	    boolean brc = ZMQ.zmq_connect (sock, "tcp://localhost:1234");
+	    assertThat (brc, is(true));
 	
 
+	    int rc;
 	    try {
-	        rc = ZMQ.zmq_connect (sock, "tcp://foobar123xyz:1234");
+	        brc = ZMQ.zmq_connect (sock, "tcp://foobar123xyz:1234");
 	        assertTrue(false);
 	    } catch (IllegalArgumentException e) {
 	    }

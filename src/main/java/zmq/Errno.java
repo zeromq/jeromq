@@ -5,7 +5,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public enum Errno {
 
-    EINTR(4, "Interrupted system call"),
+    //EINTR(4, "Interrupted system call"),
     EAGAIN(11, "Resource temporarily unavailable"),
     ENOMEM(12, "Cannot allocate memory"),
 	//EFAULT(14, "Bad address"),

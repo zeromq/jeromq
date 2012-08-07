@@ -82,7 +82,7 @@ public class LB {
         active++;
     }
 
-    public int send(Msg msg_, int flags_) {
+    public boolean send(Msg msg_, int flags_) {
         //  Drop the message if required. If we are at the end of the message
         //  switch back to non-dropping mode.
         if (dropping) {
@@ -92,7 +92,7 @@ public class LB {
 
             msg_.close ();
             msg_.init ();
-            return 0;
+            return true;
         }
 
         while (active > 0) {
@@ -109,7 +109,7 @@ public class LB {
 
         //  If there are no pipes we cannot send the message.
         if (active == 0) {
-            return -1;
+            return false;
         }
 
         //  If it's final part of the message we can fluch it downstream and
@@ -123,7 +123,7 @@ public class LB {
         //  Detach the message from the data buffer.
         msg_.init ();
 
-        return 0;
+        return true;
     }
 
     public boolean has_out() {

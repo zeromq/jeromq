@@ -163,6 +163,11 @@ public class TcpConnecter extends Own implements IPollEvents {
     }
     
     @Override
+    public void accept_event() {
+        throw new UnsupportedOperationException();
+    }
+    
+    @Override
     public void connect_event ()
     {
         boolean err = false;

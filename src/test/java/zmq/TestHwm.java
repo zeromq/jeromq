@@ -12,6 +12,7 @@ public class TestHwm {
         assertThat (ctx, notNullValue());
 
         int rc = 0;
+        boolean brc = false;
         //  Create pair of socket, each with high watermark of 2. Thus the total
         //  buffer space should be 4 messages.
         SocketBase sb = ZMQ.zmq_socket (ctx, ZMQ.ZMQ_PULL);
@@ -27,28 +28,28 @@ public class TestHwm {
         
         ZMQ.zmq_setsockopt (sc, ZMQ.ZMQ_SNDHWM, hwm);
         
-        rc = ZMQ.zmq_connect (sc, "inproc://a");
+        brc = ZMQ.zmq_connect (sc, "inproc://a");
         assertThat (rc, is(0));
 
         
         //  Try to send 10 messages. Only 4 should succeed.
         for (int i = 0; i < 10; i++)
         {
-            boolean sent = ZMQ.zmq_send (sc, null, 0, ZMQ.ZMQ_DONTWAIT);
-            System.out.println("" + i + ":" + sent);
+            rc = ZMQ.zmq_send (sc, null, 0, ZMQ.ZMQ_DONTWAIT);
             if (i < 4)
-                assertThat (sent, is(true));
+                assertThat (rc, is(0));
             else
-                assertThat (sent, is(false));
+                assertThat (rc, is(-1));
         }
 
-        /*
+        
         // There should be now 4 messages pending, consume them.
         for (int i = 0; i != 4; i++) {
             rc = ZMQ.zmq_recv (sb, null, 0, 0);
             assertThat (rc, is(0));
         }
 
+        
         // Now it should be possible to send one more.
         rc = ZMQ.zmq_send (sc, null, 0, 0);
         assertThat (rc, is(0));
@@ -56,7 +57,6 @@ public class TestHwm {
         //  Consume the remaining message.
         rc = ZMQ.zmq_recv (sb, null, 0, 0);
         assertThat (rc, is(0));
-
         rc = ZMQ.zmq_close (sc);
         assertThat (rc, is(0));
 
@@ -65,7 +65,7 @@ public class TestHwm {
 
         rc = ZMQ.zmq_term (ctx);
         assertThat (rc, is(0));
-        */
+        
 
     }
 }

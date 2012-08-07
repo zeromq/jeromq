@@ -43,6 +43,10 @@ public class Mailbox {
         name = name_;
     }
     
+    public void close () {
+        signaler.close();
+    }
+    
     public SelectableChannel get_fd ()
     {
         return signaler.get_fd ();
@@ -50,7 +54,7 @@ public class Mailbox {
     
     void send (final Command cmd_)
     {   
-        boolean ok;
+        boolean ok = false;
         sync.lock ();
         try {
             cpipe.write (cmd_, false);
@@ -60,7 +64,7 @@ public class Mailbox {
         }
         
         if (LOG.isDebugEnabled())
-            LOG.debug( "{} -> {}", new Object[] { Thread.currentThread().getName(), cmd_ });
+            LOG.debug( "{} -> {} signal {}", new Object[] { Thread.currentThread().getName(), cmd_, !ok });
         
         if (!ok) {
             signaler.send ();

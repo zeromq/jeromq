@@ -32,6 +32,16 @@ public class Signaler {
             throw new ZException.IOException(e);
         }
     }
+    
+    public void close() {
+        try {
+            r.close();
+            w.close();
+            selector.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
     private void make_fdpair() {
 	    Pipe pipe;
@@ -58,13 +68,13 @@ public class Signaler {
 	        int nbytes = 0;
             try {
                 nbytes = w.write(dummy);
-                if (nbytes < dummy.limit()) {
+                if (nbytes < 1) {
                     continue;
                 }
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-	        assert (nbytes == dummy.limit());
+	        assert (nbytes == 1);
 	        break;
 	    }
 	}
@@ -72,17 +82,14 @@ public class Signaler {
 
     void recv ()
     {
-        //byte[] dummy = new byte[1];
         ByteBuffer dummy = ByteBuffer.allocate(1);
         int nbytes;
         try {
             nbytes = r.read(dummy);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new ZException.IOException(e);
         } 
-        Errno.errno_assert (nbytes >= 0);
-        assert (nbytes == dummy.remaining());
-        assert (dummy.get() == 0);
+        assert (nbytes == 1);
     }
     
     boolean wait_event (long timeout_) {

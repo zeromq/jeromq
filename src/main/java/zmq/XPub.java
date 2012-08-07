@@ -129,5 +129,12 @@ public class XPub extends SocketBase {
     protected boolean xhas_in() {
         throw new UnsupportedOperationException();
     }
+    
+    @Override
+    protected void xwrite_activated (Pipe pipe_)
+    {
+        dist.activated (pipe_);
+    }
+
 
 }

@@ -125,7 +125,6 @@ public class Options {
     }
 
     public void setsockopt(int option_, int optval_) {
-        // TODO Auto-generated method stub
         switch (option_) {
 
         case ZMQ.ZMQ_SNDHWM:

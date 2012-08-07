@@ -71,7 +71,7 @@ public abstract class SocketBase extends Own
         endpoints = new HashMap<String, Own>();
         sync = new ReentrantLock();
         clock = new Clock();
-        pipes = new ArrayList<Pipe>(3);
+        pipes = new ArrayList<Pipe>();
         
         id = "" + tid_ + "." + sid_;
         name = "socket-" + id;
@@ -84,6 +84,11 @@ public abstract class SocketBase extends Own
         throw new UnsupportedOperationException("Must Override");
     }
     protected void xsetsockopt(int option_, int optval_) {};
+    
+    public void write_activated (Pipe pipe_)
+    {
+        xwrite_activated (pipe_);
+    }
     
     boolean check_tag ()
     {
@@ -144,7 +149,7 @@ public abstract class SocketBase extends Own
         return s;
     }
 
-    int send (Msg msg_, int flags_)
+    boolean send (Msg msg_, int flags_)
     {
         if (ctx_terminated) {
             throw new IllegalStateException();
@@ -158,7 +163,7 @@ public abstract class SocketBase extends Own
         //  Process pending commands, if any.
         boolean brc = process_commands (0, true);
         if (!brc)
-            return -1;
+            return false;
 
         //  Clear any user-visible flags that are set on the message.
         msg_.reset_flags (Msg.more);
@@ -168,14 +173,14 @@ public abstract class SocketBase extends Own
             msg_.set_flags (Msg.more);
 
         //  Try to send the message.
-        int rc = xsend (msg_, flags_);
-        if (rc == 0)
-            return 0;
+        brc = xsend (msg_, flags_);
+        if (brc)
+            return true;
 
         //  In case of non-blocking send we'll simply propagate
         //  the error - including EAGAIN - up the stack.
         if ((flags_ & ZMQ.ZMQ_DONTWAIT) > 0 || options.sndtimeo == 0)
-            return -1;
+            return false;
 
         //  Compute the time when the timeout should occur.
         //  If the timeout is infite, don't care. 
@@ -187,20 +192,20 @@ public abstract class SocketBase extends Own
         //  If timeout is reached in the meantime, return EAGAIN.
         while (true) {
             if (!process_commands (timeout, false) )
-                return -1;
-            rc = xsend (msg_, flags_);
-            if (rc == 0)
+                return false;
+            brc = xsend (msg_, flags_);
+            if (brc)
                 break;
             if (timeout > 0) {
                 timeout = (int) (end - clock.now_ms ());
                 if (timeout <= 0) {
-                    return -1;
+                    return false;
                 }
             }
         }
-        return 0;
+        return true;
     }
-    int connect (String addr_)
+    boolean connect (String addr_)
     {
         if (ctx_terminated) {
             throw new IllegalStateException();
@@ -209,7 +214,7 @@ public abstract class SocketBase extends Own
         //  Process pending commands, if any.
         boolean brc = process_commands (0, false);
         if (!brc)
-            return -1;
+            return false;
 
         //  Parse addr_ string.
         URI uri;
@@ -226,7 +231,7 @@ public abstract class SocketBase extends Own
 
         check_protocol (protocol);
 
-        if (protocol == "inproc") {
+        if (protocol.equals("inproc")) {
 
             //  TODO: inproc connect is specific with respect to creating pipes
             //  as there's no 'reconnect' functionality implemented. Once that
@@ -235,7 +240,7 @@ public abstract class SocketBase extends Own
             //  Find the peer endpoint.
             Ctx.Endpoint peer = find_endpoint (addr_);
             if (peer.socket == null)
-                return -1;
+                return false;
             // The total HWM for an inproc connection should be the sum of
             // the binder's HWM and the connector's HWM.
             int  sndhwm;
@@ -254,8 +259,7 @@ public abstract class SocketBase extends Own
             Pipe[] pipes = {null, null};
             int[] hwms = {sndhwm, rcvhwm};
             boolean[] delays = {options.delay_on_disconnect, options.delay_on_close};
-            int rc = Pipe.pipepair (parents, pipes, hwms, delays);
-            Errno.errno_assert (rc == 0);
+            Pipe.pipepair (parents, pipes, hwms, delays);
 
             //  Attach local end of the pipe to this socket object.
             attach_pipe (pipes [0]);
@@ -290,7 +294,7 @@ public abstract class SocketBase extends Own
             // Save last endpoint URI
             options.last_endpoint = addr_;
 
-            return 0;
+            return true;
         }
 
         //  Choose the I/O thread to run the session in.
@@ -321,8 +325,7 @@ public abstract class SocketBase extends Own
         Pipe[] pipes = {null, null};
         int[] hwms = {options.sndhwm, options.rcvhwm};
         boolean[] delays = {options.delay_on_disconnect, options.delay_on_close};
-        int rc = Pipe.pipepair (parents, pipes, hwms, delays);
-        Errno.errno_assert (rc == 0);
+        Pipe.pipepair (parents, pipes, hwms, delays);
 
         //  PGM does not support subscription forwarding; ask for all data to be
         //  sent to this pipe.
@@ -340,7 +343,7 @@ public abstract class SocketBase extends Own
         paddr.toString (options.last_endpoint);
 
         add_endpoint (addr_, session);
-        return 0;
+        return true;
     }
 
     boolean process_commands (int timeout_, boolean throttle_)
@@ -392,6 +395,12 @@ public abstract class SocketBase extends Own
 
         return true;
     }
+
+    @Override
+    protected void process_bind (Pipe pipe_)
+    {       
+        attach_pipe (pipe_);
+    }       
 
 
     void check_protocol (String protocol_)
@@ -456,6 +465,11 @@ public abstract class SocketBase extends Own
     }
 
     @Override
+    public void accept_event() {
+        throw new UnsupportedOperationException();
+    }
+    
+    @Override
     public void timer_event(int id_) {
         throw new UnsupportedOperationException();        
     }
@@ -514,7 +528,6 @@ public abstract class SocketBase extends Own
 
             //  Remove the socket from the reaper's poller.
             poller.rm_fd (handle);
-
             //  Remove the socket from the context.
             destroy_socket (this);
 
@@ -606,7 +619,7 @@ public abstract class SocketBase extends Own
         throw new UnsupportedOperationException("Must Override");
     }
     
-    protected int xsend(Msg msg_, int flags_) {
+    protected boolean xsend(Msg msg_, int flags_) {
         throw new UnsupportedOperationException("Must Override");
     }
 
@@ -653,7 +666,7 @@ public abstract class SocketBase extends Own
         if (protocol.equals("pgm") || protocol.equals("epgm")) {
             //  For convenience's sake, bind can be used interchageable with
             //  connect for PGM and EPGM transports.
-            return connect (addr_);
+            return connect (addr_)?0:-1;
         }
 
         //  Remaining trasnports require to be run in an I/O thread, so at this
@@ -700,5 +713,95 @@ public abstract class SocketBase extends Own
 
         assert (false);
         return -1;
+    }
+
+    public boolean recv(Msg msg_, int flags_) {
+        if (ctx_terminated) {
+            throw new IllegalStateException();
+        }
+        
+        //  Check whether message passed to the function is valid.
+        if (msg_ == null || !msg_.check ()) {
+            throw new IllegalArgumentException(msg_.toString());
+        }
+        
+        //  Get the message.
+        int rc = xrecv (msg_, flags_);
+        //if (rc != 0)
+        //    return false;
+
+        //  Once every inbound_poll_rate messages check for signals and process
+        //  incoming commands. This happens only if we are not polling altogether
+        //  because there are messages available all the time. If poll occurs,
+        //  ticks is set to zero and thus we avoid this code.
+        //
+        //  Note that 'recv' uses different command throttling algorithm (the one
+        //  described above) from the one used by 'send'. This is because counting
+        //  ticks is more efficient than doing RDTSC all the time.
+        if (++ticks == Config.inbound_poll_rate.getValue()) {
+            if (!process_commands (0, false))
+                return false;
+            ticks = 0;
+        }
+
+        //  If we have the message, return immediately.
+        if (rc == 0) {
+            extract_flags (msg_);
+            return true;
+        }
+
+        //  If the message cannot be fetched immediately, there are two scenarios.
+        //  For non-blocking recv, commands are processed in case there's an
+        //  activate_reader command already waiting int a command pipe.
+        //  If it's not, return EAGAIN.
+        if ((flags_ & ZMQ.ZMQ_DONTWAIT) > 0 || options.rcvtimeo == 0) {
+            if (!process_commands (0, false))
+                return false;
+            ticks = 0;
+
+            rc = xrecv (msg_, flags_);
+            if (rc < 0)
+                return false;
+            extract_flags (msg_);
+            return true;
+        }
+
+        //  Compute the time when the timeout should occur.
+        //  If the timeout is infite, don't care. 
+        int timeout = options.rcvtimeo;
+        long end = timeout < 0 ? 0 : (clock.now_ms () + timeout);
+
+        //  In blocking scenario, commands are processed over and over again until
+        //  we are able to fetch a message.
+        boolean block = (ticks != 0);
+        while (true) {
+            if (!process_commands (block ? timeout : 0, false))
+                return false;
+            rc = xrecv (msg_, flags_);
+            if (rc == 0) {
+                ticks = 0;
+                break;
+            }
+            block = true;
+            if (timeout > 0) {
+                timeout = (int) (end - clock.now_ms ());
+                if (timeout <= 0) {
+                    return false;
+                }
+            }
+        }
+
+        extract_flags (msg_);
+        return true;
+
+    }
+
+    private void extract_flags(Msg msg_) {
+        //  Test whether IDENTITY flag is valid for this socket type.
+        if ((msg_.flags () & Msg.identity) > 0)
+            assert (options.recv_identity);
+
+        //  Remove MORE flag.
+        rcvmore = (msg_.flags () & Msg.more)>0 ? true : false;
     }
 }

@@ -53,4 +53,8 @@ public class Encoder {
         beginning = beginning_;
     }
 
+    public void set_session(SessionBase session_) {
+        session = session_;
+    }
+
 }

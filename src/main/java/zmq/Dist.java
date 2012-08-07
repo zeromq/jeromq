@@ -66,4 +66,18 @@ public class Dist {
         pipes.remove(pipe_);
     }
 
+    public void activated(Pipe pipe_) {
+        //  Move the pipe from passive to eligible state.
+        Utils.swap (pipes, pipes.indexOf (pipe_), eligible);
+        eligible++;
+
+        //  If there's no message being sent at the moment, move it to
+        //  the active state.
+        if (!more) {
+            Utils.swap (pipes, eligible - 1, active);
+            active++;
+        }
+
+    }
+
 }

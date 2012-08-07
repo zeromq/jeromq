@@ -83,10 +83,15 @@ public class Poller extends PollerBase implements Runnable {
     {
         register(handle_, SelectionKey.OP_WRITE);
     }
+
     public void set_pollconnect(SelectableChannel handle_) {
         register(handle_, SelectionKey.OP_CONNECT);
     }
     
+    public void set_pollaccept(SelectableChannel handle_) {
+        register(handle_, SelectionKey.OP_ACCEPT);        
+    }
+
     private void register (SelectableChannel handle_, int ops)
     {
         SelectionKey key = handle_.keyFor(selector);
@@ -115,16 +120,9 @@ public class Poller extends PollerBase implements Runnable {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        selector.wakeup();
     }
     
-    protected void finalize() throws Throwable {
-         try {
-             stop();
-             worker.interrupt();
-         } finally {
-             super.finalize();
-         }
-    }
     
 
 
@@ -172,6 +170,10 @@ public class Poller extends PollerBase implements Runnable {
                         fd_table.get(channel).out_event();
                     }
                     
+                    if (key.isAcceptable()) {
+                        fd_table.get(channel).accept_event();
+                    }
+                    
                     if (key.isReadable() ) {
                         fd_table.get(channel).in_event();
                     } else if (key.isConnectable()) {
@@ -186,6 +188,7 @@ public class Poller extends PollerBase implements Runnable {
         }
         
     }
+
 
 
     

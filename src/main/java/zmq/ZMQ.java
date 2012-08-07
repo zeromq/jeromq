@@ -131,13 +131,12 @@ public class ZMQ {
         return s;
     }
     
-    public static int zmq_connect (SocketBase s_, String addr_)
+    public static boolean zmq_connect (SocketBase s_, String addr_)
     {
         if (s_ == null || !s_.check_tag ()) {
             throw new IllegalStateException();
         }
-        int result = s_.connect (addr_);
-        return result;
+        return s_.connect (addr_);
     }
 
     public static int zmq_close(SocketBase s_) {
@@ -180,7 +179,7 @@ public class ZMQ {
         return s_.bind(addr_);
     }
 
-    public static boolean zmq_send(SocketBase s_, byte[] buf_, int len_,
+    public static int zmq_send(SocketBase s_, byte[] buf_, int len_,
             int flags_) {
         if (s_ == null || !s_.check_tag ()) {
             throw new IllegalStateException();
@@ -193,10 +192,10 @@ public class ZMQ {
         int rc = s_sendmsg (s_, msg, flags_);
         if (rc < 0) {
             zmq_msg_close (msg);
-            return false;
+            return -1;
         }
         
-        return true;
+        return rc;
     }
 
     private static void zmq_msg_close(Msg msg) {
@@ -205,8 +204,8 @@ public class ZMQ {
 
     private static int s_sendmsg(SocketBase s_, Msg msg_, int flags_) {
         int sz = zmq_msg_size (msg_);
-        int rc = s_.send ( msg_, flags_);
-        if ( rc < 0)
+        boolean rc = s_.send ( msg_, flags_);
+        if ( !rc )
             return -1;
         return sz;
     }
@@ -219,8 +218,48 @@ public class ZMQ {
         return msg.data();
     }
 
+    private static void zmq_msg_init(Msg msg) {
+        msg.init();
+    }
+    
     private static void zmq_msg_init_size(Msg msg, int len_) {
         msg.init_size(len_);
+    }
+
+    //public static int zmq_recvmsg(SocketBase s_, Msg msg_, int flags_) {
+    //    return zmq_msg_recv (msg_, s_, flags_);
+    //}
+    
+    public static int zmq_recv (SocketBase s_, byte[] buf_, int len_, int flags_)
+    {
+        if (s_ == null || !s_.check_tag ()) {
+            throw new IllegalStateException();
+        }
+        Msg msg = new Msg();
+        zmq_msg_init (msg);
+
+        int nbytes = s_recvmsg (s_, msg, flags_);
+        if (nbytes < 0) {
+            zmq_msg_close (msg);
+            return -1;
+        }
+
+        //  At the moment an oversized message is silently truncated.
+        //  TODO: Build in a notification mechanism to report the overflows.
+        int to_copy = nbytes < len_ ? nbytes : len_;
+        Utils.memcpy (buf_, zmq_msg_data (msg), to_copy);
+
+        zmq_msg_close (msg);
+
+        return nbytes;
+    }
+
+    public static int s_recvmsg (SocketBase s_, Msg msg_, int flags_)
+    {
+        boolean rc = s_.recv (msg_, flags_);
+        if (!rc)
+            return -1;
+        return (int) zmq_msg_size (msg_);
     }
 
 }

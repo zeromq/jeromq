@@ -222,7 +222,7 @@ public class Ctx {
             }
     
             //  Choose a slot for the socket.
-            int slot = empty_slots.peekLast();
+            int slot = empty_slots.pollLast();
             //uint32_t slot = empty_slots..back ();
             //empty_slots.pop_back ();
     
@@ -333,7 +333,12 @@ public class Ctx {
         slot_sync.unlock ();
 
         //  Deallocate the resources.
-
+        
+        for (int i=2; i != 2+io_thread_count; i++) {
+            slots[i].close();
+        }
+        slots[reaper_tid].close();
+        term_mailbox.close();
         return 0;
 
     }
@@ -343,6 +348,7 @@ public class Ctx {
         //  Free the associated thread slot.
         int tid = socket_.get_tid ();
         empty_slots.add (tid);
+        slots [tid].close();
         slots [tid] = null;
 
         //  Remove the socket from the list of sockets.

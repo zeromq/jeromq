@@ -13,7 +13,7 @@ public class IOObject implements IPollEvents {
         }
     }
 
-    private void plug(IOThread io_thread_) {
+    public void plug(IOThread io_thread_) {
         assert (io_thread_ != null);
         assert (poller == null);
 
@@ -44,6 +44,10 @@ public class IOObject implements IPollEvents {
         poller.set_pollconnect(handle);
     }
     
+    public void set_pollaccept(SelectableChannel handle) {
+        poller.set_pollaccept(handle);
+    }
+    
     @Override
     public void in_event() {
         handler.in_event();
@@ -60,6 +64,11 @@ public class IOObject implements IPollEvents {
     }
 
     @Override
+    public void accept_event() {
+        handler.accept_event();
+    }
+    
+    @Override
     public void timer_event(int id_) {
         handler.timer_event(id_);
     }
@@ -73,6 +82,17 @@ public class IOObject implements IPollEvents {
     public void set_handler(IPollEvents handler) {
         this.handler = handler;
     }
+
+    public void unplug() {
+        assert (poller != null);
+
+        //  Forget about old poller in preparation to be migrated
+        //  to a different I/O thread.
+        poller = null;
+        handler = null;
+    }
+
+
 
 
 

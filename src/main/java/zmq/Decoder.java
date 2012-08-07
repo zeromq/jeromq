@@ -16,7 +16,10 @@ public class Decoder {
     private ByteBuffer buf;
     
     private enum Step {
-        one_byte_size_ready;
+        one_byte_size_ready,
+        eight_byte_size_ready,
+        flags_ready,
+        message_ready
     }
     private Step next;
     
@@ -53,5 +56,97 @@ public class Decoder {
         to_read = to_read_;
         next = next_;
     }
+    
+    private boolean call_next() {
+        switch(next) {
+        case one_byte_size_ready:
+            return one_byte_size_ready ();
+        case eight_byte_size_ready:
+            return eight_byte_size_ready ();
+        case flags_ready:
+            return flags_ready ();
+        case message_ready:
+            return message_ready ();
+        default:
+            throw new IllegalStateException(next.toString());
+        }
+    }
+
+    private boolean message_ready() {
+        throw new UnsupportedOperationException();
+    }
+
+    private boolean flags_ready() {
+        throw new UnsupportedOperationException();
+
+    }
+
+    private boolean eight_byte_size_ready() {
+        throw new UnsupportedOperationException();
+
+    }
+
+    private boolean one_byte_size_ready() {
+        throw new UnsupportedOperationException();
+
+    }
+
+    public int process_buffer(byte[] data_, int start_, int size_) {
+        //  Check if we had an error in previous attempt.
+        if (next == null)
+            return -1;
+
+        //  In case of zero-copy simply adjust the pointers, no copying
+        //  is required. Also, run the state machine in case all the data
+        //  were processed.
+        if (start_ == read_pos) {
+            read_pos += size_;
+            to_read -= size_;
+
+            while (to_read == 0) {
+                if (!call_next()) {
+                    if (next == null)
+                        return -1;
+                    return size_;
+                }
+            }
+            return size_;
+        }
+
+        int pos = 0;
+        while (true) {
+
+            //  Try to get more space in the message to fill in.
+            //  If none is available, return.
+            while (to_read == 0) {
+                if (!call_next ()) {
+                    if (next == null)
+                        return -1;
+                    return pos;
+                }
+            }
+
+            //  If there are no more data in the buffer, return.
+            if (pos == size_)
+                return pos;
+            //  Copy the data from buffer to the message.
+            int to_copy = Math.min (to_read, size_ - pos);
+            Utils.memcpy (data_, read_pos, data_ , pos, to_copy);
+            read_pos += to_copy;
+            pos += to_copy;
+            to_read -= to_copy;
+        }
+    }
+    
+    public boolean stalled ()
+    {
+        return next == Step.message_ready;
+    }
+
+
+    public void set_session(SessionBase session_) {
+        session = session_;
+    }
+
 
 }
