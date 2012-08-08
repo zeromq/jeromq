@@ -186,17 +186,7 @@ public class Msg {
         //  Check the validity of the message.
         assert (check ());
 
-        ByteBuffer b = null;
-        switch (type) {
-        case type_vsm:
-            b = data;
-            break;
-        case type_lmsg:
-            b = content.data;
-            break;
-        default:
-            assert (false);
-        }
+        ByteBuffer b = get_buffer();
 
         if (rewind) {
             b.rewind();
@@ -274,15 +264,38 @@ public class Msg {
         src_.init ();
     }
     */
+    
+    private ByteBuffer get_buffer() {
+
+        ByteBuffer b = null;
+        switch (type) {
+        case type_vsm:
+            b = data;
+            break;
+        case type_lmsg:
+            b = content.data;
+            break;
+        default:
+            assert (false);
+        }
+        return b;
+    }
 
     public void put(byte[] src) {
-        if (src != null)
-            data.put(src);
+        
+        if (src == null)
+            return;
+        
+        get_buffer().put(src);
+        
     }
 
     public void put(byte[] src, int start, int len_) {
-        if (len_ > 0)
-            data.put(src, start, len_);
+        
+        if (len_ == 0 || src == null)
+            return;
+        
+        get_buffer().put(src, start, len_);
     }
 
 

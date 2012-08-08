@@ -151,7 +151,7 @@ public abstract class SocketBase extends Own
         return s;
     }
 
-    boolean send (Msg msg_, int flags_)
+    public boolean send (Msg msg_, int flags_)
     {
         if (ctx_terminated) {
             throw new IllegalStateException();
