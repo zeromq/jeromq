@@ -3,7 +3,7 @@ package zmq;
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class Msg {
+public class Msg implements IReplaceable {
 
     //  Size in bytes of the largest message that is still copied around
     //  rather than being reference-counted.
@@ -232,20 +232,24 @@ public class Msg {
     
 
     @Override
-    public String toString() {
+    public String toString () {
         return super.toString() + "[" + type + "]";
     }
 
-    private void clone(Msg m) {
+    private void clone (Msg m) {
         type = m.type;
         flags = m.flags;
-        size = m.size;
-        m.data.flip();
-        data.put(m.data);
+        if (type == type_vsm) {
+            size = m.size;
+            m.data.rewind();
+            data.clear();
+            data.limit(size);
+            data.put(m.data);
+        }
         content = m.content;
     }
 
-    public void reset_flags(byte f) {
+    public void reset_flags (byte f) {
         flags = (byte) (flags & (~f));
     }
 
@@ -296,6 +300,11 @@ public class Msg {
             return;
         
         get_buffer().put(src, start, len_);
+    }
+
+    @Override
+    public void replace(Object src) {
+        clone((Msg)src);
     }
 
 

@@ -1,5 +1,6 @@
 package zmq;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -162,6 +163,20 @@ public class Options {
             identity = optval_.getBytes();
             identity_size = (byte)identity.length;
             return;
+        default:
+            throw new IllegalArgumentException("option=" + option_);
+        }
+    }
+
+    public int getsockopt(int option_, ByteBuffer ret) {
+        
+        switch (option_) {
+        case ZMQ.ZMQ_LAST_ENDPOINT:
+            if (ret == null) {
+                throw new IllegalArgumentException("option=" + option_);
+            }
+            ret.put(last_endpoint.getBytes());
+            return 0;
         default:
             throw new IllegalArgumentException("option=" + option_);
         }

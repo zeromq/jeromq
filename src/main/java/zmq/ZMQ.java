@@ -13,6 +13,7 @@ public class ZMQ {
     public static final int ZMQ_IO_THREADS_DFLT = 1;
     public static final int ZMQ_MAX_SOCKETS_DFLT = 1024;
     
+    
 
     /******************************************************************************/
     /*  0MQ socket definition.                                                    */
@@ -91,6 +92,10 @@ public class ZMQ {
     public static final int ZMQ_EVENT_CLOSED = 128;
     public static final int ZMQ_EVENT_CLOSE_FAILED = 256;
     public static final int ZMQ_EVENT_DISCONNECTED = 512;
+    
+    public static final int  ZMQ_POLLIN = 1;
+    public static final int  ZMQ_POLLOUT = 2;
+    public static final int  ZMQ_POLLERR = 4;
     
     public static Ctx zmq_ctx_new() {
         //  Create 0MQ context.
@@ -171,6 +176,16 @@ public class ZMQ {
         s_.setsockopt (option_, optval_);
 
     }
+    
+    public static int zmq_getsockopt(SocketBase s_, int option_,
+            ByteBuffer ret) {
+        if (s_ == null || !s_.check_tag ()) {
+            throw new IllegalStateException();
+        }
+
+        return s_.getsockopt (option_, ret);
+    }
+
 
     public static int zmq_bind(SocketBase s_, final String addr_) {
         
@@ -252,6 +267,7 @@ public class ZMQ {
     {
         return s_.recv (flags_);
     }
+
 
 
 

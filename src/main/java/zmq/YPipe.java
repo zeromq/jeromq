@@ -3,7 +3,7 @@ package zmq;
 import java.util.concurrent.atomic.AtomicInteger;
 
 
-public class YPipe<T> {
+public class YPipe<T extends IReplaceable> {
 
     //  Allocation-efficient queue to store pipe items.
     //  Front of the queue points to the first prefetched item, back of
@@ -27,9 +27,17 @@ public class YPipe<T> {
     //  reader is asleep. This pointer should be always accessed using
     //  atomic operations.
     final AtomicInteger c;
+
+    public YPipe(Class<T> klass, Config conf) {
+        this(klass, conf, 0);
+    }
     
-	public YPipe(Class<T> klass, Config conf) {
-		queue = new YQueue<T>(klass, conf.getValue());
+    public YPipe(Class<T> klass, Config conf, int qid) {
+        this(klass, conf.getValue(), 0);
+    }
+    
+	public YPipe(Class<T> klass, int qsize, int qid) {
+		queue = new YQueue<T>(klass, qsize, qid);
         queue.push();
         w = r = f = queue.back_pos();
         c = new AtomicInteger(queue.back_pos());

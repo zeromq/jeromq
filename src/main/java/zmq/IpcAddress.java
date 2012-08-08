@@ -5,7 +5,7 @@ import java.net.SocketAddress;
 public class IpcAddress implements Address.IZAddress {
 
     @Override
-    public String toString(String addr_) {
+    public String toString() {
         throw new UnsupportedOperationException();
     }
 

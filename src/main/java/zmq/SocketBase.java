@@ -3,6 +3,7 @@ package zmq;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.ByteBuffer;
 import java.nio.channels.SelectableChannel;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -610,6 +611,48 @@ public abstract class SocketBase extends Own
         options.setsockopt (option_, optval_);
 
     }
+    
+    public int getsockopt(int option_) {
+        return getsockopt(option_, null);
+    }
+    
+    public int getsockopt(int option_, ByteBuffer ret) {
+        if (ctx_terminated) {
+            throw new IllegalStateException();
+        }
+
+        if (option_ == ZMQ.ZMQ_RCVMORE) {
+            return rcvmore ? 1 : 0;
+        }
+        
+        if (option_ == ZMQ.ZMQ_FD) {
+            throw new UnsupportedOperationException();
+        }
+        
+        if (option_ == ZMQ.ZMQ_EVENTS) {
+            boolean rc = process_commands (0, false);
+            if (!rc)
+                return -1;
+            int val = 0;
+            if (has_out ())
+                val |= ZMQ.ZMQ_POLLOUT;
+            if (has_in ())
+                val |= ZMQ.ZMQ_POLLIN;
+            return val;
+        }
+        //  If the socket type doesn't support the option, pass it to
+        //  the generic option parser.
+        return options.getsockopt (option_, ret);
+
+    }
+
+    private boolean has_out() {
+        return xhas_out ();
+    }
+
+    private boolean has_in() {
+        return xhas_in ();
+    }
 
     protected void xread_activated(Pipe pipe_) {
         throw new UnsupportedOperationException("Must Override");
@@ -688,7 +731,7 @@ public abstract class SocketBase extends Own
             }
 
             // Save last endpoint URI
-            options.last_endpoint = listener.get_address (options.last_endpoint);
+            options.last_endpoint = listener.get_address ();
 
             add_endpoint (addr_, listener);
             return 0;
@@ -705,7 +748,7 @@ public abstract class SocketBase extends Own
             }
 
             // Save last endpoint URI
-            options.last_endpoint = listener.get_address (options.last_endpoint);
+            options.last_endpoint = listener.get_address ();
 
             add_endpoint (addr_, listener);
             return 0;

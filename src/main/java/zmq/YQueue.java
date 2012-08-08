@@ -1,8 +1,11 @@
 package zmq;
 
 import java.lang.reflect.Array;
+import java.util.concurrent.atomic.AtomicReferenceArray;
 
-public class YQueue<T> {
+
+@SuppressWarnings("rawtypes")
+public class YQueue<T extends IReplaceable> {
 
     //  Individual memory chunk to hold N elements.
     class Chunk
@@ -23,35 +26,44 @@ public class YQueue<T> {
     //  while begin & end positions are always valid. Begin position is
     //  accessed exclusively be queue reader (front/pop), while back and
     //  end positions are accessed exclusively by queue writer (back/push).
-    Chunk begin_chunk;
-    int begin_pos;
-    Chunk back_chunk;
-    int back_pos;
-    Chunk end_chunk;
-    int end_pos;
-    final Class<T> klass;
-    final int size;
+    private Chunk begin_chunk;
+    private int begin_pos;
+    private Chunk back_chunk;
+    private int back_pos;
+    private Chunk end_chunk;
+    private int end_pos;
+    private final Class<T> klass;
+    private final int size;
+    private byte allocated;
+    private int qid;
+    private int front_hash;
+    private int back_hash;
 
+    private static int MAX_SHARED_QUEUE = 2;
     //  People are likely to produce and consume at similar rates.  In
     //  this scenario holding onto the most recently freed chunk saves
     //  us from having to call malloc/free.
-    volatile Chunk spare_chunk;
-
     
+    private static AtomicReferenceArray spare_chunks = new AtomicReferenceArray(MAX_SHARED_QUEUE);
+    
+
     public YQueue(Class<T> klass, int size) {
+        this(klass, size, 0);
+    }
+
+    public YQueue(Class<T> klass, int size, int qid) {
         
         this.klass = klass;
         this.size = size;
+        this.qid = qid;
         begin_chunk = new Chunk(klass, size);
-        //alloc_assert (begin_chunk);
         begin_pos = 0;
-        back_chunk = null;
         back_pos = 0;
-        end_chunk = begin_chunk;
+        back_chunk = end_chunk = begin_chunk;
         end_pos = 0;
-        
-        spare_chunk = null;
-        
+
+        back_hash = front_hash = begin_chunk.hashCode();
+        allocated = 0;
     }
     
     /*
@@ -65,7 +77,7 @@ public class YQueue<T> {
     */
 
     public int front_pos() {
-        return begin_pos;
+        return front_hash + begin_pos;
     }
     
     public T front() {
@@ -84,54 +96,66 @@ public class YQueue<T> {
     
     
     public int back_pos() {
-        return back_pos;
+        return back_hash + back_pos;
     }
 
     public T back(T val) {
-        back_chunk.values [back_pos] = val;
+        if (allocated == 2)
+            back_chunk.values [back_pos].replace(val);
+        else
+            back_chunk.values [back_pos] = val;
         return val;
     }
 
 
+    @SuppressWarnings("unchecked")
     public void pop() {
         begin_pos++;
         if (begin_pos == size) {
             Chunk o = begin_chunk;
             begin_chunk = begin_chunk.next;
+            front_hash = begin_chunk.hashCode();
             begin_chunk.prev = null;
             begin_pos = 0;
 
             //  'o' has been more recently used than spare_chunk,
             //  so for cache reasons we'll get rid of the spare and
             //  use 'o' as the spare.
-            spare_chunk = o;
+            spare_chunks.set(qid, o);
         }
     }
 
 
+    @SuppressWarnings("unchecked")
     public void push() {
-        back_chunk = end_chunk;
+        if (back_chunk != end_chunk) {
+            back_chunk = end_chunk;
+            back_hash = back_chunk.hashCode();
+            if (allocated == 1)
+                allocated = 2;
+        }
         back_pos = end_pos;
 
         end_pos ++;
         if (end_pos != size)
             return;
 
-        Chunk sc = spare_chunk;
-        spare_chunk = null;
+        Chunk sc = (Chunk) spare_chunks.getAndSet(qid, null);
         if (sc != null) {
             end_chunk.next = sc;
             sc.prev = end_chunk;
+            allocated = 1;
         } else {
             end_chunk.next =  new Chunk(klass, size);
-            //alloc_assert (end_chunk->next);
             end_chunk.next.prev = end_chunk;
+            allocated = 0;
         }
         end_chunk = end_chunk.next;
         end_pos = 0;
     }
 
 
+    @SuppressWarnings("unchecked")
     public void unpush() {
         //  First, move 'back' one position backwards.
         if (back_pos > 0)
@@ -150,7 +174,7 @@ public class YQueue<T> {
         else {
             end_pos = size - 1;
             end_chunk = end_chunk.prev;
-            //free (end_chunk.next);
+            spare_chunks.set(qid,end_chunk.next);
             end_chunk.next = null;
         }
     }

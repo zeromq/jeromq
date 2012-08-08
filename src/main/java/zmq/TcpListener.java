@@ -115,16 +115,15 @@ public class TcpListener extends Own implements IPollEvents {
         s = null;
     }
 
-    public String get_address(String addr_) {
-        TcpAddress addr = new TcpAddress(addr_);
-        return addr.toString(addr_);
+    public String get_address() {
+        return address.toString();
     }
 
     //  Set address to listen on.
     public void set_address(final String addr_) throws IOException {
         address.resolve(addr_, true, options.ipv4only > 0 ? true : false);
         
-        endpoint = address.toString(endpoint);
+        endpoint = address.toString();
         s = ServerSocketChannel.open();
         s.socket().setReuseAddress(true);
         s.socket().bind(address.address(), options.backlog);
