@@ -6,6 +6,7 @@ import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
@@ -156,34 +157,36 @@ public class Poller extends PollerBase implements Runnable {
                 throw new RuntimeException(e);
             }
             
-            if (rc > 0) {
-                Set<SelectionKey> keys = selector.selectedKeys();
-                for (SelectionKey key: keys) {
-                    
-                    SelectableChannel channel = key.channel();
-                    if (!key.isValid() ) {
-                        //fd_table.get(channel).in_event();
-                        throw new UnsupportedOperationException();
-                    }
-                    
-                    if (key.isWritable()) {
-                        fd_table.get(channel).out_event();
-                    }
-                    
-                    if (key.isAcceptable()) {
-                        fd_table.get(channel).accept_event();
-                    }
-                    
-                    if (key.isReadable() ) {
-                        fd_table.get(channel).in_event();
-                    } else if (key.isConnectable()) {
-                        fd_table.get(channel).connect_event();
-                    }
-    
-                }
-                keys.clear();
-            } 
+            if (rc == 0) 
+                continue;
             
+            Iterator<SelectionKey> it = selector.selectedKeys().iterator();
+            while (it.hasNext()) {
+                
+                SelectionKey key = it.next();
+                it.remove();
+                
+                SelectableChannel channel = key.channel();
+                if (!key.isValid() ) {
+                    //fd_table.get(channel).in_event();
+                    throw new UnsupportedOperationException();
+                }
+                
+                if (key.isWritable()) {
+                    fd_table.get(channel).out_event();
+                }
+                
+                if (key.isAcceptable()) {
+                    fd_table.get(channel).accept_event();
+                }
+                
+                if (key.isReadable() ) {
+                    fd_table.get(channel).in_event();
+                } else if (key.isConnectable()) {
+                    fd_table.get(channel).connect_event();
+                }
+
+            }
 
         }
         

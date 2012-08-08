@@ -115,19 +115,21 @@ public abstract class SocketBase extends Own
         case ZMQ.ZMQ_SUB:
             s = new Sub (parent_, tid_, sid_);
             break;
+            */
         case ZMQ.ZMQ_REQ:
             s = new Req (parent_, tid_, sid_);
             break;
+            /*
         case ZMQ.ZMQ_REP:
             s = new Rep (parent_, tid_, sid_);
             break;
         case ZMQ.ZMQ_DEALER:
             s = new Dealer (parent_, tid_, sid_);
             break;
+            */
         case ZMQ.ZMQ_ROUTER:
             s = new Router (parent_, tid_, sid_);
             break;     
-            */
         case ZMQ.ZMQ_PULL:
             s = new Pull (parent_, tid_, sid_);
             break;
@@ -266,9 +268,8 @@ public abstract class SocketBase extends Own
 
             //  If required, send the identity of the local socket to the peer.
             if (options.send_identity) {
-                Msg id = new Msg();
-                id.init_size (options.identity_size);
-                System.arraycopy(id.data (), 0, options.identity,0, options.identity_size);
+                Msg id = new Msg(options.identity_size);
+                Utils.memcpy(id.data (), options.identity, options.identity_size);
                 id.set_flags (Msg.identity);
                 boolean written = pipes [0].write (id);
                 assert (written);
@@ -277,9 +278,8 @@ public abstract class SocketBase extends Own
 
             //  If required, send the identity of the peer to the local socket.
             if (peer.options.send_identity) {
-                Msg id = new Msg();
-                id.init_size (peer.options.identity_size);
-                System.arraycopy (id.data (),0, peer.options.identity, 0, peer.options.identity_size);
+                Msg id = new Msg(peer.options.identity_size);
+                Utils.memcpy (id.data (), peer.options.identity, options.identity_size);
                 id.set_flags (Msg.identity);
                 boolean written = pipes [1].write (id);
                 assert (written);
@@ -615,11 +615,11 @@ public abstract class SocketBase extends Own
         throw new UnsupportedOperationException("Must Override");
     }
 
-    protected int xrecv(Msg msg_, int flags_) {
+    public Msg xrecv(int flags_) {
         throw new UnsupportedOperationException("Must Override");
     }
     
-    protected boolean xsend(Msg msg_, int flags_) {
+    public boolean xsend(Msg msg_, int flags_) {
         throw new UnsupportedOperationException("Must Override");
     }
 
@@ -715,18 +715,18 @@ public abstract class SocketBase extends Own
         return -1;
     }
 
-    public boolean recv(Msg msg_, int flags_) {
+    public Msg recv(int flags_) {
         if (ctx_terminated) {
             throw new IllegalStateException();
         }
         
         //  Check whether message passed to the function is valid.
-        if (msg_ == null || !msg_.check ()) {
-            throw new IllegalArgumentException(msg_.toString());
-        }
+        //if (msg_ == null || !msg_.check ()) {
+        //    throw new IllegalArgumentException(msg_.toString());
+        //}
         
         //  Get the message.
-        int rc = xrecv (msg_, flags_);
+        Msg msg_ = xrecv (flags_);
         //if (rc != 0)
         //    return false;
 
@@ -740,14 +740,14 @@ public abstract class SocketBase extends Own
         //  ticks is more efficient than doing RDTSC all the time.
         if (++ticks == Config.inbound_poll_rate.getValue()) {
             if (!process_commands (0, false))
-                return false;
+                return null;
             ticks = 0;
         }
 
         //  If we have the message, return immediately.
-        if (rc == 0) {
+        if (msg_ != null) {
             extract_flags (msg_);
-            return true;
+            return msg_;
         }
 
         //  If the message cannot be fetched immediately, there are two scenarios.
@@ -756,14 +756,14 @@ public abstract class SocketBase extends Own
         //  If it's not, return EAGAIN.
         if ((flags_ & ZMQ.ZMQ_DONTWAIT) > 0 || options.rcvtimeo == 0) {
             if (!process_commands (0, false))
-                return false;
+                return null;
             ticks = 0;
 
-            rc = xrecv (msg_, flags_);
-            if (rc < 0)
-                return false;
+            msg_ = xrecv (flags_);
+            if (msg_ == null)
+                return null;
             extract_flags (msg_);
-            return true;
+            return msg_;
         }
 
         //  Compute the time when the timeout should occur.
@@ -776,9 +776,9 @@ public abstract class SocketBase extends Own
         boolean block = (ticks != 0);
         while (true) {
             if (!process_commands (block ? timeout : 0, false))
-                return false;
-            rc = xrecv (msg_, flags_);
-            if (rc == 0) {
+                return null;
+            msg_ = xrecv (flags_);
+            if (msg_ != null) {
                 ticks = 0;
                 break;
             }
@@ -786,13 +786,13 @@ public abstract class SocketBase extends Own
             if (timeout > 0) {
                 timeout = (int) (end - clock.now_ms ());
                 if (timeout <= 0) {
-                    return false;
+                    return null;
                 }
             }
         }
 
         extract_flags (msg_);
-        return true;
+        return msg_;
 
     }
 
@@ -802,6 +802,6 @@ public abstract class SocketBase extends Own
             assert (options.recv_identity);
 
         //  Remove MORE flag.
-        rcvmore = (msg_.flags () & Msg.more)>0 ? true : false;
+        rcvmore = msg_.has_more();
     }
 }

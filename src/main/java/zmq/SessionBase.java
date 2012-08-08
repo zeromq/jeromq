@@ -288,7 +288,7 @@ public class SessionBase extends Own implements Pipe.IPipeEvents {
 
     }
 
-    private void reset() {
+    protected void reset() {
         //  Restore identity flags.
         send_identity = options.send_identity;
         recv_identity = options.recv_identity;
@@ -304,9 +304,8 @@ public class SessionBase extends Own implements Pipe.IPipeEvents {
 
             //  Remove any half-read message from the in pipe.
             while (incomplete_in) {
-                Msg msg = new Msg();
-                msg.init ();
-                if (!read (msg)) {
+                Msg msg = read();
+                if (msg == null) {
                     assert (!incomplete_in);
                     break;
                 }
@@ -315,25 +314,42 @@ public class SessionBase extends Own implements Pipe.IPipeEvents {
         }
     }
 
-    private boolean read(Msg msg_) {
+    private Msg read() {
+        
+        Msg msg_ = null;
         
         //  First message to send is identity (if required).
         if (send_identity) {
-            assert ((msg_.flags () & Msg.more) == 0);
-            msg_.init_size (options.identity_size);
+            msg_ = new Msg(options.identity_size);
             Utils.memcpy (msg_.data (), options.identity, options.identity_size);
             send_identity = false;
             incomplete_in = false;
+            return msg_;
+        }
+
+        if (pipe == null || (msg_ = pipe.read ()) == null ) {
+            return null;
+        }
+        incomplete_in = msg_.has_more();
+
+        return msg_;
+
+    }
+    
+    protected boolean write (Msg msg_)
+    {
+        //  First message to receive is identity (if required).
+        if (recv_identity) {
+            msg_.set_flags (Msg.identity);
+            recv_identity = false;
+        }
+
+        if (pipe != null && pipe.write (msg_)) {
             return true;
         }
 
-        if (pipe == null || pipe.read (msg_)) {
-            return false;
-        }
-        incomplete_in = (msg_.flags () & Msg.more) > 0 ? true : false;
-
-        return true;
-
+        return false;
     }
+
 
 }

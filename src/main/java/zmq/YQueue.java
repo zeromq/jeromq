@@ -118,7 +118,7 @@ public class YQueue<T> {
             return;
 
         Chunk sc = spare_chunk;
-        spare_chunk = null;  // is it thread safe?
+        spare_chunk = null;
         if (sc != null) {
             end_chunk.next = sc;
             sc.prev = end_chunk;

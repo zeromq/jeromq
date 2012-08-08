@@ -1,5 +1,7 @@
 package zmq;
 
+import java.nio.ByteBuffer;
+
 
 public class ZMQ {
 
@@ -178,28 +180,39 @@ public class ZMQ {
         
         return s_.bind(addr_);
     }
+    
+    public static int zmq_send(SocketBase s_, String str, 
+            int flags_) {
+        byte [] data = str.getBytes();
+        return zmq_send(s_, data, data.length, flags_);
+    }
 
+    public static int zmq_send(SocketBase s_, Msg msg, 
+            int flags_) {
+        
+        int rc = s_sendmsg (s_, msg, flags_);
+        if (rc < 0) {
+            return -1;
+        }
+        
+        return rc;
+    }
+    
     public static int zmq_send(SocketBase s_, byte[] buf_, int len_,
             int flags_) {
         if (s_ == null || !s_.check_tag ()) {
             throw new IllegalStateException();
         }
         
-        Msg msg = new Msg();
-        zmq_msg_init_size (msg, len_);
-        Utils.memcpy (zmq_msg_data (msg), buf_, len_);
+        Msg msg = new Msg(len_);
+        msg.put(buf_, 0, len_);
 
         int rc = s_sendmsg (s_, msg, flags_);
         if (rc < 0) {
-            zmq_msg_close (msg);
             return -1;
         }
         
         return rc;
-    }
-
-    private static void zmq_msg_close(Msg msg) {
-        msg.close();
     }
 
     private static int s_sendmsg(SocketBase s_, Msg msg_, int flags_) {
@@ -214,52 +227,32 @@ public class ZMQ {
         return msg_.size();
     }
 
-    private static byte[] zmq_msg_data(Msg msg) {
-        return msg.data();
-    }
-
-    private static void zmq_msg_init(Msg msg) {
-        msg.init();
-    }
-    
-    private static void zmq_msg_init_size(Msg msg, int len_) {
-        msg.init_size(len_);
-    }
-
     //public static int zmq_recvmsg(SocketBase s_, Msg msg_, int flags_) {
     //    return zmq_msg_recv (msg_, s_, flags_);
     //}
     
-    public static int zmq_recv (SocketBase s_, byte[] buf_, int len_, int flags_)
+    public static Msg zmq_recv (SocketBase s_, int flags_)
     {
         if (s_ == null || !s_.check_tag ()) {
             throw new IllegalStateException();
         }
-        Msg msg = new Msg();
-        zmq_msg_init (msg);
-
-        int nbytes = s_recvmsg (s_, msg, flags_);
-        if (nbytes < 0) {
-            zmq_msg_close (msg);
-            return -1;
+        Msg msg = s_recvmsg (s_, flags_);
+        if (msg == null) {
+            return null;
         }
 
         //  At the moment an oversized message is silently truncated.
         //  TODO: Build in a notification mechanism to report the overflows.
-        int to_copy = nbytes < len_ ? nbytes : len_;
-        Utils.memcpy (buf_, zmq_msg_data (msg), to_copy);
+        //int to_copy = nbytes < len_ ? nbytes : len_;
 
-        zmq_msg_close (msg);
-
-        return nbytes;
+        return msg;
     }
 
-    public static int s_recvmsg (SocketBase s_, Msg msg_, int flags_)
+    public static Msg s_recvmsg (SocketBase s_, int flags_)
     {
-        boolean rc = s_.recv (msg_, flags_);
-        if (!rc)
-            return -1;
-        return (int) zmq_msg_size (msg_);
+        return s_.recv (flags_);
     }
+
+
 
 }

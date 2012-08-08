@@ -69,7 +69,7 @@ public class Pipe extends ZObject {
     boolean delay;
 
     //  Identity of the writer. Used uniquely by the reader side.
-    Blob identity;
+    private Blob identity;
     
     // JeroMQ only
     private ZObject parent;
@@ -154,31 +154,30 @@ public class Pipe extends ZObject {
 	    sink = sink_;
 	}
 	
-    boolean read(Msg msg_)
+    public Msg read()
 	{
 	    if (!in_active || (state != State.active && state != State.pending))
-	        return false;
+	        return null;
 
-	    Msg read;
-	    if ((read = inpipe.read ()) == null) {
+	    Msg msg_ = inpipe.read ();
+	    if (msg_ == null) {
 	        in_active = false;
-	        return false;
+	        return null;
 	    }
-	    msg_.clone(read);
 
 	    //  If delimiter was read, start termination process of the pipe.
 	    if (msg_.is_delimiter ()) {
 	        delimit ();
-	        return false;
+	        return null;
 	    }
 
-	    if ((msg_.flags () & Msg.more) == 0)
+	    if (!msg_.has_more())
 	        msgs_read++;
 
 	    if (lwm > 0 && msgs_read % lwm == 0)
 	        send_activate_write (peer, msgs_read);
 
-	    return true;
+	    return msg_;
 	}
     
     boolean write (Msg msg_)
@@ -464,6 +463,14 @@ public class Pipe extends ZObject {
         //  Notify the peer about the hiccup.
         send_hiccup (peer, inpipe);
 
+    }
+
+    public Blob get_identity() {
+        return identity;
+    }
+
+    public void set_identity(Blob identity_) {
+        identity = identity_;
     }
 
 

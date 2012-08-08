@@ -33,11 +33,6 @@ public class Pair extends SocketBase {
     }
 
     @Override
-    protected int xrecv(Msg msg_, int flags_) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     protected boolean xhas_in() {
         throw new UnsupportedOperationException();
     }

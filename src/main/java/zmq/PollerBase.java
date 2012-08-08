@@ -7,22 +7,27 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 abstract public class PollerBase {
-	final AtomicInteger load;
+
+    final AtomicInteger load;
 	
-	final private class Timer {
+    //  Clock instance private to this I/O thread.
+    final Clock clock;
+	
+	final private class TimerInfo {
         IPollEvents sink;
         int id;
         
-        public Timer(IPollEvents sink_, int id_) {
+        public TimerInfo(IPollEvents sink_, int id_) {
             sink = sink_;
             id = id_;
         }
 	}
-	final private Map<Long, Timer> timers;
+	final private Map<Long, TimerInfo> timers;
 	
 	protected PollerBase() {
 		load = new AtomicInteger(0);
-		timers = new TreeMap<Long, Timer>();
+		timers = new TreeMap<Long, TimerInfo>();
+		clock = new Clock();
 	}
 	
 	public void adjust_load (int amount_)
@@ -42,17 +47,17 @@ abstract public class PollerBase {
 	        return 0;
 
 	    //  Get the current time.
-	    long current = System.currentTimeMillis(); // clock.now_ms ();
+	    long current = clock.now_ms ();
 
 	    //   Execute the timers that are already due.
-	    Iterator<Entry<Long, Timer>> it = timers.entrySet().iterator();
+	    Iterator<Entry<Long, TimerInfo>> it = timers.entrySet().iterator();
 	    while (it.hasNext()) {
 
 	        //  If we have to wait to execute the item, same will be true about
 	        //  all the following items (multimap is sorted). Thus we can stop
 	        //  checking the subsequent timers and return the time to wait for
 	        //  the next timer (at least 1ms).
-	        Entry<Long, Timer> o = it.next();
+	        Entry<Long, TimerInfo> o = it.next();
 	        if (o.getKey() > current)
 	            return o.getKey() - current;
 
@@ -72,8 +77,8 @@ abstract public class PollerBase {
 	
     public void add_timer (int timeout_, IPollEvents sink_, int id_)
     {
-        long expiration = System.currentTimeMillis() + timeout_;
-        Timer info = new Timer(sink_, id_);
+        long expiration = clock.now_ms () + timeout_;
+        TimerInfo info = new TimerInfo(sink_, id_);
         timers.put(expiration, info);
     }
 

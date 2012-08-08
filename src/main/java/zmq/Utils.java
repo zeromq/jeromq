@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.lang.reflect.Array;
 import java.net.Socket;
 import java.net.SocketException;
+import java.nio.ByteBuffer;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SocketChannel;
 import java.security.SecureRandom;
@@ -90,12 +91,47 @@ public class Utils {
     public static void memcpy(byte[] dest, byte[] src, int size) {
         memcpy(dest, 0, src, 0, size);
     }
+    
+    public static void memcpy(byte[] dest, String src) {
+        memcpy(dest, 0, src!=null?src.getBytes():null, 0, src!=null?src.length():0);
+    }
 
     public static void memcpy(byte[] dest, int to, byte[] src, int from, int size) {
         if (src == null || dest == null)
             return;
         
         System.arraycopy(src, from, dest, to, size);
+    }
+
+    public static void memcpy(ByteBuffer dest, byte[] src, int size) {
+        memcpy(dest, 0, src, 0, size);
+    }
+    
+    public static void memcpy(ByteBuffer dest, String src) {
+        memcpy(dest, 0, src!=null?src.getBytes():null, 0, src!=null?src.length():0);
+    }
+
+    public static void memcpy(ByteBuffer dest, int to, byte[] src, int from, int size) {
+        if (src == null || dest == null)
+            return;
+        
+        dest.position(to);
+        dest.put(src, from, size);
+    }
+
+    public static void memcpy(ByteBuffer dest, ByteBuffer src) {
+        if (dest.remaining() >= src.remaining()) {
+            dest.put(src);
+        } else {
+            while (dest.hasRemaining())
+                dest.put(src.get()); 
+        }
+    }
+
+    public static byte[] bytes(ByteBuffer buf) {
+        byte[] d = new byte[buf.limit()];
+        buf.get(d);
+        return d;
     }
 
 }

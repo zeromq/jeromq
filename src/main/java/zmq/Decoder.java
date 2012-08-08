@@ -40,9 +40,6 @@ public class Decoder {
         buf = ByteBuffer.allocate(bufsize_);
         tmpbuf = ByteBuffer.allocate(8);
         
-        in_progress = new Msg();
-
-        in_progress.init ();
     
         //  At the beginning, read one byte and go to one_byte_size_ready state.
         next_step (tmpbuf, 0, 1, Step.one_byte_size_ready);

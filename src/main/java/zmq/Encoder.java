@@ -36,9 +36,6 @@ public class Encoder {
         buf = ByteBuffer.allocate(bufsize_);
         tmpbuf = ByteBuffer.allocate(10);
         
-        int rc = in_progress.init ();
-        Errno.errno_assert (rc == 0);
-
         //  Write 0 bytes to the batch and go to message_ready state.
         next_step (null, 0, 0, Step.message_ready, true);
     }

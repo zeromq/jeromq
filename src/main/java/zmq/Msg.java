@@ -1,5 +1,6 @@
 package zmq;
 
+import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class Msg {
@@ -13,10 +14,10 @@ public class Msg {
     public final static byte shared = -128;
     
     private final static byte type_min = 101;
-    private final static byte type_vsm = 101;
-    private final static byte type_lmsg = 102;
-    private final static byte type_delimiter = 103;
-    private final static byte type_max = 103;
+    private final static byte type_vsm = 102;
+    private final static byte type_lmsg = 103;
+    private final static byte type_delimiter = 104;
+    private final static byte type_max = 105;
     
     //  Shared message buffer. Message data are either allocated in one
     //  continuous block along with this structure - thus avoiding one
@@ -27,7 +28,7 @@ public class Msg {
     //  references.
     class Content
     {
-        byte[] data;
+        ByteBuffer data;
         final int size;
         IMsgFree ffn;
         byte[] hint;
@@ -35,7 +36,7 @@ public class Msg {
         
         public Content(int size_) {
             size = size_;
-            data = new byte[size_];
+            data = ByteBuffer.allocate(size_);
             refcnt = new AtomicLong();
             hint = null;
             ffn = null;
@@ -81,13 +82,22 @@ public class Msg {
     private byte type;
     private byte flags;
     private byte size;
-    private byte[] data;
+    private ByteBuffer data;
     private Content content;
     
-    Msg() {
-        data = new byte[max_vsm_size];
-        content = null;
-        size = -1;
+    public Msg() {
+        data = ByteBuffer.allocate(max_vsm_size);
+        init();
+    }
+    
+    public Msg(int size) {
+        this();
+        init_size(size);
+    }
+    
+    public Msg(Msg m) {
+        data = ByteBuffer.allocate(max_vsm_size);
+        clone(m);
     }
     
     boolean is_delimiter ()
@@ -96,18 +106,19 @@ public class Msg {
     }
 
 
-    boolean check ()
+    public boolean check ()
     {
          return type >= type_min && type <= type_max;
     }
 
     
-    void init_size (int size_)
+    private void init_size (int size_)
     {
         if (size_ <= max_vsm_size) {
             type = type_vsm;
             flags = 0;
             size = (byte) size_;
+            data.limit(size);
         }
         else {
             type = type_lmsg;
@@ -122,23 +133,28 @@ public class Msg {
         }
     }
 
-    byte flags ()
+    public byte flags ()
     {
         return flags;
     }
     
-    byte type ()
+    public boolean has_more ()
+    {
+        return (flags & Msg.more) > 0;
+    }
+    
+    public byte type ()
     {
         return type;
     }
     
-    void set_flags (byte flags_)
+    public void set_flags (byte flags_)
     {
         flags |= flags_;
     }
 
     
-    int size ()
+    public int size ()
     {
         //  Check the validity of the message.
         assert (check ());
@@ -155,30 +171,40 @@ public class Msg {
     }
     
     
-    public int init_delimiter() {
+    public void init_delimiter() {
         type = type_delimiter;
         flags = 0;
-        return 0;
     }
 
     
-    byte[] data ()
+    public ByteBuffer data ()
     {
+        return data(true);
+    }
+    
+    public ByteBuffer data(boolean rewind) {
         //  Check the validity of the message.
         assert (check ());
 
+        ByteBuffer b = null;
         switch (type) {
         case type_vsm:
-            return data;
+            b = data;
+            break;
         case type_lmsg:
-            return content.data;
+            b = content.data;
+            break;
         default:
             assert (false);
-            return null;
         }
+
+        if (rewind) {
+            b.rewind();
+        }
+        return b;
     }
 
-    void close ()
+    public void close ()
     {
         //  Check the validity of the message.
         if (!check ()) {
@@ -205,31 +231,60 @@ public class Msg {
 
         //  Make the message invalid.
         type = 0;
-
     }
 
-    public int init() {
+    private void init() {
         type = type_vsm;
         flags = 0;
         size = 0;
-        return 0;
+        data.clear();
     }
+    
 
     @Override
     public String toString() {
         return super.toString() + "[" + type + "]";
     }
 
-    public void clone(Msg m) {
+    private void clone(Msg m) {
         type = m.type;
         flags = m.flags;
         size = m.size;
-        data = m.data;
+        m.data.flip();
+        data.put(m.data);
         content = m.content;
     }
 
     public void reset_flags(byte f) {
         flags = (byte) (flags & (~f));
     }
+
+    /*
+    public void move (Msg src_)
+    {
+        //  Check the validity of the source.
+        if (!src_.check ()) {
+            throw new IllegalStateException();
+        }
+
+        close ();
+
+        clone(src_);
+
+        src_.init ();
+    }
+    */
+
+    public void put(byte[] src) {
+        if (src != null)
+            data.put(src);
+    }
+
+    public void put(byte[] src, int start, int len_) {
+        if (len_ > 0)
+            data.put(src, start, len_);
+    }
+
+
 
 }

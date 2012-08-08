@@ -13,7 +13,7 @@ public class Options {
 
     //  Socket identity
     byte identity_size;
-    final byte[] identity; // [256];
+    byte[] identity; // [256];
 
     // Last socket endpoint resolved URI
     String last_endpoint;
@@ -120,7 +120,7 @@ public class Options {
         tcp_keepalive_intvl = -1;
         socket_id = 0;
         
-    	identity = new byte[256];
+    	identity = null;
     	tcp_accept_filters = new ArrayList<TcpAddress.TcpAddressMask>();
     }
 
@@ -133,8 +133,38 @@ public class Options {
         case ZMQ.ZMQ_RCVHWM:
             rcvhwm = optval_;
             return;
+        case ZMQ.ZMQ_LINGER:
+            linger = optval_;
+            return;
         default:
             throw new IllegalArgumentException("option=" + option_);
         }
     }
+    
+    public void setsockopt(int option_, long optval_) {
+        switch (option_) {
+
+        case ZMQ.ZMQ_AFFINITY:
+            affinity = optval_;
+            return;
+        default:
+            throw new IllegalArgumentException("option=" + option_);
+        }
+    }
+    
+    public void setsockopt(int option_, String optval_) {
+        switch (option_) {
+
+        case ZMQ.ZMQ_IDENTITY:
+            if (optval_ == null || optval_.length() > 255) {
+                throw new IllegalArgumentException("option=" + option_);
+            }
+            identity = optval_.getBytes();
+            identity_size = (byte)identity.length;
+            return;
+        default:
+            throw new IllegalArgumentException("option=" + option_);
+        }
+    }
+
 }

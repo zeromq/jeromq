@@ -87,11 +87,10 @@ public class LB {
         //  switch back to non-dropping mode.
         if (dropping) {
 
-            more = (msg_.flags () & Msg.more) > 0 ? true : false;
+            more = msg_.has_more();
             dropping = more;
 
             msg_.close ();
-            msg_.init ();
             return true;
         }
 
@@ -121,7 +120,7 @@ public class LB {
         }
 
         //  Detach the message from the data buffer.
-        msg_.init ();
+        //msg_.init ();
 
         return true;
     }

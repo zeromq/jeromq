@@ -80,22 +80,23 @@ public class FQ {
         active++;
     }
 
-    public int recv (Msg msg_)
+    public Msg recv ()
     {
-        return recvpipe (msg_, null);
+        return recvpipe (null);
     }
 
-    private int recvpipe(Msg msg_, Pipe[] pipe_) {
+    public Msg recvpipe(Pipe[] pipe_) {
         //  Deallocate old content of the message.
-        msg_.close ();
+        Msg msg_;
 
         //  Round-robin over the pipes to get the next message.
         while (active > 0) {
 
             //  Try to fetch new message. If we've already read part of the message
             //  subsequent part should be immediately available.
-            boolean fetched = pipes.get(current).read (msg_);
+            msg_ = pipes.get(current).read ();
 
+            boolean fetched = msg_ != null;
             //  Check the atomicity of the message. If we've already received the
             //  first part of the message we should get the remaining parts
             //  without blocking.
@@ -105,12 +106,12 @@ public class FQ {
             //  and replaced by another active pipe. Thus we don't have to increase
             //  the 'current' pointer.
             if (fetched) {
-                if (pipe_!=null)
+                if (pipe_ != null)
                     pipe_[0] = pipes.get(current);
-                more = (msg_.flags () & Msg.more) > 0 ? true: false;
+                more = msg_.has_more();
                 if (!more)
                     current = (current + 1) % active;
-                return 0;
+                return msg_;
             }
             active--;
             Utils.swap (pipes, current, active);
@@ -120,8 +121,7 @@ public class FQ {
 
         //  No message is available. Initialise the output parameter
         //  to be a 0-byte message.
-        msg_.init ();
-        return -1;
+        return null;
     }
 
     public boolean has_in ()

@@ -58,16 +58,18 @@ public class XPub extends SocketBase {
 	protected void xread_activated (Pipe pipe_)
 	{
 	    //  There are some subscriptions waiting. Let's process them.
-	    Msg sub = new Msg();
+	    Msg sub = null;
 	    while (true) {
 
+	        sub = pipe_.read();
 	        //  Grab next subscription.
-	        if (!pipe_.read (sub))
+	        if (sub == null)
 	            return;
 
 	        //  Apply the subscription to the trie.
 	        //unsigned char *data = (unsigned char*) sub.data ();
-	        byte[] data = sub.data();
+	        byte[] data = new byte[sub.size()];
+	        sub.data(true).get(data);
 	        int size = sub.size ();
 	        if (size > 0 && (data[0] == 0 || data[0] == 1)) {
 	            boolean unique;
@@ -76,13 +78,13 @@ public class XPub extends SocketBase {
 	            else
 	                unique = subscriptions.add (data , 1, pipe_);
 
-	            //  If the subscription is not a duplicate store it so that it can be
+	            //  If the subscription is not a duplicate, store it so that it can be
 	            //  passed to used on next recv call.
 	            if (unique && options.type != ZMQ.ZMQ_PUB)
-	                pending.add(new Blob (sub.data ()));
+	                pending.add(new Blob (sub.data (true)));
 	        }
 
-	        sub.close();
+	        //sub.close();
 	    }
 
 	}
@@ -105,10 +107,8 @@ public class XPub extends SocketBase {
                     //  Place the unsubscription to the queue of pending (un)sunscriptions
                     //  to be retrived by the user later on.
                     Blob unsub = new Blob (data_.length + 1);
-                    unsub.put((byte)0);
-                    unsub.put(data_);
-                    //unsub [0] = 0;
-                    //memcpy (&unsub [1], data_, size_);
+                    unsub.put(0,(byte)0);
+                    unsub.put(1, data_);
                     self.pending.add (unsub);
                 }
 
@@ -119,11 +119,6 @@ public class XPub extends SocketBase {
 	    dist.terminated (pipe_);
 	}
 
-
-    @Override
-    protected int xrecv(Msg msg_, int flags_) {
-        throw new UnsupportedOperationException();
-    }
 
     @Override
     protected boolean xhas_in() {

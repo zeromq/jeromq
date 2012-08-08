@@ -43,10 +43,12 @@ public class TestHwm {
         }
 
         
+        Msg m;
         // There should be now 4 messages pending, consume them.
         for (int i = 0; i != 4; i++) {
-            rc = ZMQ.zmq_recv (sb, null, 0, 0);
-            assertThat (rc, is(0));
+            m = ZMQ.zmq_recv (sb, 0);
+            assertThat (m, notNullValue());
+            assertThat (m.size(), is(0));
         }
 
         
@@ -55,8 +57,10 @@ public class TestHwm {
         assertThat (rc, is(0));
 
         //  Consume the remaining message.
-        rc = ZMQ.zmq_recv (sb, null, 0, 0);
-        assertThat (rc, is(0));
+        m = ZMQ.zmq_recv (sb, 0);
+        assertThat (rc, notNullValue());
+        assertThat (m.size(), is(0));
+        
         rc = ZMQ.zmq_close (sc);
         assertThat (rc, is(0));
 
