@@ -269,6 +269,11 @@ public class ZMQ {
         return s_.recv (flags_);
     }
 
+    public static int zmq_getsockopt(SocketBase s_, int opt) {
+        
+        return s_.getsockopt(opt);
+    }
+
 
 
 

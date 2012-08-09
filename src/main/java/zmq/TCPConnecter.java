@@ -57,6 +57,7 @@ public class TcpConnecter extends Own implements IPollEvents {
     
     protected void process_plug ()
     {
+        io_object.set_handler(this);
         if (wait)
             add_reconnect_timer();
         else {
@@ -74,8 +75,7 @@ public class TcpConnecter extends Own implements IPollEvents {
     private void start_connecting ()
     {
         //  Open the connecting socket.
-        io_object.set_handler(this);
-        
+       
         try {
             boolean rc = open ();
     

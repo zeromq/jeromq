@@ -142,7 +142,7 @@ public class StreamEngine implements IEngine, IPollEvents {
         decoder.set_session (session_);
         session = session_;
 
-        io_object = new IOObject(io_thread_);
+        io_object = new IOObject(null);
         io_object.set_handler(this);
         //  Connect to I/O threads poller object.
         io_object.plug (io_thread_);
@@ -151,6 +151,7 @@ public class StreamEngine implements IEngine, IPollEvents {
         io_object.set_pollout (handle);
         //  Flush all the data that may have been already received downstream.
         in_event ();
+        
     }
 
     @Override
@@ -175,6 +176,7 @@ public class StreamEngine implements IEngine, IPollEvents {
         }
 
         //  Push the data to the decoder.
+        inpos_buf.flip();
         int processed = decoder.process_buffer (inpos_buf);
 
         if (processed == -1) {
@@ -188,7 +190,6 @@ public class StreamEngine implements IEngine, IPollEvents {
 
             //  Adjust the buffer.
             //inpos += processed;
-            inpos_buf.clear();
             insize -= processed;
         }
 

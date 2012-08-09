@@ -27,8 +27,12 @@ import java.nio.channels.SelectableChannel;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class TcpListener extends Own implements IPollEvents {
 
+    Logger LOG = LoggerFactory.getLogger(TcpListener.class);
     //  Address to listen on.
     final private TcpAddress address;
 
@@ -87,7 +91,8 @@ public class TcpListener extends Own implements IPollEvents {
             return;
         }
 
-
+        LOG.info("Accept " + fd.socket().getRemoteSocketAddress());
+        
         //  Create the engine object for this connection.
         StreamEngine engine = new StreamEngine (fd, options, endpoint);
         //  Choose I/O thread to run connecter in. Given that we are already

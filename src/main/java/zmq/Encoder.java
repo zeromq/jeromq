@@ -76,7 +76,9 @@ public class Encoder {
         //unsigned char *buffer = !*data_ ? buf : *data_;
         //size_t buffersize = !*data_ ? bufsize : *size_;
 
-        ByteBuffer buffer = (data_ == null)? buf : data_;
+        assert data_ == null;
+        ByteBuffer buffer = buf;
+        buffer.clear();
         int buffersize = buffer.remaining();
         if (offset_ != null)
             offset_[0] = -1;
@@ -112,18 +114,21 @@ public class Encoder {
                 ByteBuffer t = write_buf;
                 write_buf = null;
                 to_write = 0;
+                t.flip();
                 return t ;
             }
 
             //  Copy data to the buffer. If the buffer is full, return.
             int to_copy = Math.min (to_write, buffer.remaining());
-            pos = write_buf.position();
-            write_buf.get(buffer.array(), buffer.arrayOffset() + pos, to_copy);
-            buffer.position(pos + to_copy);
-            write_pos += to_copy;
-            to_write -= to_copy;
+            if (to_copy > 0) {
+                pos = buffer.position();
+                write_buf.get(buffer.array(), buffer.arrayOffset() + pos, to_copy);
+                buffer.position(pos + to_copy);
+                to_write -= to_copy;
+            }
         }
 
+        buffer.flip();
         return buffer;
 
     }
@@ -163,6 +168,7 @@ public class Encoder {
         //  For messages less than 255 bytes long, write one byte of message size.
         //  For longer messages write 0xff escape character followed by 8-byte
         //  message size. In both cases 'flags' field follows.
+        tmpbuf.clear();
         if (size < 255) {
             tmpbuf.put((byte)size);
             tmpbuf.put((byte) (in_progress.flags () & Msg.more));
@@ -174,6 +180,7 @@ public class Encoder {
             tmpbuf.put((byte) (in_progress.flags () & Msg.more));
             next_step (tmpbuf, 10, Step.size_ready, false);
         }
+        tmpbuf.flip();
         
         return true;
     }

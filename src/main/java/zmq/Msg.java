@@ -114,10 +114,11 @@ public class Msg implements IReplaceable {
     
     private void init_size (int size_)
     {
+        size = size_;
         if (size_ <= max_vsm_size) {
             type = type_vsm;
             flags = 0;
-            size = size_;
+            
             data.limit(size_);
         }
         else {
@@ -209,7 +210,7 @@ public class Msg implements IReplaceable {
 
     @Override
     public String toString () {
-        return super.toString() + "[" + type + "]";
+        return super.toString() + "[" + type + "," + size + "," + flags + "]";
     }
 
     private void clone (Msg m) {

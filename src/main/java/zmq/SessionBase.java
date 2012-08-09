@@ -1,7 +1,12 @@
 package zmq;
 
-public class SessionBase extends Own implements Pipe.IPipeEvents {
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+public class SessionBase extends Own implements Pipe.IPipeEvents, IPollEvents {
+
+    Logger LOG = LoggerFactory.getLogger(SessionBase.class);
+    
     //  If true, this session (re)connects to the peer. Otherwise, it's
     //  a transient session created by the listener.
     boolean connect;
@@ -133,6 +138,7 @@ public class SessionBase extends Own implements Pipe.IPipeEvents {
     
     protected void process_plug ()
     {
+        io_object.set_handler(this);
         if (connect)
             start_connecting (false);
     }
@@ -324,17 +330,28 @@ public class SessionBase extends Own implements Pipe.IPipeEvents {
         //  First message to send is identity (if required).
         if (send_identity) {
             msg_ = new Msg(options.identity_size);
-            Utils.memcpy (msg_.data (), options.identity, options.identity_size);
+            msg_.put(options.identity, 0, options.identity_size);
             send_identity = false;
             incomplete_in = false;
+            
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("read " + msg_);
+            }
             return msg_;
         }
 
         if (pipe == null || (msg_ = pipe.read ()) == null ) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("read none Msg");
+            }
             return null;
         }
         incomplete_in = msg_.has_more();
 
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("read " + msg_);
+        }
+        
         return msg_;
 
     }
@@ -346,7 +363,11 @@ public class SessionBase extends Own implements Pipe.IPipeEvents {
             msg_.set_flags (Msg.identity);
             recv_identity = false;
         }
-
+        
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("write " + msg_);
+        }
+        
         if (pipe != null && pipe.write (msg_)) {
             return true;
         }
@@ -381,6 +402,35 @@ public class SessionBase extends Own implements Pipe.IPipeEvents {
         assert (engine == null);
         engine = engine_;
         engine.plug (io_thread, this);
+    }
+
+    @Override
+    public void in_event() {
+        throw new UnsupportedOperationException();
+        
+    }
+
+    @Override
+    public void out_event() {
+        throw new UnsupportedOperationException();
+        
+    }
+
+    @Override
+    public void connect_event() {
+        throw new UnsupportedOperationException();
+        
+    }
+
+    @Override
+    public void accept_event() {
+        throw new UnsupportedOperationException();
+        
+    }
+
+    @Override
+    public void timer_event(int id_) {
+        throw new UnsupportedOperationException();
     }
 
 

@@ -185,7 +185,7 @@ public class Pipe extends ZObject {
         if (!check_write ())
             return false;
 
-        boolean more = (msg_.flags () & Msg.more) > 0 ? true : false;
+        boolean more = msg_.has_more();
         outpipe.write (msg_, more);
         if (!more)
             msgs_written++;
@@ -303,7 +303,7 @@ public class Pipe extends ZObject {
 	    if (outpipe!= null) {
 	        while ((msg = outpipe.unwrite ()) != null) {
 	            assert ((msg.flags () & Msg.more) > 0);
-	            msg.close ();
+	            //msg.close ();
 	        }
 	    }
 	}

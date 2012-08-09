@@ -12,8 +12,13 @@ import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public abstract class SocketBase extends Own 
     implements IPollEvents, Pipe.IPipeEvents {
+    
+    Logger LOG = LoggerFactory.getLogger(SocketBase.class);
     
     //typedef std::multimap <std::string, own_t *> endpoints_t;
     final Map<String, Own> endpoints;
@@ -79,8 +84,12 @@ public abstract class SocketBase extends Own
         mailbox = new Mailbox(name);
     }
     
-    abstract protected void xattach_pipe (Pipe pipe_, boolean icanhasall_);
-    abstract protected void xterminated(Pipe pipe_);
+    protected void xattach_pipe (Pipe pipe_, boolean icanhasall_) {
+        throw new UnsupportedOperationException("Must Override");
+    }
+    protected void xterminated(Pipe pipe_) {
+        throw new UnsupportedOperationException("Must Override");
+    }
     protected void xwrite_activated(Pipe pipe_) {
         throw new UnsupportedOperationException("Must Override");
     }
@@ -208,7 +217,7 @@ public abstract class SocketBase extends Own
         }
         return true;
     }
-    boolean connect (String addr_)
+    public boolean connect (String addr_)
     {
         if (ctx_terminated) {
             throw new IllegalStateException();
@@ -733,6 +742,7 @@ public abstract class SocketBase extends Own
             } catch (IOException e) {
                 listener.close();
                 monitor_event (ZMQ.ZMQ_EVENT_BIND_FAILED, addr_, e);
+                LOG.error("Bind Failed", e);
                 return false;
             }
 

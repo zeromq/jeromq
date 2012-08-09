@@ -101,6 +101,10 @@ public class ZMQ {
             return hasMore;
         }
 
+        public boolean connect(String addr_) {
+            return base.connect(addr_);
+        }
+
     }
 
 

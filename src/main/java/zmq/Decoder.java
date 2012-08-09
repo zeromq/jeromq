@@ -38,7 +38,6 @@ public class Decoder implements IDecoder {
     
     //  Where to store the read data.
     private ByteBuffer read_buf;
-    private int read_pos;
 
     //  How much data to read before taking next step.
     private int to_read;
@@ -64,7 +63,6 @@ public class Decoder implements IDecoder {
     public Decoder (int bufsize_, long maxmsgsize_)
     {
         next = null;
-        read_pos = 0; 
         to_read = 0;
         bufsize = bufsize_;
         session = null;
@@ -89,11 +87,15 @@ public class Decoder implements IDecoder {
         //  other engines running in the same I/O thread for excessive
         //  amounts of time.
         
+        ByteBuffer b;
         if (to_read >= bufsize) {
-            return read_buf;
+            
+            b = read_buf;
+        } else {
+            b = buf;
         }
-        return buf;
-
+        b.clear();
+        return b;
     }
     
 
@@ -102,15 +104,12 @@ public class Decoder implements IDecoder {
         if (next == null)
             return -1;
 
-        buf_.flip();
-
         //  In case of zero-copy simply adjust the pointers, no copying
         //  is required. Also, run the state machine in case all the data
         //  were processed.
         if (buf_ == read_buf) {
             int size_ = buf_.remaining();
             to_read -= size_;
-            buf.clear();
 
             while (to_read == 0) {
                 if (!call_next()) {
