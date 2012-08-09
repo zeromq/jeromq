@@ -52,7 +52,7 @@ public class TcpConnecter extends Own implements IPollEvents {
         
         assert (addr != null);
         assert (addr.protocol().equals("tcp"));
-        addr.toString (endpoint);
+        endpoint = addr.toString ();
     }
     
     protected void process_plug ()

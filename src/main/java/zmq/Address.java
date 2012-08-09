@@ -25,7 +25,8 @@ public class Address {
 
     public static interface IZAddress {
 
-        void resolve(String name_, boolean local_, boolean ip4only_);
+        String toString();
+        void resolve(String name_, boolean ip4only_);
         SocketAddress address();
     };
     
@@ -39,7 +40,8 @@ public class Address {
         this.address = address;
     }
     
-    public String toString(String addr_) {
+    @Override
+    public String toString() {
         if (protocol.equals("tcp")) {
             if (resolved != null) {
                 return resolved.toString();

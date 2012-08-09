@@ -62,8 +62,7 @@ public class ZObject {
     protected void send_activate_write (Pipe destination_,
             long msgs_read_)
     {
-        Command cmd = new Command(destination_, Command.Type.activate_write);
-        cmd.msgs_read = msgs_read_;
+        Command cmd = new Command(destination_, Command.Type.activate_write, msgs_read_);
         send_command (cmd);
     }
 
@@ -88,8 +87,7 @@ public class ZObject {
         if (inc_seqnum_)
             destination_.inc_seqnum ();
 
-        Command cmd = new Command(destination_, Command.Type.bind);
-        cmd.pipe = pipe_;
+        Command cmd = new Command(destination_, Command.Type.bind, pipe_);
         send_command (cmd);
     }
     
@@ -114,15 +112,13 @@ public class ZObject {
     protected void send_own (Own destination_, Own object_)
     {
         destination_.inc_seqnum ();
-        Command cmd = new Command(destination_, Command.Type.own);
-        cmd.object = object_;
+        Command cmd = new Command(destination_, Command.Type.own, object_);
         send_command (cmd);
     }
     
     protected void send_reap (SocketBase socket_)
     {
-        Command cmd = new Command(ctx.get_reaper (), Command.Type.reap);
-        cmd.socket = socket_;
+        Command cmd = new Command(ctx.get_reaper (), Command.Type.reap, socket_);
         send_command (cmd);
     }
     
@@ -143,8 +139,7 @@ public class ZObject {
 
     protected void send_term (Own destination_, int linger_)
     {
-        Command cmd = new Command(destination_, Command.Type.term);
-        cmd.linger = linger_;
+        Command cmd = new Command(destination_, Command.Type.term, linger_);
         send_command (cmd);
     }
 
@@ -157,8 +152,7 @@ public class ZObject {
     protected void send_term_req (Own destination_,
             Own object_)
     {
-        Command cmd = new Command(destination_, Command.Type.term_req);
-        cmd.object = object_;
+        Command cmd = new Command(destination_, Command.Type.term_req, object_);
         send_command (cmd);
     }
     
@@ -172,8 +166,7 @@ public class ZObject {
         if (inc_seqnum_)
             destination_.inc_seqnum ();
 
-        Command cmd = new Command(destination_, Command.Type.attach);
-        cmd.engine = engine_;
+        Command cmd = new Command(destination_, Command.Type.attach, engine_);
         send_command (cmd);
     }
 
@@ -185,8 +178,7 @@ public class ZObject {
 
     protected void send_hiccup (Pipe destination_, Object pipe_)
     {
-        Command cmd = new Command(destination_, Command.Type.hiccup);
-        cmd.hiccup_pipe = pipe_;
+        Command cmd = new Command(destination_, Command.Type.hiccup, pipe_);
         send_command (cmd);
     }
 
@@ -200,7 +192,7 @@ public class ZObject {
             break;
 
         case activate_write:
-            process_activate_write (cmd_.msgs_read);
+            process_activate_write ((Long)cmd_.arg);
             break;
 
         case stop:
@@ -213,22 +205,22 @@ public class ZObject {
             break;
 
         case own:
-            process_own (cmd_.object);
+            process_own ((Own)cmd_.arg);
             process_seqnum ();
             break;
 
         case attach:
-            process_attach (cmd_.engine);
+            process_attach ((IEngine)cmd_.arg);
             process_seqnum ();
             break;
 
         case bind:
-            process_bind (cmd_.pipe);
+            process_bind ((Pipe)cmd_.arg);
             process_seqnum ();
             break;
 
         case hiccup:
-            process_hiccup (cmd_.hiccup_pipe);
+            process_hiccup (cmd_.arg);
             break;
     
         case pipe_term:
@@ -240,11 +232,11 @@ public class ZObject {
             break;
     
         case term_req:
-            process_term_req (cmd_.object);
+            process_term_req ((Own)cmd_.arg);
             break;
     
         case term:
-            process_term (cmd_.linger);
+            process_term ((Integer)cmd_.arg);
             break;
     
         case term_ack:
@@ -252,7 +244,7 @@ public class ZObject {
             break;
     
         case reap:
-            process_reap (cmd_.socket);
+            process_reap ((SocketBase)cmd_.arg);
             break;
             
         case reaped:

@@ -26,6 +26,7 @@ public class Msg implements IReplaceable {
     //  used to deallocate the data. If the buffer is actually shared (there
     //  are at least 2 references to it) refcount member contains number of
     //  references.
+    /*
     class Content
     {
         ByteBuffer data;
@@ -47,7 +48,7 @@ public class Msg implements IReplaceable {
     interface IMsgFree {
         void free(Content c);
     }
-    
+    */
     //  Note that fields shared between different message types are not
     //  moved to tha parent class (msg_t). This way we ger tighter packing
     //  of the data. Shared fields can be accessed via 'base' member of
@@ -83,7 +84,7 @@ public class Msg implements IReplaceable {
     private byte flags;
     private byte size;
     private ByteBuffer data;
-    private Content content;
+    private ByteBuffer content;
     
     public Msg() {
         data = ByteBuffer.allocate(max_vsm_size);
@@ -123,7 +124,7 @@ public class Msg implements IReplaceable {
         else {
             type = type_lmsg;
             flags = 0;
-            content = new Content(size_); 
+            content = ByteBuffer.allocate(size_); 
 
             //content.data = null ; //XXX lmsg().content + 1;
             //content.size = size_;
@@ -159,15 +160,7 @@ public class Msg implements IReplaceable {
         //  Check the validity of the message.
         assert (check ());
 
-        switch (type) {
-        case type_vsm:
-            return size;
-        case type_lmsg:
-            return content.size;
-        default:
-            assert (false);
-            return 0;
-        }
+        return size;
     }
     
     
@@ -201,24 +194,7 @@ public class Msg implements IReplaceable {
             throw new IllegalStateException();
         }
 
-        if (type == type_lmsg) {
-
-            //  If the content is not shared, or if it is shared and the reference
-            //  count has dropped to zero, deallocate it.
-            if ((flags & shared) == 0 ||
-                  content.refcnt.decrementAndGet() == 0) {
-
-                //  We used "placement new" operator to initialize the reference
-                //  counter so we call the destructor explicitly now.
-                //content.refcnt = null; //.~atomic_counter_t ();
-
-                if (content.ffn != null)
-                    content.ffn.free (content);
-                content.data = null;
-                content = null;  
-            }
-        }
-
+        content = null;
         //  Make the message invalid.
         type = 0;
     }
@@ -239,14 +215,16 @@ public class Msg implements IReplaceable {
     private void clone (Msg m) {
         type = m.type;
         flags = m.flags;
+        size = m.size;
+        data.clear();
         if (type == type_vsm) {
-            size = m.size;
             m.data.rewind();
-            data.clear();
-            data.limit(size);
             data.put(m.data);
+            data.flip();
+            content = null;
+        } else {
+            content = m.content;
         }
-        content = m.content;
     }
 
     public void reset_flags (byte f) {
@@ -277,7 +255,7 @@ public class Msg implements IReplaceable {
             b = data;
             break;
         case type_lmsg:
-            b = content.data;
+            b = content;
             break;
         default:
             assert (false);

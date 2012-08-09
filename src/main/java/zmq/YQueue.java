@@ -19,6 +19,13 @@ public class YQueue<T extends IReplaceable> {
              values = (T[])(Array.newInstance(klass, size));
              assert values != null;
              prev = next = null;
+             for (int i=0; i != values.length; i++) {
+                 try {
+                    values[i] = klass.newInstance();
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+             }
          }
     };
 
@@ -34,7 +41,6 @@ public class YQueue<T extends IReplaceable> {
     private int end_pos;
     private final Class<T> klass;
     private final int size;
-    private byte allocated;
     private int qid;
     private int front_hash;
     private int back_hash;
@@ -63,7 +69,6 @@ public class YQueue<T extends IReplaceable> {
         end_pos = 0;
 
         back_hash = front_hash = begin_chunk.hashCode();
-        allocated = 0;
     }
     
     /*
@@ -100,10 +105,7 @@ public class YQueue<T extends IReplaceable> {
     }
 
     public T back(T val) {
-        if (allocated == 2)
-            back_chunk.values [back_pos].replace(val);
-        else
-            back_chunk.values [back_pos] = val;
+        back_chunk.values [back_pos].replace(val);
         return val;
     }
 
@@ -131,8 +133,6 @@ public class YQueue<T extends IReplaceable> {
         if (back_chunk != end_chunk) {
             back_chunk = end_chunk;
             back_hash = back_chunk.hashCode();
-            if (allocated == 1)
-                allocated = 2;
         }
         back_pos = end_pos;
 
@@ -144,11 +144,9 @@ public class YQueue<T extends IReplaceable> {
         if (sc != null) {
             end_chunk.next = sc;
             sc.prev = end_chunk;
-            allocated = 1;
         } else {
             end_chunk.next =  new Chunk(klass, size);
             end_chunk.next.prev = end_chunk;
-            allocated = 0;
         }
         end_chunk = end_chunk.next;
         end_pos = 0;

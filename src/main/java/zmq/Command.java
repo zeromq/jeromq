@@ -75,17 +75,19 @@ public class Command implements IReplaceable {
         done        
     }
     
-    long msgs_read;
-    Pipe pipe;
-    Own object;
-    IEngine engine;
-    Object hiccup_pipe;
-    int linger;
-    SocketBase socket;
+    Object arg;
 
+    public Command () {
+    }
+    
     public Command (ZObject destination, Type type) {
+        this(destination, type, null);
+    }
+    
+    public Command (ZObject destination, Type type, Object arg) {
         this.destination = destination;
         this.type = type;
+        this.arg = arg;
     }
     
     public ZObject destination() {
@@ -106,6 +108,7 @@ public class Command implements IReplaceable {
         Command src = (Command) src_;
         destination = src.destination;
         type = src.type;
+        arg = src.arg;
     }
 
 }

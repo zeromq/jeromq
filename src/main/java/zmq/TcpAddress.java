@@ -17,7 +17,7 @@ public class TcpAddress implements Address.IZAddress {
     protected InetSocketAddress address;
     
     public TcpAddress(String addr_) {
-        resolve(addr_, false, false);
+        resolve(addr_, false);
     }
     public TcpAddress() {
     }
@@ -38,7 +38,7 @@ public class TcpAddress implements Address.IZAddress {
     
 
     @Override
-    public void resolve(String name_, boolean local_, boolean ipv4only_) {
+    public void resolve(String name_, boolean ipv4only_) {
         //  Find the ':' at end that separates address from the port number.
         int delimiter = name_.lastIndexOf(':');
         if (delimiter < 0) {
@@ -96,7 +96,7 @@ public class TcpAddress implements Address.IZAddress {
                     break;
                 }
             } catch (UnknownHostException e) {
-                throw new IllegalArgumentException(name_);
+                throw new IllegalArgumentException(e);
             }
         //}
         

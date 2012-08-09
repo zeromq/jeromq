@@ -9,11 +9,11 @@ public class TestYQueue {
     @Test
     public void testReuse() {
         // yqueue has a first empty entry
-        YPipe<Msg> p = new YPipe<Msg>(Msg.class, 3, 0);
-        YPipe<Msg> q = new YPipe<Msg>(Msg.class, 3, 0);
+        YQueue<Msg> p = new YQueue<Msg>(Msg.class, 3, 0);
+        YQueue<Msg> q = new YQueue<Msg>(Msg.class, 3, 0);
         
-        p.read();
-        q.read();
+        p.push();
+        q.push();
         
         Msg m1 = new Msg(1);
         Msg m2 = new Msg(2);
@@ -24,21 +24,23 @@ public class TestYQueue {
         Msg m7 = new Msg(7);
         m7.put("1234567".getBytes());
 
-        assertThat(m1.size(), is(1));
-        p.write(m1, false); 
-        p.write(m2, false); // might allocated new chunk
-        p.write(m3, false);
-        p.flush();
-        p.read();
-        p.read();
-        p.read(); // offer the old chunk
+        p.back(m1); 
+        Msg front = p.front();
+        assertThat(front.size(), is(1));
 
-        q.write(m4, false);
-        q.write(m5, false); // might reuse the old chunk
-        q.write(m6, false); 
-        q.write(m7, false); 
+        p.push(); 
+        p.back(m2); p.push(); // might allocated new chunk
+        p.back(m3); p.push();
+        p.pop();
+        p.pop();
+        p.pop(); // offer the old chunk
+
+        q.back(m4); q.push();
+        q.back(m5); q.push();// might reuse the old chunk
+        q.back(m6); q.push();
+        q.back(m7); q.push();
         
-        assertThat(m1.size(), is(7));
-        assertThat(m1.data().limit(), is(7));
+        assertThat(front.size(), is(7));
+        assertThat(front.data().remaining(), is(7));
     }
 }

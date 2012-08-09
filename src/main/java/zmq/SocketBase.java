@@ -310,11 +310,11 @@ public abstract class SocketBase extends Own
         if (protocol.equals("tcp")) {
             paddr.resolved( new  TcpAddress () );
             paddr.resolved().resolve (
-                address, false, options.ipv4only != 0 ? true : false);
+                address, options.ipv4only != 0 ? true : false);
         } else if(protocol.equals("ipc")) {
             paddr.resolved( new IpcAddress () );
             //alloc_assert (paddr.resolved.ipc_addr);
-            paddr.resolved().resolve (address, true, true);
+            paddr.resolved().resolve (address, true);
         }
         //  Create session.
         SessionBase session = SessionBase.create (io_thread, true, this,
@@ -341,7 +341,7 @@ public abstract class SocketBase extends Own
         session.attach_pipe (pipes [1]);
 
         // Save last endpoint URI
-        paddr.toString (options.last_endpoint);
+        options.last_endpoint = paddr.toString ();
 
         add_endpoint (addr_, session);
         return true;
@@ -692,6 +692,7 @@ public abstract class SocketBase extends Own
         }
         String protocol = uri.getScheme();
         String address = uri.getHost();
+        String path = uri.getPath();
         if (uri.getPort() > 0) {
             address = address + ":" + uri.getPort();
         }
@@ -740,10 +741,11 @@ public abstract class SocketBase extends Own
         if (protocol.equals("ipc")) {
             IpcListener listener = new IpcListener (
                 io_thread, this, options);
-            int rc = listener.set_address (address);
-            if (rc != 0) {
+            try {
+                listener.set_address (path);
+            } catch (IOException e) {
                 listener.close();
-                monitor_event (ZMQ.ZMQ_EVENT_BIND_FAILED, addr_, rc);
+                monitor_event (ZMQ.ZMQ_EVENT_BIND_FAILED, addr_, e);
                 return -1;
             }
 

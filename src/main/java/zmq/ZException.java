@@ -1,10 +1,8 @@
 package zmq;
 
-import java.util.concurrent.atomic.AtomicReference;
 
 public class ZException  {
 
-    //private static final AtomicReference<Errno> errno = new AtomicReference<Errno>();
 
     public static class AddrInUse extends RuntimeException {
 

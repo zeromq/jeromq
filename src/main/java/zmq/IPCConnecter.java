@@ -48,6 +48,6 @@ public class IpcConnecter extends Own {
         
         assert (addr!=null);
         assert (addr.protocol().equals("ipc"));
-        addr.toString (endpoint);
+        endpoint = addr.toString ();
     }
 }
