@@ -116,8 +116,10 @@ public class YQueue<T extends IReplaceable> {
         if (begin_pos == size) {
             Chunk o = begin_chunk;
             begin_chunk = begin_chunk.next;
-            front_hash = begin_chunk.hashCode();
-            begin_chunk.prev = null;
+            if (begin_chunk != null) {
+                front_hash = begin_chunk.hashCode();
+                begin_chunk.prev = null;
+            }
             begin_pos = 0;
 
             //  'o' has been more recently used than spare_chunk,

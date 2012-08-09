@@ -69,36 +69,20 @@ public class TcpAddress implements Address.IZAddress {
 
         InetAddress addr_net = null;
 
-        /*
-        if (local_) {
-            try {
-                Enumeration<NetworkInterface> nets = NetworkInterface.getNetworkInterfaces();
-                for (NetworkInterface netint : Collections.list(nets)) {
-                    for (InetAddress ia: Collections.list(netint.getInetAddresses())){
-                        if (ipv4only_ && (ia instanceof Inet6Address)) {
-                            continue;
-                        }
-                        addr_net = ia;
-                        //break;
-                    }
+        if (addr_str.equals("*")) {
+            addr_str = "0.0.0.0";
+        }
+        try {
+            for(InetAddress ia: InetAddress.getAllByName(addr_str)) {
+                if (ipv4only_ && (ia instanceof Inet6Address)) {
+                    continue;
                 }
-            } catch (SocketException e) {
-                throw new IllegalArgumentException(name_);
+                addr_net = ia;
+                break;
             }
-        } else {
-        */
-            try {
-                for(InetAddress ia: InetAddress.getAllByName(addr_str)) {
-                    if (ipv4only_ && (ia instanceof Inet6Address)) {
-                        continue;
-                    }
-                    addr_net = ia;
-                    break;
-                }
-            } catch (UnknownHostException e) {
-                throw new IllegalArgumentException(e);
-            }
-        //}
+        } catch (UnknownHostException e) {
+            throw new IllegalArgumentException(e);
+        }
         
         if (addr_net == null) {
             throw new IllegalArgumentException(name_);

@@ -30,8 +30,9 @@ public class TestLastEndpoint {
 
     static void do_bind_and_verify (SocketBase s, String endpoint)
     {
-        int rc = ZMQ.zmq_bind (s, endpoint);
-        assertThat (rc, is(0));
+        int rc;
+        boolean brc = ZMQ.zmq_bind (s, endpoint);
+        assertThat (brc, is(true));
 
         ByteBuffer test = ByteBuffer.allocate(255);
         rc = ZMQ.zmq_getsockopt (s, ZMQ.ZMQ_LAST_ENDPOINT, test);

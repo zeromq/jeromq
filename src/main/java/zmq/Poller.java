@@ -77,26 +77,36 @@ public class Poller extends PollerBase implements Runnable {
 
     public void set_pollin (SelectableChannel handle_)
     {
-        register(handle_, SelectionKey.OP_READ);
+        register(handle_, pollset.get(handle_) | SelectionKey.OP_READ);
     }
+    
+
+    public void reset_pollin (SelectableChannel handle_) {
+        register(handle_, pollset.get(handle_) &~ SelectionKey.OP_READ);
+    }
+
+    public void reset_pollout (SelectableChannel handle_) {
+        register(handle_, pollset.get(handle_) &~ SelectionKey.OP_WRITE);
+    }
+
     
     public void set_pollout (SelectableChannel handle_)
     {
-        register(handle_, SelectionKey.OP_WRITE);
+        register(handle_,  pollset.get(handle_) | SelectionKey.OP_WRITE);
     }
 
     public void set_pollconnect(SelectableChannel handle_) {
-        register(handle_, SelectionKey.OP_CONNECT);
+        register(handle_, pollset.get(handle_) | SelectionKey.OP_CONNECT);
     }
     
     public void set_pollaccept(SelectableChannel handle_) {
-        register(handle_, SelectionKey.OP_ACCEPT);        
+        register(handle_, pollset.get(handle_) | SelectionKey.OP_ACCEPT);        
     }
 
     private void register (SelectableChannel handle_, int ops)
     {
         SelectionKey key = handle_.keyFor(selector);
-        pollset.put(handle_, pollset.get(handle_) + ops);
+        pollset.put(handle_, ops);
         if (key == null) {
             try {
                 handle_.register(selector, pollset.get(handle_));

@@ -92,7 +92,14 @@ public class IOObject implements IPollEvents {
         handler = null;
     }
 
+    public void reset_pollin(SelectableChannel handle) {
+        poller.reset_pollin (handle);
+    }
 
+
+    public void reset_pollout(SelectableChannel handle) {
+        poller.reset_pollout (handle);
+    }
 
 
 

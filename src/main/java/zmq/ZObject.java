@@ -81,6 +81,11 @@ public class ZObject {
         send_command(destination_, Command.Type.activate_read);
     }
     
+    protected void send_bind (Own destination_, Pipe pipe_)
+    {
+        send_bind(destination_, pipe_, true);
+    }
+    
     protected void send_bind (Own destination_, Pipe pipe_,
             boolean inc_seqnum_)
     {

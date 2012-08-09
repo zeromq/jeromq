@@ -160,7 +160,7 @@ public class Router extends SocketBase {
     }
     
     @Override
-    public boolean xsend (Msg msg_, int flags_)
+    protected boolean xsend (Msg msg_, int flags_)
     {
         //  If this is the first part of the message it's the ID of the
         //  peer to send the message to.
@@ -218,7 +218,7 @@ public class Router extends SocketBase {
 
 
     @Override
-    public Msg xrecv (int flags_)
+    protected Msg xrecv (int flags_)
     {
         Msg msg_ = null;
         if (prefetched) {
@@ -276,7 +276,7 @@ public class Router extends SocketBase {
     }
     
     @Override
-    public boolean xhas_in ()
+    protected boolean xhas_in ()
     {
         //  If we are in the middle of reading the messages, there are
         //  definitely more parts available.
@@ -309,7 +309,7 @@ public class Router extends SocketBase {
     }
 
     @Override
-    public boolean xhas_out ()
+    protected boolean xhas_out ()
     {
         //  In theory, ROUTER socket is always ready for writing. Whether actual
         //  attempt to write succeeds depends on whitch pipe the message is going
@@ -332,11 +332,11 @@ public class Router extends SocketBase {
             buf.putInt (next_peer_id++);
             buf.flip();
             identity = new Blob(buf);
-            msg.close ();
+            //msg.close ();
         }
         else {
             identity = new Blob(msg.data ());
-            msg.close ();
+            //msg.close ();
 
             //  Ignore peers with duplicate ID.
             if (outpipes.containsKey(identity))

@@ -1,7 +1,6 @@
 package zmq;
 
 import java.nio.ByteBuffer;
-import java.util.concurrent.atomic.AtomicLong;
 
 public class Msg implements IReplaceable {
 
@@ -82,7 +81,7 @@ public class Msg implements IReplaceable {
 
     private byte type;
     private byte flags;
-    private byte size;
+    private int size;
     private ByteBuffer data;
     private ByteBuffer content;
     
@@ -118,8 +117,8 @@ public class Msg implements IReplaceable {
         if (size_ <= max_vsm_size) {
             type = type_vsm;
             flags = 0;
-            size = (byte) size_;
-            data.limit(size);
+            size = size_;
+            data.limit(size_);
         }
         else {
             type = type_lmsg;
@@ -194,9 +193,10 @@ public class Msg implements IReplaceable {
             throw new IllegalStateException();
         }
 
-        content = null;
+        throw new IllegalStateException();
+        //content = null;
         //  Make the message invalid.
-        type = 0;
+        //type = 0;
     }
 
     private void init() {
@@ -222,13 +222,13 @@ public class Msg implements IReplaceable {
             data.put(m.data);
             data.flip();
             content = null;
-        } else {
-            content = m.content;
+        } else if (type == type_lmsg) {
+            content = m.content.duplicate();
         }
     }
 
     public void reset_flags (byte f) {
-        flags = (byte) (flags & (~f));
+        flags = (byte) (flags &~ f);
     }
 
     /*
@@ -263,13 +263,16 @@ public class Msg implements IReplaceable {
         return b;
     }
 
+    public void put(ByteBuffer buf) {
+        if (type == type_vsm) {
+            data.put(buf);
+        } else {
+            content = buf.duplicate();
+        }
+    }
+    
     public void put(byte[] src) {
-        
-        if (src == null)
-            return;
-        
-        get_buffer().put(src);
-        
+        put(src, 0, src.length);
     }
 
     public void put(byte[] src, int start, int len_) {
@@ -277,7 +280,10 @@ public class Msg implements IReplaceable {
         if (len_ == 0 || src == null)
             return;
         
-        get_buffer().put(src, start, len_);
+        if (type == type_vsm)
+            data.put(src, start, len_);
+        else
+            content = ByteBuffer.wrap(src, start, len_);
     }
 
     @Override

@@ -41,9 +41,9 @@ public class TestInvalidRep {
         int rc;
         ZMQ.zmq_setsockopt (router_socket, ZMQ.ZMQ_LINGER, linger);
         ZMQ.zmq_setsockopt (req_socket, ZMQ.ZMQ_LINGER, linger);
-        rc = ZMQ.zmq_bind (router_socket, "inproc://hi");
-        assertThat (rc , is(0));
-        boolean brc = ZMQ.zmq_connect (req_socket, "inproc://hi");
+        boolean brc = ZMQ.zmq_bind (router_socket, "inproc://hi");
+        assertThat (brc , is(true));
+        brc = ZMQ.zmq_connect (req_socket, "inproc://hi");
         assertThat (brc, is(true) );
     
         //  Initial request.

@@ -3,24 +3,25 @@ package zmq;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.ByteBuffer;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 
-public class StreamEngine implements IEngine {
+public class StreamEngine implements IEngine, IPollEvents {
     
     //final private IOObject io_object;
     //  Underlying socket.
-    private Socket s;
+    private SocketChannel s;
 
     private SelectableChannel handle;
 
-    byte[] inpos;
+    ByteBuffer inpos_buf;
     int insize;
     final Decoder decoder;
     boolean input_error;
 
-    byte[] outpos;
+    ByteBuffer outpos_buf;
     int outsize;
     final Encoder encoder;
 
@@ -40,13 +41,13 @@ public class StreamEngine implements IEngine {
     private IOObject io_object;
     
     
-    public StreamEngine (Socket fd_, final Options options_, final String endpoint_) {
+    public StreamEngine (SocketChannel fd_, final Options options_, final String endpoint_) {
         s = fd_;
-        inpos = null;
+        inpos_buf = null;
         insize = 0;
         decoder = new Decoder(Config.in_batch_size.getValue(), options_.maxmsgsize);
         input_error = false;
-        outpos = null;
+        outpos_buf = null;
         outsize = 0;
         encoder = new Encoder(Config.out_batch_size.getValue());
         session = null;
@@ -57,14 +58,14 @@ public class StreamEngine implements IEngine {
         // io_object = new IOObject(); xxxx at plug call
         //  Put the socket into non-blocking mode.
         try {
-            Utils.unblock_socket (s.getChannel());
+            Utils.unblock_socket (s);
             
             //  Set the socket buffer limits for the underlying socket.
             if (options.sndbuf != 0) {
-                s.setSendBufferSize(options.sndbuf);
+                s.socket().setSendBufferSize(options.sndbuf);
             }
             if (options.rcvbuf != 0) {
-                s.setReceiveBufferSize(options.rcvbuf);
+                s.socket().setReceiveBufferSize(options.rcvbuf);
             }
 
         } catch (IOException e) {
@@ -91,7 +92,7 @@ public class StreamEngine implements IEngine {
             //  There was an input error but the engine could not
             //  be terminated (due to the stalled decoder).
             //  Flush the pending message and terminate the engine now.
-            decoder.process_buffer (inpos, 0, 0);
+            decoder.process_buffer (inpos_buf);
             assert (!decoder.stalled ());
             session.flush ();
             error ();
@@ -127,5 +128,173 @@ public class StreamEngine implements IEngine {
         decoder.set_session (null);
         session = null;
     }
+    
+    public void plug (IOThread io_thread_,
+            SessionBase session_)
+    {
+        assert (!plugged);
+        plugged = true;
+
+        //  Connect to session object.
+        assert (session == null);
+        assert (session_ != null);
+        encoder.set_session (session_);
+        decoder.set_session (session_);
+        session = session_;
+
+        io_object = new IOObject(io_thread_);
+        io_object.set_handler(this);
+        //  Connect to I/O threads poller object.
+        io_object.plug (io_thread_);
+        handle = io_object.add_fd (s);
+        io_object.set_pollin (handle);
+        io_object.set_pollout (handle);
+        //  Flush all the data that may have been already received downstream.
+        in_event ();
+    }
+
+    @Override
+    public void in_event() {
+        boolean disconnection = false;
+
+        //  If there's no data to process in the buffer...
+        if (insize == 0) {
+
+            //  Retrieve the buffer and read as much data as possible.
+            //  Note that buffer can be arbitrarily large. However, we assume
+            //  the underlying TCP layer has fixed buffer size and thus the
+            //  number of bytes read will be always limited.
+            inpos_buf = decoder.get_buffer ();
+            insize = read (inpos_buf);
+
+            //  Check whether the peer has closed the connection.
+            if (insize == -1) {
+                insize = 0;
+                disconnection = true;
+            }
+        }
+
+        //  Push the data to the decoder.
+        int processed = decoder.process_buffer (inpos_buf);
+
+        if (processed == -1) {
+            disconnection = true;
+        }
+        else {
+
+            //  Stop polling for input if we got stuck.
+            if (processed < insize)
+                io_object.reset_pollin (handle);
+
+            //  Adjust the buffer.
+            //inpos += processed;
+            inpos_buf.clear();
+            insize -= processed;
+        }
+
+        //  Flush all messages the decoder may have produced.
+        session.flush ();
+
+        //  Input error has occurred. If the last decoded
+        //  message has already been accepted, we terminate
+        //  the engine immediately. Otherwise, we stop
+        //  waiting for input events and postpone the termination
+        //  until after the session has accepted the message.
+        if (disconnection) {
+            input_error = true;
+            if (decoder.stalled ())
+                io_object.reset_pollin (handle);
+            else
+                error ();
+        }
+
+    }
+    
+    private int read (ByteBuffer buf) {
+        int nbytes = 0 ;
+        try {
+            nbytes = s.read(buf);
+        } catch (IOException e) {
+            return -1;
+        }
+        
+        return nbytes;
+    }
+    
+    private int write (ByteBuffer buf) {
+        int nbytes = 0 ;
+        try {
+            nbytes = s.write(buf);
+        } catch (IOException e) {
+            return -1;
+        }
+        
+        return nbytes;
+    }
+
+    @Override
+    public void out_event() {
+        //  If write buffer is empty, try to read new data from the encoder.
+        if (outsize == 0) {
+
+            outpos_buf = encoder.get_data (null, null);
+            outsize = outpos_buf.remaining();
+            //  If there is no data to send, stop polling for output.
+            if (outpos_buf.remaining() == 0) {
+                io_object.reset_pollout (handle);
+                return;
+            }
+        }
+
+        //  If there are any data to write in write buffer, write as much as
+        //  possible to the socket. Note that amount of data to write can be
+        //  arbitratily large. However, we assume that underlying TCP layer has
+        //  limited transmission buffer and thus the actual number of bytes
+        //  written should be reasonably modest.
+        int nbytes = write (outpos_buf);
+
+        //  IO error has occurred. We stop waiting for output events.
+        //  The engine is not terminated until we detect input error;
+        //  this is necessary to prevent losing incomming messages.
+        if (nbytes == -1) {
+            io_object.reset_pollout (handle);
+            return;
+        }
+
+        //outpos += nbytes;
+        outsize -= nbytes;
+        
+    }
+
+    @Override
+    public void connect_event() {
+        throw new UnsupportedOperationException();
+        
+    }
+
+    @Override
+    public void accept_event() {
+        throw new UnsupportedOperationException();
+        
+    }
+
+    @Override
+    public void timer_event(int id_) {
+        throw new UnsupportedOperationException();
+        
+    }
+
+    @Override
+    public void activate_out() {
+        io_object.set_pollout (handle);
+
+        //  Speculative write: The assumption is that at the moment new message
+        //  was sent by the user the socket is probably available for writing.
+        //  Thus we try to write the data to socket avoiding polling for POLLOUT.
+        //  Consequently, the latency should be better in request/reply scenarios.
+        out_event ();
+        
+    }
+
 
 }

@@ -67,7 +67,8 @@ public class YPipe<T extends IReplaceable> {
     {
         //  Was the value prefetched already? If so, return.
         int h = queue.front_pos();
-        if (h != r)
+        //System.out.println("check_read " + Thread.currentThread().getName() + " " + h + " " + r + " " + c.get()  + " " + f);
+        if (h != r && r != -1)
              return true;
 
         //  There's no prefetched value, so let us prefetch more values.
@@ -85,7 +86,7 @@ public class YPipe<T extends IReplaceable> {
         //  During pipe's lifetime r should never be NULL, however,
         //  it can happen during pipe shutdown when items
         //  are being deallocated.
-        if (h == r)
+        if (h == r || r == -1)
             return false;
 
         //  There was at least one value prefetched.

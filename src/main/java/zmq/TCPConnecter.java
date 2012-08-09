@@ -200,7 +200,7 @@ public class TcpConnecter extends Own implements IPollEvents {
         }
 
         //  Create the engine object for this connection.
-        StreamEngine engine = new StreamEngine (fd.socket(), options, endpoint);
+        StreamEngine engine = new StreamEngine (fd, options, endpoint);
         //alloc_assert (engine);
 
         //  Attach the engine to the corresponding session object.

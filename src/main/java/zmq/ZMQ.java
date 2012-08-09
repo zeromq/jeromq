@@ -31,6 +31,7 @@ public class ZMQ {
     public static final int ZMQ_PUSH = 8;
     public static final int ZMQ_XPUB = 9;
     public static final int ZMQ_XSUB = 10;
+    public static final int ZMQ_PLAIN = 11;
 
     /*  Deprecated aliases                                                        */
     public static final int ZMQ_XREQ = ZMQ_DEALER;
@@ -187,7 +188,7 @@ public class ZMQ {
     }
 
 
-    public static int zmq_bind(SocketBase s_, final String addr_) {
+    public static boolean zmq_bind(SocketBase s_, final String addr_) {
         
         if (s_ == null || !s_.check_tag ()) {
             throw new IllegalStateException();

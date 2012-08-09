@@ -120,10 +120,10 @@ public abstract class SocketBase extends Own
         case ZMQ.ZMQ_REQ:
             s = new Req (parent_, tid_, sid_);
             break;
-            /*
         case ZMQ.ZMQ_REP:
             s = new Rep (parent_, tid_, sid_);
             break;
+            /*
         case ZMQ.ZMQ_DEALER:
             s = new Dealer (parent_, tid_, sid_);
             break;
@@ -589,8 +589,8 @@ public abstract class SocketBase extends Own
     }
     
     @Override
-    public void read_activated(Pipe pipe) {
-        throw new UnsupportedOperationException();
+    public void read_activated(Pipe pipe_) {
+        xread_activated (pipe_);
     }
     
     @Override
@@ -658,11 +658,11 @@ public abstract class SocketBase extends Own
         throw new UnsupportedOperationException("Must Override");
     }
 
-    public Msg xrecv(int flags_) {
+    protected Msg xrecv(int flags_) {
         throw new UnsupportedOperationException("Must Override");
     }
     
-    public boolean xsend(Msg msg_, int flags_) {
+    protected boolean xsend(Msg msg_, int flags_) {
         throw new UnsupportedOperationException("Must Override");
     }
 
@@ -673,7 +673,7 @@ public abstract class SocketBase extends Own
         throw new UnsupportedOperationException("Must Override");
     }
 
-    public int bind(final String addr_) {
+    public boolean bind(final String addr_) {
         if (ctx_terminated) {
             throw new IllegalStateException();
         }
@@ -681,7 +681,7 @@ public abstract class SocketBase extends Own
         //  Process pending commands, if any.
         boolean brc = process_commands (0, false);
         if (!brc)
-            return -1;
+            return false;
 
         //  Parse addr_ string.
         URI uri;
@@ -691,11 +691,16 @@ public abstract class SocketBase extends Own
             throw new IllegalArgumentException(e);
         }
         String protocol = uri.getScheme();
-        String address = uri.getHost();
+        String address = uri.getAuthority();
         String path = uri.getPath();
+        /*
+        if (address == null && path.length() == 0) {
+            address = addr_.substring(protocol.length()+3);
+        }
         if (uri.getPort() > 0) {
             address = address + ":" + uri.getPort();
         }
+        */
 
 
         check_protocol (protocol);
@@ -705,12 +710,12 @@ public abstract class SocketBase extends Own
             register_endpoint (addr_, endpoint);
             // Save last endpoint URI
             options.last_endpoint = addr_;
-            return 0;
+            return true;
         }
         if (protocol.equals("pgm") || protocol.equals("epgm")) {
             //  For convenience's sake, bind can be used interchageable with
             //  connect for PGM and EPGM transports.
-            return connect (addr_)?0:-1;
+            return connect (addr_);
         }
 
         //  Remaining trasnports require to be run in an I/O thread, so at this
@@ -728,14 +733,14 @@ public abstract class SocketBase extends Own
             } catch (IOException e) {
                 listener.close();
                 monitor_event (ZMQ.ZMQ_EVENT_BIND_FAILED, addr_, e);
-                return -1;
+                return false;
             }
 
             // Save last endpoint URI
             options.last_endpoint = listener.get_address ();
 
             add_endpoint (addr_, listener);
-            return 0;
+            return true;
         }
 
         if (protocol.equals("ipc")) {
@@ -746,18 +751,18 @@ public abstract class SocketBase extends Own
             } catch (IOException e) {
                 listener.close();
                 monitor_event (ZMQ.ZMQ_EVENT_BIND_FAILED, addr_, e);
-                return -1;
+                return false;
             }
 
             // Save last endpoint URI
             options.last_endpoint = listener.get_address ();
 
             add_endpoint (addr_, listener);
-            return 0;
+            return true;
         }
 
         assert (false);
-        return -1;
+        return false;
     }
 
     public Msg recv(int flags_) {

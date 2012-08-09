@@ -25,6 +25,7 @@ import java.net.Socket;
 import java.nio.channels.IllegalBlockingModeException;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
 
 public class TcpListener extends Own implements IPollEvents {
 
@@ -73,7 +74,7 @@ public class TcpListener extends Own implements IPollEvents {
     @Override
     public void accept_event ()
     {
-        Socket fd = null ;
+        SocketChannel fd = null ;
         
         try {
             fd = accept ();
@@ -132,7 +133,7 @@ public class TcpListener extends Own implements IPollEvents {
         socket.monitor_event(ZMQ.ZMQ_EVENT_LISTENING, endpoint, s);
     }
 
-    public Socket accept() {
+    private SocketChannel accept() {
         Socket sock = null;
         try {
             sock = s.socket().accept();
@@ -159,7 +160,7 @@ public class TcpListener extends Own implements IPollEvents {
                 return null;
             }
         }
-        return sock;
+        return sock.getChannel();
     }
 
     @Override

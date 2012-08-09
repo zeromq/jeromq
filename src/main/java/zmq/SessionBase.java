@@ -69,24 +69,22 @@ public class SessionBase extends Own implements Pipe.IPipeEvents {
         
         SessionBase s = null;
         switch (options_.type) {
-        /*
-        case ZMQ_REQ:
-            s = new (std::nothrow) req_session_t (io_thread_, connect_,
+        case ZMQ.ZMQ_REQ:
+            s = new  Req.ReqSession (io_thread_, connect_,
                 socket_, options_, addr_);
             break;
-        case ZMQ_DEALER:
-            s = new (std::nothrow) dealer_session_t (io_thread_, connect_,
+        case ZMQ.ZMQ_DEALER:
+            s = new Dealer.DealerSession (io_thread_, connect_,
                 socket_, options_, addr_);
             break;
-        case ZMQ_REP:
-            s = new (std::nothrow) rep_session_t (io_thread_, connect_,
+        case ZMQ.ZMQ_REP:
+            s = new Rep.RepSession (io_thread_, connect_,
                 socket_, options_, addr_);
             break;
-        case ZMQ_ROUTER:
-            s = new (std::nothrow) router_session_t (io_thread_, connect_,
+        case ZMQ.ZMQ_ROUTER:
+            s = new Router.RouterSession (io_thread_, connect_,
                 socket_, options_, addr_);
             break;
-        */
         case ZMQ.ZMQ_PUB:
             s = new Pub.PubSession (io_thread_, connect_,
                 socket_, options_, addr_);
@@ -229,8 +227,13 @@ public class SessionBase extends Own implements Pipe.IPipeEvents {
     }
 
     @Override
-    public void read_activated(Pipe pipe) {
-        throw new UnsupportedOperationException();
+    public void read_activated(Pipe pipe_) {
+        assert (pipe == pipe_);
+
+        if (engine != null)
+            engine.activate_out ();
+        else
+            pipe.check_read ();
     }
     
     @Override
@@ -314,7 +317,7 @@ public class SessionBase extends Own implements Pipe.IPipeEvents {
         }
     }
 
-    private Msg read() {
+    public Msg read() {
         
         Msg msg_ = null;
         
@@ -349,6 +352,35 @@ public class SessionBase extends Own implements Pipe.IPipeEvents {
         }
 
         return false;
+    }
+
+    protected void process_attach (IEngine engine_)
+    {
+        assert (engine_ != null);
+
+        //  Create the pipe if it does not exist yet.
+        if (pipe == null && !is_terminating ()) {
+            ZObject[] parents = {this, socket};
+            Pipe[] pipes = {null, null};
+            int[] hwms = {options.rcvhwm, options.sndhwm};
+            boolean[] delays = {options.delay_on_close, options.delay_on_disconnect};
+            Pipe.pipepair (parents, pipes, hwms, delays);
+
+            //  Plug the local end of the pipe.
+            pipes [0].set_event_sink (this);
+
+            //  Remember the local end of the pipe.
+            assert (pipe == null);
+            pipe = pipes [0];
+
+            //  Ask socket to plug into the remote end of the pipe.
+            send_bind (socket, pipes [1]);
+        }
+
+        //  Plug in the engine.
+        assert (engine == null);
+        engine = engine_;
+        engine.plug (io_thread, this);
     }
 
 

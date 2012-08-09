@@ -186,6 +186,27 @@ public class Own extends ZObject {
 	{
 	}
 
+    protected void process_term_req (Own object_)
+    {
+        //  When shutting down we can ignore termination requests from owned
+        //  objects. The termination request was already sent to the object.
+        if (terminating)
+            return;
+
+        //  If I/O object is well and alive let's ask it to terminate.
+
+        //  If not found, we assume that termination request was already sent to
+        //  the object so we can safely ignore the request.
+        if (!owned.contains(object_))
+            return;
+
+        owned.remove(object_);
+        register_term_acks (1);
+
+        //  Note that this object is the root of the (partial shutdown) thus, its
+        //  value of linger is used, rather than the value stored by the children.
+        send_term (object_, options.linger);
+    }
 
 
 

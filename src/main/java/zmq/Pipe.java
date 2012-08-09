@@ -418,7 +418,7 @@ public class Pipe extends ZObject {
         //  the ypipe itself.
         Msg msg;
         while ((msg = inpipe.read ()) != null) {
-           msg.close ();
+           //msg.close ();
         }
         
         LOG.debug( "{} <= {} <- {}", new Object[] {parent, msg, peer.get_parent()});

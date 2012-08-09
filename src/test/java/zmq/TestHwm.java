@@ -41,8 +41,8 @@ public class TestHwm {
         int hwm = 2;
         ZMQ.zmq_setsockopt (sb, ZMQ.ZMQ_RCVHWM, hwm);
         
-        rc = ZMQ.zmq_bind (sb, "inproc://a");
-        assertThat (rc, is(0));
+        brc = ZMQ.zmq_bind (sb, "inproc://a");
+        assertThat (brc, is(true));
         
         SocketBase sc = ZMQ.zmq_socket (ctx, ZMQ.ZMQ_PUSH);
         assertThat (sc, notNullValue());
