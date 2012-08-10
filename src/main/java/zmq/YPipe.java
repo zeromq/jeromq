@@ -67,7 +67,6 @@ public class YPipe<T extends IReplaceable> {
     {
         //  Was the value prefetched already? If so, return.
         int h = queue.front_pos();
-        //System.out.println("check_read " + Thread.currentThread().getName() + " " + h + " " + r + " " + c.get()  + " " + f);
         if (h != r && r != -1)
              return true;
 
@@ -77,6 +76,7 @@ public class YPipe<T extends IReplaceable> {
         //  items to prefetch, set c to NULL (using compare-and-swap).
         if (c.compareAndSet (h, -1)) {
             // nothing to read, h == r must be the same
+            r = h;
         } else {
             // something to have been written
             r = c.get();

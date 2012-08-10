@@ -24,7 +24,7 @@ public abstract class SocketBase extends Own
     final Map<String, Own> endpoints;
 
     //  Used to check whether the object is a socket.
-    int tag;
+    volatile int tag;
 
     //  If true, associated context was already terminated.
     boolean ctx_terminated;
@@ -93,7 +93,7 @@ public abstract class SocketBase extends Own
     protected void xwrite_activated(Pipe pipe_) {
         throw new UnsupportedOperationException("Must Override");
     }
-    protected void xsetsockopt(int option_, int optval_) {};
+    protected void xsetsockopt(int option_, Object optval_) {};
     
     public void write_activated (Pipe pipe_)
     {
@@ -132,11 +132,9 @@ public abstract class SocketBase extends Own
         case ZMQ.ZMQ_REP:
             s = new Rep (parent_, tid_, sid_);
             break;
-            /*
         case ZMQ.ZMQ_DEALER:
             s = new Dealer (parent_, tid_, sid_);
             break;
-            */
         case ZMQ.ZMQ_ROUTER:
             s = new Router (parent_, tid_, sid_);
             break;     
@@ -154,6 +152,9 @@ public abstract class SocketBase extends Own
             s = new XSub (parent_, tid_, sid_);
             break;
         */
+        case ZMQ.ZMQ_PROXY:
+            s = new Proxy (parent_, tid_, sid_);
+            break;
         default:
             throw new IllegalArgumentException("type=" + type_);
         }
@@ -359,10 +360,12 @@ public abstract class SocketBase extends Own
     boolean process_commands (int timeout_, boolean throttle_)
     {
         Command cmd;
+        boolean ret = true;
         if (timeout_ != 0) {
 
             //  If we are asked to wait, simply ask mailbox to wait.
             cmd = mailbox.recv (timeout_);
+            ret = false;
         }
         else {
 
@@ -392,6 +395,7 @@ public abstract class SocketBase extends Own
             cmd = mailbox.recv (0);
         }
 
+        
         //  Process all the commands available at the moment.
         while (true) {
             if (cmd == null)
@@ -403,7 +407,7 @@ public abstract class SocketBase extends Own
             return false;
         }
 
-        return true;
+        return ret;
     }
 
     @Override
@@ -513,6 +517,11 @@ public abstract class SocketBase extends Own
         //  the thread owning the socket. This way, blocking call in the
         //  owner thread can be interrupted.
         send_stop ();
+        
+        if (check_tag()) {
+            // close was not called
+            close();
+        }
     }
 
     public void start_reaping(Poller poller_) {
@@ -581,6 +590,7 @@ public abstract class SocketBase extends Own
         //  further attempt to use the socket will return ETERM. The user is still
         //  responsible for calling zmq_close on the socket though!
         ctx_terminated = true;
+        
     }
 
 
@@ -607,19 +617,6 @@ public abstract class SocketBase extends Own
         return super.toString() + "[" + name + "]";
     }
 
-    public void setsockopt(int option_, int optval_) {
-        if (ctx_terminated) {
-            throw new IllegalStateException();
-        }
-
-        //  First, check whether specific socket type overloads the option.
-        xsetsockopt (option_, optval_);
-
-        //  If the socket type doesn't support the option, pass it to
-        //  the generic option parser.
-        options.setsockopt (option_, optval_);
-
-    }
     
     public int getsockopt(int option_) {
         return getsockopt(option_, null);
@@ -863,5 +860,23 @@ public abstract class SocketBase extends Own
 
         //  Remove MORE flag.
         rcvmore = msg_.has_more();
+    }
+
+    public void setsockopt(int option_, Object optval_) {
+        
+        if (ctx_terminated) {
+            throw new IllegalStateException();
+        }
+
+        //  First, check whether specific socket type overloads the option.
+        xsetsockopt (option_, optval_);
+
+        //  If the socket type doesn't support the option, pass it to
+        //  the generic option parser.
+        options.setsockopt (option_, optval_);
+    }
+
+    public SelectableChannel get_fd() {
+        return mailbox.get_fd();
     }
 }

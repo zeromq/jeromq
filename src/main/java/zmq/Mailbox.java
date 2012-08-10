@@ -64,7 +64,7 @@ public class Mailbox {
         }
         
         if (LOG.isDebugEnabled())
-            LOG.debug( "{} -> {} signal {}", new Object[] { Thread.currentThread().getName(), cmd_, !ok });
+            LOG.debug( "{} -> {} / {} {}", new Object[] { Thread.currentThread().getName(), cmd_, cmd_.arg , !ok});
         
         if (!ok) {
             signaler.send ();

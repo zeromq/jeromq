@@ -90,6 +90,13 @@ public class IOThread extends ZObject implements IPollEvents {
         poller.rm_fd (mailbox_handle);
         
         poller.stop ();
+        while (!poller.stopped);
+        mailbox.close();
+    }
+
+    public void stop ()
+    {
+        send_stop ();
     }
 
     

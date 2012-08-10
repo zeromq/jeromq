@@ -1,5 +1,9 @@
 package zmq;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -92,4 +96,30 @@ public class TestUtil {
         //  Check whether the message is still the same.
         //assert (memcmp (buf2, content, 32) == 0);
     }
+    
+    public static void send (Socket sa, String data) throws IOException
+    {
+        byte[] content = data.getBytes();
+
+        byte[] length = String.format("%04d", content.length).getBytes();
+
+        byte[] buf = new byte[1024];
+        int reslen ;
+        int rc;
+        //  Bounce the message back.
+        InputStream in = sa.getInputStream();
+        OutputStream out = sa.getOutputStream();
+
+        out.write(length);
+        out.write(content);
+        
+        System.out.println("sent message");
+        rc = in.read(buf, 0, 4);
+        assert (rc == 4);
+        reslen = Integer.valueOf(new String(buf, 0, 4));
+        
+        rc = in.read(buf, 4, reslen);
+        assert (rc == reslen);
+    }
+
 }

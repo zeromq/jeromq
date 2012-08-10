@@ -17,7 +17,7 @@ public class Reaper extends ZObject implements IPollEvents {
     int sockets;
 
     //  If true, we were already asked to terminate.
-    boolean terminating;
+    volatile boolean terminating;
     
     private String name;
     
@@ -36,6 +36,7 @@ public class Reaper extends ZObject implements IPollEvents {
         poller.set_pollin (mailbox_handle);
     }
     
+    @Override
     protected void process_reap (SocketBase socket_)
     {   
         //  Add the socket to the poller.
@@ -44,17 +45,6 @@ public class Reaper extends ZObject implements IPollEvents {
         ++sockets;
     }
 
-    protected void rocess_stop ()
-    {
-        terminating = true;
-
-        //  If there are no sockets being reaped finish immediately.
-        if (sockets == 0) {
-            send_done ();
-            poller.rm_fd (mailbox_handle);
-            poller.stop ();
-        }
-    }
 
 
     @Override
@@ -83,6 +73,8 @@ public class Reaper extends ZObject implements IPollEvents {
             send_done ();
             poller.rm_fd (mailbox_handle);
             poller.stop ();
+            while (!poller.stopped);
+            mailbox.close();
         }
     }
 
@@ -98,6 +90,8 @@ public class Reaper extends ZObject implements IPollEvents {
             poller.rm_fd (mailbox_handle);
             
             poller.stop ();
+            while (!poller.stopped);
+            mailbox.close();
         }
     }
 
@@ -132,6 +126,7 @@ public class Reaper extends ZObject implements IPollEvents {
     }
 
     public void stop() {
-        send_stop ();
+        if (!terminating)
+            send_stop ();
     }
 }

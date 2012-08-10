@@ -122,6 +122,10 @@ public class SessionBase extends Own implements Pipe.IPipeEvents, IPollEvents {
                 socket_, options_, addr_);
             break;
         */
+        case ZMQ.ZMQ_PROXY:
+            s = new Proxy.ProxySession(io_thread_, connect_, 
+                    socket_, options_, addr_);
+            return s;
         default:
             throw new IllegalArgumentException("type=" + options_.type);
         }
@@ -375,6 +379,7 @@ public class SessionBase extends Own implements Pipe.IPipeEvents, IPollEvents {
         return false;
     }
 
+    @Override
     protected void process_attach (IEngine engine_)
     {
         assert (engine_ != null);

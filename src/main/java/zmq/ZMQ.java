@@ -1,10 +1,25 @@
 package zmq;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.channels.ClosedChannelException;
+import java.nio.channels.SelectableChannel;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
+import java.util.Iterator;
 
 
 public class ZMQ {
 
+    /******************************************************************************/
+    /*  0MQ versioning support.                                                   */
+    /******************************************************************************/
+
+    /*  Version macros for compile-time API version detection                     */
+    public static final int ZMQ_VERSION_MAJOR = 3;
+    public static final int ZMQ_VERSION_MINOR = 2;
+    public static final int ZMQ_VERSION_PATCH = 1;
+    
     /*  Context options  */
     public static final int ZMQ_IO_THREADS = 1;
     public static final int ZMQ_MAX_SOCKETS = 2;
@@ -31,7 +46,7 @@ public class ZMQ {
     public static final int ZMQ_PUSH = 8;
     public static final int ZMQ_XPUB = 9;
     public static final int ZMQ_XSUB = 10;
-    public static final int ZMQ_PLAIN = 11;
+    public static final int ZMQ_PROXY = 11;
 
     /*  Deprecated aliases                                                        */
     public static final int ZMQ_XREQ = ZMQ_DEALER;
@@ -68,6 +83,10 @@ public class ZMQ {
     public static final int ZMQ_TCP_KEEPALIVE_IDLE = 36;
     public static final int ZMQ_TCP_KEEPALIVE_INTVL = 37;
     public static final int ZMQ_TCP_ACCEPT_FILTER = 38;
+    
+    /* Custom options */
+    public static final int ZMQ_DECODER = 1001;
+    
     /*  Message options                                                           */
     
     public static final int ZMQ_MORE = 1;
@@ -98,10 +117,24 @@ public class ZMQ {
     public static final int  ZMQ_POLLOUT = 2;
     public static final int  ZMQ_POLLERR = 4;
     
+    public static final int ZMQ_STREAMER = 1;
+    public static final int ZMQ_FORWARDER = 2;
+    public static final int ZMQ_QUEUE = 3;
+    
+    private static final Selector poll_selector ;
+
+    
+    static {
+        try {
+            poll_selector = Selector.open();
+        } catch (IOException e) {
+            throw new ZException.IOException(e);
+        }
+    }
+    
     public static Ctx zmq_ctx_new() {
         //  Create 0MQ context.
         Ctx ctx = new Ctx();
-        //alloc_assert (ctx);
         return ctx;
     }
 
@@ -274,6 +307,204 @@ public class ZMQ {
         return s_.getsockopt(opt);
     }
 
+    public static void zmq_ctx_set_monitor(Ctx ctx, IZmqMonitor monitor_) {
+        ctx.monitor (monitor_);
+    }
+
+    public static void zmq_sleep(int s) {
+        try {
+            Thread.sleep(s*(1000L));
+        } catch (InterruptedException e) {
+        }
+        
+    }
+
+    
+    public static boolean zmq_device (int device_, SocketBase insocket_,
+            SocketBase outsocket_)
+    {
+
+        if (insocket_ == null || outsocket_ == null) {
+            throw new IllegalArgumentException();
+        }
+
+        if (device_ != ZMQ_FORWARDER && device_ != ZMQ_QUEUE &&
+              device_ != ZMQ_STREAMER) {
+            throw new IllegalArgumentException();
+        }
+
+        //  The algorithm below assumes ratio of requests and replies processed
+        //  under full load to be 1:1.
+
+        //  TODO: The current implementation drops messages when
+        //  any of the pipes becomes full.
+
+        boolean success;
+        int rc;
+        int more;
+        Msg msg;
+        PollItem items [] = new PollItem[2];
+        
+        items[0] = new PollItem (insocket_, ZMQ_POLLIN );
+        items[1] = new PollItem (outsocket_, ZMQ_POLLIN );
+        
+        while (true) {
+            //  Wait while there are either requests or replies to process.
+            rc = zmq_poll (items, -1);
+            if (rc < 0)
+                return false;
+
+            //  Process a request.
+            if (items [0].isReadable()) {
+                while (true) {
+                    msg = insocket_.recv (0);
+                    if (msg == null)
+                        break;
+
+                    more = insocket_.getsockopt (ZMQ_RCVMORE);
+
+                    success = outsocket_.send (msg, more > 0? ZMQ_SNDMORE: 0);
+                    if (!success)
+                        return false;
+                    if (more == 0)
+                        break;
+                }
+            }
+            //  Process a reply.
+            if (items [1].isReadable()) {
+                while (true) {
+                    msg = outsocket_.recv (0);
+                    if (msg == null)
+                        break;
+
+                    more = outsocket_.getsockopt (ZMQ_RCVMORE);
+
+                    success = insocket_.send (msg, more > 0? ZMQ_SNDMORE: 0);
+                    if (!success)
+                        return false;
+                    if (more == 0)
+                        break;
+                }
+            }
+
+        }
+        
+    }
+
+    public static int zmq_poll(PollItem[] items_, long timeout_ ) {
+
+        if (items_ == null) {
+            throw new IllegalArgumentException();
+        }
+        if (items_.length == 0) {
+            if (timeout_ == 0)
+                return 0;
+            try {
+                Thread.sleep(timeout_);
+            } catch (InterruptedException e) {
+            }
+            return 0;
+        }
+        Clock clock = new Clock();
+        long now = 0;
+        long end = 0;
+        
+
+        
+        boolean first_pass = true;
+        int nevents = 0;
+        
+        while (true) {
+
+            poll_selector.selectedKeys().clear();
+            
+            for (PollItem item: items_) {
+                SelectableChannel ch = item.getChannel();  // mailbox channel if ZMQ socket
+                SelectionKey key = ch.keyFor(poll_selector);
+                
+                if (key == null) {
+                    try {
+                        key = ch.register(poll_selector, item.interestOps());
+                        key.attach(item);
+                    } catch (ClosedChannelException e) {
+                        throw new ZException.IOException(e);
+                    }
+                } else {
+                    item.readyOps(0);
+                    key.interestOps(item.interestOps());
+                }
+            }
+            
+            //  Compute the timeout for the subsequent poll.
+            long timeout;
+            if (first_pass)
+                timeout = 0;
+            else if (timeout_ < 0)
+                timeout = -1;
+            else
+                timeout = end - now;
+            
+            //  Wait for events.
+            try {
+                if (timeout < 0)
+                    nevents = poll_selector.select(0);
+                else if (timeout == 0)
+                    nevents = poll_selector.selectNow();
+                else
+                    nevents = poll_selector.select(timeout);
+                
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            
+            //  If timout is zero, exit immediately whether there are events or not.
+            if (timeout_ == 0)
+                break;
+
+            //  If there are events to return, we can exit immediately.
+            if (nevents > 0) {
+                Iterator<SelectionKey> it = poll_selector.selectedKeys().iterator();
+                while (it.hasNext()) {
+                    
+                    SelectionKey key = it.next();
+                    //it.remove();
+                    
+                    ((PollItem)key.attachment()).readyOps(key.readyOps());
+                }
+
+                break;
+            }
+
+            //  At this point we are meant to wait for events but there are none.
+            //  If timeout is infinite we can just loop until we get some events.
+            if (timeout_ < 0) {
+                if (first_pass)
+                    first_pass = false;
+                continue;
+            }
+
+            //  The timeout is finite and there are no events. In the first pass
+            //  we get a timestamp of when the polling have begun. (We assume that
+            //  first pass have taken negligible time). We also compute the time
+            //  when the polling should time out.
+            if (first_pass) {
+                now = clock.now_ms ();
+                end = now + timeout_;
+                if (now == end)
+                    break;
+                first_pass = false;
+                continue;
+            }
+
+            //  Find out whether timeout have expired.
+            now = clock.now_ms ();
+            if (now >= end)
+                break;
+            
+            
+        }
+        return nevents;
+    }
 
 
 

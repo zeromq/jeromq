@@ -34,17 +34,7 @@ import java.nio.ByteBuffer;
 //  This class implements the state machine that parses the incoming buffer.
 //  Derived class should implement individual state machine actions.
 
-public class Decoder implements IDecoder {
-    
-    //  Where to store the read data.
-    private ByteBuffer read_buf;
-
-    //  How much data to read before taking next step.
-    private int to_read;
-
-    //  The duffer for data to decode.
-    private int bufsize;
-    private ByteBuffer buf;
+public class Decoder extends DecoderBase {
     
     private enum Step {
         one_byte_size_ready,
@@ -52,22 +42,14 @@ public class Decoder implements IDecoder {
         flags_ready,
         message_ready
     }
-    private Step next;
     
-    private SessionBase session;
     final private ByteBuffer tmpbuf;
     private Msg in_progress;
 
-    private long maxmsgsize;
-
     public Decoder (int bufsize_, long maxmsgsize_)
     {
-        next = null;
-        to_read = 0;
-        bufsize = bufsize_;
-        session = null;
-        maxmsgsize = maxmsgsize_;
-        buf = ByteBuffer.allocate(bufsize_);
+        super(bufsize_, maxmsgsize_);
+        
         tmpbuf = ByteBuffer.allocate(8);
         
     
@@ -75,92 +57,15 @@ public class Decoder implements IDecoder {
         next_step (tmpbuf, 1, Step.one_byte_size_ready);
     }
     
-    
-    //  Returns a buffer to be filled with binary data.
-    public ByteBuffer get_buffer() {
-        //  If we are expected to read large message, we'll opt for zero-
-        //  copy, i.e. we'll ask caller to fill the data directly to the
-        //  message. Note that subsequent read(s) are non-blocking, thus
-        //  each single read reads at most SO_RCVBUF bytes at once not
-        //  depending on how large is the chunk returned from here.
-        //  As a consequence, large messages being received won't block
-        //  other engines running in the same I/O thread for excessive
-        //  amounts of time.
         
-        ByteBuffer b;
-        if (to_read >= bufsize) {
-            
-            b = read_buf;
-        } else {
-            b = buf;
-        }
-        b.clear();
-        return b;
-    }
-    
-
-    public int process_buffer(ByteBuffer buf_) {
-        //  Check if we had an error in previous attempt.
-        if (next == null)
-            return -1;
-
-        //  In case of zero-copy simply adjust the pointers, no copying
-        //  is required. Also, run the state machine in case all the data
-        //  were processed.
-        if (buf_ == read_buf) {
-            int size_ = buf_.remaining();
-            to_read -= size_;
-
-            while (to_read == 0) {
-                if (!call_next()) {
-                    if (next == null)
-                        return -1;
-                    return size_;
-                }
-            }
-            return size_;
-        }
-
-        int pos = 0;
-        while (true) {
-
-            //  Try to get more space in the message to fill in.
-            //  If none is available, return.
-            while (to_read == 0) {
-                if (!call_next ()) {
-                    if (next == null)
-                        return -1;
-                    return buf.position();
-                }
-            }
-
-            //  If there are no more data in the buffer, return.
-            if (!buf.hasRemaining())
-                return buf.position();
-            //  Copy the data from buffer to the message.
-            int to_copy = Math.min (to_read, buf.remaining());
-            pos = read_buf.position();
-            buf.get(read_buf.array(), read_buf.arrayOffset() + pos, to_copy);
-            read_buf.position(pos + to_copy);
-            to_read -= to_copy;
-        }
-    }
-    
-    private void next_step (ByteBuffer buf_, int to_read_,
-            Step next_)
-    {
-        read_buf = buf_;
-        to_read = to_read_;
-        next = next_;
-    }
-    
     private void decoding_error ()
     {
-        next = null;
+        state(null);
     }
 
-    private boolean call_next() {
-        switch(next) {
+    @Override
+    protected boolean next() {
+        switch((Step)state()) {
         case one_byte_size_ready:
             return one_byte_size_ready ();
         case eight_byte_size_ready:
@@ -170,7 +75,7 @@ public class Decoder implements IDecoder {
         case message_ready:
             return message_ready ();
         default:
-            throw new IllegalStateException(next.toString());
+            throw new IllegalStateException(state().toString());
         }
     }
 
@@ -180,7 +85,6 @@ public class Decoder implements IDecoder {
         //  First byte of size is read. If it is 0xff read 8-byte size.
         //  Otherwise allocate the buffer for message data and read the
         //  message data into it.
-        tmpbuf.flip();
         byte first = tmpbuf.get();
         if (first == 0xff) {
             
@@ -207,7 +111,6 @@ public class Decoder implements IDecoder {
 
             next_step (tmpbuf, 1, Step.flags_ready);
         }
-        tmpbuf.clear();
         return true;
 
     }
@@ -215,7 +118,6 @@ public class Decoder implements IDecoder {
     private boolean eight_byte_size_ready() {
         //  8-byte payload length is read. Allocate the buffer
         //  for message body and read the message data into it.
-        tmpbuf.flip();
         final long payload_length = tmpbuf.getLong();
 
         //  There has to be at least one byte (the flags) in the message).
@@ -242,7 +144,6 @@ public class Decoder implements IDecoder {
         //  message and thus we can treat it as uninitialised...
         in_progress = new Msg(msg_size);
 
-        tmpbuf.clear();
         next_step (tmpbuf, 1, Step.flags_ready);
         
         return true;
@@ -253,7 +154,6 @@ public class Decoder implements IDecoder {
 
         //  Store the flags from the wire into the message structure.
         
-        tmpbuf.flip();
         byte first = tmpbuf.get();
         
         in_progress.set_flags (first);
@@ -268,16 +168,13 @@ public class Decoder implements IDecoder {
     private boolean message_ready() {
         //  Message is completely read. Push it further and start reading
         //  new message. (in_progress is a 0-byte message after this point.)
-        if (session == null)
-            return false;
         
-        boolean rc = session.write (in_progress);
+        boolean rc = session_write (in_progress);
         if (!rc) {
             decoding_error ();
             return false;
         }
 
-        tmpbuf.clear();
         next_step (tmpbuf, 1, Step.one_byte_size_ready);
         
         return true;
@@ -287,14 +184,8 @@ public class Decoder implements IDecoder {
     
     public boolean stalled ()
     {
-        return next == Step.message_ready;
+        return state() == Step.message_ready;
     }
-
-
-    public void set_session(SessionBase session_) {
-        session = session_;
-    }
-
 
 
 }

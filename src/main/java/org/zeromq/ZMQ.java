@@ -22,7 +22,7 @@ public class ZMQ {
     public static final int PUSH = zmq.ZMQ.ZMQ_PUSH;
     public static final int XPUB = zmq.ZMQ.ZMQ_XPUB;
     public static final int XSUB = zmq.ZMQ.ZMQ_XSUB;
-    public static final int PLAIN = zmq.ZMQ.ZMQ_PLAIN;
+    public static final int PROXY = zmq.ZMQ.ZMQ_PROXY;
 
     
     public static class Context {
@@ -98,7 +98,7 @@ public class ZMQ {
         }
         
         public boolean hasReceiveMore() {
-            return hasMore;
+            return base.getsockopt (zmq.ZMQ.ZMQ_RCVMORE) == 1;
         }
 
         public boolean connect(String addr_) {
@@ -110,6 +110,20 @@ public class ZMQ {
 
     public static Context context(int ioThreads) {
         return new Context(ioThreads);
+    }
+
+
+    public static String getVersionString() {
+        return "" + zmq.ZMQ.ZMQ_VERSION_MAJOR + "." +
+        		zmq.ZMQ.ZMQ_VERSION_MINOR + "." +
+                zmq.ZMQ.ZMQ_VERSION_PATCH;
+    }
+
+
+    public static int getFullVersion() {
+        return zmq.ZMQ.ZMQ_VERSION_MAJOR * 100000 + 
+                zmq.ZMQ.ZMQ_VERSION_MINOR * 10000 + 
+                zmq.ZMQ.ZMQ_VERSION_PATCH;
     }
 
 }

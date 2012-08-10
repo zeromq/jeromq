@@ -28,6 +28,7 @@ public class Poller extends PollerBase implements Runnable {
 
     //  If true, thread is in the process of shutting down.
     volatile private boolean stopping;
+    volatile public boolean stopped;
     
     private Thread worker;
     final private Selector selector;
@@ -38,13 +39,14 @@ public class Poller extends PollerBase implements Runnable {
         name = name_;
         retired = false;
         stopping = false;
+        stopped = false;
         
         fd_table = new HashMap<SelectableChannel, IPollEvents>();
         pollset = new HashMap<SelectableChannel, Integer>();
         try {
             selector = Selector.open();
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new ZException.IOException(e);
         }
     }
 
@@ -114,6 +116,7 @@ public class Poller extends PollerBase implements Runnable {
                 throw new ZException.IOException(e);
             }
         } else {
+            
             retired = true;
             selector.wakeup();
         }
@@ -126,12 +129,14 @@ public class Poller extends PollerBase implements Runnable {
     
     public void stop() {
         stopping = true;
+        
         try {
             selector.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
-        selector.wakeup();
+        worker.interrupt();
+
     }
     
     
@@ -178,7 +183,6 @@ public class Poller extends PollerBase implements Runnable {
                 
                 SelectableChannel channel = key.channel();
                 if (!key.isValid() ) {
-                    //fd_table.get(channel).in_event();
                     throw new UnsupportedOperationException();
                 }
                 
@@ -192,13 +196,16 @@ public class Poller extends PollerBase implements Runnable {
                 
                 if (key.isReadable() ) {
                     fd_table.get(channel).in_event();
-                } else if (key.isConnectable()) {
+                } 
+                else if (key.isConnectable()) {
                     fd_table.get(channel).connect_event();
+                    rm_fd(channel);
                 }
 
             }
 
         }
+        stopped = true;
         
     }
 

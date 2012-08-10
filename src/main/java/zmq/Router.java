@@ -112,12 +112,12 @@ public class Router extends SocketBase {
     }
     
     @Override
-    public void xsetsockopt (int option_, int optval_)
+    public void xsetsockopt (int option_, Object optval_)
     {
         if (option_ != ZMQ.ZMQ_ROUTER_BEHAVIOR) {
             return;
         }
-        report_unroutable = optval_ == 1;
+        report_unroutable = (Integer)optval_ == 1;
     }
 
 

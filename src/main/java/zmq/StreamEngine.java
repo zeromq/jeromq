@@ -18,7 +18,7 @@ public class StreamEngine implements IEngine, IPollEvents {
 
     ByteBuffer inpos_buf;
     int insize;
-    final Decoder decoder;
+    DecoderBase decoder;
     boolean input_error;
 
     ByteBuffer outpos_buf;
@@ -295,6 +295,12 @@ public class StreamEngine implements IEngine, IPollEvents {
         //  Consequently, the latency should be better in request/reply scenarios.
         out_event ();
         
+    }
+
+    @Override
+    public void plug_decoder(DecoderBase decoder_) {
+        if (decoder_ != null)
+            decoder = decoder_;
     }
 
 
