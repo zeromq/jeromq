@@ -160,6 +160,9 @@ public class Pipe extends ZObject {
 	        return null;
 
 	    Msg msg_ = inpipe.read ();
+	    if (LOG.isDebugEnabled()) {
+	        LOG.debug(parent.toString() + " read " + msg_);
+	    }
 	    if (msg_ == null) {
 	        in_active = false;
 	        return null;
@@ -187,6 +190,10 @@ public class Pipe extends ZObject {
 
         boolean more = msg_.has_more();
         outpipe.write (msg_, more);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug(parent.toString() + " write " + msg_);
+        }
+
         if (!more)
             msgs_written++;
 

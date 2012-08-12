@@ -18,14 +18,14 @@ public class StreamEngine implements IEngine, IPollEvents {
 
     private SelectableChannel handle;
 
-    ByteBuffer inpos_buf;
+    ByteBuffer inbuf;
     int insize;
-    DecoderBase decoder;
+    final DecoderBase decoder;
     boolean input_error;
 
-    ByteBuffer outpos_buf;
+    ByteBuffer outbuf;
     int outsize;
-    final Encoder encoder;
+    final EncoderBase encoder;
 
     //  The session this engine is attached to.
     SessionBase session;
@@ -45,10 +45,10 @@ public class StreamEngine implements IEngine, IPollEvents {
     
     public StreamEngine (SocketChannel fd_, final Options options_, final String endpoint_) {
         s = fd_;
-        inpos_buf = null;
+        inbuf = null;
         insize = 0;
         input_error = false;
-        outpos_buf = null;
+        outbuf = null;
         outsize = 0;
         session = null;
         options = options_;
@@ -56,14 +56,12 @@ public class StreamEngine implements IEngine, IPollEvents {
         endpoint = endpoint_;
 
         try {
-            if (options_.decoder != null) {
-                Constructor<? extends DecoderBase> con = 
-                        options_.decoder.getConstructor(Integer.class, Long.class);
-                decoder = con.newInstance(Config.in_batch_size.getValue(), options_.maxmsgsize);
-            } else {
-                decoder = new Decoder(Config.in_batch_size.getValue(), options_.maxmsgsize);
-            }
-            encoder = new Encoder(Config.out_batch_size.getValue());
+            Constructor<? extends DecoderBase> dcon = 
+                        options_.decoder.getConstructor(int.class, long.class);
+            Constructor<? extends EncoderBase> econ = 
+                    options_.encoder.getConstructor(int.class);
+            decoder = dcon.newInstance(Config.in_batch_size.getValue(), options_.maxmsgsize);
+            encoder = econ.newInstance(Config.in_batch_size.getValue());
         } catch (SecurityException e) {
             throw new ZException.InstantiationException(e);
         } catch (NoSuchMethodException e) {
@@ -112,7 +110,7 @@ public class StreamEngine implements IEngine, IPollEvents {
             //  There was an input error but the engine could not
             //  be terminated (due to the stalled decoder).
             //  Flush the pending message and terminate the engine now.
-            decoder.process_buffer (inpos_buf);
+            decoder.process_buffer (inbuf);
             assert (!decoder.stalled ());
             session.flush ();
             error ();
@@ -185,8 +183,8 @@ public class StreamEngine implements IEngine, IPollEvents {
             //  Note that buffer can be arbitrarily large. However, we assume
             //  the underlying TCP layer has fixed buffer size and thus the
             //  number of bytes read will be always limited.
-            inpos_buf = decoder.get_buffer ();
-            insize = read (inpos_buf);
+            inbuf = decoder.get_buffer ();
+            insize = read (inbuf);
 
             //  Check whether the peer has closed the connection.
             if (insize == -1) {
@@ -196,21 +194,21 @@ public class StreamEngine implements IEngine, IPollEvents {
         }
 
         //  Push the data to the decoder.
-        inpos_buf.flip();
-        int processed = decoder.process_buffer (inpos_buf);
+        int remaining = decoder.process_buffer (inbuf);
 
-        if (processed == -1) {
+        if (remaining == -1) {
             disconnection = true;
         }
         else {
 
             //  Stop polling for input if we got stuck.
-            if (processed < insize)
+            if (remaining > 0)
                 io_object.reset_pollin (handle);
 
             //  Adjust the buffer.
             //inpos += processed;
-            insize -= processed;
+            //insize -= processed;
+            insize = remaining;
         }
 
         //  Flush all messages the decoder may have produced.
@@ -258,10 +256,10 @@ public class StreamEngine implements IEngine, IPollEvents {
         //  If write buffer is empty, try to read new data from the encoder.
         if (outsize == 0) {
 
-            outpos_buf = encoder.get_data (null, null);
-            outsize = outpos_buf.remaining();
+            outbuf = encoder.get_data ();
+            outsize = outbuf.remaining();
             //  If there is no data to send, stop polling for output.
-            if (outpos_buf.remaining() == 0) {
+            if (outbuf.remaining() == 0) {
                 io_object.reset_pollout (handle);
                 return;
             }
@@ -272,7 +270,7 @@ public class StreamEngine implements IEngine, IPollEvents {
         //  arbitratily large. However, we assume that underlying TCP layer has
         //  limited transmission buffer and thus the actual number of bytes
         //  written should be reasonably modest.
-        int nbytes = write (outpos_buf);
+        int nbytes = write (outbuf);
 
         //  IO error has occurred. We stop waiting for output events.
         //  The engine is not terminated until we detect input error;
@@ -315,12 +313,6 @@ public class StreamEngine implements IEngine, IPollEvents {
         //  Consequently, the latency should be better in request/reply scenarios.
         out_event ();
         
-    }
-
-    @Override
-    public void plug_decoder(DecoderBase decoder_) {
-        if (decoder_ != null)
-            decoder = decoder_;
     }
 
 

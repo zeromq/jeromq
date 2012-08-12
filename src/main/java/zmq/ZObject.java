@@ -326,8 +326,8 @@ public class ZObject {
         throw new UnsupportedOperationException();
     }
     
-    @Override
-    public String toString() {
-        return super.toString() + "[" + tid + "]";
-    }
+    //@Override
+    //public String toString() {
+    //    return super.toString() + "[" + tid + "]";
+    //}
 }

@@ -35,9 +35,8 @@ public class TestDecoder {
         int insize = read_short_message (in);
         
         assertThat(insize, is(7));
-        in.flip();
-        int processed = decoder.process_buffer (in);
-        assertThat(processed, is(7));
+        int remaining = decoder.process_buffer (in);
+        assertThat(remaining, is(0));
     }
 
     @Test
@@ -47,11 +46,12 @@ public class TestDecoder {
         assertThat(insize, is(7));
         read_short_message (in);
         
-        in.flip();
-        int processed = decoder.process_buffer (in);
-        assertThat(processed, is(14));
+        int remaining = decoder.process_buffer (in);
+        assertThat(remaining, is(0));
+        assertThat(in.position(), is(14));
         
         assertThat(session.out.size(), is(2));
+        
     }
     
     static class CustomDecoder extends DecoderBase
@@ -98,7 +98,7 @@ public class TestDecoder {
         private boolean read_body() {
             
             session_write(msg);
-            
+            header.clear();
             next_step(header, 10, State.read_header);
             return true;
         }
@@ -120,9 +120,8 @@ public class TestDecoder {
         assertThat(insize, is(10));
         read_body (in);
         
-        in.flip();
-        int processed = cdecoder.process_buffer (in);
-        assertThat(processed, is(30));
+        int remaining = cdecoder.process_buffer (in);
+        assertThat(remaining, is(0));
         assertThat(cdecoder.size, is(20));
         assertThat(session.out.size(), is(1));
     }

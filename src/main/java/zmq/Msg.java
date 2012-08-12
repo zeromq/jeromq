@@ -288,7 +288,7 @@ public class Msg implements IReplaceable {
         byte[] bytes = new byte[size];
         
         ByteBuffer b = get_buffer();
-        b.flip();
+        b.rewind();
         b.get(bytes);
         b.rewind();
         

@@ -91,6 +91,7 @@ public class Options {
     //  ID of the socket.
     int socket_id;
     Class<? extends DecoderBase> decoder;
+    Class<? extends EncoderBase> encoder;
 
     public Options() {
         sndhwm = 1000;
@@ -124,6 +125,8 @@ public class Options {
         
     	identity = null;
     	tcp_accept_filters = new ArrayList<TcpAddress.TcpAddressMask>();
+    	decoder = Decoder.class;
+    	encoder = Encoder.class;
     }
     
     @SuppressWarnings("unchecked")
@@ -156,6 +159,20 @@ public class Options {
             linger = (Integer)optval_;
             return;
 
+        case ZMQ.ZMQ_ENCODER:
+            if (optval_ instanceof String) {
+                try {
+                    encoder = Class.forName((String) optval_).asSubclass(EncoderBase.class);
+                } catch (ClassNotFoundException e) {
+                    throw new IllegalArgumentException(e);
+                }
+            } else if (optval_ instanceof Class) {
+                encoder = (Class<? extends EncoderBase>) optval_;
+            } else {
+                throw new IllegalArgumentException("encoder " + optval_);
+            }
+            return;
+            
         case ZMQ.ZMQ_DECODER:
             if (optval_ instanceof String) {
                 try {
@@ -166,12 +183,9 @@ public class Options {
             } else if (optval_ instanceof Class) {
                 decoder = (Class<? extends DecoderBase>) optval_;
             } else {
-                throw new IllegalArgumentException("indentity " + optval_);
+                throw new IllegalArgumentException("decoder " + optval_);
             }
             return;
-        //case ZMQ.ZMQ_ENCODER:
-        //    decoder = optval_;
-        //    return;
 
         default:
             if (option_ != 6)

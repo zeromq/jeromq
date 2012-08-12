@@ -209,7 +209,7 @@ public class TcpConnecter extends Own implements IPollEvents {
         try {
             engine = new StreamEngine (fd, options, endpoint);
         } catch (ZException.InstantiationException e) {
-            LOG.error("Failed initialize StreamEngine", e.getCause());
+            LOG.error("Failed to initialize StreamEngine", e.getCause());
             session.monitor_event (ZMQ.ZMQ_EVENT_CONNECT_FAILED, e.getCause());
             return;
         }

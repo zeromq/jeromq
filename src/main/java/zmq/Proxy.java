@@ -37,97 +37,55 @@ public class Proxy extends Router {
         sending_reply = false;
         request_begins = true;
         
+        options.send_identity = false;
         options.type = ZMQ.ZMQ_PROXY;
     }
     
-    @Override
-    protected boolean xsend (Msg msg_, int flags_)
-    {
-        //  If we are in the middle of receiving a request, we cannot send reply.
-        if (!sending_reply) {
-            throw new IllegalStateException("Cannot send another reply");
-        }
-
-        boolean more = msg_.has_more();
-
-        //  Push message to the reply pipe.
-        boolean rc = super.xsend (msg_, flags_);
-        if (!rc)
-            return rc;
-
-        //  If the reply is complete flip the FSM back to request receiving state.
-        if (!more)
-            sending_reply = false;
-
-        return true;
-    }
-    
-    @Override
-    protected Msg xrecv (int flags_)
-    {
-        //  If we are in middle of sending a reply, we cannot receive next request.
-        if (sending_reply) {
-            throw new IllegalStateException("Cannot receive another request");
-        }
-
-        //  First thing to do when receiving a request is to copy all the labels
-        //  to the reply pipe.
-        if (request_begins) {
-            while (true) {
-                Msg msg_ = super.xrecv (flags_);
-                if (msg_ == null)
-                    return null;
-                assert (msg_.has_more());
-                boolean bottom = (msg_.size () == 0);
-                boolean rc = super.xsend (msg_, flags_);
-                assert (rc);
-                if (bottom)
-                    break;
-            }
-            request_begins = false;
-        }
-
-        //  Get next message part to return to the user.
-        Msg msg_ = super.xrecv (flags_);
-        if (msg_ == null)
-           return null;
-
-        //  If whole request is read, flip the FSM to reply-sending state.
-        if (!msg_.has_more()) {
-            sending_reply = true;
-            request_begins = true;
-        }
-
-        return msg_;
-    }
-
-    @Override
-    protected boolean xhas_in ()
-    {
-        if (sending_reply)
-            return false;
-
-        return super.xhas_in ();
-    }
-    
-    @Override
-    protected boolean xhas_out ()
-    {
-        if (!sending_reply)
-            return false;
-
-        return super.xhas_out ();
-    }
-
     public static class ProxySession extends Router.RouterSession {
 
+        private boolean message_begins;
+        private final String address;
+        
         public ProxySession(IOThread io_thread_, boolean connect_,
             SocketBase socket_, final Options options_,
             final Address addr_) {
+  
             super(io_thread_, connect_, socket_, options_, addr_);
-            
+            message_begins = true;
+            address = addr_.address();
         }
         
+        @Override
+        protected boolean write (Msg msg_)
+        {
+            //  generate First identity message 
+            /*
+            if (message_begins) {
+                Msg identity = new Msg(address.length());
+                //identity.put((byte)0);
+                identity.put(address.getBytes());
+                if (!super.write(identity)) {
+                    return false;
+                }
+                message_begins = false;
+            }
+            */
+            // fake req
+            if (message_begins) {
+                Msg bottom = new Msg();
+                bottom.set_flags (Msg.more);
+
+                //Msg identity = new Msg(0);
+                //identity.put((byte)0);
+                //identity.put(address.getBytes());
+                if (!super.write(bottom)) {
+                    return false;
+                }
+                message_begins = false;
+            }
+            
+            return super.write(msg_);
+        }
     }
 
 

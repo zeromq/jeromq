@@ -87,7 +87,8 @@ public class ZMQ {
     public static final int ZMQ_TCP_ACCEPT_FILTER = 38;
     
     /* Custom options */
-    public static final int ZMQ_DECODER = 1001;
+    public static final int ZMQ_ENCODER = 1001;
+    public static final int ZMQ_DECODER = 1002;
     
     /*  Message options                                                           */
     

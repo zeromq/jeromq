@@ -19,6 +19,7 @@
 */
 package zmq;
 
+import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 
 public class Address {
@@ -35,11 +36,18 @@ public class Address {
     
     private IZAddress resolved;
     
-    public Address(final String protocol, final String address) {
-        this.protocol = protocol;
-        this.address = address;
+    public Address(final String protocol_, final String address_) {
+        protocol = protocol_;
+        address = address_;
+        resolved = null;
     }
     
+    public Address(SocketAddress sockaddr_) {
+        protocol = "tcp";
+        InetSocketAddress sockaddr = (InetSocketAddress)sockaddr_;
+        address = sockaddr.getAddress().getHostAddress() + ":" + sockaddr.getPort();
+    }
+
     @Override
     public String toString() {
         if (protocol.equals("tcp")) {

@@ -59,9 +59,6 @@ public abstract class SocketBase extends Own
 
     final Lock sync;
     
-    private final String name;
-    private final String id;
-    
     SocketBase (Ctx parent_, int tid_, int sid_) 
     {
         super (parent_, tid_);
@@ -79,9 +76,7 @@ public abstract class SocketBase extends Own
         clock = new Clock();
         pipes = new ArrayList<Pipe>();
         
-        id = "" + tid_ + "." + sid_;
-        name = "socket-" + id;
-        mailbox = new Mailbox(name);
+        mailbox = new Mailbox("socket-" + sid_);
     }
     
     protected void xattach_pipe (Pipe pipe_, boolean icanhasall_) {
@@ -105,10 +100,6 @@ public abstract class SocketBase extends Own
         return tag == 0xbaddecaf;
     }
     
-    public String id() {
-        return id;
-    }
-
     public static SocketBase create (int type_, Ctx parent_,
         int tid_, int sid_)
     {
@@ -612,7 +603,7 @@ public abstract class SocketBase extends Own
     
     @Override
     public String toString() {
-        return super.toString() + "[" + name + "]";
+        return super.toString() + "[" + options.socket_id + "]";
     }
 
     

@@ -47,8 +47,6 @@ public class SessionBase extends Own implements Pipe.IPipeEvents, IPollEvents {
 
     IOObject io_object;
 
-    private final String name ;
-    
     public SessionBase(IOThread io_thread_, boolean connect_,
             SocketBase socket_, Options options_, Address addr_) {
         super(io_thread_, options_);
@@ -66,7 +64,6 @@ public class SessionBase extends Own implements Pipe.IPipeEvents, IPollEvents {
         recv_identity = options_.recv_identity;
         addr = addr_;
         
-        name = "session-" + socket_.id();
     }
 
     public static SessionBase create(IOThread io_thread_, boolean connect_,
@@ -257,7 +254,7 @@ public class SessionBase extends Own implements Pipe.IPipeEvents, IPollEvents {
     
     @Override
     public String toString() {
-        return super.toString() + "[" + name + "]";
+        return super.toString() + "[" + options.socket_id + "]";
     }
 
     public void flush() {
@@ -338,23 +335,16 @@ public class SessionBase extends Own implements Pipe.IPipeEvents, IPollEvents {
             incomplete_in = false;
             
             if (LOG.isDebugEnabled()) {
-                LOG.debug("read " + msg_);
+                LOG.debug(toString() +  " send identity " + msg_);
             }
             return msg_;
         }
 
         if (pipe == null || (msg_ = pipe.read ()) == null ) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("read none Msg");
-            }
             return null;
         }
         incomplete_in = msg_.has_more();
 
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("read " + msg_);
-        }
-        
         return msg_;
 
     }
@@ -367,9 +357,6 @@ public class SessionBase extends Own implements Pipe.IPipeEvents, IPollEvents {
             recv_identity = false;
         }
         
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("write " + msg_);
-        }
         
         if (pipe != null && pipe.write (msg_)) {
             return true;

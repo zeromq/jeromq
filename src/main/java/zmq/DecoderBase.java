@@ -79,12 +79,13 @@ abstract public class DecoderBase {
             b = read_buf;
         } else {
             b = buf;
+            b.clear();
         }
-        b.clear();
         return b;
     }
     
 
+    // return remaining
     public int process_buffer(ByteBuffer buf_) {
         //  Check if we had an error in previous attempt.
         if (state() == null)
@@ -94,19 +95,20 @@ abstract public class DecoderBase {
         //  is required. Also, run the state machine in case all the data
         //  were processed.
         if (buf_ == read_buf) {
-            int size_ = buf_.remaining();
-            to_read -= size_;
+            to_read = buf_.remaining();
+            //to_read -= size_;
 
             while (to_read == 0) {
                 if (!next()) {
                     if (state() == null)
                         return -1;
-                    return size_;
+                    return 0;
                 }
             }
-            return size_;
+            return 0;
         }
 
+        buf.flip();
         int pos = 0;
         while (true) {
 
@@ -117,13 +119,13 @@ abstract public class DecoderBase {
                 if (!next ()) {
                     if (state() == null)
                         return -1;
-                    return buf.position();
+                    return buf.remaining();
                 }
             }
 
             //  If there are no more data in the buffer, return.
             if (!buf.hasRemaining())
-                return buf.position();
+                return 0;
             //  Copy the data from buffer to the message.
             int to_copy = Math.min (to_read, buf.remaining());
             pos = read_buf.position();

@@ -87,7 +87,7 @@ public class Decoder extends DecoderBase {
         //  message data into it.
         byte first = tmpbuf.get();
         if (first == 0xff) {
-            
+            tmpbuf.clear();
             next_step (tmpbuf, 8, Step.eight_byte_size_ready);
         } else {
 
@@ -109,6 +109,7 @@ public class Decoder extends DecoderBase {
                 in_progress = new Msg(first-1);
             }
 
+            tmpbuf.clear();
             next_step (tmpbuf, 1, Step.flags_ready);
         }
         return true;
@@ -143,7 +144,8 @@ public class Decoder extends DecoderBase {
         //  close it before calling init_size, however, it's a 0-byte
         //  message and thus we can treat it as uninitialised...
         in_progress = new Msg(msg_size);
-
+        
+        tmpbuf.clear();
         next_step (tmpbuf, 1, Step.flags_ready);
         
         return true;

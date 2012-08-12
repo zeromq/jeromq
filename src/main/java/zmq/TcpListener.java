@@ -98,7 +98,7 @@ public class TcpListener extends Own implements IPollEvents {
         try {
             engine = new StreamEngine (fd, options, endpoint);
         } catch (ZException.InstantiationException e) {
-            LOG.error("Failed initialize StreamEngine", e.getCause());
+            LOG.error("Failed to initialize StreamEngine", e.getCause());
             socket.monitor_event (ZMQ.ZMQ_EVENT_ACCEPT_FAILED, e.getCause());
             return;
         }
@@ -108,7 +108,7 @@ public class TcpListener extends Own implements IPollEvents {
 
         //  Create and launch a session object. 
         SessionBase session = SessionBase.create (io_thread, false, socket,
-            options, null);
+            options, new Address(fd.socket().getRemoteSocketAddress()));
         session.inc_seqnum ();
         launch_child (session);
         send_attach (session, engine, false);

@@ -118,7 +118,7 @@ public class TestUtil {
         assert (rc == 4);
         System.out.println(String.format("%02x %02x", buf[0], buf[1]));
         try {
-            Thread.sleep(10000);
+            Thread.sleep(1000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }

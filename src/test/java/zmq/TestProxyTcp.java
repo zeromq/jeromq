@@ -59,8 +59,11 @@ public class TestProxyTcp {
         private SocketBase s = null;
         private String name = null;
         public Dealer(Ctx ctx, String name_) {
-            s = ZMQ.zmq_socket (ctx, ZMQ.ZMQ_DEALER);
-            s.setsockopt(ZMQ.ZMQ_IDENTITY, name_);
+//            s = ZMQ.zmq_socket (ctx, ZMQ.ZMQ_DEALER);
+//            s.setsockopt(ZMQ.ZMQ_IDENTITY, name_);
+            s = ZMQ.zmq_socket (ctx, ZMQ.ZMQ_REP);
+            //s.setsockopt(ZMQ.ZMQ_IDENTITY, name_);
+
             name = name_;
         }
         
@@ -69,7 +72,7 @@ public class TestProxyTcp {
             
             System.out.println("Start dealer " + name);
             
-            ZMQ.zmq_connect(s, "ipc://router.ipc");
+            ZMQ.zmq_connect(s, "tcp://127.0.0.1:5561");
             while (true) {
                 Msg msg = s.recv(0);
                 if (msg == null) {
@@ -79,6 +82,7 @@ public class TestProxyTcp {
                     }
                     continue;
                 }
+                System.out.println("REP recieved " + msg);
                 String data = new String(msg.data().array(), 0 , msg.size());
                 if (data.equals("end")) {
                     break;
@@ -131,6 +135,7 @@ public class TestProxyTcp {
 
         private boolean read_body() {
             
+            System.out.println("Received body " + new String(msg.bytes()));
             session_write(msg);
             
             next_step(header, 4, State.read_header);
@@ -144,6 +149,65 @@ public class TestProxyTcp {
         
     }
 
+    static class ProxyEncoder extends EncoderBase
+    {
+
+        enum State {
+            write_header,
+            write_body
+        };
+        
+        ByteBuffer header = ByteBuffer.allocate(4);
+        Msg msg;
+        int size = -1;
+        
+        public ProxyEncoder(int bufsize_) {
+            super(bufsize_);
+            next_step(null, 0, State.write_header, true);
+        }
+
+        @Override
+        protected boolean next() {
+            switch ((State)state()) {
+            case write_header:
+                return write_header();
+            case write_body:
+                return write_body();
+            }
+            return false;
+        }
+
+        private boolean write_body() {
+            System.out.println("writer body " + size);
+            next_step(msg, State.write_body, !msg.has_more());
+            
+            return true;
+        }
+
+        private boolean write_header() {
+            
+            msg = session_read();
+            if (msg == null) {
+                System.out.println("no data yet");
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                }
+                return false;
+            }
+            System.out.println("write header");
+
+            header.clear();
+            header.put(String.format("%04d", msg.size()).getBytes());
+            header.flip();
+            
+            next_step(header, 4, State.write_header, false);
+            return true;
+        }
+
+        
+    }
+
     @Test
     public void testReqrepTcp()  throws Exception {
         Ctx ctx = ZMQ.zmq_init (1);
@@ -153,19 +217,20 @@ public class TestProxyTcp {
 
         SocketBase sa = ZMQ.zmq_socket (ctx, ZMQ.ZMQ_PROXY);
         sa.setsockopt(ZMQ.ZMQ_DECODER, ProxyDecoder.class);
+        sa.setsockopt(ZMQ.ZMQ_ENCODER, ProxyEncoder.class);
+        
         assert (sa != null);
         rc = ZMQ.zmq_bind (sa, "tcp://127.0.0.1:5560");
         assert (!rc );
 
         
-        SocketBase sb = ZMQ.zmq_socket (ctx, ZMQ.ZMQ_ROUTER);
+        SocketBase sb = ZMQ.zmq_socket (ctx, ZMQ.ZMQ_DEALER);
         assert (sb != null);
-        rc = ZMQ.zmq_bind (sb, "ipc://router.ipc");
+        rc = ZMQ.zmq_bind (sb, "tcp://127.0.0.1:5561");
         assert (!rc );
 
 
         
-        ZMQ.zmq_connect(sa, "ipc://router.ipc");
 
         new Dealer(ctx, "A").start();
         new Dealer(ctx, "B").start();
