@@ -53,6 +53,9 @@ public class Utils {
         s.configureBlocking(false);
     }
     
+    public static <T> T[] realloc(Class<T> klass, T[] src, int size) {
+        return realloc(klass, src, size, true);
+    }
     @SuppressWarnings("unchecked")
     public static <T> T[] realloc(Class<T> klass, T[] src, int size, boolean ended) {
         T[] dest;
@@ -133,5 +136,15 @@ public class Utils {
         buf.get(d);
         return d;
     }
+
+    public static byte[] realloc(byte[] src, int size) {
+
+        byte[] dest = new byte[size];
+        if (src != null)
+            System.arraycopy(src, 0, dest, 0, src.length);
+        
+        return dest;
+    }
+
 
 }

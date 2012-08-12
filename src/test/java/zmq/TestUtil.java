@@ -116,6 +116,12 @@ public class TestUtil {
         System.out.println("sent message");
         rc = in.read(buf, 0, 4);
         assert (rc == 4);
+        System.out.println(String.format("%02x %02x", buf[0], buf[1]));
+        try {
+            Thread.sleep(10000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         reslen = Integer.valueOf(new String(buf, 0, 4));
         
         rc = in.read(buf, 4, reslen);

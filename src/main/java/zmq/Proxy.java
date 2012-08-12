@@ -128,17 +128,6 @@ public class Proxy extends Router {
             
         }
         
-        @Override
-        protected void process_attach (IEngine engine_) {
-            System.out.println("olleh1");
-            if (options.decoder != null)
-                engine_.plug_decoder(options.decoder);
-            
-            super.process_attach(engine_);
-            
-
-        }
-        
     }
 
 

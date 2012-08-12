@@ -1,6 +1,8 @@
 package zmq;
 
 import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.ByteBuffer;
@@ -45,17 +47,35 @@ public class StreamEngine implements IEngine, IPollEvents {
         s = fd_;
         inpos_buf = null;
         insize = 0;
-        decoder = new Decoder(Config.in_batch_size.getValue(), options_.maxmsgsize);
         input_error = false;
         outpos_buf = null;
         outsize = 0;
-        encoder = new Encoder(Config.out_batch_size.getValue());
         session = null;
         options = options_;
         plugged = false;
         endpoint = endpoint_;
 
-        // io_object = new IOObject(); xxxx at plug call
+        try {
+            if (options_.decoder != null) {
+                Constructor<? extends DecoderBase> con = 
+                        options_.decoder.getConstructor(Integer.class, Long.class);
+                decoder = con.newInstance(Config.in_batch_size.getValue(), options_.maxmsgsize);
+            } else {
+                decoder = new Decoder(Config.in_batch_size.getValue(), options_.maxmsgsize);
+            }
+            encoder = new Encoder(Config.out_batch_size.getValue());
+        } catch (SecurityException e) {
+            throw new ZException.InstantiationException(e);
+        } catch (NoSuchMethodException e) {
+            throw new ZException.InstantiationException(e);
+        } catch (InvocationTargetException e) {
+            throw new ZException.InstantiationException(e);
+        } catch (IllegalAccessException e) {
+            throw new ZException.InstantiationException(e);
+        } catch (InstantiationException e) {
+            throw new ZException.InstantiationException(e);
+        }
+        
         //  Put the socket into non-blocking mode.
         try {
             Utils.unblock_socket (s);

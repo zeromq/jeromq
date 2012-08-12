@@ -94,7 +94,14 @@ public class TcpListener extends Own implements IPollEvents {
         LOG.info("Accept " + fd.socket().getRemoteSocketAddress());
         
         //  Create the engine object for this connection.
-        StreamEngine engine = new StreamEngine (fd, options, endpoint);
+        StreamEngine engine = null;
+        try {
+            engine = new StreamEngine (fd, options, endpoint);
+        } catch (ZException.InstantiationException e) {
+            LOG.error("Failed initialize StreamEngine", e.getCause());
+            socket.monitor_event (ZMQ.ZMQ_EVENT_ACCEPT_FAILED, e.getCause());
+            return;
+        }
         //  Choose I/O thread to run connecter in. Given that we are already
         //  running in an I/O thread, there must be at least one available.
         IOThread io_thread = choose_io_thread (options.affinity);

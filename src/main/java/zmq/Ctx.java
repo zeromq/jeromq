@@ -39,7 +39,7 @@ import org.slf4j.LoggerFactory;
 //  the library.
 
 public class Ctx {
-	
+    
     private static Logger LOG = LoggerFactory.getLogger(Ctx.class);
 
     //  Information associated with inproc endpoint. Note that endpoint options
@@ -47,7 +47,7 @@ public class Ctx {
     //  for synchronisation, handshaking or similar.
     
     public static class Endpoint {
-		SocketBase socket;
+        SocketBase socket;
         Options options;
         
         public Endpoint(SocketBase socket_, Options options_) {
@@ -55,7 +55,7 @@ public class Ctx {
             options = options_;
         }
 
-	}
+    }
     //  Used to check whether the object is a context.
     private int tag;
 
@@ -153,7 +153,7 @@ public class Ctx {
     //  down. If there are open sockets still, the deallocation happens
     //  after the last one is closed.
     
-    public int terminate() {
+    public void terminate() {
         
         tag = 0xdeadbeef;
         
@@ -187,8 +187,7 @@ public class Ctx {
             Command cmd;
             cmd = term_mailbox.recv (-1);
             if (cmd == null)
-                return -1;
-            //Errno.errno_assert (cmd != null);
+                throw new IllegalStateException();
             assert (cmd.type() == Command.Type.done);
             slot_sync.lock ();
             assert (sockets.isEmpty ());
@@ -204,7 +203,6 @@ public class Ctx {
         reaper.stop();
         term_mailbox.close();
         
-        return 0;
     }
     
     public void monitor(IZmqMonitor monitor_) {
@@ -238,7 +236,7 @@ public class Ctx {
         if (option_ == ZMQ.ZMQ_IO_THREADS)
             rc = io_thread_count;
         else {
-        	throw new IllegalArgumentException("option = " + option_);
+            throw new IllegalArgumentException("option = " + option_);
         }
         return rc;
     }
@@ -302,7 +300,6 @@ public class Ctx {
     
             //  If max_sockets limit was reached, return error.
             if (empty_slots.isEmpty ()) {
-                Errno.set(Errno.EMFILE);
                 throw new ZException.NoFreeSlot();
             }
     

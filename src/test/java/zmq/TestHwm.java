@@ -82,14 +82,11 @@ public class TestHwm {
         assertThat (rc, notNullValue());
         assertThat (m.size(), is(0));
         
-        rc = ZMQ.zmq_close (sc);
-        assertThat (rc, is(0));
+        ZMQ.zmq_close (sc);
 
-        rc = ZMQ.zmq_close (sb);
-        assertThat (rc, is(0));
+        ZMQ.zmq_close (sb);
 
-        rc = ZMQ.zmq_term (ctx);
-        assertThat (rc, is(0));
+        ZMQ.zmq_term (ctx);
         
 
     }

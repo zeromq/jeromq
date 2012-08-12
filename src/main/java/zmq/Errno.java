@@ -10,7 +10,7 @@ public enum Errno {
     //ENOMEM(12, "Cannot allocate memory"),
 	//EFAULT(14, "Bad address"),
 	//EINVAL(22, "Invalid argument"),
-	EMFILE(24, "Too many files open"),
+	//EMFILE(24, "Too many files open"),
 	EINPROGRESS(46, "Operation now in progress"),
 	ENOTSOCK(48, "Socket operation on nonsocket"),
 	//EPROTONOSUPPORT(53, "Protocol not supported"),

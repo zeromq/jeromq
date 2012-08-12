@@ -121,11 +121,9 @@ public abstract class SocketBase extends Own
         case ZMQ.ZMQ_PUB:
             s = new Pub (parent_, tid_, sid_);
             break;
-            /*
         case ZMQ.ZMQ_SUB:
             s = new Sub (parent_, tid_, sid_);
             break;
-            */
         case ZMQ.ZMQ_REQ:
             s = new Req (parent_, tid_, sid_);
             break;
@@ -144,14 +142,15 @@ public abstract class SocketBase extends Own
         case ZMQ.ZMQ_PUSH:
             s = new Push (parent_, tid_, sid_);
             break;
-            /*
+            
         case ZMQ.ZMQ_XPUB:
             s = new XPub (parent_, tid_, sid_);
             break;
+            
         case ZMQ.ZMQ_XSUB:
             s = new XSub (parent_, tid_, sid_);
             break;
-        */
+        
         case ZMQ.ZMQ_PROXY:
             s = new Proxy (parent_, tid_, sid_);
             break;
@@ -365,7 +364,7 @@ public abstract class SocketBase extends Own
 
             //  If we are asked to wait, simply ask mailbox to wait.
             cmd = mailbox.recv (timeout_);
-            ret = false;
+            //ret = false;
         }
         else {
 
@@ -499,7 +498,7 @@ public abstract class SocketBase extends Own
         endpoints.put (addr_, endpoint_);
     }
 
-    public int close() {
+    public void close() {
         //  Mark the socket as dead
         tag = 0xdeadbeef;
        
@@ -508,7 +507,6 @@ public abstract class SocketBase extends Own
         //  process.
         send_reap (this);
 
-        return 0;
     }
 
     public void stop() {
@@ -878,5 +876,9 @@ public abstract class SocketBase extends Own
 
     public SelectableChannel get_fd() {
         return mailbox.get_fd();
+    }
+
+    protected void xhiccuped(Pipe pipe_) {
+        throw new UnsupportedOperationException("Must override");
     }
 }

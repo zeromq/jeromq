@@ -6,8 +6,13 @@ import java.net.SocketException;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SocketChannel;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class TcpConnecter extends Own implements IPollEvents {
 
+    Logger LOG = LoggerFactory.getLogger(TcpConnecter.class);
+    
     private final static int reconnect_timer_id = 1;
     
     final private IOObject io_object;
@@ -200,8 +205,15 @@ public class TcpConnecter extends Own implements IPollEvents {
         }
 
         //  Create the engine object for this connection.
-        StreamEngine engine = new StreamEngine (fd, options, endpoint);
-        //alloc_assert (engine);
+        StreamEngine engine = null;
+        try {
+            engine = new StreamEngine (fd, options, endpoint);
+        } catch (ZException.InstantiationException e) {
+            LOG.error("Failed initialize StreamEngine", e.getCause());
+            session.monitor_event (ZMQ.ZMQ_EVENT_CONNECT_FAILED, e.getCause());
+            return;
+        }
+            //alloc_assert (engine);
 
         //  Attach the engine to the corresponding session object.
         send_attach (session, engine);

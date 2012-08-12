@@ -120,9 +120,9 @@ public class TestProxyTcp {
         private boolean read_header() {
             byte[] h = new byte[4];
             header.get(h, 0, 4);
-            
+            System.out.println(String.format("%02x %02x", h[0], h[1]));
             size = Integer.parseInt(new String(h));
-            
+            System.out.println("Received " + size);
             msg = new Msg(size);
             next_step(msg, State.read_body);
             
@@ -152,7 +152,7 @@ public class TestProxyTcp {
         boolean rc ;
 
         SocketBase sa = ZMQ.zmq_socket (ctx, ZMQ.ZMQ_PROXY);
-        sa.setsockopt(ZMQ.ZMQ_DECODER, new ProxyDecoder(64, 1024));
+        sa.setsockopt(ZMQ.ZMQ_DECODER, ProxyDecoder.class);
         assert (sa != null);
         rc = ZMQ.zmq_bind (sa, "tcp://127.0.0.1:5560");
         assert (!rc );

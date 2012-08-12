@@ -231,22 +231,6 @@ public class Msg implements IReplaceable {
     public void reset_flags (byte f) {
         flags = (byte) (flags &~ f);
     }
-
-    /*
-    public void move (Msg src_)
-    {
-        //  Check the validity of the source.
-        if (!src_.check ()) {
-            throw new IllegalStateException();
-        }
-
-        close ();
-
-        clone(src_);
-
-        src_.init ();
-    }
-    */
     
     private ByteBuffer get_buffer() {
 
@@ -292,6 +276,24 @@ public class Msg implements IReplaceable {
         clone((Msg)src);
     }
 
+    public boolean is_vsm() {
+        return type == type_vsm;
+    }
+
+    public void put(byte b) {
+        get_buffer().put(b);
+    }
+
+    public byte[] bytes() {
+        byte[] bytes = new byte[size];
+        
+        ByteBuffer b = get_buffer();
+        b.flip();
+        b.get(bytes);
+        b.rewind();
+        
+        return bytes;
+    }
 
 
 }

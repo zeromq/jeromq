@@ -31,6 +31,8 @@ public class XPub extends SocketBase {
     
 	public XPub(Ctx parent_, int tid_, int sid_) {
 		super (parent_, tid_, sid_);
+		
+		options.type = ZMQ.ZMQ_XPUB;
 		more = false;
 		
 		subscriptions = new Mtrie();
@@ -99,7 +101,7 @@ public class XPub extends SocketBase {
 	    Mtrie.IMtrieHandler send_unsubscription = new Mtrie.IMtrieHandler() {
             
             @Override
-            public void removed(byte[] data_, Object arg_) {
+            public void invoke(Pipe pipe_, byte[] data_, Object arg_) {
                 XPub self = (XPub) arg_;
 
                 if (self.options.type != ZMQ.ZMQ_PUB) {
@@ -119,7 +121,53 @@ public class XPub extends SocketBase {
 	    dist.terminated (pipe_);
 	}
 
+	@Override
+	protected Msg xrecv(int flags_) {
+	    //  If there is at least one 
+	    if (pending.isEmpty ()) {
+	        return null;
+	    }
 
+	    Blob first = pending.pollFirst();
+	    Msg msg_ = new Msg(first.size());
+	    msg_.put(first.data());
+	    return msg_;
+
+	}
+
+	@Override
+	protected boolean xsend(Msg msg_, int flags_) {
+	    boolean msg_more = msg_.has_more(); 
+
+	    Mtrie.IMtrieHandler mark_as_matching = new Mtrie.IMtrieHandler() {
+
+            @Override
+            public void invoke(Pipe pipe_, byte[] data, Object arg_) {
+                XPub self = (XPub) arg_;
+                self.dist.match (pipe_);
+            }
+	        
+	    };
+	    //  For the first part of multi-part message, find the matching pipes.
+	    if (!more)
+	        subscriptions.match (msg_.data ().array(), msg_.data().arrayOffset(),
+	            mark_as_matching, this);
+
+	    //  Send the message to all the pipes that were marked as matching
+	    //  in the previous step.
+	    boolean rc = dist.send_to_matching (msg_, flags_);
+	    if (!rc)
+	        return rc;
+
+	    //  If we are at the end of multi-part message we can mark all the pipes
+	    //  as non-matching.
+	    if (!msg_more)
+	        dist.unmatch ();
+
+	    more = msg_more;
+	    return true;
+	}
+	
     @Override
     protected boolean xhas_in() {
         throw new UnsupportedOperationException();
@@ -130,6 +178,5 @@ public class XPub extends SocketBase {
     {
         dist.activated (pipe_);
     }
-
 
 }

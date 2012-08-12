@@ -94,34 +94,33 @@ public class SessionBase extends Own implements Pipe.IPipeEvents, IPollEvents {
             s = new Pub.PubSession (io_thread_, connect_,
                 socket_, options_, addr_);
             break;
-        /*
-        case ZMQ_XPUB:
-            s = new (std::nothrow) xpub_session_t (io_thread_, connect_,
+        case ZMQ.ZMQ_XPUB:
+            s = new XPub.XPubSession(io_thread_, connect_,
                 socket_, options_, addr_);
             break;
-        case ZMQ_SUB:
-            s = new (std::nothrow) sub_session_t (io_thread_, connect_,
+        case ZMQ.ZMQ_SUB:
+            s = new  Sub.SubSession (io_thread_, connect_,
                 socket_, options_, addr_);
             break;
-        case ZMQ_XSUB:
-            s = new (std::nothrow) xsub_session_t (io_thread_, connect_,
+        case ZMQ.ZMQ_XSUB:
+            s = new XSub.XSubSession (io_thread_, connect_,
                 socket_, options_, addr_);
             break;
-            */
+            
         case ZMQ.ZMQ_PUSH:
             s = new Push.PushSession (io_thread_, connect_,
                 socket_, options_, addr_);
             break;
+        case ZMQ.ZMQ_PULL:
+            s = new Pull.PullSession (io_thread_, connect_,
+                socket_, options_, addr_);
+            break;
             /*
-        case ZMQ_PULL:
-            s = new (std::nothrow) pull_session_t (io_thread_, connect_,
-                socket_, options_, addr_);
-            break;
         case ZMQ_PAIR:
-            s = new (std::nothrow) pair_session_t (io_thread_, connect_,
+            s = new Pair.PairSession (io_thread_, connect_,
                 socket_, options_, addr_);
             break;
-        */
+            */
         case ZMQ.ZMQ_PROXY:
             s = new Proxy.ProxySession(io_thread_, connect_, 
                     socket_, options_, addr_);

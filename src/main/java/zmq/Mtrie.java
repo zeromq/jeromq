@@ -1,9 +1,9 @@
 package zmq;
 
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
+
+import zmq.Mtrie.IMtrieHandler;
 
 public class Mtrie {
     Set<Pipe> pipes;
@@ -13,7 +13,7 @@ public class Mtrie {
     short live_nodes;
     
     public static interface IMtrieHandler {
-        void removed(byte[] data, Object arg);
+        void invoke(Pipe pipe, byte[] data, Object arg);
     }
     /*
     union {
@@ -143,7 +143,7 @@ public class Mtrie {
     }
     
     public boolean rm (Pipe pipe_, IMtrieHandler func, Object arg) {
-        return rm_helper(pipe_, null, 0, 0, func, arg );
+        return rm_helper(pipe_, new byte[0], 0, 0, func, arg );
     }
 
     private boolean rm_helper(Pipe pipe_, byte[] buff_, int buffsize_, int maxbuffsize_,
@@ -151,17 +151,14 @@ public class Mtrie {
         
         //  Remove the subscription from this node.
         if (pipes != null && pipes.remove(pipe_) && pipes.isEmpty()) {
-            func_.removed(buff_, arg_);
+            func_.invoke(null, buff_, arg_);
             pipes = null;
         }
 
         //  Adjust the buffer.
         if (buffsize_ >= maxbuffsize_) {
             maxbuffsize_ = buffsize_ + 256;
-            byte[] old = buff_;
-            buff_ = new byte[maxbuffsize_];
-            if (old != null)
-                System.arraycopy(old, 0, buff_, 0, old.length);
+            buff_ = Utils.realloc(buff_, maxbuffsize_);
         }
 
         //  If there are no subnodes in the trie, return.
@@ -356,6 +353,50 @@ public class Mtrie {
         }
 
         return ret;
+    }
+
+    public void match(byte[] data_, int size_, IMtrieHandler func_, Object arg_) {
+        Mtrie current = this;
+        
+        int idx = 0;
+        
+        while (true) {
+            byte c = data_[idx];
+            
+            //  Signal the pipes attached to this node.
+            if (current.pipes != null) {
+                for (Pipe it : pipes)
+                    func_.invoke(it, null, arg_);
+            }
+
+            //  If we are at the end of the message, there's nothing more to match.
+            if (size_ == 0)
+                break;
+
+            //  If there are no subnodes in the trie, return.
+            if (current.count == 0)
+                break;
+
+            //  If there's one subnode (optimisation).
+            if (current.count == 1) {
+                if (c != current.min)
+                    break;
+                current = current.next[0];
+                idx++;
+                size_--;
+                continue;
+            }
+
+            //  If there are multiple subnodes.
+            if (c < current.min || c >=
+                  current.min + current.count)
+                break;
+            if (current.next [c - current.min] == null)
+                break;
+            current = current.next [c - current.min];
+            idx++;
+            size_--;
+        }
     }
 
 

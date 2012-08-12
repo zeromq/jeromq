@@ -46,7 +46,9 @@ public class ZMQ {
     public static final int ZMQ_PUSH = 8;
     public static final int ZMQ_XPUB = 9;
     public static final int ZMQ_XSUB = 10;
-    public static final int ZMQ_PROXY = 11;
+    
+    /* custom socket */
+    public static final int ZMQ_PROXY = 101;
 
     /*  Deprecated aliases                                                        */
     public static final int ZMQ_XREQ = ZMQ_DEALER;
@@ -102,6 +104,7 @@ public class ZMQ {
     public static final int ZMQ_EVENT_CONNECTED = 1;
     public static final int ZMQ_EVENT_CONNECT_DELAYED = 2;
     public static final int ZMQ_EVENT_CONNECT_RETRIED = 4;
+    public static final int ZMQ_EVENT_CONNECT_FAILED = 1024;
 
     public static final int ZMQ_EVENT_LISTENING = 8;
     public static final int ZMQ_EVENT_BIND_FAILED = 16;
@@ -180,28 +183,26 @@ public class ZMQ {
         return s_.connect (addr_);
     }
 
-    public static int zmq_close(SocketBase s_) {
+    public static void zmq_close(SocketBase s_) {
         if (s_ == null || !s_.check_tag ()) {
             throw new IllegalStateException();
         }
-        int result = s_.close ();
-        return result;
+        s_.close ();
     }
 
-    public static int zmq_term(Ctx ctx_) {
-        return zmq_ctx_destroy (ctx_);
+    public static void zmq_term(Ctx ctx_) {
+        zmq_ctx_destroy (ctx_);
     }
 
-    private static int zmq_ctx_destroy(Ctx ctx_) {
+    private static void zmq_ctx_destroy(Ctx ctx_) {
         if (ctx_ == null || !ctx_.check_tag ()) {
             throw new IllegalStateException();
         }
        
-        int rc = ctx_.terminate ();
-        return rc;
+        ctx_.terminate ();
     }
 
-    public static void zmq_setsockopt(SocketBase s_, int option_, int optval_) {
+    public static void zmq_setsockopt(SocketBase s_, int option_, Object optval_) {
 
         if (s_ == null || !s_.check_tag ()) {
             throw new IllegalStateException();
@@ -332,62 +333,9 @@ public class ZMQ {
               device_ != ZMQ_STREAMER) {
             throw new IllegalArgumentException();
         }
-
-        //  The algorithm below assumes ratio of requests and replies processed
-        //  under full load to be 1:1.
-
-        //  TODO: The current implementation drops messages when
-        //  any of the pipes becomes full.
-
-        boolean success;
-        int rc;
-        int more;
-        Msg msg;
-        PollItem items [] = new PollItem[2];
         
-        items[0] = new PollItem (insocket_, ZMQ_POLLIN );
-        items[1] = new PollItem (outsocket_, ZMQ_POLLIN );
-        
-        while (true) {
-            //  Wait while there are either requests or replies to process.
-            rc = zmq_poll (items, -1);
-            if (rc < 0)
-                return false;
+        return Device.device(insocket_, outsocket_);
 
-            //  Process a request.
-            if (items [0].isReadable()) {
-                while (true) {
-                    msg = insocket_.recv (0);
-                    if (msg == null)
-                        break;
-
-                    more = insocket_.getsockopt (ZMQ_RCVMORE);
-
-                    success = outsocket_.send (msg, more > 0? ZMQ_SNDMORE: 0);
-                    if (!success)
-                        return false;
-                    if (more == 0)
-                        break;
-                }
-            }
-            //  Process a reply.
-            if (items [1].isReadable()) {
-                while (true) {
-                    msg = outsocket_.recv (0);
-                    if (msg == null)
-                        break;
-
-                    more = outsocket_.getsockopt (ZMQ_RCVMORE);
-
-                    success = insocket_.send (msg, more > 0? ZMQ_SNDMORE: 0);
-                    if (!success)
-                        return false;
-                    if (more == 0)
-                        break;
-                }
-            }
-
-        }
         
     }
 
@@ -416,7 +364,7 @@ public class ZMQ {
         
         while (true) {
 
-            poll_selector.selectedKeys().clear();
+            //poll_selector.selectedKeys().clear();
             
             for (PollItem item: items_) {
                 SelectableChannel ch = item.getChannel();  // mailbox channel if ZMQ socket
@@ -467,7 +415,7 @@ public class ZMQ {
                 while (it.hasNext()) {
                     
                     SelectionKey key = it.next();
-                    //it.remove();
+                    it.remove();
                     
                     ((PollItem)key.attachment()).readyOps(key.readyOps());
                 }

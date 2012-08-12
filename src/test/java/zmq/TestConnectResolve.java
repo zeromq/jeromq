@@ -52,12 +52,10 @@ public class TestConnectResolve {
 	    }
 	    
 	    
-	    rc = ZMQ.zmq_close (sock);
-	    assertThat (rc, is(0));
+	    ZMQ.zmq_close (sock);
 	
 	    
-	    rc = ZMQ.zmq_term (ctx);
-	    assertThat (rc, is(0));
+	    ZMQ.zmq_term (ctx);
 	    
 	}
 }

@@ -82,11 +82,8 @@ public class TestInvalidRep {
         assertThat (body.data().get() , is((byte)'b'));
     
         //  Tear down the wiring.
-        rc = ZMQ.zmq_close (router_socket);
-        assertThat (rc ,is(0));
-        rc = ZMQ.zmq_close (req_socket);
-        assertThat (rc ,is(0));
-        rc = ZMQ.zmq_term (ctx);
-        assertThat (rc ,is(0));
+        ZMQ.zmq_close (router_socket);
+        ZMQ.zmq_close (req_socket);
+        ZMQ.zmq_term (ctx);
     }
 }

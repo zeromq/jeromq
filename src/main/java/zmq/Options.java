@@ -90,7 +90,7 @@ public class Options {
     
     //  ID of the socket.
     int socket_id;
-    DecoderBase decoder;
+    Class<? extends DecoderBase> decoder;
 
     public Options() {
         sndhwm = 1000;
@@ -126,6 +126,7 @@ public class Options {
     	tcp_accept_filters = new ArrayList<TcpAddress.TcpAddressMask>();
     }
     
+    @SuppressWarnings("unchecked")
     public void setsockopt(int option_, Object optval_) {
         switch (option_) {
         
@@ -137,9 +138,6 @@ public class Options {
             rcvhwm = (Integer)optval_;
             return;
             
-        case ZMQ.ZMQ_LINGER:
-            linger = (Integer)optval_;
-            return;
 
         case ZMQ.ZMQ_AFFINITY:
             affinity = (Long)optval_;
@@ -148,20 +146,35 @@ public class Options {
         case ZMQ.ZMQ_IDENTITY:
             String val = (String) optval_;
             if (val == null || val.length() > 255) {
-                throw new IllegalArgumentException("option=" + option_);
+                throw new IllegalArgumentException("indentity " + optval_);
             }
             identity = val.getBytes();
             identity_size = (byte)identity.length;
             return;
             
+        case ZMQ.ZMQ_LINGER:
+            linger = (Integer)optval_;
+            return;
+
         case ZMQ.ZMQ_DECODER:
-            decoder = (DecoderBase) optval_;
+            if (optval_ instanceof String) {
+                try {
+                    decoder = Class.forName((String) optval_).asSubclass(DecoderBase.class);
+                } catch (ClassNotFoundException e) {
+                    throw new IllegalArgumentException(e);
+                }
+            } else if (optval_ instanceof Class) {
+                decoder = (Class<? extends DecoderBase>) optval_;
+            } else {
+                throw new IllegalArgumentException("indentity " + optval_);
+            }
             return;
         //case ZMQ.ZMQ_ENCODER:
         //    decoder = optval_;
         //    return;
 
         default:
+            if (option_ != 6)
             throw new IllegalArgumentException("option=" + option_);
         }
     }
