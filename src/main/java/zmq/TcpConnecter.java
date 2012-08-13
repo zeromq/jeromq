@@ -97,7 +97,7 @@ public class TcpConnecter extends Own implements IPollEvents {
                 handle = io_object.add_fd (s);
                 handle_valid = true;
                 io_object.set_pollconnect (handle);
-                session.monitor_event (ZMQ.ZMQ_EVENT_CONNECT_DELAYED, endpoint, Errno.get());
+                session.monitor_event (ZMQ.ZMQ_EVENT_CONNECT_DELAYED, endpoint, s);
                 return;
             }
         } catch (IOException e) {

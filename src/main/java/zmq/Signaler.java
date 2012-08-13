@@ -2,6 +2,7 @@ package zmq;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -71,8 +72,10 @@ public class Signaler {
                 if (nbytes < 1) {
                     continue;
                 }
+            } catch (ClosedChannelException e) {
+                return;
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                throw new ZException.IOException(e);
             }
 	        assert (nbytes == 1);
 	        break;

@@ -21,6 +21,8 @@
 package zmq;
 
 import org.junit.Test;
+import static org.junit.Assert.*;
+import static org.hamcrest.CoreMatchers.*;
 
 public class TestMonitor {
 
@@ -107,7 +109,7 @@ public class TestMonitor {
         assert ((events & ZMQ.ZMQ_EVENT_ACCEPTED) > 0);
         assert ((events & ZMQ.ZMQ_EVENT_CONNECTED) > 0);
         assert ((events & ZMQ.ZMQ_EVENT_CLOSED) > 0);
-        assert ((events & ZMQ.ZMQ_EVENT_DISCONNECTED) > 0);
+        assertThat ((events & ZMQ.ZMQ_EVENT_DISCONNECTED) > 0, is(true));
 
     }
 }

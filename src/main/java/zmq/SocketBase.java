@@ -319,7 +319,7 @@ public abstract class SocketBase extends Own
         //  Create session.
         SessionBase session = SessionBase.create (io_thread, true, this,
             options, paddr);
-        Errno.errno_assert (session != null);
+        assert (session != null);
 
         //  Create a bi-directional pipe.
         ZObject[] parents = {this, session};

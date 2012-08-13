@@ -242,7 +242,7 @@ public class Router extends SocketBase {
 
         //  Identity is not expected
         assert ((msg_.flags () & Msg.identity) == 0);
-        assert (pipe != null);
+        assert (pipe[0] != null);
 
         //  If we are in the middle of reading a message, just return the next part.
         if (more_in)

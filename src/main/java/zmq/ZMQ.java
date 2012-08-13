@@ -3,6 +3,7 @@ package zmq;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
+import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -403,7 +404,8 @@ public class ZMQ {
                     nevents = poll_selector.selectNow();
                 else
                     nevents = poll_selector.select(timeout);
-                
+            } catch (ClosedSelectorException e) {
+                return -1;
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -455,6 +457,14 @@ public class ZMQ {
             
         }
         return nevents;
+    }
+    
+    public static void zmq_poll_stop () {
+        try {
+            poll_selector.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public static Msg zmq_recvmsg(SocketBase s_, int flags_) {

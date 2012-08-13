@@ -98,7 +98,7 @@ public class Mailbox {
 
         //  Get a command.
         cmd_ = cpipe.read ();
-        assert (cmd_ != null);
+        //assert (cmd_ != null);
         
         return cmd_;
     }

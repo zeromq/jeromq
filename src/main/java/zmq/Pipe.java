@@ -327,11 +327,7 @@ public class Pipe extends ZObject {
 
 	    if (outpipe != null && !outpipe.flush ()) {
 	        send_activate_read (peer);
-	    } else {
-	        System.out.println("Reader is active??");
-	        int x= 0;
-	        x ++;
-	    }
+	    } 
 	}
 
     public void set_event_sink(IPipeEvents sink_) {
@@ -428,9 +424,7 @@ public class Pipe extends ZObject {
         //  First, delete all the unread messages in the pipe. We have to do it by
         //  hand because msg_t doesn't have automatic destructor. Then deallocate
         //  the ypipe itself.
-        Msg msg;
-        while ((msg = inpipe.read ()) != null) {
-           //msg.close ();
+        while (inpipe.read () != null) {
         }
         
         inpipe = null;

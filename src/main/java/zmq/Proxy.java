@@ -103,7 +103,8 @@ public class Proxy extends Router {
             //    message_begins = false;
             //}
             
-            return super.write(msg_);
+            boolean success = super.write(msg_);
+            return success;
         }
     }
 

@@ -51,6 +51,7 @@ public class TestProxyTcp {
                 e.printStackTrace();
             }
             System.out.println("Stop client thread");
+            ZMQ.zmq_poll_stop();
         }
     }
     
@@ -59,9 +60,9 @@ public class TestProxyTcp {
         private SocketBase s = null;
         private String name = null;
         public Dealer(Ctx ctx, String name_) {
-//            s = ZMQ.zmq_socket (ctx, ZMQ.ZMQ_DEALER);
+            s = ZMQ.zmq_socket (ctx, ZMQ.ZMQ_DEALER);
 //            s.setsockopt(ZMQ.ZMQ_IDENTITY, name_);
-            s = ZMQ.zmq_socket (ctx, ZMQ.ZMQ_REP);
+//            s = ZMQ.zmq_socket (ctx, ZMQ.ZMQ_REP);
             //s.setsockopt(ZMQ.ZMQ_IDENTITY, name_);
 
             name = name_;
@@ -73,24 +74,30 @@ public class TestProxyTcp {
             System.out.println("Start dealer " + name);
             
             ZMQ.zmq_connect(s, "tcp://127.0.0.1:5561");
+            int i = 0;
             while (true) {
                 Msg msg = s.recv(0);
                 if (msg == null) {
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                    }
-                    continue;
+                    throw new RuntimeException("hello");
                 }
                 System.out.println("REP recieved " + msg);
                 String data = new String(msg.data().array(), 0 , msg.size());
+
+                Msg response = null;
+                if (i%3 == 2) {
+                    response = new Msg(msg.size() + 3);
+                    response.put("OK ");
+                } else {
+                    response = new Msg(msg.size());
+                }
+                response.put(msg.data());
+                s.send(response, i%3==2?0:ZMQ.ZMQ_SNDMORE);
+                i++;
                 if (data.equals("end")) {
                     break;
                 }
-                Msg response = new Msg(msg.size() + 3);
-                response.put("OK ");
-                response.put(msg.data());
-                s.send(response, 0);
+                
+                
             }
             s.close();
             System.out.println("Stop dealer " + name);
@@ -128,7 +135,6 @@ public class TestProxyTcp {
         private boolean read_header() {
             byte[] h = new byte[4];
             header.get(h, 0, 4);
-            System.out.println(String.format("%02x %02x", h[0], h[1]));
             size = Integer.parseInt(new String(h));
             System.out.println("Received " + size);
             msg = new Msg(size);
@@ -226,13 +232,13 @@ public class TestProxyTcp {
         
         assert (sa != null);
         rc = ZMQ.zmq_bind (sa, "tcp://127.0.0.1:5560");
-        assert (!rc );
+        assert (rc );
 
         
         SocketBase sb = ZMQ.zmq_socket (ctx, ZMQ.ZMQ_DEALER);
         assert (sb != null);
         rc = ZMQ.zmq_bind (sb, "tcp://127.0.0.1:5561");
-        assert (!rc );
+        assert (rc );
 
 
         
@@ -242,6 +248,7 @@ public class TestProxyTcp {
         
         Thread.sleep(1000);
         new Client().start();
+
         ZMQ.zmq_device (ZMQ.ZMQ_QUEUE, sa, sb);
 
         

@@ -63,20 +63,20 @@ public class Dealer extends SocketBase {
 
 
     @Override
-    public void xattach_pipe(Pipe pipe_, boolean icanhasall_) {
+    protected void xattach_pipe(Pipe pipe_, boolean icanhasall_) {
         assert (pipe_ != null);
         fq.attach (pipe_);
         lb.attach (pipe_);
     }
     
     @Override
-    public boolean xsend (Msg msg_, int flags_)
+    protected boolean xsend (Msg msg_, int flags_)
     {
         return lb.send (msg_, flags_);
     }
 
     @Override
-    public Msg xrecv (int flags_)
+    protected Msg xrecv (int flags_)
     {
         return xxrecv(flags_);
     }
@@ -103,7 +103,7 @@ public class Dealer extends SocketBase {
     }
 
     @Override
-    public boolean xhas_in ()
+    protected boolean xhas_in ()
     {
         //  We may already have a message pre-fetched.
         if (prefetched)
@@ -118,19 +118,19 @@ public class Dealer extends SocketBase {
     }
 
     @Override
-    public boolean xhas_out ()
+    protected boolean xhas_out ()
     {
         return lb.has_out ();
     }
 
     @Override
-    public void xread_activated (Pipe pipe_)
+    protected void xread_activated (Pipe pipe_)
     {
         fq.activated (pipe_);
     }
 
     @Override
-    public void xwrite_activated (Pipe pipe_)
+    protected void xwrite_activated (Pipe pipe_)
     {
         lb.activated (pipe_);
     }

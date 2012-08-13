@@ -74,13 +74,15 @@ public class YPipe<T extends IReplaceable> {
         //  Prefetching is to simply retrieve the
         //  pointer from c in atomic fashion. If there are no
         //  items to prefetch, set c to NULL (using compare-and-swap).
-        if (c.compareAndSet (h, -1)) {
+        //r = c.get();
+        r = c.getAndSet(-1);
+        //if (c.compareAndSet (h, -1)) {
             // nothing to read, h == r must be the same
-            r = h;
-        } else {
+        //     r = h;
+        //} else {
             // something to have been written
-            r = c.get();
-        }
+        //     r = c.get();
+        //}
         
         //  If there are no elements prefetched, exit.
         //  During pipe's lifetime r should never be NULL, however,
