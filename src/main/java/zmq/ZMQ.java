@@ -275,7 +275,7 @@ public class ZMQ {
         return sz;
     }
 
-    private static int zmq_msg_size(Msg msg_) {
+    public static int zmq_msg_size(Msg msg_) {
         return msg_.size();
     }
 
@@ -473,6 +473,18 @@ public class ZMQ {
 
     public static int zmq_sendmsg(SocketBase s_, Msg msg_, int flags_) {
         return zmq_send (s_, msg_, flags_);
+    }
+
+    public static Msg zmq_msg_init() {
+        return new Msg();
+    }
+
+    public static long zmq_stopwatch_start() {
+        return System.nanoTime();
+    }
+
+    public static long zmq_stopwatch_stop(long watch) {
+        return System.nanoTime() - watch;
     }
 
 
