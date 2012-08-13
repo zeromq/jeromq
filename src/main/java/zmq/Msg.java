@@ -249,11 +249,7 @@ public class Msg implements IReplaceable {
     }
 
     public void put(ByteBuffer buf) {
-        if (type == type_vsm) {
-            data.put(buf);
-        } else {
-            content = buf.duplicate();
-        }
+        get_buffer().put(buf);
     }
     
     public void put(byte[] src) {
@@ -283,6 +279,10 @@ public class Msg implements IReplaceable {
     public void put(byte b) {
         get_buffer().put(b);
     }
+    
+    public void put(String str) {
+        get_buffer().put(str.getBytes());
+    }
 
     public byte[] bytes() {
         byte[] bytes = new byte[size];
@@ -294,6 +294,8 @@ public class Msg implements IReplaceable {
         
         return bytes;
     }
+
+
 
 
 }

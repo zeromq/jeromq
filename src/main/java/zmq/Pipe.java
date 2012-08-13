@@ -325,8 +325,13 @@ public class Pipe extends ZObject {
 	    if (state == State.terminating)
 	        return;
 
-	    if (outpipe != null && !outpipe.flush ())
+	    if (outpipe != null && !outpipe.flush ()) {
 	        send_activate_read (peer);
+	    } else {
+	        System.out.println("Reader is active??");
+	        int x= 0;
+	        x ++;
+	    }
 	}
 
     public void set_event_sink(IPipeEvents sink_) {
@@ -428,8 +433,6 @@ public class Pipe extends ZObject {
            //msg.close ();
         }
         
-        LOG.debug( "{} <= {} <- {}", new Object[] {parent, msg, peer.get_parent()});
-        
         inpipe = null;
 
         //  Deallocate the pipe object
@@ -480,6 +483,10 @@ public class Pipe extends ZObject {
         identity = identity_;
     }
 
+    @Override
+    public String toString() {
+        return super.toString() + "[" + parent + "]";
+    }
 
 
 }

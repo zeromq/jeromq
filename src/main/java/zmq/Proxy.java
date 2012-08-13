@@ -41,9 +41,11 @@ public class Proxy extends Router {
         options.type = ZMQ.ZMQ_PROXY;
     }
     
+    
     public static class ProxySession extends Router.RouterSession {
 
         private boolean message_begins;
+        private boolean sent_identity;
         private final String address;
         
         public ProxySession(IOThread io_thread_, boolean connect_,
@@ -52,37 +54,54 @@ public class Proxy extends Router {
   
             super(io_thread_, connect_, socket_, options_, addr_);
             message_begins = true;
+            sent_identity = false;
+            
             address = addr_.address();
         }
         
         @Override
-        protected boolean write (Msg msg_)
+        public Msg read() {
+            
+            Msg msg_ = null;
+            
+            if (pipe == null || (msg_ = pipe.read ()) == null ) {
+                return null;
+            }
+            
+            if ( msg_.has_more() && msg_.size () == 0) {
+                //return null;
+                msg_ = pipe.read ();
+            }
+            
+            //incomplete_in = msg_.has_more();
+
+            return msg_;
+
+        }
+        
+        @Override
+        public boolean write (Msg msg_)
         {
             //  generate First identity message 
-            /*
-            if (message_begins) {
-                Msg identity = new Msg(address.length());
-                //identity.put((byte)0);
+            if (!sent_identity) {
+                Msg identity = new Msg(address.length() +1);
+                identity.put((byte)0);
                 identity.put(address.getBytes());
                 if (!super.write(identity)) {
                     return false;
                 }
-                message_begins = false;
+                sent_identity = true;
             }
-            */
             // fake req
-            if (message_begins) {
+            //if (message_begins) {
                 Msg bottom = new Msg();
                 bottom.set_flags (Msg.more);
 
-                //Msg identity = new Msg(0);
-                //identity.put((byte)0);
-                //identity.put(address.getBytes());
                 if (!super.write(bottom)) {
                     return false;
                 }
-                message_begins = false;
-            }
+            //    message_begins = false;
+            //}
             
             return super.write(msg_);
         }

@@ -349,7 +349,7 @@ public class SessionBase extends Own implements Pipe.IPipeEvents, IPollEvents {
 
     }
     
-    protected boolean write (Msg msg_)
+    public boolean write (Msg msg_)
     {
         //  First message to receive is identity (if required).
         if (recv_identity) {

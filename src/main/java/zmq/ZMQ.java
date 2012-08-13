@@ -370,7 +370,9 @@ public class ZMQ {
             for (PollItem item: items_) {
                 SelectableChannel ch = item.getChannel();  // mailbox channel if ZMQ socket
                 SelectionKey key = ch.keyFor(poll_selector);
-                
+
+                item.readyOps(0);
+
                 if (key == null) {
                     try {
                         key = ch.register(poll_selector, item.interestOps());
@@ -379,8 +381,8 @@ public class ZMQ {
                         throw new ZException.IOException(e);
                     }
                 } else {
-                    item.readyOps(0);
-                    key.interestOps(item.interestOps());
+                    if (item.interestOps() != key.interestOps())
+                        key.interestOps(item.interestOps());
                 }
             }
             
@@ -453,6 +455,14 @@ public class ZMQ {
             
         }
         return nevents;
+    }
+
+    public static Msg zmq_recvmsg(SocketBase s_, int flags_) {
+        return zmq_recv (s_, flags_);
+    }
+
+    public static int zmq_sendmsg(SocketBase s_, Msg msg_, int flags_) {
+        return zmq_send (s_, msg_, flags_);
     }
 
 

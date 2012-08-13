@@ -113,9 +113,9 @@ public class TestUtil {
         out.write(length);
         out.write(content);
         
-        System.out.println("sent message");
+        System.out.println("sent " + data.length() + " " + data);
         rc = in.read(buf, 0, 4);
-        assert (rc == 4);
+        assertThat (rc, is( 4));
         System.out.println(String.format("%02x %02x", buf[0], buf[1]));
         try {
             Thread.sleep(1000);
@@ -123,9 +123,10 @@ public class TestUtil {
             e.printStackTrace();
         }
         reslen = Integer.valueOf(new String(buf, 0, 4));
+
+        in.read(buf, 0, reslen);
+        System.out.println("recv " + reslen + " " + new String(buf,0, reslen));
         
-        rc = in.read(buf, 4, reslen);
-        assert (rc == reslen);
     }
 
 }

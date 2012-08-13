@@ -48,7 +48,7 @@ public class TestInvalidRep {
     
         //  Initial request.
         rc = ZMQ.zmq_send (req_socket, "r", 0);
-        assert (rc == 1);
+        assertThat (rc, is( 1));
     
         //  Receive the request.
         Msg addr ;

@@ -434,6 +434,7 @@ public abstract class SocketBase extends Own
     void attach_pipe (Pipe pipe_, boolean icanhasall_)
     {
         //  First, register the pipe so that we can terminate it later on.
+        
         pipe_.set_event_sink (this);
         pipes.add (pipe_);
 

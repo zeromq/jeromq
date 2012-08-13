@@ -98,7 +98,6 @@ public class Req extends Dealer {
                     if (!msg_.has_more())
                         break;
                 }
-                msg_.close ();
                 return null;
             }
 

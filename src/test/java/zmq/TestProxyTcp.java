@@ -42,7 +42,7 @@ public class TestProxyTcp {
             System.out.println("Start client thread");
             try {
                 Socket s = new Socket("127.0.0.1", 5560);
-                TestUtil.send(s, "hello");
+                TestUtil.send(s, "hellow");
                 TestUtil.send(s, "1234567890abcdefghizklmnopqrstuvwxyz");
                 TestUtil.send(s, "end");
                 TestUtil.send(s, "end");
@@ -87,6 +87,10 @@ public class TestProxyTcp {
                 if (data.equals("end")) {
                     break;
                 }
+                Msg response = new Msg(msg.size() + 3);
+                response.put("OK ");
+                response.put(msg.data());
+                s.send(response, 0);
             }
             s.close();
             System.out.println("Stop dealer " + name);
@@ -178,8 +182,8 @@ public class TestProxyTcp {
         }
 
         private boolean write_body() {
-            System.out.println("writer body " + size);
-            next_step(msg, State.write_body, !msg.has_more());
+            System.out.println("writer body ");
+            next_step(msg, State.write_header, !msg.has_more());
             
             return true;
         }
@@ -188,20 +192,21 @@ public class TestProxyTcp {
             
             msg = session_read();
             if (msg == null) {
-                System.out.println("no data yet");
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                }
+                //System.out.println("no data yet");
+                //try {
+                //    Thread.sleep(1000);
+                //} catch (InterruptedException e) {
+               // }
+                //return false;
                 return false;
             }
-            System.out.println("write header");
+            System.out.println("write header " + msg.size());
 
             header.clear();
             header.put(String.format("%04d", msg.size()).getBytes());
             header.flip();
             
-            next_step(header, 4, State.write_header, false);
+            next_step(header, 4, State.write_body, false);
             return true;
         }
 
@@ -209,7 +214,7 @@ public class TestProxyTcp {
     }
 
     @Test
-    public void testReqrepTcp()  throws Exception {
+    public void testProxyTcp()  throws Exception {
         Ctx ctx = ZMQ.zmq_init (1);
         assert (ctx!= null);
         
