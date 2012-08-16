@@ -1,6 +1,7 @@
 package zmq;
 
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 
 public class YPipe<T extends IReplaceable> {
@@ -13,34 +14,34 @@ public class YPipe<T extends IReplaceable> {
 
     //  Points to the first un-flushed item. This variable is used
     //  exclusively by writer thread.
-    int w;
+    long w;
 
     //  Points to the first un-prefetched item. This variable is used
     //  exclusively by reader thread.
-    int r;
+    long r;
 
     //  Points to the first item to be flushed in the future.
-    int f;
+    long f;
 
     //  The single point of contention between writer and reader thread.
     //  Points past the last flushed item. If it is NULL,
     //  reader is asleep. This pointer should be always accessed using
     //  atomic operations.
-    final AtomicInteger c;
+    final AtomicLong c;
 
     public YPipe(Class<T> klass, Config conf) {
         this(klass, conf, 0);
     }
     
     public YPipe(Class<T> klass, Config conf, int qid) {
-        this(klass, conf.getValue(), 0);
+        this(klass, conf.getValue(), qid);
     }
     
 	public YPipe(Class<T> klass, int qsize, int qid) {
 		queue = new YQueue<T>(klass, qsize, qid);
         queue.push();
         w = r = f = queue.back_pos();
-        c = new AtomicInteger(queue.back_pos());
+        c = new AtomicLong(queue.back_pos());
             
 	}
 
@@ -66,7 +67,7 @@ public class YPipe<T extends IReplaceable> {
     boolean check_read ()
     {
         //  Was the value prefetched already? If so, return.
-        int h = queue.front_pos();
+        long h = queue.front_pos();
         if (h != r && r != -1)
              return true;
 
@@ -75,14 +76,14 @@ public class YPipe<T extends IReplaceable> {
         //  pointer from c in atomic fashion. If there are no
         //  items to prefetch, set c to NULL (using compare-and-swap).
         //r = c.get();
-        r = c.getAndSet(-1);
-        //if (c.compareAndSet (h, -1)) {
+        //r = c.getAndSet(-1);
+        if (c.compareAndSet (h, -1)) {
             // nothing to read, h == r must be the same
         //     r = h;
-        //} else {
+        } else {
             // something to have been written
-        //     r = c.get();
-        //}
+             r = c.get();
+        }
         
         //  If there are no elements prefetched, exit.
         //  During pipe's lifetime r should never be NULL, however,

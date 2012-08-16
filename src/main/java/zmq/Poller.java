@@ -111,7 +111,8 @@ public class Poller extends PollerBase implements Runnable {
         pollset.put(handle_, ops);
         if (key == null) {
             try {
-                handle_.register(selector, pollset.get(handle_));
+                key = handle_.register(selector, pollset.get(handle_));
+                key.attach(fd_table.get(handle_));
             } catch (ClosedChannelException e) {
                 throw new ZException.IOException(e);
             }
@@ -179,30 +180,32 @@ public class Poller extends PollerBase implements Runnable {
             while (it.hasNext()) {
                 
                 SelectionKey key = it.next();
+                IPollEvents evt = (IPollEvents) key.attachment();
                 it.remove();
                 
-                SelectableChannel channel = key.channel();
-                if (!key.isValid() ) {
+                //SelectableChannel channel = key.channel();
+                /*if (!key.isValid() ) {
                     throw new UnsupportedOperationException();
-                }
+                }*/
                 
                 if (key.isWritable()) {
-                    fd_table.get(channel).out_event();
-                }
+                    evt.out_event();
+                } 
                 
-                if (key.isAcceptable()) {
-                    fd_table.get(channel).accept_event();
-                }
+
                 
                 if (key.isReadable() ) {
-                    fd_table.get(channel).in_event();
+                    evt.in_event();
                 } 
                 else if (key.isConnectable()) {
-                    fd_table.get(channel).connect_event();
-                    rm_fd(channel);
-                }
+                    evt.connect_event();
+                } else
+                if (key.isAcceptable()) {
+                    evt.accept_event();
+                } 
 
             }
+            //selector.selectedKeys().clear();
 
         }
         stopped = true;

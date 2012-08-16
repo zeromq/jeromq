@@ -49,7 +49,7 @@ public class LocalThr {
         message_size = atoi (argv [1]);
         message_count = atoi (argv [2]);
 
-        ctx = ZMQ.zmq_init (1);
+        ctx = ZMQ.zmq_init (2);
         if (ctx == null) {
             printf ("error in zmq_init");
             return ;
@@ -68,26 +68,41 @@ public class LocalThr {
             printf ("error in zmq_bind: %s\n");
             return;
         }
-        
+        /*
         msg = ZMQ.zmq_msg_init ();
         if (msg == null ) {
             printf ("error in zmq_msg_init: %s\n");
             return;
         }
+        */
 
         msg = ZMQ.zmq_recvmsg (s, 0);
         if (msg == null) {
             printf ("error in zmq_recvmsg: %s\n");
             return;
         }
+        /*
         if (ZMQ.zmq_msg_size (msg) != message_size) {
             printf ("message of incorrect size received\n");
             return;
         }
+        */
+        
+        for (i = 0; i != message_count - 1; i++) {
+            msg = ZMQ.zmq_recvmsg (s, 0);
+            if (msg == null) {
+                printf ("error in zmq_recvmsg: %s\n");
+                return ;
+            }
+            if (ZMQ.zmq_msg_size (msg) != message_size) {
+                printf ("message of incorrect size received\n");
+                return;
+            }
+        }
 
         watch = ZMQ.zmq_stopwatch_start ();
 
-        for (i = 0; i != message_count - 1; i++) {
+        for (i = 0; i != message_count ; i++) {
             msg = ZMQ.zmq_recvmsg (s, 0);
             if (msg == null) {
                 printf ("error in zmq_recvmsg: %s\n");
@@ -104,17 +119,18 @@ public class LocalThr {
             elapsed = 1;
 
         throughput = ( long)
-                ((double) message_count / (double) elapsed * 1000000);
-            megabits = (double) (throughput * message_size * 8) / 1000000;
+                ((double) message_count / (double) elapsed * 1000000000L);
+        megabits = (double) (throughput * message_size * 8) / 1000000;
 
-            printf ("message size: %d [B]\n", (int) message_size);
-            printf ("message count: %d\n", (int) message_count);
-            printf ("mean throughput: %d [msg/s]\n", (int) throughput);
-            printf ("mean throughput: %.3f [Mb/s]\n", (double) megabits);
+        printf ("message elapsed: %.3f \n", (double) elapsed / 1000000000L);
+        printf ("message size: %d [B]\n", (int) message_size);
+        printf ("message count: %d\n", (int) message_count);
+        printf ("mean throughput: %d [msg/s]\n", (int) throughput);
+        printf ("mean throughput: %.3f [Mb/s]\n", (double) megabits);
 
-            ZMQ.zmq_close (s);
+        ZMQ.zmq_close (s);
 
-            ZMQ.zmq_term (ctx);
+        ZMQ.zmq_term (ctx);
 
 
     }

@@ -59,7 +59,7 @@ abstract public class DecoderBase {
         bufsize = bufsize_;
         session = null;
         maxmsgsize = maxmsgsize_;
-        buf = ByteBuffer.allocate(bufsize_);
+        buf = ByteBuffer.allocateDirect(bufsize_);
     }
     
     

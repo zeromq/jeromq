@@ -487,6 +487,10 @@ public class ZMQ {
         return System.nanoTime() - watch;
     }
 
+    public static Msg zmq_msg_init_size(int message_size) {
+        return new Msg(message_size);
+    }
+
 
 
 }

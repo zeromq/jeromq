@@ -1,6 +1,7 @@
 package zmq;
 
 import java.lang.reflect.Array;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 
 
@@ -11,21 +12,22 @@ public class YQueue<T extends IReplaceable> {
     class Chunk
     {
          final T []values;
+         final long[] pos;
          Chunk prev;
          Chunk next;
          
          @SuppressWarnings("unchecked")
          Chunk(Class<T> klass,int size) {
              values = (T[])(Array.newInstance(klass, size));
+             pos = new long[size];
              assert values != null;
              prev = next = null;
+             long ptr = memory_ptr.getAndAdd(size);
              for (int i=0; i != values.length; i++) {
-                 try {
-                    values[i] = klass.newInstance();
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
+                 pos[i] = ptr;
+                 ptr++;
              }
+            
          }
     };
 
@@ -51,11 +53,8 @@ public class YQueue<T extends IReplaceable> {
     //  us from having to call malloc/free.
     
     private static AtomicReferenceArray spare_chunks = new AtomicReferenceArray(MAX_SHARED_QUEUE);
+    private static AtomicLong memory_ptr = new AtomicLong(0);
     
-
-    public YQueue(Class<T> klass, int size) {
-        this(klass, size, 0);
-    }
 
     public YQueue(Class<T> klass, int size, int qid) {
         
@@ -71,18 +70,8 @@ public class YQueue<T extends IReplaceable> {
         back_hash = front_hash = begin_chunk.hashCode();
     }
     
-    /*
-    private T newTerminator() {
-        try {
-            return klass.newInstance();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-    */
-
-    public int front_pos() {
-        return front_hash + begin_pos;
+    public long front_pos() {
+        return begin_chunk.pos[begin_pos];
     }
     
     public T front() {
@@ -92,20 +81,17 @@ public class YQueue<T extends IReplaceable> {
     
     public T back() {
         T val = back_chunk.values [back_pos];
-        //if (val == null) {
-        //    val = newTerminator();
-        //    back_chunk.values [back_pos] = val;
-        //}
         return val;
     }
     
     
-    public int back_pos() {
-        return back_hash + back_pos;
+    public long back_pos() {
+        return back_chunk.pos [back_pos];
     }
 
     public T back(T val) {
-        back_chunk.values [back_pos].replace(val);
+        //back_chunk.values [back_pos].replace(val);
+        back_chunk.values [back_pos] = val;
         return val;
     }
 

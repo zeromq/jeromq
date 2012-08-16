@@ -90,7 +90,7 @@ public class Reaper extends ZObject implements IPollEvents {
             poller.rm_fd (mailbox_handle);
             
             poller.stop ();
-            while (!poller.stopped);
+            //while (!poller.stopped);
             mailbox.close();
         }
     }

@@ -204,7 +204,7 @@ public class Msg implements IReplaceable {
         type = type_vsm;
         flags = 0;
         size = 0;
-        data.clear();
+        //data.clear();
     }
     
 

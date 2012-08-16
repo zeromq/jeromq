@@ -3,6 +3,7 @@ package zmq;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
+import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -65,21 +66,21 @@ public class Signaler {
 	    ByteBuffer dummy = ByteBuffer.allocate(1);
 	    dummy.put((byte)0).flip();
 	    
-	    while (true) {
+	    //while (true) {
 	        int nbytes = 0;
             try {
                 nbytes = w.write(dummy);
-                if (nbytes < 1) {
-                    continue;
-                }
+       //         if (nbytes < 1) {
+       //             continue;
+       //         }
             } catch (ClosedChannelException e) {
                 return;
             } catch (IOException e) {
                 throw new ZException.IOException(e);
             }
 	        assert (nbytes == 1);
-	        break;
-	    }
+	   //     break;
+	    //}
 	}
 
 
@@ -89,6 +90,8 @@ public class Signaler {
         int nbytes;
         try {
             nbytes = r.read(dummy);
+        } catch (ClosedChannelException e) {
+            return;
         } catch (IOException e) {
             throw new ZException.IOException(e);
         } 
@@ -108,7 +111,8 @@ public class Signaler {
             } else {
                 rc = selector.select(timeout_);
             }
-            
+        } catch (ClosedSelectorException e) {
+            return false;
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

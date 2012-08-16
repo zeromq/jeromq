@@ -42,10 +42,10 @@ public class TestProxyTcp {
             System.out.println("Start client thread");
             try {
                 Socket s = new Socket("127.0.0.1", 5560);
-                TestUtil.send(s, "hellow");
-                TestUtil.send(s, "1234567890abcdefghizklmnopqrstuvwxyz");
-                TestUtil.send(s, "end");
-                TestUtil.send(s, "end");
+                TestHelper.send(s, "hellow");
+                TestHelper.send(s, "1234567890abcdefghizklmnopqrstuvwxyz");
+                TestHelper.send(s, "end");
+                TestHelper.send(s, "end");
                 s.close();
             } catch (IOException e) {
                 e.printStackTrace();

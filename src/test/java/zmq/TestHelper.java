@@ -11,7 +11,7 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 import static org.hamcrest.CoreMatchers.*;
 
-public class TestUtil {
+public class TestHelper {
 
     public static AtomicInteger counter = new AtomicInteger(2);
     

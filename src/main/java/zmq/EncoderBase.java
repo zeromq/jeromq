@@ -45,7 +45,7 @@ abstract public class EncoderBase {
     private SessionBase session;
     
     protected EncoderBase (int bufsize_) {
-        buf = ByteBuffer.allocate(bufsize_);
+        buf = ByteBuffer.allocateDirect(bufsize_);
     }
 
     //  The function returns a batch of binary data. The data
@@ -115,10 +115,10 @@ abstract public class EncoderBase {
             //  Copy data to the buffer. If the buffer is full, return.
             int to_copy = Math.min (to_write, buffer.remaining());
             if (to_copy > 0) {
-                buffer.put(write_buf);
-                //pos = buffer.position();
-                //write_buf.get(buffer.array(), buffer.arrayOffset() + pos, to_copy);
-                //buffer.position(pos + to_copy);
+                //buffer.put(write_buf);
+                int pos = buffer.position();
+                write_buf.get(buffer.array(), buffer.arrayOffset() + pos, to_copy);
+                buffer.position(pos + to_copy);
                 to_write -= to_copy;
             }
         }
