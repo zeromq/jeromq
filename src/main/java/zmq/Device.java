@@ -49,7 +49,7 @@ public class Device {
             //  Process a request.
             if (items [0].isReadable()) {
                 while (true) {
-                    msg = insocket_.recv (ZMQ.ZMQ_DONTWAIT);
+                    msg = insocket_.recv (0);
                     if (msg == null)
                         break;
 
@@ -65,7 +65,7 @@ public class Device {
             //  Process a reply.
             if (items [1].isReadable()) {
                 while (true) {
-                    msg = outsocket_.recv (ZMQ.ZMQ_DONTWAIT);
+                    msg = outsocket_.recv (0);
                     if (msg == null)
                         break;
 

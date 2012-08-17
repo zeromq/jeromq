@@ -66,25 +66,16 @@ public class ZMQ {
 
         public boolean send(byte[] data, int flags) {
 
-            Msg msg = new Msg(data.length);
-            msg.put(data);
+            Msg msg = new Msg(data);
             
             return base.send(msg, flags);
         }
 
-        public boolean send(ByteBuffer data, int flags) {
-
-            Msg msg = new Msg(data.remaining());
-            msg.put(data);
-            
-            return base.send(msg, flags);
-        }
-        
         public boolean bind(String addr) {
             return base.bind(addr);
         }
 
-        public ByteBuffer recv(int flags) {
+        public byte[] recv(int flags) {
             Msg msg = base.recv(flags);
             
             

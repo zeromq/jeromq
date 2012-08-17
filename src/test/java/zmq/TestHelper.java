@@ -79,20 +79,20 @@ public class TestHelper {
         assert (rc == 32);
         rcvmore = ZMQ.zmq_getsockopt (sb, ZMQ.ZMQ_RCVMORE);
         assert (rcvmore == 0);
-        rc = ZMQ.zmq_send (sb, msg, ZMQ.ZMQ_SNDMORE);
+        rc = ZMQ.zmq_send (sb, new Msg(msg), ZMQ.ZMQ_SNDMORE);
         assert (rc == 32);
-        rc = ZMQ.zmq_send (sb, msg, 0);
+        rc = ZMQ.zmq_send (sb, new Msg(msg), 0);
         assert (rc == 32);
 
         //  Receive the bounced message.
         msg = ZMQ.zmq_recv (sc, 0);
         assert (rc == 32);
         rcvmore = ZMQ.zmq_getsockopt (sc, ZMQ.ZMQ_RCVMORE);
-        assert (rcvmore == 1);
+        assertThat (rcvmore , is(1));
         msg = ZMQ.zmq_recv (sc,  0);
         assert (rc == 32);
         rcvmore = ZMQ.zmq_getsockopt (sc, ZMQ.ZMQ_RCVMORE);
-        assert (rcvmore == 0);
+        assertThat (rcvmore , is(0));
         //  Check whether the message is still the same.
         //assert (memcmp (buf2, content, 32) == 0);
     }

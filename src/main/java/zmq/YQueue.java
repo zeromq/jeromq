@@ -1,11 +1,8 @@
 package zmq;
 
 import java.lang.reflect.Array;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReferenceArray;
 
 
-@SuppressWarnings("rawtypes")
 public class YQueue<T extends IReplaceable> {
 
     //  Individual memory chunk to hold N elements.
@@ -17,15 +14,21 @@ public class YQueue<T extends IReplaceable> {
          Chunk next;
          
          @SuppressWarnings("unchecked")
-         Chunk(Class<T> klass,int size) {
+         Chunk(Class<T> klass, int size, long memory_ptr, boolean allocate) {
              values = (T[])(Array.newInstance(klass, size));
              pos = new long[size];
              assert values != null;
              prev = next = null;
-             long ptr = memory_ptr.getAndAdd(size);
              for (int i=0; i != values.length; i++) {
-                 pos[i] = ptr;
-                 ptr++;
+                 pos[i] = memory_ptr;
+                 memory_ptr++;
+                 if (allocate) {
+                    try {
+                        values[i] = klass.newInstance();
+                    } catch (Exception e) {
+                        throw new ZException.InstantiationException(e);
+                    }
+                 }
              }
             
          }
@@ -41,33 +44,32 @@ public class YQueue<T extends IReplaceable> {
     private int back_pos;
     private Chunk end_chunk;
     private int end_pos;
+    private Chunk spare_chunk;
     private final Class<T> klass;
     private final int size;
-    private int qid;
-    private int front_hash;
-    private int back_hash;
+    private boolean allocate;
 
-    private static int MAX_SHARED_QUEUE = 2;
     //  People are likely to produce and consume at similar rates.  In
     //  this scenario holding onto the most recently freed chunk saves
     //  us from having to call malloc/free.
     
-    private static AtomicReferenceArray spare_chunks = new AtomicReferenceArray(MAX_SHARED_QUEUE);
-    private static AtomicLong memory_ptr = new AtomicLong(0);
+    private long memory_ptr;
     
 
-    public YQueue(Class<T> klass, int size, int qid) {
+    public YQueue(Class<T> klass, int size, boolean allocate) {
         
         this.klass = klass;
         this.size = size;
-        this.qid = qid;
-        begin_chunk = new Chunk(klass, size);
+        this.allocate = allocate;
+        memory_ptr = 0;
+        begin_chunk = new Chunk(klass, size, memory_ptr, allocate);
+        memory_ptr += size;
         begin_pos = 0;
         back_pos = 0;
-        back_chunk = end_chunk = begin_chunk;
+        back_chunk = null;
+        spare_chunk = null;
+        end_chunk = begin_chunk;
         end_pos = 0;
-
-        back_hash = front_hash = begin_chunk.hashCode();
     }
     
     public long front_pos() {
@@ -80,8 +82,7 @@ public class YQueue<T extends IReplaceable> {
     
     
     public T back() {
-        T val = back_chunk.values [back_pos];
-        return val;
+        return back_chunk.values [back_pos];
     }
     
     
@@ -90,50 +91,47 @@ public class YQueue<T extends IReplaceable> {
     }
 
     public T back(T val) {
-        //back_chunk.values [back_pos].replace(val);
-        back_chunk.values [back_pos] = val;
+        if (allocate)
+            back_chunk.values[back_pos].replace(val);
+        else
+            back_chunk.values [back_pos] = val;
         return val;
     }
 
 
-    @SuppressWarnings("unchecked")
     public void pop() {
         begin_pos++;
         if (begin_pos == size) {
             Chunk o = begin_chunk;
             begin_chunk = begin_chunk.next;
-            if (begin_chunk != null) {
-                front_hash = begin_chunk.hashCode();
-                begin_chunk.prev = null;
-            }
+            begin_chunk.prev = null;
             begin_pos = 0;
 
             //  'o' has been more recently used than spare_chunk,
             //  so for cache reasons we'll get rid of the spare and
             //  use 'o' as the spare.
-            spare_chunks.set(qid, o);
+            if (spare_chunk == null)
+                spare_chunk = o;
         }
     }
 
 
-    @SuppressWarnings("unchecked")
     public void push() {
-        if (back_chunk != end_chunk) {
-            back_chunk = end_chunk;
-            back_hash = back_chunk.hashCode();
-        }
+        back_chunk = end_chunk;
         back_pos = end_pos;
 
         end_pos ++;
         if (end_pos != size)
             return;
 
-        Chunk sc = (Chunk) spare_chunks.getAndSet(qid, null);
-        if (sc != null) {
+        Chunk sc = spare_chunk;
+        if (sc != begin_chunk && sc != null) {
+            spare_chunk = spare_chunk.next;
             end_chunk.next = sc;
             sc.prev = end_chunk;
         } else {
-            end_chunk.next =  new Chunk(klass, size);
+            end_chunk.next =  new Chunk(klass, size, memory_ptr, allocate);
+            memory_ptr += size;
             end_chunk.next.prev = end_chunk;
         }
         end_chunk = end_chunk.next;
@@ -141,7 +139,6 @@ public class YQueue<T extends IReplaceable> {
     }
 
 
-    @SuppressWarnings("unchecked")
     public void unpush() {
         //  First, move 'back' one position backwards.
         if (back_pos > 0)
@@ -160,7 +157,6 @@ public class YQueue<T extends IReplaceable> {
         else {
             end_pos = size - 1;
             end_chunk = end_chunk.prev;
-            spare_chunks.set(qid,end_chunk.next);
             end_chunk.next = null;
         }
     }

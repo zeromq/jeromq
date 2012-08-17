@@ -6,11 +6,24 @@ import java.nio.channels.SelectionKey;
 public class PollItem {
 
     private SocketBase s;
+    private SelectableChannel c;
+    private int zinterest;
     private int interest;
     private int ready;
     
     public PollItem(SocketBase s_, int ops) {
         s = s_;
+        c = null;
+        init (ops);
+    }
+    
+    public PollItem(SelectableChannel c_, int ops) {
+        s = null;
+        c = c_;
+    }
+    
+    private void init (int ops) {
+        zinterest = ops;
         int interest_ = 0;
         if ((ops & ZMQ.ZMQ_POLLIN) > 0) {
             interest_ |= SelectionKey.OP_READ;
@@ -20,27 +33,51 @@ public class PollItem {
         }
         interest = interest_;
         ready = 0;
-        
     }
 
     public boolean isReadable() {
-        return (ready & SelectionKey.OP_READ) > 0;
+        return (ready & ZMQ.ZMQ_POLLIN) > 0;
     }
 
     public boolean isWriteable() {
-        return (ready & SelectionKey.OP_WRITE) > 0;
+        return (ready & ZMQ.ZMQ_POLLOUT) > 0;
     }
 
     public SelectableChannel getChannel() {
-        return s.get_fd();
+        if (s != null)
+            return s.get_fd();
+        else 
+            return c;
     }
 
     public int interestOps() {
         return interest;
     }
-
-    public void readyOps(int readyOps) {
-        ready = readyOps;
+    
+    public boolean readyOps(SelectionKey key) {
+        ready = 0;
+        
+        if (s != null) {
+            int events = s.getsockopt(ZMQ.ZMQ_EVENTS);
+            if ( (zinterest & ZMQ.ZMQ_POLLOUT) > 0 && (events & ZMQ.ZMQ_POLLOUT) > 0 ) {
+                ready |= ZMQ.ZMQ_POLLOUT;
+            }
+            if ( (zinterest & ZMQ.ZMQ_POLLIN) > 0 && (events & ZMQ.ZMQ_POLLIN) > 0 ) {
+                ready |= ZMQ.ZMQ_POLLIN;
+            }
+        } else {
+            if (key.isReadable()) {
+                ready |= ZMQ.ZMQ_POLLIN;
+            }
+            if (key.isWritable()) {
+                ready |= ZMQ.ZMQ_POLLOUT;
+            }
+            if (!key.isValid() || key.isAcceptable() || key.isConnectable()) {
+                ready |= ZMQ.ZMQ_POLLERR;
+            }
+        }
+        
+        return ready > 0;
     }
 
 }

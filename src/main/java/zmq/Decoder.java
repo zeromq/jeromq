@@ -45,6 +45,7 @@ public class Decoder extends DecoderBase {
     
     final private ByteBuffer tmpbuf;
     private Msg in_progress;
+    
 
     public Decoder (int bufsize_, long maxmsgsize_)
     {
@@ -96,17 +97,22 @@ public class Decoder extends DecoderBase {
                 decoding_error ();
                 return false;
             }
+            
+            int size = (int) first;
+            if (size < 0) {
+                size = (0xFF) & first;
+            }
 
             //  in_progress is initialised at this point so in theory we should
             //  close it before calling zmq_msg_init_size, however, it's a 0-byte
             //  message and thus we can treat it as uninitialised...
-            if (maxmsgsize >= 0 && (long) (first - 1) > maxmsgsize) {
+            if (maxmsgsize >= 0 && (long) (size - 1) > maxmsgsize) {
                 decoding_error ();
                 return false;
 
             }
             else {
-                in_progress = new Msg(first-1);
+                in_progress = new Msg(size-1);
             }
 
             tmpbuf.clear();
@@ -160,7 +166,7 @@ public class Decoder extends DecoderBase {
         
         in_progress.set_flags (first);
 
-        next_step (in_progress.data (), in_progress.size (),
+        next_step (in_progress,
             Step.message_ready);
 
         return true;
@@ -173,10 +179,11 @@ public class Decoder extends DecoderBase {
         
         boolean rc = session_write (in_progress);
         if (!rc) {
-            decoding_error ();
+            // full
             return false;
         }
-
+        
+        tmpbuf.clear();
         next_step (tmpbuf, 1, Step.one_byte_size_ready);
         
         return true;

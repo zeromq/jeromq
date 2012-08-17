@@ -33,7 +33,6 @@ public class TestMonitor {
         @Override
         public void monitor(SocketBase socket_, int event_, Object[] args_) {
             
-            String addr = "tcp://127.0.0.1:5560";
             assert (args_!= null);
             // Only some of the exceptional events could fire
             switch (event_) {
@@ -70,7 +69,7 @@ public class TestMonitor {
                 break;
             default:
                 // out of band / unexpected event
-                assert (false);
+                assertTrue("Unkown Event " + event_, true);
             }
         }
 
@@ -86,20 +85,26 @@ public class TestMonitor {
         SocketBase rep = ZMQ.zmq_socket (ctx, ZMQ.ZMQ_REP);
         assert (rep != null);
 
-        boolean rc = ZMQ.zmq_bind (rep, "tcp://127.0.0.1:5560");
+        boolean rc = ZMQ.zmq_bind (rep, "tcp://127.0.0.1:5590");
         assert (rc );
 
         SocketBase req = ZMQ.zmq_socket (ctx, ZMQ.ZMQ_REQ);
         assert (req != null);
 
-        rc = ZMQ.zmq_connect (req, "tcp://127.0.0.1:5560");
+        rc = ZMQ.zmq_connect (req, "tcp://127.0.0.1:5590");
         assert (rc);
         
         // Allow for closed or disconnected events to bubble up
         ZMQ.zmq_sleep (1);
+        
+        ZMQ.zmq_close (req);
 
+        // Allow for closed or disconnected events to bubble up
+        ZMQ.zmq_sleep (1);
+        
         ZMQ.zmq_close (rep);
 
+        
         ZMQ.zmq_sleep (1);
 
         ZMQ.zmq_term (ctx);

@@ -8,19 +8,13 @@ import java.nio.channels.Selector;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Set;
 
 public class Poller extends PollerBase implements Runnable {
 
     //  This table stores data for registered descriptors.
-    //typedef std::vector <fd_entry_t> fd_table_t;
-    //List<FdEntry> fd_table;
     final private Map<SelectableChannel, IPollEvents> fd_table;
 
     //  Pollset to pass to the poll function.
-    //typedef std::vector <pollfd> pollset_t;
-    //pollset_t pollset;
-    
     final private Map<SelectableChannel, Integer> pollset;
 
     //  If true, there's at least one retired event source.
@@ -50,18 +44,14 @@ public class Poller extends PollerBase implements Runnable {
         }
     }
 
-    public SelectableChannel add_fd (SelectableChannel fd_, IPollEvents events_)
+    public void add_fd (SelectableChannel fd_, IPollEvents events_)
     {
-        
-        //  If the file descriptor table is too small expand it.
-        
         
         fd_table.put(fd_, events_);
         pollset.put(fd_, 0);
         
         adjust_load (1);
         
-        return fd_;
     }
     
 
@@ -79,48 +69,48 @@ public class Poller extends PollerBase implements Runnable {
 
     public void set_pollin (SelectableChannel handle_)
     {
-        register(handle_, pollset.get(handle_) | SelectionKey.OP_READ);
+        register(handle_, SelectionKey.OP_READ);
     }
     
 
     public void reset_pollin (SelectableChannel handle_) {
-        register(handle_, pollset.get(handle_) &~ SelectionKey.OP_READ);
+        register(handle_, SelectionKey.OP_READ, true);
     }
-
-    public void reset_pollout (SelectableChannel handle_) {
-        register(handle_, pollset.get(handle_) &~ SelectionKey.OP_WRITE);
-    }
-
     
     public void set_pollout (SelectableChannel handle_)
     {
-        register(handle_,  pollset.get(handle_) | SelectionKey.OP_WRITE);
+        register(handle_,  SelectionKey.OP_WRITE);
+    }
+    
+    public void reset_pollout (SelectableChannel handle_) {
+        register(handle_, SelectionKey.OP_WRITE, true);
     }
 
     public void set_pollconnect(SelectableChannel handle_) {
-        register(handle_, pollset.get(handle_) | SelectionKey.OP_CONNECT);
+        register(handle_, SelectionKey.OP_CONNECT);
     }
     
     public void set_pollaccept(SelectableChannel handle_) {
-        register(handle_, pollset.get(handle_) | SelectionKey.OP_ACCEPT);        
+        register(handle_, SelectionKey.OP_ACCEPT);        
     }
 
-    private void register (SelectableChannel handle_, int ops)
+    private void register (SelectableChannel handle_, int ops) {
+        register (handle_, ops, false);
+    }
+
+    private void register (SelectableChannel handle_, int ops, boolean negate)
     {
-        SelectionKey key = handle_.keyFor(selector);
+
+        
+        if (negate) 
+            ops = pollset.get(handle_) &~ ops;
+        else
+            ops = pollset.get(handle_) | ops;
         pollset.put(handle_, ops);
-        if (key == null) {
-            try {
-                key = handle_.register(selector, pollset.get(handle_));
-                key.attach(fd_table.get(handle_));
-            } catch (ClosedChannelException e) {
-                throw new ZException.IOException(e);
-            }
-        } else {
-            
-            retired = true;
-            selector.wakeup();
-        }
+        
+        retired = true;
+        selector.wakeup();
+
     }
     
     public void start() {
@@ -152,17 +142,29 @@ public class Poller extends PollerBase implements Runnable {
             long timeout = execute_timers ();
             
             if (retired) {
-                for (SelectionKey key: selector.keys()) {
-                    Integer ops = pollset.get(key.channel());
-                    
-                    if (ops == null) {
-                        // removed
-                        key.cancel();
-                    } else if (ops != key.interestOps()) {
-                        key.interestOps(ops);
+                
+                for (SelectableChannel ch: fd_table.keySet()) {
+                    SelectionKey key = ch.keyFor(selector);
+                    if (key == null) {
+                        try {
+                            key = ch.register(selector, pollset.get(ch));
+                            key.attach(fd_table.get(ch));
+                        } catch (ClosedChannelException e) {
+                            continue;
+                        }
+                    } else if (key.isValid()) {
+                        key.interestOps(pollset.get(ch));
                     }
                 }
+                for (SelectionKey key: selector.keys()) {
+                    
+                    if (!fd_table.containsKey(key.channel())) {
+                        // removed
+                        key.cancel();
+                    } 
+                }
                 retired = false;
+                
             }
 
             //  Wait for events.
@@ -183,10 +185,9 @@ public class Poller extends PollerBase implements Runnable {
                 IPollEvents evt = (IPollEvents) key.attachment();
                 it.remove();
                 
-                //SelectableChannel channel = key.channel();
-                /*if (!key.isValid() ) {
-                    throw new UnsupportedOperationException();
-                }*/
+                if (!key.isValid() ) {
+                    throw new RuntimeException("invalid");
+                }
                 
                 if (key.isWritable()) {
                     evt.out_event();
@@ -211,7 +212,6 @@ public class Poller extends PollerBase implements Runnable {
         stopped = true;
         
     }
-
 
 
     

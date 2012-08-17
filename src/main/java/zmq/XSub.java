@@ -78,7 +78,7 @@ public class XSub extends SocketBase {
                 //  Create the subsctription message.
                 Msg msg = new Msg(data_.length + 1);
                 msg.put((byte)1);
-                msg.put(data_);
+                msg.put(data_,1);
 
                 //  Send it to the pipe.
                 boolean sent = pipe.write (msg);
@@ -130,7 +130,7 @@ public class XSub extends SocketBase {
     @Override
     protected boolean xsend (Msg msg_, int flags_)
     {   
-        byte[] data = msg_.bytes(); 
+        byte[] data = msg_.data(); 
         // Malformed subscriptions.
         if (data.length < 1 || (data[0] != 0 && data[0] != 1)) {
             //throw new IllegalArgumentException();
@@ -192,7 +192,7 @@ public class XSub extends SocketBase {
     }
 
     private boolean match(Msg msg_) {
-        return subscriptions.check ( msg_.bytes() );
+        return subscriptions.check ( msg_.data() );
     }
     
     @Override

@@ -1,6 +1,6 @@
 package zmq;
 
-import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 public class Msg implements IReplaceable {
 
@@ -25,29 +25,6 @@ public class Msg implements IReplaceable {
     //  used to deallocate the data. If the buffer is actually shared (there
     //  are at least 2 references to it) refcount member contains number of
     //  references.
-    /*
-    class Content
-    {
-        ByteBuffer data;
-        final int size;
-        IMsgFree ffn;
-        byte[] hint;
-        final AtomicLong refcnt;
-        
-        public Content(int size_) {
-            size = size_;
-            data = ByteBuffer.allocate(size_);
-            refcnt = new AtomicLong();
-            hint = null;
-            ffn = null;
-        }
-
-    };
-    
-    interface IMsgFree {
-        void free(Content c);
-    }
-    */
     //  Note that fields shared between different message types are not
     //  moved to tha parent class (msg_t). This way we ger tighter packing
     //  of the data. Shared fields can be accessed via 'base' member of
@@ -82,11 +59,9 @@ public class Msg implements IReplaceable {
     private byte type;
     private byte flags;
     private int size;
-    private ByteBuffer data;
-    private ByteBuffer content;
+    private byte[] data;
     
     public Msg() {
-        data = ByteBuffer.allocate(max_vsm_size);
         init();
     }
     
@@ -96,9 +71,22 @@ public class Msg implements IReplaceable {
     }
     
     public Msg(Msg m) {
-        data = ByteBuffer.allocate(max_vsm_size);
         clone(m);
     }
+    
+    public Msg(byte[] src) {
+        this(src, false);
+    }
+    
+    public Msg(byte[] src, boolean copy ) {
+        this();
+        size = src.length;
+        if (copy)
+            data = Arrays.copyOf(src, src.length);
+        else
+            data = src;
+    }
+    
     
     boolean is_delimiter ()
     {
@@ -119,18 +107,12 @@ public class Msg implements IReplaceable {
             type = type_vsm;
             flags = 0;
             
-            data.limit(size_);
+            data = new byte[size_];
         }
         else {
             type = type_lmsg;
             flags = 0;
-            content = ByteBuffer.allocate(size_); 
-
-            //content.data = null ; //XXX lmsg().content + 1;
-            //content.size = size_;
-            //content.ffn = null;
-            //content.hint = null;
-            //content.refcnt = new AtomicLong(); 
+            data = new byte[size_];
         }
     }
 
@@ -170,41 +152,25 @@ public class Msg implements IReplaceable {
     }
 
     
-    public ByteBuffer data ()
+    public byte[] data ()
     {
-        return data(true);
+        return data;
     }
-    
-    public ByteBuffer data(boolean rewind) {
-        //  Check the validity of the message.
-        assert (check ());
 
-        ByteBuffer b = get_buffer();
-
-        if (rewind) {
-            b.rewind();
-        }
-        return b;
-    }
 
     public void close ()
     {
-        //  Check the validity of the message.
         if (!check ()) {
             throw new IllegalStateException();
         }
 
-        throw new IllegalStateException();
-        //content = null;
-        //  Make the message invalid.
-        //type = 0;
+        data = null;
     }
 
     private void init() {
         type = type_vsm;
         flags = 0;
         size = 0;
-        //data.clear();
     }
     
 
@@ -217,84 +183,50 @@ public class Msg implements IReplaceable {
         type = m.type;
         flags = m.flags;
         size = m.size;
-        data.clear();
-        if (type == type_vsm) {
-            m.data.rewind();
-            data.put(m.data);
-            data.flip();
-            content = null;
-        } else if (type == type_lmsg) {
-            content = m.content.duplicate();
-        }
+        data = m.data;
     }
 
     public void reset_flags (byte f) {
         flags = (byte) (flags &~ f);
     }
     
-    private ByteBuffer get_buffer() {
+    public void put(byte[] src, int i) {
+        
+        if (src == null)
+            return;
 
-        ByteBuffer b = null;
-        switch (type) {
-        case type_vsm:
-            b = data;
-            break;
-        case type_lmsg:
-            b = content;
-            break;
-        default:
-            assert (false);
-        }
-        return b;
-    }
-
-    public void put(ByteBuffer buf) {
-        get_buffer().put(buf);
+        System.arraycopy(src, 0, data, i, src.length);
     }
     
-    public void put(byte[] src) {
-        put(src, 0, src.length);
-    }
-
-    public void put(byte[] src, int start, int len_) {
+    public void put(byte[] src, int i, int len_) {
         
         if (len_ == 0 || src == null)
             return;
         
-        if (type == type_vsm)
-            data.put(src, start, len_);
-        else
-            content = ByteBuffer.wrap(src, start, len_);
-    }
-
-    @Override
-    public void replace(Object src) {
-        clone((Msg)src);
+        System.arraycopy(src, 0, data, i, len_);
     }
 
     public boolean is_vsm() {
         return type == type_vsm;
     }
 
+    
     public void put(byte b) {
-        get_buffer().put(b);
+        data[0] = b;
+    }
+
+    public void put(byte b, int i) {
+        data[i] = b;
+    }
+
+    public void put(String str, int i) {
+        put(str.getBytes(), i);
     }
     
-    public void put(String str) {
-        get_buffer().put(str.getBytes());
+    @Override
+    public void replace(Object src) {
+        clone((Msg)src);
     }
-
-    public byte[] bytes() {
-        byte[] bytes = new byte[size];
-        
-        ByteBuffer b = get_buffer();
-        b.rewind();
-        b.get(bytes);
-        b.rewind();
-        
-        return bytes;
-    }
-
 
 
 

@@ -194,15 +194,11 @@ public class Options {
     }
 
     
-    public int getsockopt(int option_, ByteBuffer ret) {
+    public Object getsockopt(int option_) {
         
         switch (option_) {
         case ZMQ.ZMQ_LAST_ENDPOINT:
-            if (ret == null) {
-                throw new IllegalArgumentException("option=" + option_);
-            }
-            ret.put(last_endpoint.getBytes());
-            return 0;
+            return last_endpoint;
         default:
             throw new IllegalArgumentException("option=" + option_);
         }

@@ -65,6 +65,22 @@ public class SessionBase extends Own implements Pipe.IPipeEvents, IPollEvents {
         addr = addr_;
         
     }
+    
+    @Override
+    protected void process_destroy () {
+        assert (pipe == null);
+
+        //  If there's still a pending linger timer, remove it.
+        if (has_linger_timer) {
+            io_object.cancel_timer (linger_timer_id);
+            has_linger_timer = false;
+        }
+
+        //  Close the engine.
+        if (engine != null)
+            engine.terminate ();
+
+    }
 
     public static SessionBase create(IOThread io_thread_, boolean connect_,
             SocketBase socket_, Options options_, Address addr_) {

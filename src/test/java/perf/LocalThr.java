@@ -49,7 +49,7 @@ public class LocalThr {
         message_size = atoi (argv [1]);
         message_count = atoi (argv [2]);
 
-        ctx = ZMQ.zmq_init (2);
+        ctx = ZMQ.zmq_init (1);
         if (ctx == null) {
             printf ("error in zmq_init");
             return ;

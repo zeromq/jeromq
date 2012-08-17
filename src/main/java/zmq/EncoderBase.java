@@ -27,6 +27,8 @@ abstract public class EncoderBase {
 
     //  Where to get the data to write from.
     private ByteBuffer write_buf;
+    private byte[] write_array;
+    private int write_pos;
 
     //  Next step. If set to NULL, it means that associated data stream
     //  is dead.
@@ -63,6 +65,7 @@ abstract public class EncoderBase {
         //unsigned char *buffer = !*data_ ? buf : *data_;
         //size_t buffersize = !*data_ ? bufsize : *size_;
 
+        
         ByteBuffer buffer ;
         if (data_ == null) {
             buffer = buf;
@@ -74,7 +77,8 @@ abstract public class EncoderBase {
         if (offset_ != null)
             offset_[0] = -1;
 
-        while (true) {
+        int pos = 0;
+        while (pos < buffersize) {
 
             //  If there are no more data to return, run the state machine.
             //  If there are still no data, return what we already have
@@ -90,10 +94,6 @@ abstract public class EncoderBase {
                     break;
             }
             
-            if (!buffer.hasRemaining()) {
-                break;
-            }
-
             //  If there are no data in the buffer yet and we are able to
             //  fill whole buffer in a single go, let's use zero-copy.
             //  There's no disadvantage to it as we cannot stuck multiple
@@ -105,20 +105,25 @@ abstract public class EncoderBase {
             //  other engines running in the same I/O thread for excessive
             //  amounts of time.
             if (buffer.position() == 0 && data_ == null && to_write >= buffersize) {
-                //ByteBuffer t = write_buf;
-                //write_buf = null;
-                //to_write = 0;
-                //t.flip();
-                return write_buf ;
+                write_pos = 0;
+                to_write = 0;
+                if (write_array != null) {
+                    return ByteBuffer.wrap(write_array);
+                } else
+                    return write_buf ;
             }
 
             //  Copy data to the buffer. If the buffer is full, return.
-            int to_copy = Math.min (to_write, buffer.remaining());
+            int to_copy = Math.min (to_write, buffersize - pos);
             if (to_copy > 0) {
-                //buffer.put(write_buf);
-                int pos = buffer.position();
-                write_buf.get(buffer.array(), buffer.arrayOffset() + pos, to_copy);
-                buffer.position(pos + to_copy);
+                if (write_array != null) {
+                    buffer.put(write_array, write_pos, to_copy);
+                } else {
+                    buffer.put(write_buf.array(), write_buf.arrayOffset() + write_pos, to_copy);
+                    write_buf.position(write_pos + to_copy);
+                }
+                pos += to_copy;
+                write_pos += to_copy;
                 to_write -= to_copy;
             }
         }
@@ -139,13 +144,30 @@ abstract public class EncoderBase {
     abstract protected boolean next();
 
     protected void next_step (Msg msg_, Object state_, boolean beginning_) {
-        next_step(msg_.data(), msg_.size(), state_, beginning_);
+        if (msg_ == null)
+            next_step((ByteBuffer) null, 0, state_, beginning_);
+        else
+            next_step(msg_.data(), msg_.size(), state_, beginning_);
     }
     
     protected void next_step (ByteBuffer buf_, int to_write_,
             Object next_, boolean beginning_)
     {
+        
         write_buf = buf_;
+        write_array = null;
+        write_pos = 0;
+        to_write = to_write_;
+        next = next_;
+        beginning = beginning_;
+    }
+    
+    protected void next_step (byte[] buf_, int to_write_,
+            Object next_, boolean beginning_)
+    {
+        write_buf = null;
+        write_array = buf_;
+        write_pos = 0;
         to_write = to_write_;
         next = next_;
         beginning = beginning_;

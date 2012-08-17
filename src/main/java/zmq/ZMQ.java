@@ -214,13 +214,12 @@ public class ZMQ {
 
     }
     
-    public static int zmq_getsockopt(SocketBase s_, int option_,
-            ByteBuffer ret) {
+    public static Object zmq_getsockoptx(SocketBase s_, int option_) {
         if (s_ == null || !s_.check_tag ()) {
             throw new IllegalStateException();
         }
 
-        return s_.getsockopt (option_, ret);
+        return s_.getsockoptx (option_);
     }
 
 
@@ -359,34 +358,28 @@ public class ZMQ {
         long now = 0;
         long end = 0;
         
+        for (PollItem item: items_) {
+            SelectableChannel ch = item.getChannel();  // mailbox channel if ZMQ socket
+            SelectionKey key = ch.keyFor(poll_selector);
 
+            if (key == null) {
+                try {
+                    key = ch.register(poll_selector, item.interestOps());
+                    key.attach(item);
+                } catch (ClosedChannelException e) {
+                    throw new ZException.IOException(e);
+                }
+            } else {
+                if (item.interestOps() != key.interestOps())
+                    key.interestOps(item.interestOps());
+            }
+        }
         
         boolean first_pass = true;
         int nevents = 0;
         
         while (true) {
 
-            //poll_selector.selectedKeys().clear();
-            
-            for (PollItem item: items_) {
-                SelectableChannel ch = item.getChannel();  // mailbox channel if ZMQ socket
-                SelectionKey key = ch.keyFor(poll_selector);
-
-                item.readyOps(0);
-
-                if (key == null) {
-                    try {
-                        key = ch.register(poll_selector, item.interestOps());
-                        key.attach(item);
-                    } catch (ClosedChannelException e) {
-                        throw new ZException.IOException(e);
-                    }
-                } else {
-                    if (item.interestOps() != key.interestOps())
-                        key.interestOps(item.interestOps());
-                }
-            }
-            
             //  Compute the timeout for the subsequent poll.
             long timeout;
             if (first_pass)
@@ -399,35 +392,33 @@ public class ZMQ {
             //  Wait for events.
             try {
                 if (timeout < 0)
-                    nevents = poll_selector.select(0);
+                    poll_selector.select(0);
                 else if (timeout == 0)
-                    nevents = poll_selector.selectNow();
+                    poll_selector.selectNow();
                 else
-                    nevents = poll_selector.select(timeout);
+                    poll_selector.select(timeout);
+
+                for (SelectionKey key: poll_selector.keys()) {
+                    PollItem item = (PollItem)key.attachment();
+                    if (item.readyOps(key)) {
+                        nevents++;
+                    }
+                }
+                
+                poll_selector.selectedKeys().clear();
+                
             } catch (ClosedSelectorException e) {
                 return -1;
             } catch (IOException e) {
                 throw new RuntimeException(e);
-            }
-            
+            }            
             //  If timout is zero, exit immediately whether there are events or not.
             if (timeout_ == 0)
                 break;
 
-            //  If there are events to return, we can exit immediately.
-            if (nevents > 0) {
-                Iterator<SelectionKey> it = poll_selector.selectedKeys().iterator();
-                while (it.hasNext()) {
-                    
-                    SelectionKey key = it.next();
-                    it.remove();
-                    
-                    ((PollItem)key.attachment()).readyOps(key.readyOps());
-                }
-
+            if (nevents > 0)
                 break;
-            }
-
+            
             //  At this point we are meant to wait for events but there are none.
             //  If timeout is infinite we can just loop until we get some events.
             if (timeout_ < 0) {

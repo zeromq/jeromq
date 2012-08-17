@@ -70,8 +70,9 @@ public class XPub extends SocketBase {
 
 	        //  Apply the subscription to the trie.
 	        //unsigned char *data = (unsigned char*) sub.data ();
-	        byte[] data = new byte[sub.size()];
-	        sub.data(true).get(data);
+	        //byte[] data = new byte[sub.size()];
+	        //sub.data(true).get(data);
+	        byte[] data = sub.data();
 	        int size = sub.size ();
 	        if (size > 0 && (data[0] == 0 || data[0] == 1)) {
 	            boolean unique;
@@ -83,7 +84,7 @@ public class XPub extends SocketBase {
 	            //  If the subscription is not a duplicate, store it so that it can be
 	            //  passed to used on next recv call.
 	            if (unique && options.type != ZMQ.ZMQ_PUB)
-	                pending.add(new Blob (sub.data (true)));
+	                pending.add(new Blob (sub.data ()));
 	        }
 
 	        //sub.close();
@@ -129,8 +130,9 @@ public class XPub extends SocketBase {
 	    }
 
 	    Blob first = pending.pollFirst();
-	    Msg msg_ = new Msg(first.size());
-	    msg_.put(first.data());
+	    //Msg msg_ = new Msg(first.size());
+	    //msg_.put(first.data());
+	    Msg msg_ = new Msg(first.data());
 	    return msg_;
 
 	}
@@ -150,7 +152,7 @@ public class XPub extends SocketBase {
 	    };
 	    //  For the first part of multi-part message, find the matching pipes.
 	    if (!more)
-	        subscriptions.match (msg_.data ().array(), msg_.data().arrayOffset(),
+	        subscriptions.match (msg_.data (), msg_.size(),
 	            mark_as_matching, this);
 
 	    //  Send the message to all the pipes that were marked as matching

@@ -34,21 +34,21 @@ public class TestSubForward {
         assertThat (ctx, notNullValue());
         SocketBase xpub = ZMQ.zmq_socket (ctx, ZMQ.ZMQ_XPUB);
         assertThat (xpub, notNullValue());
-        boolean rc = ZMQ.zmq_bind (xpub, "tcp://127.0.0.1:5560");
+        boolean rc = ZMQ.zmq_bind (xpub, "tcp://127.0.0.1:5570");
         
         SocketBase xsub = ZMQ.zmq_socket (ctx, ZMQ.ZMQ_XSUB);
         assertThat (xsub, notNullValue());
-        rc = ZMQ.zmq_bind (xsub, "tcp://127.0.0.1:5561");
+        rc = ZMQ.zmq_bind (xsub, "tcp://127.0.0.1:5571");
         assertThat (rc, is(true));
         
         SocketBase pub = ZMQ.zmq_socket (ctx, ZMQ.ZMQ_PUB);
         assertThat (pub, notNullValue());
-        rc = ZMQ.zmq_connect (pub, "tcp://127.0.0.1:5561");
+        rc = ZMQ.zmq_connect (pub, "tcp://127.0.0.1:5571");
         assertThat (rc, is(true));
         
         SocketBase sub = ZMQ.zmq_socket (ctx, ZMQ.ZMQ_SUB);
         assertThat (sub, notNullValue());
-        rc = ZMQ.zmq_connect (sub, "tcp://127.0.0.1:5560");
+        rc = ZMQ.zmq_connect (sub, "tcp://127.0.0.1:5570");
         assertThat (rc, is(true));
         
         ZMQ.zmq_setsockopt (sub, ZMQ.ZMQ_SUBSCRIBE, "");

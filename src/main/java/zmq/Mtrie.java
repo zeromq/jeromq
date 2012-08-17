@@ -361,7 +361,7 @@ public class Mtrie {
         int idx = 0;
         
         while (true) {
-            byte c = data_[idx];
+            
             
             //  Signal the pipes attached to this node.
             if (current.pipes != null) {
@@ -377,6 +377,7 @@ public class Mtrie {
             if (current.count == 0)
                 break;
 
+            byte c = data_[idx];
             //  If there's one subnode (optimisation).
             if (current.count == 1) {
                 if (c != current.min)

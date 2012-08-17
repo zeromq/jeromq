@@ -24,10 +24,10 @@ public class hwclient{
             socket.send(request, 0);
 
             //  Get the reply.
-            ByteBuffer reply = socket.recv(0);
+            byte[] reply = socket.recv(0);
             //  When displaying reply as a String, omit the last byte because
             //  our "Hello World" server has sent us a 0-terminated string:
-            System.out.println("Received reply " + request_nbr + ": [" + new String(reply.array(),reply.arrayOffset(),reply.remaining()) + "]");
+            System.out.println("Received reply " + request_nbr + ": [" + new String(reply) + "]");
         }
     }
 }

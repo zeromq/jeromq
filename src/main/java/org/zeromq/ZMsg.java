@@ -238,7 +238,7 @@ public class ZMsg implements Iterable<ZFrame>, Deque<ZFrame> {
                     // Write byte size of frame
                     file.writeInt(f.size());
                     // Write frame byte data
-                    file.write(f.getData().array());
+                    file.write(f.getData());
                 }
             }
             return true;
@@ -335,7 +335,7 @@ public class ZMsg implements Iterable<ZFrame>, Deque<ZFrame> {
                 PrintWriter pw = new PrintWriter(sw);
                 pw.printf("--------------------------------------\n");
                 for (ZFrame frame : frames) {
-                    pw.printf("[%03d] %s\n", frame.getData().remaining(), 
+                    pw.printf("[%03d] %s\n", frame.getData().length, 
                             frame.toString());
                 }
                 out.append(sw.getBuffer());

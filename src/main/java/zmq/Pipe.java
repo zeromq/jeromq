@@ -31,12 +31,12 @@ public class Pipe extends ZObject {
     int lwm;
 
     //  Number of messages read and written so far.
-    long msgs_read;
-    long msgs_written;
+    private long msgs_read;
+    private long msgs_written;
 
     //  Last received peer's msgs_read. The actual number in the peer
     //  can be higher at the moment.
-    long peers_msgs_read;
+    private long peers_msgs_read;
 
     //  The pipe object on the other side of the pipepair.
     Pipe peer;
@@ -100,8 +100,8 @@ public class Pipe extends ZObject {
 	    //   Creates two pipe objects. These objects are connected by two ypipes,
 	    //   each to pass messages in one direction.
 	            
-		YPipe<Msg> upipe1 = new YPipe<Msg>(Msg.class, Config.message_pipe_granularity);
-		YPipe<Msg> upipe2 = new YPipe<Msg>(Msg.class, Config.message_pipe_granularity);
+		YPipe<Msg> upipe1 = new YPipe<Msg>(Msg.class, Config.message_pipe_granularity.getValue());
+		YPipe<Msg> upipe2 = new YPipe<Msg>(Msg.class, Config.message_pipe_granularity.getValue());
 	            
 	    pipes_ [0] = new Pipe(parents_ [0], upipe1, upipe2,
 	        hwms_ [1], hwms_ [0], delays_ [0]);
@@ -160,9 +160,9 @@ public class Pipe extends ZObject {
 	        return null;
 
 	    Msg msg_ = inpipe.read ();
-	    //if (LOG.isDebugEnabled()) {
-	    //    LOG.debug(parent.toString() + " read " + msg_);
-	    //}
+	    if (LOG.isDebugEnabled()) {
+	        LOG.debug(parent.toString() + " read " + msg_);
+	    }
 	    if (msg_ == null) {
 	        in_active = false;
 	        return null;
@@ -190,9 +190,9 @@ public class Pipe extends ZObject {
 
         boolean more = msg_.has_more();
         outpipe.write (msg_, more);
-        //if (LOG.isDebugEnabled()) {
-        //    LOG.debug(parent.toString() + " write " + msg_);
-        //}
+        if (LOG.isDebugEnabled()) {
+            LOG.debug(parent.toString() + " write " + msg_);
+        }
 
         if (!more)
             msgs_written++;
@@ -295,13 +295,9 @@ public class Pipe extends ZObject {
 	        outpipe.write (msg, false);
 	        flush ();
 	        
-	        LOG.debug( "{} -> {} => {}", new Object[] {parent, msg, peer.get_parent()});
 	    }
 	}
 
-	private ZObject get_parent() {
-        return parent;
-    }
 
     void rollback ()
 	{
@@ -461,7 +457,7 @@ public class Pipe extends ZObject {
         inpipe = null;
 
         //  Create new inpipe.
-        inpipe = new YPipe<Msg>(Msg.class, Config.message_pipe_granularity);
+        inpipe = new YPipe<Msg>(Msg.class, Config.message_pipe_granularity.getValue());
         in_active = true;
 
         //  Notify the peer about the hiccup.

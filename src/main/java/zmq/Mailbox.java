@@ -32,7 +32,7 @@ public class Mailbox {
     final String name;
 
     public Mailbox(String name_) {
-        cpipe = new YPipe<Command>(Command.class, Config.command_pipe_granularity, 1);
+        cpipe = new YPipe<Command>(Command.class, Config.command_pipe_granularity.getValue(), true);
         sync = new ReentrantLock();
         signaler = new Signaler();
         

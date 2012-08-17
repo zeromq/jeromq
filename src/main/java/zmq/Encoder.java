@@ -39,7 +39,7 @@ public class Encoder extends EncoderBase {
         tmpbuf = ByteBuffer.allocate(10);
         
         //  Write 0 bytes to the batch and go to message_ready state.
-        next_step (null, 0, Step.message_ready, true);
+        next_step ((ByteBuffer)null, 0, Step.message_ready, true);
     }
 
     

@@ -3,7 +3,6 @@ package zmq;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.SocketException;
-import java.nio.channels.SelectableChannel;
 import java.nio.channels.SocketChannel;
 
 import org.slf4j.Logger;
@@ -21,10 +20,7 @@ public class TcpConnecter extends Own implements IPollEvents {
     final private Address addr;
 
     //  Underlying socket.
-    private SocketChannel s;
-
-    //  Handle corresponding to the listening socket.
-    private SelectableChannel handle;
+    private SocketChannel handle;
 
     //  If true file descriptor is registered with the poller and 'handle'
     //  contains valid value.
@@ -49,7 +45,7 @@ public class TcpConnecter extends Own implements IPollEvents {
         super (io_thread_, options_);
         io_object = new IOObject(io_thread_);
         addr = addr_;
-        s = null; 
+        handle = null; 
         handle_valid = false;
         wait = wait_;
         session = session_;
@@ -60,6 +56,7 @@ public class TcpConnecter extends Own implements IPollEvents {
         endpoint = addr.toString ();
     }
     
+    @Override
     protected void process_plug ()
     {
         io_object.set_handler(this);
@@ -86,18 +83,18 @@ public class TcpConnecter extends Own implements IPollEvents {
     
             //  Connect may succeed in synchronous manner.
             if (rc) {
-                handle = io_object.add_fd (s);
+                io_object.add_fd (handle);
                 handle_valid = true;
-                io_object.out_event ();
+                io_object.connect_event();
                 return;
             }
     
             //  Connection establishment may be delayed. Poll for its completion.
             else {
-                handle = io_object.add_fd (s);
+                io_object.add_fd (handle);
                 handle_valid = true;
                 io_object.set_pollconnect (handle);
-                session.monitor_event (ZMQ.ZMQ_EVENT_CONNECT_DELAYED, endpoint, s);
+                session.monitor_event (ZMQ.ZMQ_EVENT_CONNECT_DELAYED, endpoint, handle);
                 return;
             }
         } catch (IOException e) {
@@ -131,16 +128,16 @@ public class TcpConnecter extends Own implements IPollEvents {
     
     private boolean open () throws IOException
     {
-        assert (s == null);
+        assert (handle == null);
 
         //  Create the socket.
-        s = SocketChannel.open();
+        handle = SocketChannel.open();
 
         // Set the socket to non-blocking mode so that we get async connect().
-        Utils.unblock_socket(s);
+        Utils.unblock_socket(handle);
 
         //  Connect to the remote peer.
-        boolean rc = s.connect(addr.resolved().address());
+        boolean rc = handle.connect(addr.resolved().address());
 
         return rc;
 
@@ -148,10 +145,9 @@ public class TcpConnecter extends Own implements IPollEvents {
     
     private SocketChannel connect () throws IOException
     {
-        boolean finished = s.finishConnect();
+        boolean finished = handle.finishConnect();
         assert finished;
-        SocketChannel ret = s;
-        s = null;
+        SocketChannel ret = handle;
         
         return ret;
     }
@@ -164,7 +160,7 @@ public class TcpConnecter extends Own implements IPollEvents {
     
     @Override
     public void out_event() {
-        throw new UnsupportedOperationException();
+        return;
     }
     
     @Override
@@ -189,7 +185,7 @@ public class TcpConnecter extends Own implements IPollEvents {
 
         io_object.rm_fd (handle);
         handle_valid = false;
-
+        
         if (err) {
             //  Handle the error condition by attempt to reconnect.
             close ();
@@ -197,7 +193,11 @@ public class TcpConnecter extends Own implements IPollEvents {
             add_reconnect_timer();
             return;
         }
+        
+        handle = null;
+        
         try {
+            
             Utils.tune_tcp_socket (fd);
             Utils.tune_tcp_keepalives (fd, options.tcp_keepalive, options.tcp_keepalive_cnt, options.tcp_keepalive_idle, options.tcp_keepalive_intvl);
         } catch (SocketException e) {
@@ -224,14 +224,25 @@ public class TcpConnecter extends Own implements IPollEvents {
         session.monitor_event (ZMQ.ZMQ_EVENT_CONNECTED, endpoint, fd);
     }
 
+    @Override
+    protected void process_destroy ()
+    {
+        if (wait)
+            io_object.cancel_timer (reconnect_timer_id);
+        if (handle_valid)
+            io_object.rm_fd (handle);
 
+        if (handle != null)
+            close ();
+        
+    }
 
     private void close() {
-        assert (s != null);
+        assert (handle != null);
         try {
-            s.close();
-            session.monitor_event (ZMQ.ZMQ_EVENT_CLOSED, endpoint, s);
-            s = null;
+            handle.close();
+            session.monitor_event (ZMQ.ZMQ_EVENT_CLOSED, endpoint, handle);
+            handle = null;
         } catch (IOException e) {
             session.monitor_event (ZMQ.ZMQ_EVENT_CLOSE_FAILED, endpoint, e.getCause());
         }

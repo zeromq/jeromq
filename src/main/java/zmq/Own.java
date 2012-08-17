@@ -4,7 +4,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class Own extends ZObject {
+abstract public class Own extends ZObject {
 
 	protected final Options options;
 	
@@ -113,7 +113,7 @@ public class Own extends ZObject {
 	    check_term_acks ();
 	}
 	
-	void check_term_acks ()
+	private void check_term_acks ()
 	{
 	    if (terminating && processed_seqnum == sent_seqnum.get () &&
 	          term_acks == 0) {
@@ -131,7 +131,7 @@ public class Own extends ZObject {
 	    }
 	}
 	
-	void terminate ()
+	protected void terminate ()
 	{
 	    //  If termination is already underway, there's no point
 	    //  in starting it anew.
@@ -149,6 +149,7 @@ public class Own extends ZObject {
 	    send_term_req (owner, this);
 	}
 	
+	@Override
 	protected void process_term (int linger_)
 	{
 	    //  Double termination should never happen.
@@ -167,6 +168,7 @@ public class Own extends ZObject {
 	}
 
 
+	@Override
 	protected void process_term_ack ()
 	{
 	    unregister_term_ack ();
@@ -181,11 +183,13 @@ public class Own extends ZObject {
         //  This may be a last ack we are waiting for before termination...
         check_term_acks ();
     }
-
-    void process_destroy ()
+	
+    protected void process_destroy ()
 	{
+        throw new UnsupportedOperationException("Must Override");
 	}
 
+    @Override
     protected void process_term_req (Own object_)
     {
         //  When shutting down we can ignore termination requests from owned

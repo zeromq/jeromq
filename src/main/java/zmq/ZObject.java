@@ -146,6 +146,7 @@ public class ZObject {
     {
         Command cmd = new Command(destination_, Command.Type.term, linger_);
         send_command (cmd);
+        
     }
 
     protected void send_term_ack (Own destination_)

@@ -33,12 +33,12 @@ public class TestReqrepTcp {
 
         SocketBase sb = ZMQ.zmq_socket (ctx, ZMQ.ZMQ_REP);
         assert (sb != null);
-        boolean rc = ZMQ.zmq_bind (sb, "tcp://127.0.0.1:5560");
-        assert (!rc );
+        boolean rc = ZMQ.zmq_bind (sb, "tcp://127.0.0.1:7560");
+        assert (rc );
 
         SocketBase sc = ZMQ.zmq_socket (ctx, ZMQ.ZMQ_REQ);
         assert (sc != null);
-        rc = ZMQ.zmq_connect (sc, "tcp://127.0.0.1:5560");
+        rc = ZMQ.zmq_connect (sc, "tcp://127.0.0.1:7560");
         assert (rc);
 
         TestHelper.bounce (sb, sc);
@@ -46,5 +46,7 @@ public class TestReqrepTcp {
         ZMQ.zmq_close (sc);
 
         ZMQ.zmq_close (sb);
+        
+        ZMQ.zmq_term (ctx);
     }
 }

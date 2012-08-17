@@ -13,10 +13,7 @@ import java.nio.channels.SocketChannel;
 public class StreamEngine implements IEngine, IPollEvents {
     
     //final private IOObject io_object;
-    //  Underlying socket.
-    private SocketChannel s;
-
-    private SelectableChannel handle;
+    private SocketChannel handle;
 
     ByteBuffer inbuf;
     int insize;
@@ -44,7 +41,7 @@ public class StreamEngine implements IEngine, IPollEvents {
     
     
     public StreamEngine (SocketChannel fd_, final Options options_, final String endpoint_) {
-        s = fd_;
+        handle = fd_;
         inbuf = null;
         insize = 0;
         input_error = false;
@@ -76,14 +73,14 @@ public class StreamEngine implements IEngine, IPollEvents {
         
         //  Put the socket into non-blocking mode.
         try {
-            Utils.unblock_socket (s);
+            Utils.unblock_socket (handle);
             
             //  Set the socket buffer limits for the underlying socket.
             if (options.sndbuf != 0) {
-                s.socket().setSendBufferSize(options.sndbuf);
+                handle.socket().setSendBufferSize(options.sndbuf);
             }
             if (options.rcvbuf != 0) {
-                s.socket().setReceiveBufferSize(options.rcvbuf);
+                handle.socket().setReceiveBufferSize(options.rcvbuf);
             }
 
         } catch (IOException e) {
@@ -93,13 +90,12 @@ public class StreamEngine implements IEngine, IPollEvents {
     }
     
     public void close() {
-        if (s != null) {
+        if (handle != null) {
             try {
-                s.close();
+                handle.close();
             } catch (IOException e) {
-                e.printStackTrace();
             }
-            s = null;
+            handle = null;
         }
     }
 
@@ -110,7 +106,7 @@ public class StreamEngine implements IEngine, IPollEvents {
             //  There was an input error but the engine could not
             //  be terminated (due to the stalled decoder).
             //  Flush the pending message and terminate the engine now.
-            decoder.process_buffer (inbuf);
+            decoder.process_buffer (inbuf, 0);
             assert (!decoder.stalled ());
             session.flush ();
             error ();
@@ -125,7 +121,7 @@ public class StreamEngine implements IEngine, IPollEvents {
 
     private void error() {
         assert (session!=null);
-        session.monitor_event (ZMQ.ZMQ_EVENT_DISCONNECTED, endpoint, s);
+        session.monitor_event (ZMQ.ZMQ_EVENT_DISCONNECTED, endpoint, handle);
         session.detach ();
         unplug ();
         close();
@@ -164,7 +160,7 @@ public class StreamEngine implements IEngine, IPollEvents {
         io_object.set_handler(this);
         //  Connect to I/O threads poller object.
         io_object.plug (io_thread_);
-        handle = io_object.add_fd (s);
+        io_object.add_fd (handle);
         io_object.set_pollin (handle);
         io_object.set_pollout (handle);
         //  Flush all the data that may have been already received downstream.
@@ -185,6 +181,7 @@ public class StreamEngine implements IEngine, IPollEvents {
             //  number of bytes read will be always limited.
             inbuf = decoder.get_buffer ();
             insize = read (inbuf);
+            inbuf.flip();
 
             //  Check whether the peer has closed the connection.
             if (insize == -1) {
@@ -194,21 +191,20 @@ public class StreamEngine implements IEngine, IPollEvents {
         }
 
         //  Push the data to the decoder.
-        int remaining = decoder.process_buffer (inbuf);
+        int processed = decoder.process_buffer (inbuf, insize);
 
-        if (remaining == -1) {
+        if (processed == -1) {
             disconnection = true;
         }
         else {
 
             //  Stop polling for input if we got stuck.
-            if (remaining > 0)
+            if (processed < insize)
                 io_object.reset_pollin (handle);
 
             //  Adjust the buffer.
             //inpos += processed;
-            //insize -= processed;
-            insize = remaining;
+            insize -= processed;
         }
 
         //  Flush all messages the decoder may have produced.
@@ -232,7 +228,7 @@ public class StreamEngine implements IEngine, IPollEvents {
     private int read (ByteBuffer buf) {
         int nbytes = 0 ;
         try {
-            nbytes = s.read(buf);
+            nbytes = handle.read(buf);
         } catch (IOException e) {
             return -1;
         }
@@ -243,7 +239,7 @@ public class StreamEngine implements IEngine, IPollEvents {
     private int write (ByteBuffer buf) {
         int nbytes = 0 ;
         try {
-            nbytes = s.write(buf);
+            nbytes = handle.write(buf);
         } catch (IOException e) {
             return -1;
         }
@@ -313,6 +309,12 @@ public class StreamEngine implements IEngine, IPollEvents {
         //  Consequently, the latency should be better in request/reply scenarios.
         out_event ();
         
+    }
+
+    @Override
+    public void terminate() {
+        unplug ();
+        close();
     }
 
 

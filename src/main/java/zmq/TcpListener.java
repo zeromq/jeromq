@@ -37,10 +37,7 @@ public class TcpListener extends Own implements IPollEvents {
     final private TcpAddress address;
 
     //  Underlying socket.
-    private ServerSocketChannel s;
-
-    //  Handle corresponding to the listening socket.
-    private SelectableChannel handle;
+    private ServerSocketChannel handle;
 
     //  Socket the listerner belongs to.
     private SocketBase socket;
@@ -55,18 +52,20 @@ public class TcpListener extends Own implements IPollEvents {
         
         io_object = new IOObject(io_thread_);
         address = new TcpAddress();
-        s = null;
+        handle = null;
         socket = socket_;
     }
     
+    @Override
     protected void process_plug ()
     {
         //  Start polling for incoming connections.
         io_object.set_handler(this);
-        handle = io_object.add_fd (s);
+        io_object.add_fd (handle);
         io_object.set_pollaccept (handle);
     }
 
+    @Override
     protected void process_term (int linger_)
     {
         io_object.set_handler(this);
@@ -115,17 +114,23 @@ public class TcpListener extends Own implements IPollEvents {
         socket.monitor_event (ZMQ.ZMQ_EVENT_ACCEPTED, endpoint, fd);
     }
     
+    @Override
+    protected void process_destroy () {
+        if (handle != null)
+            close();
+    }
+    
     public void close () {
-        if (s == null) 
+        if (handle == null) 
             return;
         
         try {
-            s.close();
-            socket.monitor_event (ZMQ.ZMQ_EVENT_CLOSED, endpoint, s);
+            handle.close();
+            socket.monitor_event (ZMQ.ZMQ_EVENT_CLOSED, endpoint, handle);
         } catch (IOException e) {
             socket.monitor_event (ZMQ.ZMQ_EVENT_CLOSE_FAILED, endpoint, e);
         }
-        s = null;
+        handle = null;
     }
 
     public String get_address() {
@@ -137,18 +142,18 @@ public class TcpListener extends Own implements IPollEvents {
         address.resolve(addr_, options.ipv4only > 0 ? true : false);
         
         endpoint = address.toString();
-        s = ServerSocketChannel.open();
-        s.configureBlocking(false);
-        s.socket().setReuseAddress(true);
-        s.socket().bind(address.address(), options.backlog);
+        handle = ServerSocketChannel.open();
+        handle.configureBlocking(false);
+        handle.socket().setReuseAddress(true);
+        handle.socket().bind(address.address(), options.backlog);
         
-        socket.monitor_event(ZMQ.ZMQ_EVENT_LISTENING, endpoint, s);
+        socket.monitor_event(ZMQ.ZMQ_EVENT_LISTENING, endpoint, handle);
     }
 
     private SocketChannel accept() {
         Socket sock = null;
         try {
-            sock = s.socket().accept();
+            sock = handle.socket().accept();
         } catch (IllegalBlockingModeException e) {
             return null;
         } catch (IOException e) {

@@ -82,5 +82,22 @@ abstract public class PollerBase {
         timers.put(expiration, info);
     }
 
+    public void cancel_timer(IPollEvents sink_, int id_) {
+
+        //  Complexity of this operation is O(n). We assume it is rarely used.
+
+        Iterator<Entry<Long, TimerInfo>> it = timers.entrySet().iterator();
+        while (it.hasNext()) {
+            TimerInfo v = it.next().getValue();
+            if (v.sink == sink_ && v.id == id_) {
+                it.remove();
+                return;
+            }
+        }
+
+        //  Timer not found.
+        assert (false);
+    }
+
 
 }

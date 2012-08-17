@@ -86,7 +86,7 @@ public class Proxy extends Router {
             if (!sent_identity) {
                 Msg identity = new Msg(address.length() +1);
                 identity.put((byte)0);
-                identity.put(address.getBytes());
+                identity.put(address.getBytes(),1);
                 if (!super.write(identity)) {
                     return false;
                 }

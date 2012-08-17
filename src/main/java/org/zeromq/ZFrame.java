@@ -24,7 +24,7 @@ public class ZFrame {
     
     private boolean more;
     
-    private ByteBuffer data;
+    private byte[] data;
     
 
     /**
@@ -45,14 +45,7 @@ public class ZFrame {
     public ZFrame(byte[] data)
     {
         if (data != null) {
-            this.data = ByteBuffer.wrap(data);
-        }
-    }
-    
-    public ZFrame(ByteBuffer data)
-    {
-        if (data != null) {
-            this.data = data.duplicate();
+            this.data = data;
         }
     }
     
@@ -63,7 +56,7 @@ public class ZFrame {
      */
     public ZFrame(String data) {
         if (data != null) {
-            this.data = ByteBuffer.wrap(data.getBytes());
+            this.data = data.getBytes();
         }
     }
     
@@ -78,13 +71,10 @@ public class ZFrame {
     /**
      * @return the data
      */
-    public ByteBuffer getData() {
+    public byte[] getData() {
         return data;
     }
 
-    public byte[] getArray() {
-        return data.array();
-    }
 
     /**
      * @return More flag, true if last read had MORE message parts to come
@@ -100,7 +90,7 @@ public class ZFrame {
      */
     public int size() {
         if (hasData())
-            return data.remaining();
+            return data.length;
         else
             return 0;
     }
@@ -201,7 +191,7 @@ public class ZFrame {
         if (other == null) return false;
         
         if (size() == other.size()) {
-            return Arrays.equals(data.array(), other.data.array());
+            return Arrays.equals(data, other.data);
         }
         return false;
     }
@@ -212,7 +202,7 @@ public class ZFrame {
      *          New byte array contents for frame
      */
     public void reset(byte[] data) {
-        this.data = ByteBuffer.wrap(data);
+        this.data = data;
     }
     
     /**
@@ -223,10 +213,9 @@ public class ZFrame {
         String hexChar = "0123456789ABCDEF";
         
         StringBuilder b = new StringBuilder();
-        byte[] arr = data.array();
-        for (int nbr = 0;nbr<arr.length;nbr++) {
-            int b1 = arr[nbr] >>> 4 & 0xf;
-            int b2 = arr[nbr] & 0xf;
+        for (int nbr = 0;nbr<data.length;nbr++) {
+            int b1 = data[nbr] >>> 4 & 0xf;
+            int b2 = data[nbr] & 0xf;
             b.append(hexChar.charAt(b1));
             b.append(hexChar.charAt(b2));
         }
@@ -243,7 +232,7 @@ public class ZFrame {
      */
     public boolean streq(String str) {
         if (!hasData()) return false;
-        return new String(this.data.array(), data.arrayOffset(), data.remaining()).compareTo(str) == 0;
+        return new String(this.data).compareTo(str) == 0;
     }
 
     @Override
@@ -253,14 +242,14 @@ public class ZFrame {
 
         ZFrame zFrame = (ZFrame) o;
 
-        if (!Arrays.equals(data.array(), zFrame.data.array())) return false;
+        if (!Arrays.equals(data, zFrame.data)) return false;
 
         return true;
     }
 
     @Override
     public int hashCode() {
-        return data != null ? Arrays.hashCode(data.array()) : 0;
+        return data != null ? Arrays.hashCode(data) : 0;
     }
 
     /**
@@ -272,13 +261,12 @@ public class ZFrame {
         if (!hasData()) return null;
         // Dump message as text or hex-encoded string
         boolean isText = true;
-        byte[] arr = data.array();
-        for (int i = 0;i< arr.length;i++) {
-            if (arr[i] < 32 || arr[i] > 127)
+        for (int i = 0;i< data.length;i++) {
+            if (data[i] < 32 || data[i] > 127)
                 isText = false;
         }
         if (isText) 
-            return new String(data.array(), data.arrayOffset(), data.remaining());
+            return new String(data);
         else
             return strhex();
     }
@@ -291,7 +279,7 @@ public class ZFrame {
      * @return
      *          ByteBuffer
      */
-    private ByteBuffer recv(Socket socket, int flags) {
+    private byte[] recv(Socket socket, int flags) {
         if (socket == null)
             throw new IllegalArgumentException("socket parameter must not be null");
         

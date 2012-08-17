@@ -62,7 +62,7 @@ public class TestInvalidRep {
         assertThat (bottom.size(), is(0));
         body = ZMQ.zmq_recv (router_socket,  0);
         assertThat (body.size(), is(1));
-        assertThat (body.data().get(), is((byte)'r'));
+        assertThat (body.data()[0], is((byte)'r'));
         
         //  Send invalid reply.
         rc = ZMQ.zmq_send (router_socket, addr, 0);
@@ -79,7 +79,7 @@ public class TestInvalidRep {
         //  Check whether we've got the valid reply.
         body = ZMQ.zmq_recv (req_socket, 0);
         assertThat (body.size(), is( 1));
-        assertThat (body.data().get() , is((byte)'b'));
+        assertThat (body.data()[0] , is((byte)'b'));
     
         //  Tear down the wiring.
         ZMQ.zmq_close (router_socket);

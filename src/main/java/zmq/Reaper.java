@@ -32,7 +32,8 @@ public class Reaper extends ZObject implements IPollEvents {
 
         mailbox = new Mailbox(name);
         
-        mailbox_handle = poller.add_fd (mailbox.get_fd (), this);
+        mailbox_handle = mailbox.get_fd();
+        poller.add_fd (mailbox_handle, this);
         poller.set_pollin (mailbox_handle);
     }
     

@@ -35,7 +35,7 @@ public class Sub extends XSub {
             msg.put((byte)1);
         else if (option_ == ZMQ.ZMQ_UNSUBSCRIBE)
             msg.put((byte)0);
-        msg.put (val.getBytes());
+        msg.put (val.getBytes(),1);
 
         //  Pass it further on in the stack.
         boolean rc = super.xsend (msg, 0);

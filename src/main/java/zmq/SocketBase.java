@@ -508,10 +508,6 @@ public abstract class SocketBase extends Own
         //  owner thread can be interrupted.
         send_stop ();
         
-        if (check_tag()) {
-            // close was not called
-            close();
-        }
     }
 
     public void start_reaping(Poller poller_) {
@@ -521,8 +517,9 @@ public abstract class SocketBase extends Own
         
         //  Plug the socket to the reaper thread.
         poller = poller_;
-        handle = poller.add_fd (mailbox.get_fd (), this);
-        poller.set_pollin (mailbox.get_fd ());
+        handle = mailbox.get_fd();
+        poller.add_fd (handle, this);
+        poller.set_pollin (handle);
 
         //  Initialise the termination and check whether it can be deallocated
         //  immediately.
@@ -530,7 +527,7 @@ public abstract class SocketBase extends Own
         check_destroy ();
     }
     
-    void check_destroy ()
+    private void check_destroy ()
     {
         //  If the object was already marked as destroyed, finish the deallocation.
         if (destroyed) {
@@ -542,9 +539,15 @@ public abstract class SocketBase extends Own
 
             //  Notify the reaper about the fact.
             send_reaped ();
-
+            
             //  Deallocate.
-            super.process_destroy ();
+            // super.process_destroy ();
+            
+            try {
+                handle.close();
+            } catch (IOException e) {
+                LOG.error("Channel close error", e);
+            }
         }
     }
 
@@ -552,7 +555,8 @@ public abstract class SocketBase extends Own
         get_ctx().monitor_event(this, event, args);
     }
 
-    void process_destroy ()
+    @Override
+    protected void process_destroy ()
     {
         destroyed = true;
     }
@@ -609,10 +613,10 @@ public abstract class SocketBase extends Own
 
     
     public int getsockopt(int option_) {
-        return getsockopt(option_, null);
+        return (Integer) getsockoptx(option_);
     }
     
-    public int getsockopt(int option_, ByteBuffer ret) {
+    public Object getsockoptx(int option_) {
         if (ctx_terminated) {
             throw new IllegalStateException();
         }
@@ -622,7 +626,7 @@ public abstract class SocketBase extends Own
         }
         
         if (option_ == ZMQ.ZMQ_FD) {
-            throw new UnsupportedOperationException();
+            return mailbox.get_fd();
         }
         
         if (option_ == ZMQ.ZMQ_EVENTS) {
@@ -638,7 +642,7 @@ public abstract class SocketBase extends Own
         }
         //  If the socket type doesn't support the option, pass it to
         //  the generic option parser.
-        return options.getsockopt (option_, ret);
+        return options.getsockopt (option_);
 
     }
 

@@ -38,26 +38,26 @@ public class TestReqrepDevice {
         SocketBase dealer = ZMQ.zmq_socket (ctx, ZMQ.ZMQ_DEALER);
         assertThat (dealer, notNullValue());
         
-        brc = ZMQ.zmq_bind (dealer, "tcp://127.0.0.1:5560");
+        brc = ZMQ.zmq_bind (dealer, "tcp://127.0.0.1:5580");
         assertThat (brc , is(true));
         
         SocketBase router = ZMQ.zmq_socket (ctx, ZMQ.ZMQ_ROUTER);
         assertThat (router, notNullValue());
         
-        brc = ZMQ.zmq_bind (router, "tcp://127.0.0.1:5561");
+        brc = ZMQ.zmq_bind (router, "tcp://127.0.0.1:5581");
         assertThat (brc , is(true));
         
         //  Create a worker.
         SocketBase rep = ZMQ.zmq_socket (ctx, ZMQ.ZMQ_REP);
         assertThat (rep, notNullValue());
         
-        brc = ZMQ.zmq_connect (rep, "tcp://127.0.0.1:5560");
+        brc = ZMQ.zmq_connect (rep, "tcp://127.0.0.1:5580");
         assertThat (brc , is(true));
         
         SocketBase req = ZMQ.zmq_socket (ctx, ZMQ.ZMQ_REQ);
         assertThat (req, notNullValue());
         
-        brc = ZMQ.zmq_connect (req, "tcp://127.0.0.1:5561");
+        brc = ZMQ.zmq_connect (req, "tcp://127.0.0.1:5581");
         assertThat (brc , is(true));
         
         //  Send a request.
@@ -84,13 +84,13 @@ public class TestReqrepDevice {
         //  Receive the request.
         msg = ZMQ.zmq_recv (rep, 0);
         assertThat (msg.size() , is(3));
-        buff = new String(msg.bytes());
+        buff = new String(msg.data());
         assertThat (buff , is("ABC"));
         rcvmore = ZMQ.zmq_getsockopt (rep, ZMQ.ZMQ_RCVMORE);
         assertThat (rcvmore>0, is(true));
         msg = ZMQ.zmq_recv (rep, 0);
         assertThat (msg.size(), is( 4));
-        buff = new String(msg.bytes());
+        buff = new String(msg.data());
         assertThat (buff, is("DEFG") );
         rcvmore = ZMQ.zmq_getsockopt (rep, ZMQ.ZMQ_RCVMORE);
         assertThat (rcvmore, is(0));
@@ -115,13 +115,13 @@ public class TestReqrepDevice {
         //  Receive the reply.
         msg = ZMQ.zmq_recv (req, 0);
         assertThat (msg.size() , is(6));
-        buff = new String(msg.bytes());
+        buff = new String(msg.data());
         assertThat (buff , is("GHIJKL"));
         rcvmore = ZMQ.zmq_getsockopt (req, ZMQ.ZMQ_RCVMORE);
         assertThat (rcvmore>0, is(true));
         msg = ZMQ.zmq_recv (req, 0);
         assertThat (msg.size(), is( 2));
-        buff = new String(msg.bytes());
+        buff = new String(msg.data());
         assertThat (buff, is("MN") );
         rcvmore = ZMQ.zmq_getsockopt (req, ZMQ.ZMQ_RCVMORE);
         assertThat (rcvmore, is(0));

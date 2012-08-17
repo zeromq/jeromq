@@ -29,16 +29,12 @@ public class YPipe<T extends IReplaceable> {
     //  atomic operations.
     final AtomicLong c;
 
-    public YPipe(Class<T> klass, Config conf) {
-        this(klass, conf, 0);
+    public YPipe(Class<T> klass, int qsize ) {
+        this(klass, qsize, false);
     }
     
-    public YPipe(Class<T> klass, Config conf, int qid) {
-        this(klass, conf.getValue(), qid);
-    }
-    
-	public YPipe(Class<T> klass, int qsize, int qid) {
-		queue = new YQueue<T>(klass, qsize, qid);
+	public YPipe(Class<T> klass, int qsize, boolean allocate) {
+		queue = new YQueue<T>(klass, qsize, allocate);
         queue.push();
         w = r = f = queue.back_pos();
         c = new AtomicLong(queue.back_pos());

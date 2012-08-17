@@ -17,7 +17,7 @@ public class TestDecoder {
     @Before
     public void setUp () {
         session = new DummySession();
-        decoder = new Decoder(64, 128);
+        decoder = new Decoder(64, 256);
         decoder.set_session(session);
     }
     // as if it read data from socket
@@ -29,15 +29,59 @@ public class TestDecoder {
         return buf.position();
     }
     
+    // as if it read data from socket
+    private int read_long_message1 (ByteBuffer buf) {
+        
+        buf.put((byte)201);
+        buf.put((byte)0); // flag
+        for (int i=0; i < 6; i++)
+            buf.put("0123456789".getBytes());
+        buf.put("01".getBytes());
+        return buf.position();
+    }
+
+    private int read_long_message2 (ByteBuffer buf) {
+        buf.put("23456789".getBytes());        
+        for (int i=0; i < 13; i++)
+            buf.put("0123456789".getBytes());
+        return buf.position();
+    }
+
     @Test
     public void testReader() {
         ByteBuffer in = decoder.get_buffer ();
         int insize = read_short_message (in);
         
         assertThat(insize, is(7));
-        int remaining = decoder.process_buffer (in);
-        assertThat(remaining, is(0));
+        in.flip();
+        int process = decoder.process_buffer (in, insize);
+        assertThat(process, is(7));
     }
+    
+    @Test
+    public void testReaderLong() {
+        ByteBuffer in = decoder.get_buffer ();
+        int insize = read_long_message1 (in);
+        
+        assertThat(insize, is(64));
+        in.flip();
+        int process = decoder.process_buffer (in, insize);
+        assertThat(process, is(64));
+
+        
+        in = decoder.get_buffer ();
+        assertThat(in.capacity(), is(200));
+        assertThat(in.position(), is(62));
+
+        insize = read_long_message2 (in);
+        
+        assertThat(insize, is(200));
+        process = decoder.process_buffer (in, 138);
+        assertThat(process, is(138));
+        assertThat(in.array()[199], is((byte)'9'));
+
+    }
+    
 
     @Test
     public void testReaderMultipleMsg() {
@@ -46,8 +90,9 @@ public class TestDecoder {
         assertThat(insize, is(7));
         read_short_message (in);
         
-        int remaining = decoder.process_buffer (in);
-        assertThat(remaining, is(0));
+        in.flip();
+        int processed = decoder.process_buffer (in, 14);
+        assertThat(processed, is(14));
         assertThat(in.position(), is(14));
         
         assertThat(session.out.size(), is(2));
@@ -120,8 +165,9 @@ public class TestDecoder {
         assertThat(insize, is(10));
         read_body (in);
         
-        int remaining = cdecoder.process_buffer (in);
-        assertThat(remaining, is(0));
+        in.flip();
+        int processed = cdecoder.process_buffer (in, 30);
+        assertThat(processed, is(30));
         assertThat(cdecoder.size, is(20));
         assertThat(session.out.size(), is(1));
     }

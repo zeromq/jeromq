@@ -38,6 +38,8 @@ abstract public class DecoderBase {
     
     //  Where to store the read data.
     private ByteBuffer read_buf;
+    private byte[] read_array;
+    private int read_pos;
 
     //  How much data to read before taking next step.
     private int to_read;
@@ -52,6 +54,8 @@ abstract public class DecoderBase {
 
     protected long maxmsgsize;
 
+    boolean zero_copy;
+    
     public DecoderBase (int bufsize_, long maxmsgsize_)
     {
         state = null;
@@ -60,6 +64,8 @@ abstract public class DecoderBase {
         session = null;
         maxmsgsize = maxmsgsize_;
         buf = ByteBuffer.allocateDirect(bufsize_);
+        read_array = null;
+        zero_copy = false;
     }
     
     
@@ -76,7 +82,12 @@ abstract public class DecoderBase {
         
         ByteBuffer b;
         if (to_read >= bufsize) {
-            b = read_buf;
+            zero_copy = true;
+            if (read_array != null) {
+                b = ByteBuffer.wrap(read_array);
+                b.position(read_pos);
+            } else
+                b = read_buf;
         } else {
             b = buf;
             b.clear();
@@ -85,8 +96,11 @@ abstract public class DecoderBase {
     }
     
 
-    // return remaining
-    public int process_buffer(ByteBuffer buf_) {
+    //  Processes the data in the buffer previously allocated using
+    //  get_buffer function. size_ argument specifies nemuber of bytes
+    //  actually filled into the buffer. Function returns number of
+    //  bytes actually processed.
+    public int process_buffer(ByteBuffer buf_, int size_) {
         //  Check if we had an error in previous attempt.
         if (state() == null)
             return -1;
@@ -94,47 +108,56 @@ abstract public class DecoderBase {
         //  In case of zero-copy simply adjust the pointers, no copying
         //  is required. Also, run the state machine in case all the data
         //  were processed.
-        if (buf_ == read_buf) {
-            to_read = buf_.remaining();
-            //to_read -= size_;
+        if (zero_copy) {
+            read_pos += size_;
+            to_read -= size_;
 
             while (to_read == 0) {
                 if (!next()) {
                     if (state() == null)
                         return -1;
-                    return 0;
+                    return size_;
                 }
             }
-            return 0;
+            return size_;
         }
 
-        buf.flip();
         int pos = 0;
         while (true) {
 
             //  Try to get more space in the message to fill in.
             //  If none is available, return.
             while (to_read == 0) {
-                read_buf.flip();
+                if (read_buf != null)
+                    read_buf.flip();
                 if (!next ()) {
-                    if (state() == null)
+                    if (state() == null) {
                         return -1;
-                    return buf.remaining();
+                    }
+
+                    return pos;
                 }
             }
 
             //  If there are no more data in the buffer, return.
-            if (!buf.hasRemaining())
-                return 0;
+            if (pos == size_)
+                return pos;
+            
             //  Copy the data from buffer to the message.
-            int to_copy = Math.min (to_read, buf.remaining());
-            pos = read_buf.position();
-            buf.get(read_buf.array(), read_buf.arrayOffset() + pos, to_copy);
-            read_buf.position(pos + to_copy);
+            int to_copy = Math.min (to_read, size_ - pos);
+            if (read_array != null) {
+                buf.get(read_array, read_pos, to_copy);
+            } else {
+                buf.get(read_buf.array(), read_buf.arrayOffset() + read_pos, to_copy);
+                read_buf.position(read_pos + to_copy);
+            }
+            read_pos += to_copy;
+            pos += to_copy;
             to_read -= to_copy;
         }
     }
     
+
     protected void next_step (Msg msg_, Object state_) {
         next_step(msg_.data(), msg_.size(), state_);
     }
@@ -142,9 +165,19 @@ abstract public class DecoderBase {
     protected void next_step (ByteBuffer buf_, int to_read_, Object state_)
     {
         read_buf = buf_;
+        read_array = null;
+        read_pos = 0;
         to_read = to_read_;
         state = state_;
-        read_buf.clear();
+    }
+    
+    protected void next_step (byte[] buf_, int to_read_, Object state_)
+    {
+        read_buf = null;
+        read_array = buf_;
+        read_pos = 0;
+        to_read = to_read_;
+        state = state_;
     }
     
     protected boolean session_write (Msg msg) {

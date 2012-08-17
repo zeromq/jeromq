@@ -26,10 +26,6 @@ import java.nio.ByteBuffer;
 
 import org.junit.Test;
 
-import zmq.TestDecoder.CustomDecoder.State;
-import static org.junit.Assert.*;
-import static org.hamcrest.CoreMatchers.*;
-
 public class TestProxyTcp {
     
     static class Client extends Thread {
@@ -41,7 +37,7 @@ public class TestProxyTcp {
         public void run () {
             System.out.println("Start client thread");
             try {
-                Socket s = new Socket("127.0.0.1", 5560);
+                Socket s = new Socket("127.0.0.1", 6560);
                 TestHelper.send(s, "hellow");
                 TestHelper.send(s, "1234567890abcdefghizklmnopqrstuvwxyz");
                 TestHelper.send(s, "end");
@@ -61,9 +57,6 @@ public class TestProxyTcp {
         private String name = null;
         public Dealer(Ctx ctx, String name_) {
             s = ZMQ.zmq_socket (ctx, ZMQ.ZMQ_DEALER);
-//            s.setsockopt(ZMQ.ZMQ_IDENTITY, name_);
-//            s = ZMQ.zmq_socket (ctx, ZMQ.ZMQ_REP);
-            //s.setsockopt(ZMQ.ZMQ_IDENTITY, name_);
 
             name = name_;
         }
@@ -73,7 +66,7 @@ public class TestProxyTcp {
             
             System.out.println("Start dealer " + name);
             
-            ZMQ.zmq_connect(s, "tcp://127.0.0.1:5561");
+            ZMQ.zmq_connect(s, "tcp://127.0.0.1:6561");
             int i = 0;
             while (true) {
                 Msg msg = s.recv(0);
@@ -81,16 +74,17 @@ public class TestProxyTcp {
                     throw new RuntimeException("hello");
                 }
                 System.out.println("REP recieved " + msg);
-                String data = new String(msg.data().array(), 0 , msg.size());
+                String data = new String(msg.data(), 0 , msg.size());
 
                 Msg response = null;
                 if (i%3 == 2) {
                     response = new Msg(msg.size() + 3);
-                    response.put("OK ");
+                    response.put("OK ", 0);
+                    response.put(msg.data(), 3);
                 } else {
-                    response = new Msg(msg.size());
+                    response = new Msg(msg.data());
                 }
-                response.put(msg.data());
+                
                 s.send(response, i%3==2?0:ZMQ.ZMQ_SNDMORE);
                 i++;
                 if (data.equals("end")) {
@@ -145,7 +139,7 @@ public class TestProxyTcp {
 
         private boolean read_body() {
             
-            System.out.println("Received body " + new String(msg.bytes()));
+            System.out.println("Received body " + new String(msg.data()));
             session_write(msg);
             
             next_step(header, 4, State.read_header);
@@ -173,7 +167,7 @@ public class TestProxyTcp {
         
         public ProxyEncoder(int bufsize_) {
             super(bufsize_);
-            next_step(null, 0, State.write_header, true);
+            next_step(null, State.write_header, true);
         }
 
         @Override
@@ -198,12 +192,6 @@ public class TestProxyTcp {
             
             msg = session_read();
             if (msg == null) {
-                //System.out.println("no data yet");
-                //try {
-                //    Thread.sleep(1000);
-                //} catch (InterruptedException e) {
-               // }
-                //return false;
                 return false;
             }
             System.out.println("write header " + msg.size());
@@ -231,13 +219,13 @@ public class TestProxyTcp {
         sa.setsockopt(ZMQ.ZMQ_ENCODER, ProxyEncoder.class);
         
         assert (sa != null);
-        rc = ZMQ.zmq_bind (sa, "tcp://127.0.0.1:5560");
+        rc = ZMQ.zmq_bind (sa, "tcp://127.0.0.1:6560");
         assert (rc );
 
         
         SocketBase sb = ZMQ.zmq_socket (ctx, ZMQ.ZMQ_DEALER);
         assert (sb != null);
-        rc = ZMQ.zmq_bind (sb, "tcp://127.0.0.1:5561");
+        rc = ZMQ.zmq_bind (sb, "tcp://127.0.0.1:6561");
         assert (rc );
 
 
