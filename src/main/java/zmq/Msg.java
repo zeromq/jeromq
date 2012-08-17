@@ -1,12 +1,33 @@
+/*
+    Copyright (c) 2010-2011 250bpm s.r.o.
+    Copyright (c) 2007-2009 iMatix Corporation
+    Copyright (c) 2007-2011 Other contributors as noted in the AUTHORS file
+
+    This file is part of 0MQ.
+
+    0MQ is free software; you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License as published by
+    the Free Software Foundation; either version 3 of the License, or
+    (at your option) any later version.
+
+    0MQ is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Lesser General Public License for more details.
+
+    You should have received a copy of the GNU Lesser General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 package zmq;
 
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 public class Msg implements IReplaceable {
 
     //  Size in bytes of the largest message that is still copied around
     //  rather than being reference-counted.
-    private final static int max_vsm_size = 29;
     
     public final static byte more = 1;
     public final static byte identity = 64;
@@ -16,59 +37,33 @@ public class Msg implements IReplaceable {
     private final static byte type_vsm = 102;
     private final static byte type_lmsg = 103;
     private final static byte type_delimiter = 104;
-    private final static byte type_max = 105;
+    private final static byte type_max = 106;
     
-    //  Shared message buffer. Message data are either allocated in one
-    //  continuous block along with this structure - thus avoiding one
-    //  malloc/free pair or they are stored in used-supplied memory.
-    //  In the latter case, ffn member stores pointer to the function to be
-    //  used to deallocate the data. If the buffer is actually shared (there
-    //  are at least 2 references to it) refcount member contains number of
-    //  references.
-    //  Note that fields shared between different message types are not
-    //  moved to tha parent class (msg_t). This way we ger tighter packing
-    //  of the data. Shared fields can be accessed via 'base' member of
-    //  the union.
-    /*
-    union {
-        struct {
-            unsigned char unused [max_vsm_size + 1];
-            unsigned char type;
-            unsigned char flags;
-        } base;
-        struct {
-            unsigned char data [max_vsm_size];
-            unsigned char size;
-            unsigned char type;
-            unsigned char flags;
-        } vsm;
-        struct {
-            content_t *content;
-            unsigned char unused [max_vsm_size + 1 - sizeof (content_t*)];
-            unsigned char type;
-            unsigned char flags;
-        } lmsg;
-        struct {
-            unsigned char unused [max_vsm_size + 1];
-            unsigned char type;
-            unsigned char flags;
-        } delimiter;
-    } u;
-    */
-
     private byte type;
     private byte flags;
     private int size;
     private byte[] data;
+    private ByteBuffer buf;
     
     public Msg() {
+        this(false);
+    }
+
+    public Msg(boolean buffered) {
         init();
+        if (buffered)
+            type = type_lmsg;
+    }
+
+    public Msg(int size) {
+        this(size, false);
     }
     
-    public Msg(int size) {
-        this();
-        init_size(size);
+    public Msg(int size, boolean buffered) {
+        this(buffered);
+        init_size(size, buffered);
     }
+
     
     public Msg(Msg m) {
         clone(m);
@@ -100,19 +95,21 @@ public class Msg implements IReplaceable {
     }
 
     
-    private void init_size (int size_)
+    private void init_size (int size_, boolean buffered)
     {
         size = size_;
-        if (size_ <= max_vsm_size) {
-            type = type_vsm;
-            flags = 0;
-            
-            data = new byte[size_];
-        }
-        else {
+        if (buffered) {
             type = type_lmsg;
             flags = 0;
+            
+            buf = ByteBuffer.allocate(size_);
+            data = null;
+        }
+        else {
+            type = type_vsm;
+            flags = 0;
             data = new byte[size_];
+            buf = null;
         }
     }
 
@@ -154,7 +151,16 @@ public class Msg implements IReplaceable {
     
     public byte[] data ()
     {
+        if (data == null && type == type_lmsg) 
+            data = buf.array();
         return data;
+    }
+    
+    public ByteBuffer buf()
+    {
+        if (buf == null && type != type_lmsg)
+            buf = ByteBuffer.wrap(data);
+        return buf;
     }
 
 
@@ -165,12 +171,15 @@ public class Msg implements IReplaceable {
         }
 
         data = null;
+        buf = null;
     }
 
     private void init() {
         type = type_vsm;
         flags = 0;
         size = 0;
+        data = null;
+        buf = null;
     }
     
 
@@ -183,6 +192,7 @@ public class Msg implements IReplaceable {
         type = m.type;
         flags = m.flags;
         size = m.size;
+        buf = m.buf;
         data = m.data;
     }
 

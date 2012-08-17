@@ -1,8 +1,6 @@
 package org.zeromq;
 
 
-import java.nio.ByteBuffer;
-
 import zmq.Ctx;
 import zmq.Msg;
 import zmq.SocketBase;
@@ -47,10 +45,8 @@ public class ZMQ {
 
         private Ctx ctx;
         private SocketBase base;
-        private boolean hasMore;
 
         public Socket(Ctx ctx_, int type) {
-            hasMore = false;
             ctx = ctx_;
             base = ctx.create_socket(type);
         }
@@ -80,11 +76,9 @@ public class ZMQ {
             
             
             if (msg != null) {
-                hasMore = msg.has_more();
                 return msg.data();
             }
             
-            hasMore = false;
             return null;
         }
         

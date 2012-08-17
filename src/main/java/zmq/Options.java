@@ -155,10 +155,51 @@ public class Options {
             identity_size = (byte)identity.length;
             return;
             
+        case ZMQ.ZMQ_RATE:
+            rate = (Integer)optval_;
+            return;
+            
+        case ZMQ.ZMQ_RECOVERY_IVL:
+            recovery_ivl = (Integer)optval_;
+            return;
+            
+        case ZMQ.ZMQ_SNDBUF:
+           sndbuf = (Integer)optval_;
+           return;
+           
+        case ZMQ.ZMQ_RCVBUF:
+           rcvbuf = (Integer)optval_;
+           return;
+           
         case ZMQ.ZMQ_LINGER:
             linger = (Integer)optval_;
             return;
+            
+        case ZMQ.ZMQ_RECONNECT_IVL:
+            reconnect_ivl = (Integer)optval_;
+            
+            if (reconnect_ivl < -1) {
+                throw new IllegalArgumentException("reconnect_ivl " + optval_);
+            }
+            
+            return;
+            
+        case ZMQ.ZMQ_RECONNECT_IVL_MAX:
+            reconnect_ivl_max = (Integer)optval_;
+            
+            if (reconnect_ivl_max < 0) {
+                throw new IllegalArgumentException("reconnect_ivl_max " + optval_);
+            }
+            
+            return;
 
+        case ZMQ.ZMQ_BACKLOG:
+            backlog = (Integer)optval_;
+            return;
+            
+            
+            /****************/
+            
         case ZMQ.ZMQ_ENCODER:
             if (optval_ instanceof String) {
                 try {
@@ -188,8 +229,7 @@ public class Options {
             return;
 
         default:
-            if (option_ != 6)
-            throw new IllegalArgumentException("option=" + option_);
+            break;
         }
     }
 

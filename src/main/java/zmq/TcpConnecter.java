@@ -52,7 +52,6 @@ public class TcpConnecter extends Own implements IPollEvents {
         current_reconnect_ivl = options.reconnect_ivl;
         
         assert (addr != null);
-        assert (addr.protocol().equals("tcp"));
         endpoint = addr.toString ();
     }
     

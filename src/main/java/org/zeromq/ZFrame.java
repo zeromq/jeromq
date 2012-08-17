@@ -1,6 +1,5 @@
 package org.zeromq;
 
-import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 import org.zeromq.ZMQ.Socket;

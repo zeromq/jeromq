@@ -226,11 +226,10 @@ public abstract class SocketBase extends Own
         } catch (URISyntaxException e) {
             throw new IllegalArgumentException(e);
         }
+        
         String protocol = uri.getScheme();
-        String address = uri.getHost();
-        if (uri.getPort() > 0) {
-            address = address + ":" + uri.getPort();
-        }
+        String address = uri.getAuthority();
+        String path = uri.getPath();
 
         check_protocol (protocol);
 
@@ -314,7 +313,7 @@ public abstract class SocketBase extends Own
         } else if(protocol.equals("ipc")) {
             paddr.resolved( new IpcAddress () );
             //alloc_assert (paddr.resolved.ipc_addr);
-            paddr.resolved().resolve (address, true);
+            paddr.resolved().resolve (path, true);
         }
         //  Create session.
         SessionBase session = SessionBase.create (io_thread, true, this,

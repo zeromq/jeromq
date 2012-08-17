@@ -128,12 +128,10 @@ public class SessionBase extends Own implements Pipe.IPipeEvents, IPollEvents {
             s = new Pull.PullSession (io_thread_, connect_,
                 socket_, options_, addr_);
             break;
-            /*
-        case ZMQ_PAIR:
+        case ZMQ.ZMQ_PAIR:
             s = new Pair.PairSession (io_thread_, connect_,
                 socket_, options_, addr_);
             break;
-            */
         case ZMQ.ZMQ_PROXY:
             s = new Proxy.ProxySession(io_thread_, connect_, 
                     socket_, options_, addr_);

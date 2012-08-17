@@ -482,6 +482,18 @@ public class ZMQ {
         return new Msg(message_size);
     }
 
+    public static int zmq_msg_get(Msg msg_) {
+        return zmq_msg_get (msg_, ZMQ_MORE);
+    }
 
+    public static int zmq_msg_get (Msg msg_, int option_)
+    {
+        switch (option_) {
+            case ZMQ_MORE:
+                return msg_.has_more() ? 1: 0;
+            default:
+                throw new IllegalArgumentException();
+        }
+    }
 
 }

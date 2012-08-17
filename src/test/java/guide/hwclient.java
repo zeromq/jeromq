@@ -1,5 +1,4 @@
 package guide;
-import java.nio.ByteBuffer;
 
 import org.zeromq.ZMQ;
 
