@@ -189,20 +189,15 @@ public class Poller extends PollerBase implements Runnable {
                     throw new RuntimeException("invalid");
                 }
                 
-                if (key.isWritable()) {
-                    evt.out_event();
-                } 
-                
 
-                
-                if (key.isReadable() ) {
-                    evt.in_event();
-                } 
-                else if (key.isConnectable()) {
-                    evt.connect_event();
-                } else
                 if (key.isAcceptable()) {
                     evt.accept_event();
+                } else  if (key.isReadable() ) {
+                    evt.in_event();
+                } else if (key.isWritable()) {
+                    evt.out_event();
+                } else if (key.isConnectable()) {
+                    evt.connect_event();
                 } 
 
             }

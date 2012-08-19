@@ -57,11 +57,11 @@ abstract public class EncoderBase {
     //  in the batch.If there's no beginning of a message in the batch,
     //  offset is set to -1.
     
-    public ByteBuffer get_data () {
+    public Transfer get_data () {
         return get_data(null, null);
     }
     
-    public ByteBuffer get_data (ByteBuffer data_, int[] offset_) {
+    public Transfer get_data (ByteBuffer data_, int[] offset_) {
         //unsigned char *buffer = !*data_ ? buf : *data_;
         //size_t buffersize = !*data_ ? bufsize : *size_;
 
@@ -108,9 +108,9 @@ abstract public class EncoderBase {
                 write_pos = 0;
                 to_write = 0;
                 if (write_array != null) {
-                    return ByteBuffer.wrap(write_array);
+                    return new Transfer.ByteBufferTransfer(ByteBuffer.wrap(write_array));
                 } else
-                    return write_buf ;
+                    return new Transfer.ByteBufferTransfer(write_buf) ;
             }
 
             //  Copy data to the buffer. If the buffer is full, return.
@@ -129,7 +129,7 @@ abstract public class EncoderBase {
         }
 
         buffer.flip();
-        return buffer;
+        return new Transfer.ByteBufferTransfer(buffer);
 
     }
     

@@ -20,7 +20,7 @@ public class StreamEngine implements IEngine, IPollEvents {
     final DecoderBase decoder;
     boolean input_error;
 
-    ByteBuffer outbuf;
+    private Transfer outbuf;
     int outsize;
     final EncoderBase encoder;
 
@@ -236,10 +236,10 @@ public class StreamEngine implements IEngine, IPollEvents {
         return nbytes;
     }
     
-    private int write (ByteBuffer buf) {
+    private int write (Transfer buf) {
         int nbytes = 0 ;
         try {
-            nbytes = handle.write(buf);
+            nbytes = buf.transferTo(handle);
         } catch (IOException e) {
             return -1;
         }

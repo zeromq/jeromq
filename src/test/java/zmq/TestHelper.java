@@ -56,6 +56,16 @@ public class TestHelper {
             return true;
         }
         
+        @Override
+        public Msg read() {
+            System.out.println("session.read " + out);
+            if (out.size() == 0)
+                return null;
+            Msg msg = out.remove(0);
+            
+            return msg;
+        }
+        
     }
     
     public static void bounce (SocketBase sb, SocketBase sc)
