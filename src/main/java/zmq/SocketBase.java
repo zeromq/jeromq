@@ -144,9 +144,6 @@ public abstract class SocketBase extends Own
             s = new XSub (parent_, tid_, sid_);
             break;
         
-        case ZMQ.ZMQ_PROXY:
-            s = new Proxy (parent_, tid_, sid_);
-            break;
         default:
             throw new IllegalArgumentException("type=" + type_);
         }

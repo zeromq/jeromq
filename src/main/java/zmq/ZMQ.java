@@ -48,9 +48,6 @@ public class ZMQ {
     public static final int ZMQ_XPUB = 9;
     public static final int ZMQ_XSUB = 10;
     
-    /* custom socket */
-    public static final int ZMQ_PROXY = 101;
-
     /*  Deprecated aliases                                                        */
     public static final int ZMQ_XREQ = ZMQ_DEALER;
     public static final int ZMQ_XREP = ZMQ_ROUTER;

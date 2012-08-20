@@ -50,7 +50,7 @@ abstract public class DecoderBase {
     
     private Object state;
     
-    private SessionBase session;
+    protected SessionBase session;
 
     protected long maxmsgsize;
 
@@ -180,14 +180,6 @@ abstract public class DecoderBase {
         state = state_;
     }
     
-    protected boolean session_write (Msg msg) {
-        
-        if (session == null) {
-            return false;
-        } 
-        return session.write(msg);
-    }
-    
     protected Object state () {
         return state;
     }
@@ -203,6 +195,5 @@ abstract public class DecoderBase {
     public void set_session(SessionBase session_) { 
         session = session_;
     }
-    
 
 }

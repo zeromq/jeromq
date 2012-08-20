@@ -1,5 +1,7 @@
 package zmq;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.Array;
 import java.net.Socket;
@@ -146,5 +148,16 @@ public class Utils {
         return dest;
     }
 
+    public static boolean delete(File path) {
+        if (!path.exists())
+            return false; 
+        boolean ret = true;
+        if (path.isDirectory()){
+            for (File f : path.listFiles()){
+                ret = ret && delete(f);
+            }
+        }
+        return ret && path.delete();
+    }
 
 }

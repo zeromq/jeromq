@@ -109,10 +109,17 @@ public class TestProxyTcp {
         ByteBuffer header = ByteBuffer.allocate(4);
         Msg msg;
         int size = -1;
+        boolean identity_sent = false;
+        Msg bottom ;
         
         public ProxyDecoder(int bufsize_, long maxmsgsize_) {
             super(bufsize_, maxmsgsize_);
             next_step(header, 4, State.read_header);
+            //send_identity();
+            
+            bottom = new Msg();
+            bottom.set_flags (Msg.more);
+            
         }
 
         @Override
@@ -139,8 +146,19 @@ public class TestProxyTcp {
 
         private boolean read_body() {
             
+            if (session == null)
+                return false;
+            
             System.out.println("Received body " + new String(msg.data()));
-            session_write(msg);
+            
+            if (!identity_sent) {
+                Msg identity = new Msg();
+                session.write(identity);
+                identity_sent = true;
+            }
+            
+            session.write(bottom);
+            session.write(msg);
             
             next_step(header, 4, State.read_header);
             return true;
@@ -164,10 +182,14 @@ public class TestProxyTcp {
         ByteBuffer header = ByteBuffer.allocate(4);
         Msg msg;
         int size = -1;
+        boolean message_ready;
+        boolean identity_recieved;
         
         public ProxyEncoder(int bufsize_) {
             super(bufsize_);
             next_step(null, State.write_header, true);
+            message_ready = false;
+            identity_recieved = false;
         }
 
         @Override
@@ -190,10 +212,29 @@ public class TestProxyTcp {
 
         private boolean write_header() {
             
-            msg = session_read();
+            if (session == null)
+                return false;
+            
+            msg = session.read();
+            
             if (msg == null) {
                 return false;
             }
+            if (!identity_recieved) {
+                identity_recieved = true;
+                msg = session.read();
+                if (msg == null)
+                    return false;
+            }
+            if (!message_ready) {
+                message_ready = true;
+                msg = session.read();
+                if (msg == null) {
+                    return false;
+                }
+            }
+            
+            message_ready = false;
             System.out.println("write header " + msg.size());
 
             header.clear();
@@ -205,6 +246,7 @@ public class TestProxyTcp {
         }
 
         
+        
     }
 
     @Test
@@ -214,7 +256,7 @@ public class TestProxyTcp {
         
         boolean rc ;
 
-        SocketBase sa = ZMQ.zmq_socket (ctx, ZMQ.ZMQ_PROXY);
+        SocketBase sa = ZMQ.zmq_socket (ctx, ZMQ.ZMQ_ROUTER);
         sa.setsockopt(ZMQ.ZMQ_DECODER, ProxyDecoder.class);
         sa.setsockopt(ZMQ.ZMQ_ENCODER, ProxyEncoder.class);
         

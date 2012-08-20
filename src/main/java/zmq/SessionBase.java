@@ -132,10 +132,6 @@ public class SessionBase extends Own implements Pipe.IPipeEvents, IPollEvents {
             s = new Pair.PairSession (io_thread_, connect_,
                 socket_, options_, addr_);
             break;
-        case ZMQ.ZMQ_PROXY:
-            s = new Proxy.ProxySession(io_thread_, connect_, 
-                    socket_, options_, addr_);
-            return s;
         default:
             throw new IllegalArgumentException("type=" + options_.type);
         }

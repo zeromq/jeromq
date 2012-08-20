@@ -76,7 +76,11 @@ public class Encoder extends EncoderBase {
         //  Note that new state is set only if write is successful. That way
         //  unsuccessful write will cause retry on the next state machine
         //  invocation.
-        in_progress = session_read ();
+        
+        if (session == null)
+            return false;
+        
+        in_progress = session.read ();
         if (in_progress == null) {
             return false;
         }

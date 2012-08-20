@@ -142,7 +142,7 @@ public class TestDecoder {
 
         private boolean read_body() {
             
-            session_write(msg);
+            session.write(msg);
             header.clear();
             next_step(header, 10, State.read_header);
             return true;

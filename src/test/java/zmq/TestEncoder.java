@@ -138,7 +138,7 @@ public class TestEncoder {
 
         private boolean read_body() {
             
-            msg = session_read();
+            msg = session.read();
             
             if (msg == null) {
                 return false;

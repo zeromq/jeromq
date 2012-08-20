@@ -20,7 +20,6 @@ public class ZMQ {
     public static final int PUSH = zmq.ZMQ.ZMQ_PUSH;
     public static final int XPUB = zmq.ZMQ.ZMQ_XPUB;
     public static final int XSUB = zmq.ZMQ.ZMQ_XSUB;
-    public static final int PROXY = zmq.ZMQ.ZMQ_PROXY;
 
     
     public static class Context {

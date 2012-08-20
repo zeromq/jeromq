@@ -44,7 +44,7 @@ abstract public class EncoderBase {
     //  The buffer for encoded data.
     private ByteBuffer buf;
 
-    private SessionBase session;
+    protected SessionBase session;
     
     protected EncoderBase (int bufsize_) {
         buf = ByteBuffer.allocateDirect(bufsize_);
@@ -180,11 +180,4 @@ abstract public class EncoderBase {
         session = session_;
     }
     
-    protected Msg session_read () {
-        if (session == null) {
-            return null;
-        }
-        return session.read ();
-    }
-
 }

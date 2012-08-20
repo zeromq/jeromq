@@ -177,7 +177,10 @@ public class Decoder extends DecoderBase {
         //  Message is completely read. Push it further and start reading
         //  new message. (in_progress is a 0-byte message after this point.)
         
-        boolean rc = session_write (in_progress);
+        if (session == null)
+            return false;
+        
+        boolean rc = session.write (in_progress);
         if (!rc) {
             // full
             return false;
