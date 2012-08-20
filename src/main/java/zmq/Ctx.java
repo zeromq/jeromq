@@ -284,13 +284,6 @@ public class Ctx {
                     slots [i] = null;
                 }
                 
-                if (LOG.isDebugEnabled()) {
-                    for (int i = 0; i < slot_count; i++) {
-                        Mailbox box = slots[i];
-                        if (box == null) break;
-                        LOG.debug("[" + i + "] " + box);
-                    }
-                }
             }
     
             //  Once zmq_term() was called, we can't create new sockets.

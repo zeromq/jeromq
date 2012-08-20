@@ -4,6 +4,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.net.SocketAddress;
+import java.nio.ByteBuffer;
+import java.nio.channels.SocketChannel;
+import java.nio.channels.spi.SelectorProvider;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -15,6 +19,104 @@ public class TestHelper {
     public static AtomicInteger counter = new AtomicInteger(2);
     
     public static class DummyCtx extends Ctx {
+        
+    }
+    
+    public static class DummySocketChannel extends SocketChannel {
+
+        private int bufsize;
+        private byte[] buf;
+        protected DummySocketChannel(SelectorProvider provider) {
+            super(provider);
+            // TODO Auto-generated constructor stub
+        }
+        
+        public DummySocketChannel() {
+            this(64);
+        }
+        public DummySocketChannel(int bufsize) {
+            super(SelectorProvider.provider());
+            this.bufsize = bufsize;
+            buf = new byte[bufsize];
+        }
+        
+        public byte[] data () {
+            return buf;
+        }
+
+        @Override
+        public boolean connect(SocketAddress remote) throws IOException {
+            // TODO Auto-generated method stub
+            return false;
+        }
+
+        @Override
+        public boolean finishConnect() throws IOException {
+            // TODO Auto-generated method stub
+            return false;
+        }
+
+        @Override
+        public boolean isConnected() {
+            // TODO Auto-generated method stub
+            return false;
+        }
+
+        @Override
+        public boolean isConnectionPending() {
+            // TODO Auto-generated method stub
+            return false;
+        }
+
+        @Override
+        public int read(ByteBuffer dst) throws IOException {
+            // TODO Auto-generated method stub
+            return 0;
+        }
+
+        @Override
+        public long read(ByteBuffer[] dsts, int offset, int length)
+                throws IOException {
+            // TODO Auto-generated method stub
+            return 0;
+        }
+
+        @Override
+        public Socket socket() {
+            // TODO Auto-generated method stub
+            return null;
+        }
+
+        @Override
+        public int write(ByteBuffer src) throws IOException {
+            int remaining = src.remaining();
+            if (remaining > bufsize)
+            {
+                src.get(buf);
+                return bufsize;
+            }
+            src.get(buf,0, remaining);
+            return remaining;
+        }
+
+        @Override
+        public long write(ByteBuffer[] srcs, int offset, int length)
+                throws IOException {
+            // TODO Auto-generated method stub
+            return 0;
+        }
+
+        @Override
+        protected void implCloseSelectableChannel() throws IOException {
+            // TODO Auto-generated method stub
+            
+        }
+
+        @Override
+        protected void implConfigureBlocking(boolean arg0) throws IOException {
+            // TODO Auto-generated method stub
+            
+        }
         
     }
     

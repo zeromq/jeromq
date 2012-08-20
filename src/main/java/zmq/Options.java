@@ -1,8 +1,30 @@
+/*
+    Copyright (c) 2007-2012 iMatix Corporation
+    Copyright (c) 2009-2011 250bpm s.r.o.
+    Copyright (c) 2011 VMware, Inc.
+    Copyright (c) 2007-2011 Other contributors as noted in the AUTHORS file
+        
+    This file is part of 0MQ.
+            
+    0MQ is free software; you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License as published by
+    the Free Software Foundation; either version 3 of the License, or
+    (at your option) any later version.
+            
+    0MQ is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Lesser General Public License for more details.
+        
+    You should have received a copy of the GNU Lesser General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 package zmq;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+
+import zmq.TcpAddress.TcpAddressMask;
 
 public class Options {
     //  High-water marks for message pipes.
@@ -197,8 +219,57 @@ public class Options {
             backlog = (Integer)optval_;
             return;
             
+          
+        case ZMQ.ZMQ_MAXMSGSIZE:
+            maxmsgsize = (Long)optval_;
+            return;
             
-            /****************/
+        case ZMQ.ZMQ_MULTICAST_HOPS:
+            multicast_hops = (Integer)optval_;
+            return;
+            
+        case ZMQ.ZMQ_RCVTIMEO:
+            rcvtimeo = (Integer)optval_;
+            return;
+            
+        case ZMQ.ZMQ_SNDTIMEO:
+            sndtimeo = (Integer)optval_;
+            return;
+            
+        case ZMQ.ZMQ_IPV4ONLY:
+            
+            ipv4only = (Integer)optval_;
+            if (ipv4only != 0 && ipv4only != 1) {
+                throw new IllegalArgumentException("ip4only " + optval_);
+            }
+            return;
+            
+        case ZMQ.ZMQ_TCP_KEEPALIVE:
+            
+            tcp_keepalive = (Integer)optval_;
+            if (tcp_keepalive != -1 && tcp_keepalive != 0 && tcp_keepalive != 1) {
+                throw new IllegalArgumentException("tcp_keepalive " + optval_);
+            }
+            return;
+            
+        case ZMQ.ZMQ_TCP_KEEPALIVE_CNT:
+        case ZMQ.ZMQ_TCP_KEEPALIVE_IDLE:
+        case ZMQ.ZMQ_TCP_KEEPALIVE_INTVL:
+            // not supported
+            return;
+            
+        case ZMQ.ZMQ_TCP_ACCEPT_FILTER:
+            String filter_str = (String) optval_;
+            if (filter_str == null) {
+                tcp_accept_filters.clear();
+            } else if (filter_str.length() == 0 || filter_str.length() > 255) {
+                throw new IllegalArgumentException("tcp_accept_filter " + optval_);
+            } else {
+                TcpAddressMask filter = new TcpAddressMask();
+                filter.resolve (filter_str, ipv4only==1 ? true : false);
+                tcp_accept_filters.add(filter);
+            }
+            return;
             
         case ZMQ.ZMQ_ENCODER:
             if (optval_ instanceof String) {
@@ -237,8 +308,74 @@ public class Options {
     public Object getsockopt(int option_) {
         
         switch (option_) {
+        
+        case ZMQ.ZMQ_SNDHWM:
+            return sndhwm;
+            
+        case ZMQ.ZMQ_RCVHWM:
+            return rcvhwm;            
+
+        case ZMQ.ZMQ_AFFINITY:
+            return affinity;
+            
+        case ZMQ.ZMQ_IDENTITY:
+            return identity;
+            
+        case ZMQ.ZMQ_RATE:
+            return rate; 
+            
+        case ZMQ.ZMQ_RECOVERY_IVL:
+            return recovery_ivl;
+            
+        case ZMQ.ZMQ_SNDBUF:
+           return sndbuf;
+           
+        case ZMQ.ZMQ_RCVBUF:
+           return rcvbuf;
+           
+        case ZMQ.ZMQ_TYPE:
+            return type;
+           
+        case ZMQ.ZMQ_LINGER:
+            return linger;
+            
+        case ZMQ.ZMQ_RECONNECT_IVL:
+            return reconnect_ivl;
+            
+        case ZMQ.ZMQ_RECONNECT_IVL_MAX:
+            return reconnect_ivl_max; 
+
+        case ZMQ.ZMQ_BACKLOG:
+            return backlog; 
+          
+        case ZMQ.ZMQ_MAXMSGSIZE:
+            return maxmsgsize;
+            
+        case ZMQ.ZMQ_MULTICAST_HOPS:
+            return multicast_hops;
+            
+        case ZMQ.ZMQ_RCVTIMEO:
+            return rcvtimeo;
+            
+        case ZMQ.ZMQ_SNDTIMEO:
+            return sndtimeo;
+            
+        case ZMQ.ZMQ_IPV4ONLY:
+            return ipv4only;
+            
+        case ZMQ.ZMQ_TCP_KEEPALIVE:
+            
+            return tcp_keepalive; 
+            
+        case ZMQ.ZMQ_TCP_KEEPALIVE_CNT:
+        case ZMQ.ZMQ_TCP_KEEPALIVE_IDLE:
+        case ZMQ.ZMQ_TCP_KEEPALIVE_INTVL:
+            // not supported
+            return 0;
+            
         case ZMQ.ZMQ_LAST_ENDPOINT:
             return last_endpoint;
+            
         default:
             throw new IllegalArgumentException("option=" + option_);
         }

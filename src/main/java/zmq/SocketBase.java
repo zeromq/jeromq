@@ -7,8 +7,10 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectableChannel;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -71,7 +73,7 @@ public abstract class SocketBase extends Own
         
         options.socket_id = sid_;
         
-        endpoints = new HashMap<String, Own>();
+        endpoints = new MultiMap<String, Own>();
         sync = new ReentrantLock();
         clock = new Clock();
         pipes = new ArrayList<Pipe>();
@@ -873,7 +875,43 @@ public abstract class SocketBase extends Own
         return mailbox.get_fd();
     }
 
+    public void hiccuped(Pipe pipe_) {
+        xhiccuped(pipe_);
+    }
+    
     protected void xhiccuped(Pipe pipe_) {
         throw new UnsupportedOperationException("Must override");
+    }
+
+    public boolean term_endpoint(String addr_) {
+
+        if (ctx_terminated) {
+            throw new IllegalStateException();
+        }
+        
+        //  Check whether endpoint address passed to the function is valid.
+        if (addr_ == null) {
+            throw new IllegalArgumentException();
+        }
+
+        //  Process pending commands, if any, since there could be pending unprocessed process_own()'s
+        //  (from launch_child() for example) we're asked to terminate now.
+        boolean rc = process_commands (0, false);
+        if (!rc)
+            return rc;
+
+        if (!endpoints.containsKey(addr_)) {
+            return false;
+        }
+        //  Find the endpoints range (if any) corresponding to the addr_ string.
+        Iterator<Entry<String, Own>> it = endpoints.entrySet().iterator();
+
+        while(it.hasNext()) {
+            Entry<String, Own> e = it.next();
+            term_child(e.getValue());
+            it.remove();
+        }
+        return true;
+
     }
 }

@@ -88,21 +88,9 @@ public class LocalThr {
         }
         */
         
-        for (i = 0; i != message_count - 1; i++) {
-            msg = ZMQ.zmq_recvmsg (s, 0);
-            if (msg == null) {
-                printf ("error in zmq_recvmsg: %s\n");
-                return ;
-            }
-            if (ZMQ.zmq_msg_size (msg) != message_size) {
-                printf ("message of incorrect size received\n");
-                return;
-            }
-        }
-
         watch = ZMQ.zmq_stopwatch_start ();
 
-        for (i = 0; i != message_count ; i++) {
+        for (i = 0; i != message_count-1 ; i++) {
             msg = ZMQ.zmq_recvmsg (s, 0);
             if (msg == null) {
                 printf ("error in zmq_recvmsg: %s\n");
@@ -119,10 +107,10 @@ public class LocalThr {
             elapsed = 1;
 
         throughput = ( long)
-                ((double) message_count / (double) elapsed * 1000000000L);
+                ((double) message_count / (double) elapsed * 1000000L);
         megabits = (double) (throughput * message_size * 8) / 1000000;
 
-        printf ("message elapsed: %.3f \n", (double) elapsed / 1000000000L);
+        printf ("message elapsed: %.3f \n", (double) elapsed / 1000000L);
         printf ("message size: %d [B]\n", (int) message_size);
         printf ("message count: %d\n", (int) message_count);
         printf ("mean throughput: %d [msg/s]\n", (int) throughput);

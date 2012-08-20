@@ -1,11 +1,13 @@
 package zmq;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 
 import org.junit.Before;
 import org.junit.Test;
 
 import zmq.TestHelper.DummySession;
+import zmq.TestHelper.DummySocketChannel;
 import static org.junit.Assert.*;
 import static org.hamcrest.CoreMatchers.*;
 
@@ -13,12 +15,13 @@ public class TestEncoder {
     
     EncoderBase encoder ;
     TestHelper.DummySession session;
-    
+    DummySocketChannel sock;
     @Before
     public void setUp () {
         session = new DummySession();
         encoder = new Encoder(64);
         encoder.set_session(session);
+        sock = new DummySocketChannel();
     }
     // as if it read data from socket
     private Msg read_short_message () {
@@ -34,15 +37,7 @@ public class TestEncoder {
         Msg msg = new Msg(200);
         for (int i=0; i < 20; i++)
             msg.put("0123456789".getBytes(), i*10);
-        //msg.put("01".getBytes(),60);
         return msg;
-    }
-
-    private int read_long_message2 (ByteBuffer buf) {
-        buf.put("23456789".getBytes());        
-        for (int i=0; i < 13; i++)
-            buf.put("0123456789".getBytes());
-        return buf.position();
     }
 
     @Test
@@ -54,12 +49,20 @@ public class TestEncoder {
         int outsize = out.remaining();
         
         assertThat(outsize, is(7));
-        int remaning = write(out);
+        int written = write(out);
+        assertThat(written, is(7));
+        int remaning = out.remaining();
         assertThat(remaning, is(0));
     }
     
     private int write(Transfer out) {
-        return 0;
+        
+        try {
+            return out.transferTo(sock);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return -1;
+        }
     }
     
     @Test
@@ -71,42 +74,34 @@ public class TestEncoder {
         int insize = out.remaining();
         
         assertThat(insize, is(64));
-        in.flip();
-        int process = decoder.process_buffer (in, insize);
-        assertThat(process, is(64));
+        int written = write(out);
+        assertThat(written, is(64));
 
+        out = encoder.get_data ();
+        int remaning = out.remaining();
+        assertThat(remaning, is(138));
         
-        in = decoder.get_buffer ();
-        assertThat(in.capacity(), is(200));
-        assertThat(in.position(), is(62));
+        written = write(out);
+        assertThat(written, is(64));
 
-        insize = read_long_message2 (in);
-        
-        assertThat(insize, is(200));
-        process = decoder.process_buffer (in, 138);
-        assertThat(process, is(138));
-        assertThat(in.array()[199], is((byte)'9'));
+        remaning = out.remaining();
+        assertThat(remaning, is(74));
+
+        written = write(out);
+        assertThat(written, is(64));
+
+        remaning = out.remaining();
+        assertThat(remaning, is(10));
+
+        written = write(out);
+        assertThat(written, is(10));
+
+        remaning = out.remaining();
+        assertThat(remaning, is(0));
 
     }
-    /*
 
-    @Test
-    public void testReaderMultipleMsg() {
-        ByteBuffer in = decoder.get_buffer ();
-        int insize = read_short_message (in);
-        assertThat(insize, is(7));
-        read_short_message (in);
-        
-        in.flip();
-        int processed = decoder.process_buffer (in, 14);
-        assertThat(processed, is(14));
-        assertThat(in.position(), is(14));
-        
-        assertThat(session.out.size(), is(2));
-        
-    }
-    
-    static class CustomDecoder extends DecoderBase
+    static class CustomEncoder extends EncoderBase
     {
 
         enum State {
@@ -118,9 +113,9 @@ public class TestEncoder {
         Msg msg;
         int size = -1;
         
-        public CustomDecoder(int bufsize_, long maxmsgsize_) {
-            super(bufsize_, maxmsgsize_);
-            next_step(header, 10, State.read_header);
+        public CustomEncoder(int bufsize_) {
+            super(bufsize_);
+            next_step(null, State.read_body, true);
         }
 
         @Override
@@ -135,57 +130,44 @@ public class TestEncoder {
         }
 
         private boolean read_header() {
-            byte[] h = new byte[6];
-            header.get(h, 0, 6);
-            
-            assertThat(new String(h), is("HEADER"));
-            size = header.getInt();
-            
-            msg = new Msg(size);
-            next_step(msg, State.read_body);
-            
+            next_step (msg.data (), msg.size (),
+                    State.read_body, !msg.has_more());
             return true;
+                
         }
 
         private boolean read_body() {
             
-            session_write(msg);
+            msg = session_read();
+            
+            if (msg == null) {
+                return false;
+            }
             header.clear();
-            next_step(header, 10, State.read_header);
+            header.put("HEADER".getBytes());
+            header.putInt(msg.size());
+            header.flip();
+            next_step(header, 10, State.read_header, !msg.has_more());
             return true;
         }
 
-        @Override
-        public boolean stalled() {
-            return state() == State.read_body;
-        }
         
     }
     @Test
     public void testCustomDecoder () {
         
-        CustomDecoder cdecoder = new CustomDecoder(32, 64);
-        cdecoder.set_session(session);
+        CustomEncoder cencoder = new CustomEncoder(32);
+        cencoder.set_session(session);
+        Msg msg = new Msg("12345678901234567890");
+        session.write(msg);
         
-        ByteBuffer in = cdecoder.get_buffer ();
-        int insize = read_header (in);
-        assertThat(insize, is(10));
-        read_body (in);
+        Transfer out = cencoder.get_data ();
+        write(out);
+        byte[] data = sock.data();
+
+        assertThat(new String(data,0, 6), is("HEADER"));
+        assertThat((int)data[9], is(20));
+        assertThat(new String(data,10, 20), is("12345678901234567890"));
         
-        in.flip();
-        int processed = cdecoder.process_buffer (in, 30);
-        assertThat(processed, is(30));
-        assertThat(cdecoder.size, is(20));
-        assertThat(session.out.size(), is(1));
     }
-    private void read_body(ByteBuffer in) {
-        in.put("1234567890".getBytes());
-        in.put("1234567890".getBytes());
-    }
-    private int read_header(ByteBuffer in) {
-        in.put("HEADER".getBytes());
-        in.putInt(20);
-        return in.position();
-    }
-    */
 }

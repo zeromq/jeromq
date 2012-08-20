@@ -438,5 +438,13 @@ public class SessionBase extends Own implements Pipe.IPipeEvents, IPollEvents {
         throw new UnsupportedOperationException();
     }
 
+    public void hiccuped (Pipe pipe_)
+    {
+        //  Hiccups are always sent from session to socket, not the other
+        //  way round.
+        throw new UnsupportedOperationException("Must Override");
+
+    }
+
 
 }

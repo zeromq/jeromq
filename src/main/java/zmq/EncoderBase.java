@@ -62,9 +62,6 @@ abstract public class EncoderBase {
     }
     
     public Transfer get_data (ByteBuffer data_, int[] offset_) {
-        //unsigned char *buffer = !*data_ ? buf : *data_;
-        //size_t buffersize = !*data_ ? bufsize : *size_;
-
         
         ByteBuffer buffer ;
         if (data_ == null) {
@@ -105,12 +102,18 @@ abstract public class EncoderBase {
             //  other engines running in the same I/O thread for excessive
             //  amounts of time.
             if (buffer.position() == 0 && data_ == null && to_write >= buffersize) {
+                Transfer t;
+                if (write_array != null) {
+                    ByteBuffer b = ByteBuffer.wrap(write_array);
+                    b.position(write_pos);
+                    t = new Transfer.ByteBufferTransfer(b);
+                } else { 
+                    t = new Transfer.ByteBufferTransfer(write_buf) ;
+                }
                 write_pos = 0;
                 to_write = 0;
-                if (write_array != null) {
-                    return new Transfer.ByteBufferTransfer(ByteBuffer.wrap(write_array));
-                } else
-                    return new Transfer.ByteBufferTransfer(write_buf) ;
+
+                return t;
             }
 
             //  Copy data to the buffer. If the buffer is full, return.

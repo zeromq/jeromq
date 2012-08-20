@@ -23,19 +23,8 @@ package zmq;
 
 public class Proxy extends Router {
 
-    //  If true, we are in process of sending the reply. If false we are
-    //  in process of receiving a request.
-    private boolean sending_reply;
-
-    //  If true, we are starting to receive a request. The beginning
-    //  of the request is the backtrace stack.
-    private boolean request_begins;
-    
-    
     public Proxy(Ctx parent_, int tid_, int sid_) {
         super(parent_, tid_, sid_);
-        sending_reply = false;
-        request_begins = true;
         
         options.send_identity = false;
         options.type = ZMQ.ZMQ_PROXY;
@@ -44,8 +33,7 @@ public class Proxy extends Router {
     
     public static class ProxySession extends Router.RouterSession {
 
-        private boolean message_begins;
-        private boolean sent_identity;
+        private boolean identity_sent;
         private final String address;
         
         public ProxySession(IOThread io_thread_, boolean connect_,
@@ -53,8 +41,7 @@ public class Proxy extends Router {
             final Address addr_) {
   
             super(io_thread_, connect_, socket_, options_, addr_);
-            message_begins = true;
-            sent_identity = false;
+            identity_sent = false;
             
             address = addr_.address();
         }
@@ -69,12 +56,9 @@ public class Proxy extends Router {
             }
             
             if ( msg_.has_more() && msg_.size () == 0) {
-                //return null;
                 msg_ = pipe.read ();
             }
             
-            //incomplete_in = msg_.has_more();
-
             return msg_;
 
         }
@@ -83,25 +67,21 @@ public class Proxy extends Router {
         public boolean write (Msg msg_)
         {
             //  generate First identity message 
-            if (!sent_identity) {
+            if (!identity_sent) {
                 Msg identity = new Msg(address.length() +1);
                 identity.put((byte)0);
                 identity.put(address.getBytes(),1);
                 if (!super.write(identity)) {
                     return false;
                 }
-                sent_identity = true;
+                identity_sent = true;
             }
-            // fake req
-            //if (message_begins) {
-                Msg bottom = new Msg();
-                bottom.set_flags (Msg.more);
+            Msg bottom = new Msg();
+            bottom.set_flags (Msg.more);
 
-                if (!super.write(bottom)) {
-                    return false;
-                }
-            //    message_begins = false;
-            //}
+            if (!super.write(bottom)) {
+                return false;
+            }
             
             boolean success = super.write(msg_);
             return success;

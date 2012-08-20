@@ -1,53 +1,40 @@
+/*              
+    Copyright (c) 2011 250bpm s.r.o.
+    Copyright (c) 2011-2012 Spotify AB
+    Copyright (c) 2011 Other contributors as noted in the AUTHORS file
+                    
+    This file is part of 0MQ.
+                            
+    0MQ is free software; you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License as published by
+    the Free Software Foundation; either version 3 of the License, or
+    (at your option) any later version.
+
+    0MQ is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Lesser General Public License for more details.
+                
+    You should have received a copy of the GNU Lesser General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/ 
 package zmq;
 
 import java.util.HashSet;
 import java.util.Set;
 
-import zmq.Mtrie.IMtrieHandler;
-
+//Multi-trie. Each node in the trie is a set of pointers to pipes.
 public class Mtrie {
-    Set<Pipe> pipes;
+    private Set<Pipe> pipes;
 
-    byte min;
-    short count;
-    short live_nodes;
+    private byte min;
+    private short count;
+    private short live_nodes;
+    private Mtrie[] next;
     
     public static interface IMtrieHandler {
         void invoke(Pipe pipe, byte[] data, Object arg);
     }
-    /*
-    union {
-        class mtrie_t *node;
-        class mtrie_t **table;
-    } next;
-    */
-    /*
-    class Next {
-        private boolean empty;
-        private Mtrie[] table;
-        
-        public Next() {
-            empty = true;
-            table = null;
-        }
-        public Mtrie node() {
-            if (empty) {
-                return null;
-            }
-            return table[0];
-        }
-        public void node(Mtrie val) {
-            if (val == null) {
-                empty = true;
-                table = null;
-            } else {
-                table = new Mtrie[1];
-                table[0] = val;
-            }
-        }
-    };
-    */
-    Mtrie[] next;
     
     public Mtrie() {
         min = 0;
@@ -58,16 +45,15 @@ public class Mtrie {
         next = null;
     }
     
-    boolean is_redundant ()
-    {
-        return pipes == null && live_nodes == 0;
-    }
+
     
     public boolean add (byte[] prefix_, Pipe pipe_)
     {
         return add_helper (prefix_, 0, pipe_);
     }
-    
+
+    //  Add key to the trie. Returns true if it's a new subscription
+    //  rather than a duplicate.
     public boolean add (byte[] prefix_, int start_, Pipe pipe_)
     {
         return add_helper (prefix_, start_, pipe_);
@@ -142,6 +128,9 @@ public class Mtrie {
         return Utils.realloc(Mtrie.class, table, size, ended);
     }
     
+    //  Remove all subscriptions for a specific peer from the trie.
+    //  If there are no subscriptions left on some topics, invoke the
+    //  supplied callback function.
     public boolean rm (Pipe pipe_, IMtrieHandler func, Object arg) {
         return rm_helper(pipe_, new byte[0], 0, 0, func, arg );
     }
@@ -251,6 +240,8 @@ public class Mtrie {
         return true;
     }
 
+    //  Remove specific subscription from the trie. Return true is it was
+    //  actually removed rather than de-duplicated.
     public boolean rm (byte[] prefix_, int start_, Pipe pipe_)
     {
         return rm_helper (prefix_, start_,  pipe_);
@@ -355,6 +346,7 @@ public class Mtrie {
         return ret;
     }
 
+    //  Signal all the matching pipes.
     public void match(byte[] data_, int size_, IMtrieHandler func_, Object arg_) {
         Mtrie current = this;
         
@@ -400,5 +392,9 @@ public class Mtrie {
         }
     }
 
+    private boolean is_redundant ()
+    {
+        return pipes == null && live_nodes == 0;
+    }
 
 }

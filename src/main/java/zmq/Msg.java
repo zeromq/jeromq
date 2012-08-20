@@ -73,6 +73,10 @@ public class Msg implements IReplaceable {
         this(src, false);
     }
     
+    public Msg(String src) {
+        this(src.getBytes(), false);
+    }
+    
     public Msg(byte[] src, boolean copy ) {
         this();
         size = src.length;
@@ -83,7 +87,7 @@ public class Msg implements IReplaceable {
     }
     
     
-    boolean is_delimiter ()
+    public boolean is_delimiter ()
     {
         return type == type_delimiter;
     }

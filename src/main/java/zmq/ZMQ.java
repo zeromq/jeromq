@@ -475,7 +475,7 @@ public class ZMQ {
     }
 
     public static long zmq_stopwatch_stop(long watch) {
-        return System.nanoTime() - watch;
+        return (System.nanoTime() - watch) / 1000;
     }
 
     public static Msg zmq_msg_init_size(int message_size) {
@@ -494,6 +494,22 @@ public class ZMQ {
             default:
                 throw new IllegalArgumentException();
         }
+    }
+
+    public static boolean zmq_unbind(SocketBase s_, String addr_) {
+        
+        if (s_ == null || !s_.check_tag ()) {
+            throw new IllegalStateException();
+        }
+        return s_.term_endpoint (addr_);
+    }
+
+    public static boolean zmq_disconnect(SocketBase s_, String addr_) {
+
+        if (s_ == null || !s_.check_tag ()) {
+            throw new IllegalStateException();
+        }
+        return s_.term_endpoint (addr_);
     }
 
 }
