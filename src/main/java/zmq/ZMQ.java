@@ -375,7 +375,7 @@ public class ZMQ {
         boolean first_pass = true;
         int nevents = 0;
         
-        while (true) {
+        while (!Thread.currentThread().isInterrupted()) {
 
             //  Compute the timeout for the subsequent poll.
             long timeout;
@@ -447,14 +447,6 @@ public class ZMQ {
         return nevents;
     }
     
-    public static void zmq_poll_stop () {
-        try {
-            poll_selector.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
     public static Msg zmq_recvmsg(SocketBase s_, int flags_) {
         return zmq_recv (s_, flags_);
     }

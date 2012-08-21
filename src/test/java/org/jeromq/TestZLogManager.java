@@ -5,12 +5,10 @@ import java.io.File;
 import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 
-import org.jeromq.ZLog;
-import org.jeromq.ZLogManager;
+import org.jeromq.ZMQ.Msg;
 import org.junit.Before;
 import org.junit.Test;
 
-import zmq.Msg;
 import zmq.Utils;
 import static org.junit.Assert.*;
 import static org.hamcrest.CoreMatchers.*;

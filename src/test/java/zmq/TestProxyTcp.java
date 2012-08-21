@@ -47,7 +47,6 @@ public class TestProxyTcp {
                 e.printStackTrace();
             }
             System.out.println("Stop client thread");
-            ZMQ.zmq_poll_stop();
         }
     }
     
@@ -246,44 +245,57 @@ public class TestProxyTcp {
         }
 
         
+    }
+    
+    static class Main extends Thread {
         
+        Ctx ctx;
+        Main(Ctx ctx_) {
+            ctx = ctx_;
+        }
+        
+        @Override
+        public void run() {
+            boolean rc ;
+            SocketBase sa = ZMQ.zmq_socket (ctx, ZMQ.ZMQ_ROUTER);
+            sa.setsockopt(ZMQ.ZMQ_DECODER, ProxyDecoder.class);
+            sa.setsockopt(ZMQ.ZMQ_ENCODER, ProxyEncoder.class);
+            
+            assert (sa != null);
+            rc = ZMQ.zmq_bind (sa, "tcp://127.0.0.1:6560");
+            assert (rc );
+
+            
+            SocketBase sb = ZMQ.zmq_socket (ctx, ZMQ.ZMQ_DEALER);
+            assert (sb != null);
+            rc = ZMQ.zmq_bind (sb, "tcp://127.0.0.1:6561");
+            assert (rc );
+            
+            ZMQ.zmq_device (ZMQ.ZMQ_QUEUE, sa, sb);
+
+            
+            ZMQ.zmq_close (sa);
+            ZMQ.zmq_close (sb);
+
+        }
     }
 
     @Test
     public void testProxyTcp()  throws Exception {
         Ctx ctx = ZMQ.zmq_init (1);
         assert (ctx!= null);
-        
-        boolean rc ;
 
-        SocketBase sa = ZMQ.zmq_socket (ctx, ZMQ.ZMQ_ROUTER);
-        sa.setsockopt(ZMQ.ZMQ_DECODER, ProxyDecoder.class);
-        sa.setsockopt(ZMQ.ZMQ_ENCODER, ProxyEncoder.class);
-        
-        assert (sa != null);
-        rc = ZMQ.zmq_bind (sa, "tcp://127.0.0.1:6560");
-        assert (rc );
-
-        
-        SocketBase sb = ZMQ.zmq_socket (ctx, ZMQ.ZMQ_DEALER);
-        assert (sb != null);
-        rc = ZMQ.zmq_bind (sb, "tcp://127.0.0.1:6561");
-        assert (rc );
-
-
-        
-
+        Thread mt = new Main(ctx);
+        mt.start();
         new Dealer(ctx, "A").start();
         new Dealer(ctx, "B").start();
         
         Thread.sleep(1000);
-        new Client().start();
+        Thread client = new Client();
+        client.start();
 
-        ZMQ.zmq_device (ZMQ.ZMQ_QUEUE, sa, sb);
-
-        
-        ZMQ.zmq_close (sa);
-        ZMQ.zmq_close (sb);
+        client.join();
+        mt.interrupt();
         
         ZMQ.zmq_term(ctx);
     }

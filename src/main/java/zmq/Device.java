@@ -40,7 +40,7 @@ public class Device {
         items[0] = new PollItem (insocket_, ZMQ.ZMQ_POLLIN );
         items[1] = new PollItem (outsocket_, ZMQ.ZMQ_POLLIN );
         
-        while (true) {
+        while (!Thread.currentThread().isInterrupted()) {
             //  Wait while there are either requests or replies to process.
             rc = ZMQ.zmq_poll (items, -1);
             if (rc < 0)
@@ -80,6 +80,7 @@ public class Device {
             }
 
         }
+        return true;
         
     }
 }

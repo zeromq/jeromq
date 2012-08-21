@@ -49,9 +49,13 @@ public class ZContext {
      * Class Constructor
      */
     public ZContext() {
+        this(1);
+    }
+
+    public ZContext(int ioThreads_) {
         context = null;     // Don't create Context until create 1st 0MQ socket
         sockets = new CopyOnWriteArrayList<Socket>();
-        ioThreads = 1;
+        ioThreads = ioThreads_;
         linger = 0;
         main = true;
     }

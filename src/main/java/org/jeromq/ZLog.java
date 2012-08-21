@@ -30,7 +30,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Deque;
 
-import zmq.Msg;
+import org.jeromq.ZMQ.Msg;
 
 
 public class ZLog {
@@ -119,7 +119,7 @@ public class ZLog {
             return -1;
         }
         
-        long size = msg.size() + msg.header_size();
+        long size = msg.size() + msg.headerSize();
         if (buf.remaining() < size) {
             current.close();
             offset = current.offset();
@@ -133,7 +133,7 @@ public class ZLog {
             }
         }
         
-        buf.put(msg.header_buf());
+        buf.put(msg.headerBuf());
         buf.put(msg.buf());
         
         pendingMessages += 1L;
