@@ -1,6 +1,6 @@
 package guide;
 
-import org.zeromq.ZMQ;
+import org.jeromq.ZMQ;
 
 
 public class version {

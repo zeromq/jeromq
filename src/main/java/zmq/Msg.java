@@ -37,11 +37,13 @@ public class Msg implements IReplaceable {
     private final static byte type_vsm = 102;
     private final static byte type_lmsg = 103;
     private final static byte type_delimiter = 104;
+    private final static byte type_bulk = 105;
     private final static byte type_max = 106;
     
     private byte type;
     private byte flags;
     private int size;
+    private byte[] header;
     private byte[] data;
     private ByteBuffer buf;
     
@@ -61,7 +63,7 @@ public class Msg implements IReplaceable {
     
     public Msg(int size, boolean buffered) {
         this(buffered);
-        init_size(size, buffered);
+        size(size, buffered);
     }
 
     
@@ -98,8 +100,21 @@ public class Msg implements IReplaceable {
          return type >= type_min && type <= type_max;
     }
 
-    
-    private void init_size (int size_, boolean buffered)
+    private void init() {
+        type = type_vsm;
+        flags = 0;
+        size = 0;
+        data = null;
+        buf = null;
+        header = new byte[10];
+    }
+
+    public void size (int size_)
+    {
+        size(size_, false);
+    }
+
+    public void size (int size_, boolean buffered)
     {
         size = size_;
         if (buffered) {
@@ -137,15 +152,7 @@ public class Msg implements IReplaceable {
         flags |= flags_;
     }
 
-    
-    public int size ()
-    {
-        //  Check the validity of the message.
-        assert (check ());
 
-        return size;
-    }
-    
     
     public void init_delimiter() {
         type = type_delimiter;
@@ -166,7 +173,47 @@ public class Msg implements IReplaceable {
             buf = ByteBuffer.wrap(data);
         return buf;
     }
+    
+    
+    public int size ()
+    {
+        //  Check the validity of the message.
+        assert (check ());
 
+        return size;
+    }
+    
+
+    public int header_size ()
+    {
+        if (header[0] == 0) {
+            if (size < 255)
+                return 2;
+            else
+                return 10;
+        }
+        else if (header[0] == 0xff)
+            return 10;
+        else
+            return 2;
+    }
+    public ByteBuffer header_buf()
+    {
+        ByteBuffer hbuf = ByteBuffer.wrap(header);
+        if (header[0] == 0) {
+            if (size < 255) {
+                hbuf.put((byte)size);
+                hbuf.put(flags);
+            } else {
+                hbuf.put((byte)0xff);
+                hbuf.put(flags);
+                hbuf.putLong((long)size);
+            }
+            hbuf.rewind();
+        }
+        hbuf.limit(header_size());
+        return hbuf;
+    }
 
     public void close ()
     {
@@ -178,14 +225,7 @@ public class Msg implements IReplaceable {
         buf = null;
     }
 
-    private void init() {
-        type = type_vsm;
-        flags = 0;
-        size = 0;
-        data = null;
-        buf = null;
-    }
-    
+
 
     @Override
     public String toString () {

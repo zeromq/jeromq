@@ -1,3 +1,24 @@
+/*      
+    Copyright (c) 2009-2011 250bpm s.r.o.
+    Copyright (c) 2007-2009 iMatix Corporation
+    Copyright (c) 2011 VMware, Inc.
+    Copyright (c) 2007-2011 Other contributors as noted in the AUTHORS file
+
+    This file is part of 0MQ.
+        
+    0MQ is free software; you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License as published by
+    the Free Software Foundation; either version 3 of the License, or
+    (at your option) any later version.
+    
+    0MQ is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Lesser General Public License for more details.
+
+    You should have received a copy of the GNU Lesser General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/ 
 package zmq;
 
 import org.slf4j.Logger;
@@ -46,41 +67,6 @@ public class SessionBase extends Own implements Pipe.IPipeEvents, IPollEvents {
     final Address addr;
 
     IOObject io_object;
-
-    public SessionBase(IOThread io_thread_, boolean connect_,
-            SocketBase socket_, Options options_, Address addr_) {
-        super(io_thread_, options_);
-        io_object = new IOObject(io_thread_);
-        
-        connect = connect_;
-        pipe = null;
-        incomplete_in = false;
-        pending = false;
-        engine = null;
-        socket = socket_;
-        io_thread = io_thread_;
-        has_linger_timer = false;
-        send_identity = options_.send_identity;
-        recv_identity = options_.recv_identity;
-        addr = addr_;
-        
-    }
-    
-    @Override
-    protected void process_destroy () {
-        assert (pipe == null);
-
-        //  If there's still a pending linger timer, remove it.
-        if (has_linger_timer) {
-            io_object.cancel_timer (linger_timer_id);
-            has_linger_timer = false;
-        }
-
-        //  Close the engine.
-        if (engine != null)
-            engine.terminate ();
-
-    }
 
     public static SessionBase create(IOThread io_thread_, boolean connect_,
             SocketBase socket_, Options options_, Address addr_) {
@@ -138,6 +124,43 @@ public class SessionBase extends Own implements Pipe.IPipeEvents, IPollEvents {
         return s;
     }
 
+    public SessionBase(IOThread io_thread_, boolean connect_,
+            SocketBase socket_, Options options_, Address addr_) {
+        super(io_thread_, options_);
+        io_object = new IOObject(io_thread_);
+        
+        connect = connect_;
+        pipe = null;
+        incomplete_in = false;
+        pending = false;
+        engine = null;
+        socket = socket_;
+        io_thread = io_thread_;
+        has_linger_timer = false;
+        send_identity = options_.send_identity;
+        recv_identity = options_.recv_identity;
+        addr = addr_;
+        
+    }
+    
+    @Override
+    protected void process_destroy () {
+        assert (pipe == null);
+
+        //  If there's still a pending linger timer, remove it.
+        if (has_linger_timer) {
+            io_object.cancel_timer (linger_timer_id);
+            has_linger_timer = false;
+        }
+
+        //  Close the engine.
+        if (engine != null)
+            engine.terminate ();
+
+    }
+
+
+    //  To be used once only, when creating the session.
     public void attach_pipe(Pipe pipe_) {
         assert (!is_terminating ());
         assert (pipe == null);
@@ -146,193 +169,6 @@ public class SessionBase extends Own implements Pipe.IPipeEvents, IPollEvents {
         pipe.set_event_sink (this);
     }
     
-    protected void process_plug ()
-    {
-        io_object.set_handler(this);
-        if (connect)
-            start_connecting (false);
-    }
-
-    private void start_connecting (boolean wait_)
-    {
-        assert (connect);
-
-        //  Choose I/O thread to run connecter in. Given that we are already
-        //  running in an I/O thread, there must be at least one available.
-        IOThread io_thread = choose_io_thread (options.affinity);
-        assert (io_thread != null);
-
-        //  Create the connecter object.
-
-        if (addr.protocol().equals("tcp")) {
-            TcpConnecter connecter = new TcpConnecter (
-                io_thread, this, options, addr, wait_);
-            //alloc_assert (connecter);
-            launch_child (connecter);
-            return;
-        }
-        
-        if (addr.protocol().equals("ipc")) {
-            IpcConnecter connecter = new IpcConnecter (
-                io_thread, this, options, addr, wait_);
-            //alloc_assert (connecter);
-            launch_child (connecter);
-            return;
-        }
-        
-        assert (false);
-    }
-    
-    public void monitor_event (int event_, Object ... args)
-    {
-        socket.monitor_event (event_, args);
-    }
-
-    protected void process_term (int linger_)
-    {
-        assert (!pending);
-
-        //  If the termination of the pipe happens before the term command is
-        //  delivered there's nothing much to do. We can proceed with the
-        //  stadard termination immediately.
-        if (pipe == null) {
-            proceed_with_term ();
-            return;
-        }
-
-        pending = true;
-
-        //  If there's finite linger value, delay the termination.
-        //  If linger is infinite (negative) we don't even have to set
-        //  the timer.
-        if (linger_ > 0) {
-            assert (!has_linger_timer);
-            io_object.add_timer (linger_, linger_timer_id);
-            has_linger_timer = true;
-        }
-
-        //  Start pipe termination process. Delay the termination till all messages
-        //  are processed in case the linger time is non-zero.
-        pipe.terminate (linger_ != 0);
-
-        //  TODO: Should this go into pipe_t::terminate ?
-        //  In case there's no engine and there's only delimiter in the
-        //  pipe it wouldn't be ever read. Thus we check for it explicitly.
-        pipe.check_read ();
-    }
-
-    private void proceed_with_term() {
-        //  The pending phase have just ended.
-        pending = false;
-
-        //  Continue with standard termination.
-        super.process_term (0);
-    }
-
-    @Override
-    public void terminated(Pipe pipe_) {
-        //  Drop the reference to the deallocated pipe.
-        assert (pipe == pipe_);
-        pipe = null;
-
-        //  If we are waiting for pending messages to be sent, at this point
-        //  we are sure that there will be no more messages and we can proceed
-        //  with termination safely.
-        if (pending)
-            proceed_with_term ();
-    }
-
-    @Override
-    public void read_activated(Pipe pipe_) {
-        assert (pipe == pipe_);
-
-        if (engine != null)
-            engine.activate_out ();
-        else
-            pipe.check_read ();
-    }
-    
-    @Override
-    public void write_activated (Pipe pipe_)
-    {
-        assert (pipe == pipe_);
-
-        if (engine != null)
-            engine.activate_in ();
-    }
-
-    
-    @Override
-    public String toString() {
-        return super.toString() + "[" + options.socket_id + "]";
-    }
-
-    public void flush() {
-        if (pipe != null)
-            pipe.flush ();
-    }
-
-    public void detach() {
-        //  Engine is dead. Let's forget about it.
-        engine = null;
-
-        //  Remove any half-done messages from the pipes.
-        clean_pipes ();
-
-        //  Send the event to the derived class.
-        detached ();
-
-        //  Just in case there's only a delimiter in the pipe.
-        if (pipe != null)
-            pipe.check_read ();
-    }
-
-    private void detached() {
-        //  Transient session self-destructs after peer disconnects.
-        if (!connect) {
-            terminate ();
-            return;
-        }
-
-        reset ();
-
-        //  Reconnect.
-        if (options.reconnect_ivl != -1)
-            start_connecting (true);
-
-        //  For subscriber sockets we hiccup the inbound pipe, which will cause
-        //  the socket object to resend all the subscriptions.
-        if (pipe != null && (options.type == ZMQ.ZMQ_SUB || options.type == ZMQ.ZMQ_XSUB))
-            pipe.hiccup ();
-
-    }
-
-    protected void reset() {
-        //  Restore identity flags.
-        send_identity = options.send_identity;
-        recv_identity = options.recv_identity;
-    }
-
-    private void clean_pipes() {
-        if (pipe != null) {
-
-            //  Get rid of half-processed messages in the out pipe. Flush any
-            //  unflushed messages upstream.
-            pipe.rollback ();
-            pipe.flush ();
-
-            //  Remove any half-read message from the in pipe.
-            while (incomplete_in) {
-                Msg msg = read();
-                if (msg == null) {
-                    assert (!incomplete_in);
-                    break;
-                }
-                msg.close ();
-            }
-        }
-    }
-
     public Msg read() {
         
         Msg msg_ = null;
@@ -374,6 +210,97 @@ public class SessionBase extends Own implements Pipe.IPipeEvents, IPollEvents {
 
         return false;
     }
+    
+
+    protected void reset() {
+        //  Restore identity flags.
+        send_identity = options.send_identity;
+        recv_identity = options.recv_identity;
+    }
+    
+
+    public void flush() {
+        if (pipe != null)
+            pipe.flush ();
+    }
+    
+
+    //  Remove any half processed messages. Flush unflushed messages.
+    //  Call this function when engine disconnect to get rid of leftovers.
+    private void clean_pipes() {
+        if (pipe != null) {
+
+            //  Get rid of half-processed messages in the out pipe. Flush any
+            //  unflushed messages upstream.
+            pipe.rollback ();
+            pipe.flush ();
+
+            //  Remove any half-read message from the in pipe.
+            while (incomplete_in) {
+                Msg msg = read();
+                if (msg == null) {
+                    assert (!incomplete_in);
+                    break;
+                }
+                msg.close ();
+            }
+        }
+    }
+
+    @Override
+    public void terminated(Pipe pipe_) {
+        //  Drop the reference to the deallocated pipe.
+        assert (pipe == pipe_);
+        pipe = null;
+
+        //  If we are waiting for pending messages to be sent, at this point
+        //  we are sure that there will be no more messages and we can proceed
+        //  with termination safely.
+        if (pending)
+            proceed_with_term ();
+    }
+
+    @Override
+    public void read_activated(Pipe pipe_) {
+        assert (pipe == pipe_);
+
+        if (engine != null)
+            engine.activate_out ();
+        else
+            pipe.check_read ();
+    }
+    
+    @Override
+    public void write_activated (Pipe pipe_)
+    {
+        assert (pipe == pipe_);
+
+        if (engine != null)
+            engine.activate_in ();
+    }
+
+    @Override
+    public void hiccuped (Pipe pipe_)
+    {
+        //  Hiccups are always sent from session to socket, not the other
+        //  way round.
+        throw new UnsupportedOperationException("Must Override");
+
+    }
+
+    public void monitor_event (int event_, Object ... args)
+    {
+        socket.monitor_event (event_, args);
+    }
+
+    @Override
+    protected void process_plug ()
+    {
+        io_object.set_handler(this);
+        if (connect)
+            start_connecting (false);
+    }
+
 
     @Override
     protected void process_attach (IEngine engine_)
@@ -404,6 +331,140 @@ public class SessionBase extends Own implements Pipe.IPipeEvents, IPollEvents {
         engine = engine_;
         engine.plug (io_thread, this);
     }
+    
+    public void detach() {
+        //  Engine is dead. Let's forget about it.
+        engine = null;
+
+        //  Remove any half-done messages from the pipes.
+        clean_pipes ();
+
+        //  Send the event to the derived class.
+        detached ();
+
+        //  Just in case there's only a delimiter in the pipe.
+        if (pipe != null)
+            pipe.check_read ();
+    }
+    
+    protected void process_term (int linger_)
+    {
+        assert (!pending);
+
+        //  If the termination of the pipe happens before the term command is
+        //  delivered there's nothing much to do. We can proceed with the
+        //  stadard termination immediately.
+        if (pipe == null) {
+            proceed_with_term ();
+            return;
+        }
+
+        pending = true;
+
+        //  If there's finite linger value, delay the termination.
+        //  If linger is infinite (negative) we don't even have to set
+        //  the timer.
+        if (linger_ > 0) {
+            assert (!has_linger_timer);
+            io_object.add_timer (linger_, linger_timer_id);
+            has_linger_timer = true;
+        }
+
+        //  Start pipe termination process. Delay the termination till all messages
+        //  are processed in case the linger time is non-zero.
+        pipe.terminate (linger_ != 0);
+
+        //  TODO: Should this go into pipe_t::terminate ?
+        //  In case there's no engine and there's only delimiter in the
+        //  pipe it wouldn't be ever read. Thus we check for it explicitly.
+        pipe.check_read ();
+    }
+    
+
+    //  Call this function to move on with the delayed process_term.
+    private void proceed_with_term() {
+        //  The pending phase have just ended.
+        pending = false;
+
+        //  Continue with standard termination.
+        super.process_term (0);
+    }
+
+
+    @Override
+    public void timer_event(int id_) {
+        
+        //  Linger period expired. We can proceed with termination even though
+        //  there are still pending messages to be sent.
+        assert (id_ == linger_timer_id);
+        has_linger_timer = false;
+
+        //  Ask pipe to terminate even though there may be pending messages in it.
+        assert (pipe != null);
+        pipe.terminate (false);
+    }
+
+
+    private void detached() {
+        //  Transient session self-destructs after peer disconnects.
+        if (!connect) {
+            terminate ();
+            return;
+        }
+
+        reset ();
+
+        //  Reconnect.
+        if (options.reconnect_ivl != -1)
+            start_connecting (true);
+
+        //  For subscriber sockets we hiccup the inbound pipe, which will cause
+        //  the socket object to resend all the subscriptions.
+        if (pipe != null && (options.type == ZMQ.ZMQ_SUB || options.type == ZMQ.ZMQ_XSUB))
+            pipe.hiccup ();
+
+    }
+
+    
+    private void start_connecting (boolean wait_)
+    {
+        assert (connect);
+
+        //  Choose I/O thread to run connecter in. Given that we are already
+        //  running in an I/O thread, there must be at least one available.
+        IOThread io_thread = choose_io_thread (options.affinity);
+        assert (io_thread != null);
+
+        //  Create the connecter object.
+
+        if (addr.protocol().equals("tcp")) {
+            TcpConnecter connecter = new TcpConnecter (
+                io_thread, this, options, addr, wait_);
+            //alloc_assert (connecter);
+            launch_child (connecter);
+            return;
+        }
+        
+        if (addr.protocol().equals("ipc")) {
+            IpcConnecter connecter = new IpcConnecter (
+                io_thread, this, options, addr, wait_);
+            //alloc_assert (connecter);
+            launch_child (connecter);
+            return;
+        }
+        
+        assert (false);
+    }
+    
+ 
+
+
+    @Override
+    public String toString() {
+        return super.toString() + "[" + options.socket_id + "]";
+    }
+
+
 
     @Override
     public void in_event() {
@@ -427,19 +488,6 @@ public class SessionBase extends Own implements Pipe.IPipeEvents, IPollEvents {
     public void accept_event() {
         throw new UnsupportedOperationException();
         
-    }
-
-    @Override
-    public void timer_event(int id_) {
-        throw new UnsupportedOperationException();
-    }
-
-    public void hiccuped (Pipe pipe_)
-    {
-        //  Hiccups are always sent from session to socket, not the other
-        //  way round.
-        throw new UnsupportedOperationException("Must Override");
-
     }
 
 

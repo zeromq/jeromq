@@ -1,8 +1,8 @@
-package org.zeromq;
+package org.jeromq;
 
 import java.util.Arrays;
 
-import org.zeromq.ZMQ.Socket;
+import org.jeromq.ZMQ.Socket;
 
 /**
  * ZFrame

@@ -1,4 +1,4 @@
-package org.zeromq;
+package org.jeromq;
 
 public class ZDevice {
 

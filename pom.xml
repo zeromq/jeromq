@@ -1,7 +1,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>org.zeromq</groupId>
+  <groupId>org.jeromq</groupId>
   <artifactId>jeromq</artifactId>
   <packaging>jar</packaging>
   <version>0.1.0-SNAPSHOT</version>
@@ -19,6 +19,13 @@
     <connection>scm:git:git@github.com:miniway/jeromq.git</connection>
     <developerConnection>scm:git:git@github.com:miniway/jeromq.git</developerConnection>
   </scm>
+  <developers>
+    <developer>
+      <id>mini</id>
+      <name>Dongmin Yu</name>
+      <email>miniway@gmail.com</email>
+    </developer>
+  </developers>
   <dependencies>
       <dependency>
         <groupId>log4j</groupId>
@@ -81,4 +88,45 @@
       </plugin>
     </plugins>
   </build>
+  <profiles>
+    <profile>
+      <id>release-sign-artifacts</id>
+      <activation>
+        <property>
+          <name>performRelease</name>
+          <value>true</value>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <version>1.1</version>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+  <distributionManagement>
+    <repository>
+      <id>sonatype-nexus-releases</id>
+      <name>Nexus Release Repository</name>
+      <url>https://oss.sonatype.org/content/repositories/releases/</url>
+    </repository>
+    <snapshotRepository>
+      <id>sonatype-nexus-snapshots</id>
+      <name>Nexus Snapshot Repository</name>
+      <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+    </snapshotRepository>
+  </distributionManagement>
 </project>

@@ -43,7 +43,7 @@ public class Decoder extends DecoderBase {
         message_ready
     }
     
-    final private ByteBuffer tmpbuf;
+    final private byte[] tmpbuf;
     private Msg in_progress;
     
 
@@ -51,7 +51,7 @@ public class Decoder extends DecoderBase {
     {
         super(bufsize_, maxmsgsize_);
         
-        tmpbuf = ByteBuffer.allocate(8);
+        tmpbuf = new byte[8];
         
     
         //  At the beginning, read one byte and go to one_byte_size_ready state.
@@ -86,9 +86,8 @@ public class Decoder extends DecoderBase {
         //  First byte of size is read. If it is 0xff read 8-byte size.
         //  Otherwise allocate the buffer for message data and read the
         //  message data into it.
-        byte first = tmpbuf.get();
+        byte first = tmpbuf[0];
         if (first == 0xff) {
-            tmpbuf.clear();
             next_step (tmpbuf, 8, Step.eight_byte_size_ready);
         } else {
 
@@ -115,7 +114,6 @@ public class Decoder extends DecoderBase {
                 in_progress = new Msg(size-1);
             }
 
-            tmpbuf.clear();
             next_step (tmpbuf, 1, Step.flags_ready);
         }
         return true;
@@ -125,7 +123,7 @@ public class Decoder extends DecoderBase {
     private boolean eight_byte_size_ready() {
         //  8-byte payload length is read. Allocate the buffer
         //  for message body and read the message data into it.
-        final long payload_length = tmpbuf.getLong();
+        final long payload_length = ByteBuffer.wrap(tmpbuf).getLong();
 
         //  There has to be at least one byte (the flags) in the message).
         if (payload_length == 0) {
@@ -151,7 +149,6 @@ public class Decoder extends DecoderBase {
         //  message and thus we can treat it as uninitialised...
         in_progress = new Msg(msg_size);
         
-        tmpbuf.clear();
         next_step (tmpbuf, 1, Step.flags_ready);
         
         return true;
@@ -162,7 +159,7 @@ public class Decoder extends DecoderBase {
 
         //  Store the flags from the wire into the message structure.
         
-        byte first = tmpbuf.get();
+        byte first = tmpbuf[0];
         
         in_progress.set_flags (first);
 
@@ -186,7 +183,6 @@ public class Decoder extends DecoderBase {
             return false;
         }
         
-        tmpbuf.clear();
         next_step (tmpbuf, 1, Step.one_byte_size_ready);
         
         return true;

@@ -1,11 +1,11 @@
-package org.zeromq;
+package org.jeromq;
 
 import java.util.List;
 import java.util.ListIterator;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import org.zeromq.ZMQ.Context;
-import org.zeromq.ZMQ.Socket;
+import org.jeromq.ZMQ.Context;
+import org.jeromq.ZMQ.Socket;
 
 /**
  * ZContext provides a high-level ZeroMQ context management class
