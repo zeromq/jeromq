@@ -14,7 +14,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.Assert.*;
 import static org.hamcrest.CoreMatchers.*;
 
-public class TestHelper {
+public class Helper {
 
     public static AtomicInteger counter = new AtomicInteger(2);
     

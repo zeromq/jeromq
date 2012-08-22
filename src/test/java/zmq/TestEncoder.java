@@ -6,15 +6,15 @@ import java.nio.ByteBuffer;
 import org.junit.Before;
 import org.junit.Test;
 
-import zmq.TestHelper.DummySession;
-import zmq.TestHelper.DummySocketChannel;
+import zmq.Helper.DummySession;
+import zmq.Helper.DummySocketChannel;
 import static org.junit.Assert.*;
 import static org.hamcrest.CoreMatchers.*;
 
 public class TestEncoder {
     
     EncoderBase encoder ;
-    TestHelper.DummySession session;
+    Helper.DummySession session;
     DummySocketChannel sock;
     @Before
     public void setUp () {

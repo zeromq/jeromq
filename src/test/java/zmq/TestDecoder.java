@@ -5,14 +5,14 @@ import java.nio.ByteBuffer;
 import org.junit.Before;
 import org.junit.Test;
 
-import zmq.TestHelper.DummySession;
+import zmq.Helper.DummySession;
 import static org.junit.Assert.*;
 import static org.hamcrest.CoreMatchers.*;
 
 public class TestDecoder {
     
     DecoderBase decoder ;
-    TestHelper.DummySession session;
+    Helper.DummySession session;
     
     @Before
     public void setUp () {

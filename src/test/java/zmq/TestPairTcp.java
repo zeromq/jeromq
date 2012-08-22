@@ -43,7 +43,7 @@ public class TestPairTcp {
         brc = ZMQ.zmq_connect (sc, "tcp://127.0.0.1:6570");
         assertThat (brc , is(true));
         
-        TestHelper.bounce(sb, sc);
+        Helper.bounce(sb, sc);
 
         
         //  Tear down the wiring.

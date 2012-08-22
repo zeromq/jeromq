@@ -42,7 +42,7 @@ public class TestReqrepIpc {
         brc = ZMQ.zmq_connect (sc, "ipc:///tmp/tester2");
         assertThat (brc , is(true));
         
-        TestHelper.bounce(sb, sc);
+        Helper.bounce(sb, sc);
 
         
         //  Tear down the wiring.

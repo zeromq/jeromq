@@ -39,7 +39,7 @@ public class TestReqrepTcp {
         rc = ZMQ.zmq_connect (sc, "tcp://127.0.0.1:7560");
         assert (rc);
 
-        TestHelper.bounce (sb, sc);
+        Helper.bounce (sb, sc);
 
         ZMQ.zmq_close (sc);
 

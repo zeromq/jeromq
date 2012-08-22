@@ -43,7 +43,7 @@ public class TestPairInproc {
         brc = ZMQ.zmq_connect (sc, "inproc://a");
         assertThat (brc , is(true));
         
-        TestHelper.bounce(sb, sc);
+        Helper.bounce(sb, sc);
 
         
         //  Tear down the wiring.

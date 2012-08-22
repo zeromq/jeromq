@@ -43,7 +43,7 @@ public class TestPairIpc {
         brc = ZMQ.zmq_connect (sc, "ipc:///tmp/tester");
         assertThat (brc , is(true));
         
-        TestHelper.bounce(sb, sc);
+        Helper.bounce(sb, sc);
 
         
         //  Tear down the wiring.
