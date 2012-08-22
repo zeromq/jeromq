@@ -68,17 +68,17 @@ public class XSub extends SocketBase {
         dist = new Dist();
         subscriptions = new Trie();
         
-        Trie.ITrieHandler send_subscription = new Trie.ITrieHandler() {
+        send_subscription = new Trie.ITrieHandler() {
             
             @Override
-            public void added(byte[] data_, Object arg_) {
+            public void added(byte[] data_, int size, Object arg_) {
                 
                 Pipe pipe = (Pipe) arg_;
 
                 //  Create the subsctription message.
-                Msg msg = new Msg(data_.length + 1);
+                Msg msg = new Msg(size + 1);
                 msg.put((byte)1);
-                msg.put(data_,1);
+                msg.put(data_,1, size);
 
                 //  Send it to the pipe.
                 boolean sent = pipe.write (msg);

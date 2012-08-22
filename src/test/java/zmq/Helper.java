@@ -28,7 +28,6 @@ public class Helper {
         private byte[] buf;
         protected DummySocketChannel(SelectorProvider provider) {
             super(provider);
-            // TODO Auto-generated constructor stub
         }
         
         public DummySocketChannel() {
@@ -46,44 +45,37 @@ public class Helper {
 
         @Override
         public boolean connect(SocketAddress remote) throws IOException {
-            // TODO Auto-generated method stub
             return false;
         }
 
         @Override
         public boolean finishConnect() throws IOException {
-            // TODO Auto-generated method stub
             return false;
         }
 
         @Override
         public boolean isConnected() {
-            // TODO Auto-generated method stub
             return false;
         }
 
         @Override
         public boolean isConnectionPending() {
-            // TODO Auto-generated method stub
             return false;
         }
 
         @Override
         public int read(ByteBuffer dst) throws IOException {
-            // TODO Auto-generated method stub
             return 0;
         }
 
         @Override
         public long read(ByteBuffer[] dsts, int offset, int length)
                 throws IOException {
-            // TODO Auto-generated method stub
             return 0;
         }
 
         @Override
         public Socket socket() {
-            // TODO Auto-generated method stub
             return null;
         }
 
@@ -102,19 +94,16 @@ public class Helper {
         @Override
         public long write(ByteBuffer[] srcs, int offset, int length)
                 throws IOException {
-            // TODO Auto-generated method stub
             return 0;
         }
 
         @Override
         protected void implCloseSelectableChannel() throws IOException {
-            // TODO Auto-generated method stub
             
         }
 
         @Override
         protected void implConfigureBlocking(boolean arg0) throws IOException {
-            // TODO Auto-generated method stub
             
         }
         

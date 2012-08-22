@@ -113,6 +113,14 @@ public class ZMQ {
         public boolean connect(String addr_) {
             return base.connect(addr_);
         }
+
+        public void subscribe(byte[] topic) {
+            subscribe(new String(topic));
+        }
+        
+        public void subscribe(String topic) {
+            base.setsockopt(zmq.ZMQ.ZMQ_SUBSCRIBE, topic);
+        }
         
     }
 

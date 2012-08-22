@@ -28,5 +28,8 @@ public class hwclient{
             //  our "Hello World" server has sent us a 0-terminated string:
             System.out.println("Received reply " + request_nbr + ": [" + new String(reply) + "]");
         }
+        
+        socket.close();
+        context.term();
     }
 }

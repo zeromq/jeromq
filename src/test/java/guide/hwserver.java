@@ -31,5 +31,8 @@ public class hwserver{
 
             //  Get the reply.
         }
+        
+        //socket.close();
+        //context.term();
     }
 }

@@ -22,7 +22,6 @@
 
 package zmq;
 
-import zmq.Trie.ITrieHandler;
 
 public class Trie {
     private int refcnt;
@@ -32,7 +31,7 @@ public class Trie {
     private short live_nodes;
     
     public static interface ITrieHandler {
-        void added(byte[] data, Object arg);
+        void added(byte[] data, int size, Object arg);
     }
     Trie[] next;
     
@@ -251,7 +250,7 @@ public class Trie {
             Object arg_) {
         //  If this node is a subscription, apply the function.
         if (refcnt > 0)
-            func_.added (buff_, arg_);
+            func_.added (buff_, buffsize_, arg_);
 
         //  Adjust the buffer.
         if (buffsize_  >= maxbuffsize_) {

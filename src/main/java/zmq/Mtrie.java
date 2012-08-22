@@ -357,7 +357,7 @@ public class Mtrie {
             
             //  Signal the pipes attached to this node.
             if (current.pipes != null) {
-                for (Pipe it : pipes)
+                for (Pipe it : current.pipes)
                     func_.invoke(it, null, arg_);
             }
 
