@@ -3,11 +3,7 @@ package zmq;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.net.ServerSocket;
-import java.net.Socket;
 import java.nio.ByteBuffer;
-import java.nio.channels.SelectableChannel;
-import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 
 public class StreamEngine implements IEngine, IPollEvents {
@@ -89,7 +85,10 @@ public class StreamEngine implements IEngine, IPollEvents {
 
     }
     
-    public void close() {
+    public void destroy() {
+        
+        assert (!plugged);
+        
         if (handle != null) {
             try {
                 handle.close();
@@ -124,7 +123,7 @@ public class StreamEngine implements IEngine, IPollEvents {
         session.monitor_event (ZMQ.ZMQ_EVENT_DISCONNECTED, endpoint, handle);
         session.detach ();
         unplug ();
-        close();
+        destroy();
     }
 
     private void unplug() {
@@ -314,7 +313,7 @@ public class StreamEngine implements IEngine, IPollEvents {
     @Override
     public void terminate() {
         unplug ();
-        close();
+        destroy();
     }
 
 

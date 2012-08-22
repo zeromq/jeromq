@@ -31,7 +31,7 @@ public class wuserver {
             relhumidity = srandom.nextInt(50) + 10 + 1;
 
             //  Send message to all subscribers
-            String update = String.format("%05d %d %d\u0000", zipcode, temperature, relhumidity);
+            String update = String.format("%05d %d %d", zipcode, temperature, relhumidity);
             publisher.send(update.getBytes(), 0);
         }
     }

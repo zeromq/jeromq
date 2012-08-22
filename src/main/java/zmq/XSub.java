@@ -53,21 +53,9 @@ public class XSub extends SocketBase {
     //  If true, part of a multipart message was already received, but
     //  there are following parts still waiting.
     private boolean more;
-    Trie.ITrieHandler send_subscription;
+    private static Trie.ITrieHandler send_subscription;
 
-    
-    public XSub (Ctx parent_, int tid_, int sid_) {
-        super (parent_, tid_, sid_);
-        
-        options.type = ZMQ.ZMQ_XSUB;
-        has_message = false;
-        more = false;
-        
-        options.linger = 0;
-        fq = new FQ();
-        dist = new Dist();
-        subscriptions = new Trie();
-        
+    static {
         send_subscription = new Trie.ITrieHandler() {
             
             @Override
@@ -91,6 +79,21 @@ public class XSub extends SocketBase {
 
             }
         };
+    }
+    
+    public XSub (Ctx parent_, int tid_, int sid_) {
+        super (parent_, tid_, sid_);
+        
+        options.type = ZMQ.ZMQ_XSUB;
+        has_message = false;
+        more = false;
+        
+        options.linger = 0;
+        fq = new FQ();
+        dist = new Dist();
+        subscriptions = new Trie();
+        
+        
     }
     
     @Override

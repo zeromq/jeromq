@@ -218,7 +218,6 @@ public class Poller extends PollerBase implements Runnable {
                 IPollEvents evt = (IPollEvents) key.attachment();
                 it.remove();
 
-
                 if (!key.isValid() ) {
                     key.cancel();
                     continue;
@@ -227,7 +226,7 @@ public class Poller extends PollerBase implements Runnable {
 
                 if (key.isAcceptable()) {
                     evt.accept_event();
-                } else  if (key.isReadable() ) {
+                } else if (key.isReadable() ) {
                     evt.in_event();
                 } else if (key.isWritable()) {
                     evt.out_event();
