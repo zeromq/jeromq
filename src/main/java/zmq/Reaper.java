@@ -55,6 +55,11 @@ public class Reaper extends ZObject implements IPollEvents {
         poller.add_fd (mailbox_handle, this);
         poller.set_pollin (mailbox_handle);
     }
+
+    public void destroy () {
+        poller.destroy();
+        mailbox.close();
+    }
     
     public Mailbox get_mailbox() {
         return mailbox;
@@ -119,8 +124,6 @@ public class Reaper extends ZObject implements IPollEvents {
             send_done ();
             poller.rm_fd (mailbox_handle);
             poller.stop ();
-            while (!poller.stopped);
-            mailbox.close();
         }
     }
     
@@ -145,10 +148,8 @@ public class Reaper extends ZObject implements IPollEvents {
         if (sockets == 0 && terminating) {
             send_done ();
             poller.rm_fd (mailbox_handle);
-            
             poller.stop ();
-            //while (!poller.stopped);
-            mailbox.close();
+            
         }
     }
 

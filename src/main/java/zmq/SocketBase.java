@@ -766,7 +766,8 @@ public abstract class SocketBase extends Own
 
     public Msg recv(int flags_) {
         if (ctx_terminated) {
-            throw new IllegalStateException();
+            //throw new IllegalStateException();
+            return null;
         }
         
         //  Check whether message passed to the function is valid.

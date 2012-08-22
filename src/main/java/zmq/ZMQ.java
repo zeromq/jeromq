@@ -123,17 +123,6 @@ public class ZMQ {
     public static final int ZMQ_FORWARDER = 2;
     public static final int ZMQ_QUEUE = 3;
     
-    private static final Selector poll_selector ;
-
-    
-    static {
-        try {
-            poll_selector = Selector.open();
-        } catch (IOException e) {
-            throw new ZException.IOException(e);
-        }
-    }
-    
     public static Ctx zmq_ctx_new() {
         //  Create 0MQ context.
         Ctx ctx = new Ctx();
@@ -319,7 +308,7 @@ public class ZMQ {
     }
 
     
-    public static boolean zmq_device (int device_, SocketBase insocket_,
+    public static boolean zmq_device (Selector selector, int device_, SocketBase insocket_,
             SocketBase outsocket_)
     {
 
@@ -327,17 +316,21 @@ public class ZMQ {
             throw new IllegalArgumentException();
         }
 
+        if (selector == null || !selector.isOpen()) {
+            throw new IllegalArgumentException();
+        }
+        
         if (device_ != ZMQ_FORWARDER && device_ != ZMQ_QUEUE &&
               device_ != ZMQ_STREAMER) {
             throw new IllegalArgumentException();
         }
         
-        return Device.device(insocket_, outsocket_);
+        return Device.device(selector, insocket_, outsocket_);
 
         
     }
 
-    public static int zmq_poll(PollItem[] items_, long timeout_ ) {
+    public static int zmq_poll(Selector selector, PollItem[] items_, long timeout_ ) {
 
         if (items_ == null) {
             throw new IllegalArgumentException();
@@ -357,11 +350,11 @@ public class ZMQ {
         
         for (PollItem item: items_) {
             SelectableChannel ch = item.getChannel();  // mailbox channel if ZMQ socket
-            SelectionKey key = ch.keyFor(poll_selector);
+            SelectionKey key = ch.keyFor(selector);
 
             if (key == null) {
                 try {
-                    key = ch.register(poll_selector, item.interestOps());
+                    key = ch.register(selector, item.interestOps());
                     key.attach(item);
                 } catch (ClosedChannelException e) {
                     throw new ZException.IOException(e);
@@ -375,7 +368,7 @@ public class ZMQ {
         boolean first_pass = true;
         int nevents = 0;
         
-        while (!Thread.currentThread().isInterrupted()) {
+        while (true) {
 
             //  Compute the timeout for the subsequent poll.
             long timeout;
@@ -389,26 +382,26 @@ public class ZMQ {
             //  Wait for events.
             try {
                 if (timeout < 0)
-                    poll_selector.select(0);
+                    selector.select(0);
                 else if (timeout == 0)
-                    poll_selector.selectNow();
+                    selector.selectNow();
                 else
-                    poll_selector.select(timeout);
+                    selector.select(timeout);
 
-                for (SelectionKey key: poll_selector.keys()) {
+                for (SelectionKey key: selector.keys()) {
                     PollItem item = (PollItem)key.attachment();
                     if (item.readyOps(key)) {
                         nevents++;
                     }
                 }
                 
-                poll_selector.selectedKeys().clear();
-                
+                selector.selectedKeys().clear();
             } catch (ClosedSelectorException e) {
                 return -1;
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                throw new ZException.IOException(e);
             }            
+            
             //  If timout is zero, exit immediately whether there are events or not.
             if (timeout_ == 0)
                 break;

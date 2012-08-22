@@ -84,7 +84,7 @@ public class InprocLat {
         Thread local_thread = new Thread(new Worker(ctx, roundtrip_count));
         local_thread.start();
 
-        Msg msg = ZMQ.zmq_msg_init_size ( message_size);
+        Msg smsg = ZMQ.zmq_msg_init_size ( message_size);
 
         printf ("message size: %d [B]\n", (int) message_size);
         printf ("roundtrip count: %d\n", (int) roundtrip_count);
@@ -92,12 +92,12 @@ public class InprocLat {
         long watch = ZMQ.zmq_stopwatch_start ();
 
         for (int i = 0; i != roundtrip_count; i++) {
-            int r = ZMQ.zmq_sendmsg (s, msg, 0);
+            int r = ZMQ.zmq_sendmsg (s, smsg, 0);
             if (r < 0) {
                 printf ("error in zmq_sendmsg: %s\n");
                 return;
             }
-            msg = ZMQ.zmq_recvmsg (s, 0);
+            Msg msg = ZMQ.zmq_recvmsg (s, 0);
             if (msg == null) {
                 printf ("error in zmq_recvmsg: %s\n");
                 return ;

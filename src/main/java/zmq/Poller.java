@@ -23,6 +23,7 @@ package zmq;
 
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
+import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -43,7 +44,7 @@ public class Poller extends PollerBase implements Runnable {
 
     //  If true, thread is in the process of shutting down.
     volatile private boolean stopping;
-    volatile public boolean stopped;
+    volatile private boolean stopped;
     
     private Thread worker;
     final private Selector selector;
@@ -65,6 +66,20 @@ public class Poller extends PollerBase implements Runnable {
         }
     }
 
+    public void destroy() {
+        
+        if (!stopped) {
+            try {
+                worker.join();
+            } catch (InterruptedException e) {
+            }
+            
+            try {
+                selector.close();
+            } catch (IOException e) {
+            }
+        }
+    }
     public void add_fd (SelectableChannel fd_, IPollEvents events_)
     {
         
@@ -141,14 +156,7 @@ public class Poller extends PollerBase implements Runnable {
     
     public void stop() {
         stopping = true;
-        
-        try {
-            selector.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        worker.interrupt();
-
+        selector.wakeup();
     }
     
     
@@ -193,20 +201,24 @@ public class Poller extends PollerBase implements Runnable {
             int rc;
             try {
                 rc = selector.select(timeout);
+            } catch (ClosedSelectorException e) {
+                break;
             } catch (IOException e) {
-                throw new RuntimeException(e);
+                throw new ZException.IOException(e);
             }
             
             if (rc == 0) 
                 continue;
-            
+
+
             Iterator<SelectionKey> it = selector.selectedKeys().iterator();
             while (it.hasNext()) {
                 
                 SelectionKey key = it.next();
                 IPollEvents evt = (IPollEvents) key.attachment();
                 it.remove();
-                
+
+
                 if (!key.isValid() ) {
                     key.cancel();
                     continue;
@@ -222,10 +234,11 @@ public class Poller extends PollerBase implements Runnable {
                 } else if (key.isConnectable()) {
                     evt.connect_event();
                 } 
-
+                
             }
 
         }
+        
         stopped = true;
         
     }

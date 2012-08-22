@@ -19,9 +19,11 @@
 */
 package zmq;
 
+import java.nio.channels.Selector;
+
 public class Device {
     
-    public static boolean device (SocketBase insocket_,
+    public static boolean device (Selector selector, SocketBase insocket_,
             SocketBase outsocket_)
     {
 
@@ -31,7 +33,7 @@ public class Device {
         //  TODO: The current implementation drops messages when
         //  any of the pipes becomes full.
 
-        boolean success;
+        boolean success = true;
         int rc;
         int more;
         Msg msg;
@@ -40,11 +42,13 @@ public class Device {
         items[0] = new PollItem (insocket_, ZMQ.ZMQ_POLLIN );
         items[1] = new PollItem (outsocket_, ZMQ.ZMQ_POLLIN );
         
-        while (!Thread.currentThread().isInterrupted()) {
+        assert (selector != null && selector.isOpen());
+        
+        while (true) {
             //  Wait while there are either requests or replies to process.
-            rc = ZMQ.zmq_poll (items, -1);
+            rc = ZMQ.zmq_poll (selector, items, -1);
             if (rc < 0)
-                return false;
+                break;
 
             //  Process a request.
             if (items [0].isReadable()) {
@@ -57,7 +61,7 @@ public class Device {
 
                     success = outsocket_.send (msg, more > 0? ZMQ.ZMQ_SNDMORE: 0);
                     if (!success)
-                        return false;
+                        break;
                     if (more == 0)
                         break;
                 }
@@ -73,14 +77,15 @@ public class Device {
 
                     success = insocket_.send (msg, more > 0? ZMQ.ZMQ_SNDMORE: 0);
                     if (!success)
-                        return false;
+                        break;
                     if (more == 0)
                         break;
                 }
             }
 
         }
-        return true;
+
+        return success;
         
     }
 }

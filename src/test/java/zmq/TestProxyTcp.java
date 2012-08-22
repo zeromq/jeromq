@@ -23,6 +23,7 @@ package zmq;
 import java.io.IOException;
 import java.net.Socket;
 import java.nio.ByteBuffer;
+import java.nio.channels.Selector;
 
 import org.junit.Test;
 
@@ -250,6 +251,7 @@ public class TestProxyTcp {
     static class Main extends Thread {
         
         Ctx ctx;
+        Selector selector;
         Main(Ctx ctx_) {
             ctx = ctx_;
         }
@@ -271,12 +273,26 @@ public class TestProxyTcp {
             rc = ZMQ.zmq_bind (sb, "tcp://127.0.0.1:6561");
             assert (rc );
             
-            ZMQ.zmq_device (ZMQ.ZMQ_QUEUE, sa, sb);
+            try {
+                selector = Selector.open();
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+            ZMQ.zmq_device (selector, ZMQ.ZMQ_QUEUE, sa, sb);
 
-            
             ZMQ.zmq_close (sa);
             ZMQ.zmq_close (sb);
 
+        }
+        
+        public void wakeup() {
+            try {
+                selector.close();
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
         }
     }
 
@@ -285,7 +301,7 @@ public class TestProxyTcp {
         Ctx ctx = ZMQ.zmq_init (1);
         assert (ctx!= null);
 
-        Thread mt = new Main(ctx);
+        Main mt = new Main(ctx);
         mt.start();
         new Dealer(ctx, "A").start();
         new Dealer(ctx, "B").start();
@@ -295,7 +311,7 @@ public class TestProxyTcp {
         client.start();
 
         client.join();
-        mt.interrupt();
+        mt.wakeup();
         
         ZMQ.zmq_term(ctx);
     }

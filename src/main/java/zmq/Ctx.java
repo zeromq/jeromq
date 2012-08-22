@@ -198,9 +198,11 @@ public class Ctx {
         
         for  (IOThread it: io_threads) {
             it.stop();
+            it.destroy();
         }
         
         reaper.stop();
+        reaper.destroy();
         term_mailbox.close();
         
     }

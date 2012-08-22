@@ -55,6 +55,10 @@ public class IOThread extends ZObject implements IPollEvents {
         poller.start();
     }
     
+    public void destroy() {
+        poller.destroy();
+        mailbox.close();
+    }
     public void stop ()
     {
         send_stop ();
@@ -122,7 +126,7 @@ public class IOThread extends ZObject implements IPollEvents {
         poller.rm_fd (mailbox_handle);
         
         poller.stop ();
-        mailbox.close();
+
     }
 
 

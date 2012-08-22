@@ -2,6 +2,7 @@ package org.jeromq;
 
 
 import java.nio.ByteBuffer;
+import java.nio.channels.Selector;
 
 import zmq.Ctx;
 import zmq.DecoderBase;
@@ -149,8 +150,8 @@ public class ZMQ {
     }
 
 
-    public static boolean device(int type_, Socket sa, Socket sb) {
-        return zmq.ZMQ.zmq_device(type_, sa.base, sb.base);
+    public static boolean device(Selector selector, int type_, Socket sa, Socket sb) {
+        return zmq.ZMQ.zmq_device(selector, type_, sa.base, sb.base);
     }
     
     public static String getVersionString() {

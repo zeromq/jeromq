@@ -6,12 +6,15 @@ Java POJO zeromq (http://zeromq.org) implementation
 ## Features
 
 * based on zeromq-3
-* 99% compatible with zeromq
- * cannot support ipc://
- * cannot support pgm
+* tcp:// protocol is compatible with zeromq
 * not too bad performance compared to zeromq
  * 2M messages (100B) per sec
+ * [Performance][https://github.com/miniway/jeromq/wiki/Perfomance] 
 * exactly same develope experience with zeromq
+
+## Not supported Features
+* ipc:// protocol. Java doesn't support UNIX domain socket.
+* pgm:// protocol. Cannot find a pgm Java implementation
 
 ## Usage
 

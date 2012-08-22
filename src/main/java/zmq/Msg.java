@@ -106,7 +106,7 @@ public class Msg implements IReplaceable {
         size = 0;
         data = null;
         buf = null;
-        header = new byte[10];
+        header = null;
     }
 
     public void size (int size_)
@@ -186,7 +186,7 @@ public class Msg implements IReplaceable {
 
     public int header_size ()
     {
-        if (header[0] == 0) {
+        if (header == null) {
             if (size < 255)
                 return 2;
             else
@@ -199,8 +199,10 @@ public class Msg implements IReplaceable {
     }
     public ByteBuffer header_buf()
     {
-        ByteBuffer hbuf = ByteBuffer.wrap(header);
-        if (header[0] == 0) {
+        ByteBuffer hbuf; 
+        if (header == null) {
+            header = new byte[10];
+            hbuf = ByteBuffer.wrap(header);
             if (size < 255) {
                 hbuf.put((byte)size);
                 hbuf.put(flags);
@@ -210,6 +212,8 @@ public class Msg implements IReplaceable {
                 hbuf.putLong((long)size);
             }
             hbuf.rewind();
+        } else {
+            hbuf = ByteBuffer.wrap(header);
         }
         hbuf.limit(header_size());
         return hbuf;

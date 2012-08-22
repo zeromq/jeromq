@@ -24,12 +24,12 @@ import java.nio.channels.SelectableChannel;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+//import org.slf4j.Logger;
+//import org.slf4j.LoggerFactory;
 
 public class Mailbox {
 
-    Logger LOG = LoggerFactory.getLogger(Mailbox.class);
+    //private static Logger LOG = LoggerFactory.getLogger(Mailbox.class);
     
     //  The pipe to store actual commands.
     //typedef ypipe_t <command_t, command_pipe_granularity> cpipe_t;
@@ -85,8 +85,8 @@ public class Mailbox {
             sync.unlock ();
         }
         
-        if (LOG.isDebugEnabled())
-            LOG.debug( "{} -> {} / {} {}", new Object[] { Thread.currentThread().getName(), cmd_, cmd_.arg , !ok});
+        //if (LOG.isDebugEnabled())
+        //    LOG.debug( "{} -> {} / {} {}", new Object[] { Thread.currentThread().getName(), cmd_, cmd_.arg , !ok});
         
         if (!ok) {
             signaler.send ();
