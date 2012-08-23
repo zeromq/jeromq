@@ -273,27 +273,13 @@ public class TestProxyTcp {
             rc = ZMQ.zmq_bind (sb, "tcp://127.0.0.1:6561");
             assert (rc );
             
-            try {
-                selector = Selector.open();
-            } catch (IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
-            ZMQ.zmq_device (selector, ZMQ.ZMQ_QUEUE, sa, sb);
+            ZMQ.zmq_device (ZMQ.ZMQ_QUEUE, sa, sb);
 
             ZMQ.zmq_close (sa);
             ZMQ.zmq_close (sb);
 
         }
         
-        public void wakeup() {
-            try {
-                selector.close();
-            } catch (IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
-        }
     }
 
     @Test
@@ -311,7 +297,6 @@ public class TestProxyTcp {
         client.start();
 
         client.join();
-        mt.wakeup();
         
         ZMQ.zmq_term(ctx);
     }

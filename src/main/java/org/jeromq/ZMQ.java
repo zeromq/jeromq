@@ -1,3 +1,19 @@
+/*
+    This file is part of 0MQ.
+
+    0MQ is free software; you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License as published by
+    the Free Software Foundation; either version 3 of the License, or
+    (at your option) any later version.
+
+    0MQ is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Lesser General Public License for more details.
+
+    You should have received a copy of the GNU Lesser General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/ 
 package org.jeromq;
 
 
@@ -74,10 +90,13 @@ public class ZMQ {
             
         }
 
-        public boolean send(byte[] data, int flags) {
-
+        public boolean send (String data, int flags) {
             zmq.Msg msg = new zmq.Msg(data);
-            
+            return base.send(msg, flags);
+        }
+        
+        public boolean send (byte[] data, int flags) {
+            zmq.Msg msg = new zmq.Msg(data);
             return base.send(msg, flags);
         }
 
@@ -115,11 +134,19 @@ public class ZMQ {
         }
 
         public void subscribe(byte[] topic) {
-            subscribe(new String(topic));
+            base.setsockopt(zmq.ZMQ.ZMQ_SUBSCRIBE, topic);
         }
         
         public void subscribe(String topic) {
-            base.setsockopt(zmq.ZMQ.ZMQ_SUBSCRIBE, topic);
+            subscribe(topic.getBytes());
+        }
+
+        public void setIdentity(byte[] identity) {
+            base.setsockopt(zmq.ZMQ.ZMQ_IDENTITY, identity);
+        }
+        
+        public void setIdentity(String identity) {
+            subscribe(identity.getBytes());
         }
         
     }
@@ -151,6 +178,10 @@ public class ZMQ {
         public ByteBuffer buf() {
             return base.buf();
         }
+        
+        public byte[] data() {
+            return base.data();
+        }
     }
 
     public static Context context(int ioThreads) {
@@ -158,8 +189,8 @@ public class ZMQ {
     }
 
 
-    public static boolean device(Selector selector, int type_, Socket sa, Socket sb) {
-        return zmq.ZMQ.zmq_device(selector, type_, sa.base, sb.base);
+    public static boolean device(int type_, Socket sa, Socket sb) {
+        return zmq.ZMQ.zmq_device(type_, sa.base, sb.base);
     }
     
     public static String getVersionString() {

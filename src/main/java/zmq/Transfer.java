@@ -3,11 +3,11 @@ package zmq;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-import java.nio.channels.SocketChannel;
+import java.nio.channels.WritableByteChannel;
 
 public interface Transfer {
 
-    public int transferTo(SocketChannel s) throws IOException;
+    public int transferTo(WritableByteChannel s) throws IOException;
     public int remaining();
     
     public static class ByteBufferTransfer implements Transfer {
@@ -19,7 +19,7 @@ public interface Transfer {
         }
         
         @Override
-        public int transferTo(SocketChannel s) throws IOException {
+        public int transferTo(WritableByteChannel s) throws IOException {
             return s.write(buf);
         }
 
@@ -39,7 +39,7 @@ public interface Transfer {
         }
         
         @Override
-        public int transferTo(SocketChannel s) throws IOException {
+        public int transferTo(WritableByteChannel s) throws IOException {
             return (int) ch.transferTo(0L, 0L, s);
         }
 

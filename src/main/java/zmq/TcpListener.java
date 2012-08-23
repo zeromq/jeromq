@@ -90,7 +90,6 @@ public class TcpListener extends Own implements IPollEvents {
             return;
         }
 
-        LOG.info(endpoint + " Accept " + fd.socket().getRemoteSocketAddress());
         
         //  Create the engine object for this connection.
         StreamEngine engine = null;
@@ -98,7 +97,7 @@ public class TcpListener extends Own implements IPollEvents {
             engine = new StreamEngine (fd, options, endpoint);
         } catch (ZException.InstantiationException e) {
             LOG.error("Failed to initialize StreamEngine", e.getCause());
-            socket.monitor_event (ZMQ.ZMQ_EVENT_ACCEPT_FAILED, e.getCause());
+            socket.monitor_event (ZMQ.ZMQ_EVENT_ACCEPT_FAILED, endpoint, e.getCause());
             return;
         }
         //  Choose I/O thread to run connecter in. Given that we are already
@@ -126,7 +125,7 @@ public class TcpListener extends Own implements IPollEvents {
         
         try {
             handle.close();
-            socket.monitor_event (ZMQ.ZMQ_EVENT_CLOSED, endpoint, handle);
+            socket.monitor_event (ZMQ.ZMQ_EVENT_CLOSED, endpoint);
         } catch (IOException e) {
             socket.monitor_event (ZMQ.ZMQ_EVENT_CLOSE_FAILED, endpoint, e);
         }
@@ -147,7 +146,7 @@ public class TcpListener extends Own implements IPollEvents {
         handle.socket().setReuseAddress(true);
         handle.socket().bind(address.address(), options.backlog);
         
-        socket.monitor_event(ZMQ.ZMQ_EVENT_LISTENING, endpoint, handle);
+        socket.monitor_event(ZMQ.ZMQ_EVENT_LISTENING, addr_, endpoint, handle);
     }
 
     private SocketChannel accept() {

@@ -1,18 +1,35 @@
+/*      
+    Copyright (c) 2009-2011 250bpm s.r.o.
+    Copyright (c) 2007-2009 iMatix Corporation
+    Copyright (c) 2011 VMware, Inc.
+    Copyright (c) 2007-2011 Other contributors as noted in the AUTHORS file
+
+    This file is part of 0MQ.
+
+    0MQ is free software; you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License as published by
+    the Free Software Foundation; either version 3 of the License, or
+    (at your option) any later version.
+
+    0MQ is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Lesser General Public License for more details.
+    
+    You should have received a copy of the GNU Lesser General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 package zmq;
 
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.ByteBuffer;
 import java.nio.channels.SelectableChannel;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,48 +37,45 @@ import org.slf4j.LoggerFactory;
 public abstract class SocketBase extends Own 
     implements IPollEvents, Pipe.IPipeEvents {
     
-    Logger LOG = LoggerFactory.getLogger(SocketBase.class);
+    private static Logger LOG = LoggerFactory.getLogger(SocketBase.class);
     
-    //typedef std::multimap <std::string, own_t *> endpoints_t;
-    final Map<String, Own> endpoints;
+    private final Map<String, Own> endpoints;
 
     //  Used to check whether the object is a socket.
-    volatile int tag;
+    private int tag;
 
     //  If true, associated context was already terminated.
-    boolean ctx_terminated;
+    private boolean ctx_terminated;
 
     //  If true, object should have been already destroyed. However,
     //  destruction is delayed while we unwind the stack to the point
     //  where it doesn't intersect the object being destroyed.
-    boolean destroyed;
+    private boolean destroyed;
 
     //  Socket's mailbox object.
-    final Mailbox mailbox;
+    private final Mailbox mailbox;
 
     //  List of attached pipes.
     //typedef array_t <pipe_t, 3> pipes_t;
-    final List<Pipe> pipes;
+    private final List<Pipe> pipes;
 
     //  Reaper's poller and handle of this socket within it.
-    Poller poller;
-    SelectableChannel handle;
+    private Poller poller;
+    private SelectableChannel handle;
 
     //  Timestamp of when commands were processed the last time.
-    long last_tsc;
+    private long last_tsc;
 
     //  Number of messages received since last command processing.
-    int ticks;
+    private int ticks;
 
     //  True if the last message received had MORE flag set.
-    boolean rcvmore;
+    private boolean rcvmore;
 
     //  Improves efficiency of time measurement.
-    final Clock clock;
+    private final Clock clock;
 
-    final Lock sync;
-    
-    SocketBase (Ctx parent_, int tid_, int sid_) 
+    protected SocketBase (Ctx parent_, int tid_, int sid_) 
     {
         super (parent_, tid_);
         tag = 0xbaddecaf;
@@ -74,34 +88,26 @@ public abstract class SocketBase extends Own
         options.socket_id = sid_;
         
         endpoints = new MultiMap<String, Own>();
-        sync = new ReentrantLock();
         clock = new Clock();
         pipes = new ArrayList<Pipe>();
         
         mailbox = new Mailbox("socket-" + sid_);
     }
     
-    protected void xattach_pipe (Pipe pipe_, boolean icanhasall_) {
-        throw new UnsupportedOperationException("Must Override");
-    }
-    protected void xterminated(Pipe pipe_) {
-        throw new UnsupportedOperationException("Must Override");
-    }
-    protected void xwrite_activated(Pipe pipe_) {
-        throw new UnsupportedOperationException("Must Override");
-    }
-    protected void xsetsockopt(int option_, Object optval_) {};
+    //  Concrete algorithms for the x- methods are to be defined by
+    //  individual socket types.
+    abstract protected void xattach_pipe (Pipe pipe_, boolean icanhasall_);
+    abstract protected void xterminated(Pipe pipe_); 
+
     
-    public void write_activated (Pipe pipe_)
-    {
-        xwrite_activated (pipe_);
-    }
-    
-    boolean check_tag ()
+    //  Returns false if object is not a socket.
+    public boolean check_tag ()
     {
         return tag == 0xbaddecaf;
     }
+
     
+    //  Create a socket of a specified type.
     public static SocketBase create (int type_, Ctx parent_,
         int tid_, int sid_)
     {
@@ -147,70 +153,222 @@ public abstract class SocketBase extends Own
         default:
             throw new IllegalArgumentException("type=" + type_);
         }
-        //alloc_assert (s);
         return s;
     }
+    
+    public void destroy() {
+        assert (destroyed);
+        super.destory();
+        
+    }
 
-    public boolean send (Msg msg_, int flags_)
+    //  Returns the mailbox associated with this socket.
+    public Mailbox get_mailbox() {
+        return mailbox;
+    }
+    
+    //  Interrupt blocking call if the socket is stuck in one.
+    //  This function can be called from a different thread!
+    public void stop() {
+        //  Called by ctx when it is terminated (zmq_term).
+        //  'stop' command is sent from the threads that called zmq_term to
+        //  the thread owning the socket. This way, blocking call in the
+        //  owner thread can be interrupted.
+        send_stop ();
+        
+    }
+    
+    //  Check whether transport protocol, as specified in connect or
+    //  bind, is available and compatible with the socket type.
+    private void check_protocol (String protocol_)
     {
+        //  First check out whether the protcol is something we are aware of.
+        if (!protocol_.equals("inproc") && !protocol_.equals("ipc") && !protocol_.equals("tcp") /*&&
+              !protocol_.equals("pgm") && !protocol_.equals("epgm")*/) {
+            throw new IllegalArgumentException(protocol_);
+        }
+
+        //  Check whether socket type and transport protocol match.
+        //  Specifically, multicast protocols can't be combined with
+        //  bi-directional messaging patterns (socket types).
+        if ((protocol_.equals("pgm") || protocol_.equals("epgm")) &&
+              options.type != ZMQ.ZMQ_PUB && options.type != ZMQ.ZMQ_SUB &&
+              options.type != ZMQ.ZMQ_XPUB && options.type != ZMQ.ZMQ_XSUB) {
+            throw new IllegalArgumentException(protocol_ + ",type=" + options.type);
+        }
+
+        //  Protocol is available.
+    }
+    
+
+    //  Register the pipe with this socket.
+    private void attach_pipe (Pipe pipe_) {
+        attach_pipe(pipe_, false);
+    }
+    
+    private void attach_pipe (Pipe pipe_, boolean icanhasall_)
+    {
+        //  First, register the pipe so that we can terminate it later on.
+        
+        pipe_.set_event_sink (this);
+        pipes.add (pipe_);
+
+        //  Let the derived socket type know about new pipe.
+        xattach_pipe (pipe_, icanhasall_);
+
+        //  If the socket is already being closed, ask any new pipes to terminate
+        //  straight away.
+        if (is_terminating ()) {
+            register_term_acks (1);
+            pipe_.terminate (false);
+        }
+    }
+    
+    public void setsockopt(int option_, Object optval_) {
+        
         if (ctx_terminated) {
-            throw new IllegalStateException();
+            throw new ZException.CtxTerminated();
+        }
+
+        //  First, check whether specific socket type overloads the option.
+        xsetsockopt (option_, optval_);
+
+        //  If the socket type doesn't support the option, pass it to
+        //  the generic option parser.
+        options.setsockopt (option_, optval_);
+    }
+    
+    public int getsockopt(int option_) {
+        return (Integer) getsockoptx(option_);
+    }
+    
+    public Object getsockoptx(int option_) {
+        if (ctx_terminated) {
+            throw new ZException.CtxTerminated();
+        }
+
+        if (option_ == ZMQ.ZMQ_RCVMORE) {
+            return rcvmore ? 1 : 0;
         }
         
-        //  Check whether message passed to the function is valid.
-        if (msg_ == null || !msg_.check ()) {
-            throw new IllegalArgumentException(msg_.toString());
+        if (option_ == ZMQ.ZMQ_FD) {
+            return mailbox.get_fd();
+        }
+        
+        if (option_ == ZMQ.ZMQ_EVENTS) {
+            boolean rc = process_commands (0, false);
+            if (!rc)
+                return -1;
+            int val = 0;
+            if (has_out ())
+                val |= ZMQ.ZMQ_POLLOUT;
+            if (has_in ())
+                val |= ZMQ.ZMQ_POLLIN;
+            return val;
+        }
+        //  If the socket type doesn't support the option, pass it to
+        //  the generic option parser.
+        return options.getsockopt (option_);
+
+    }
+    
+    public boolean bind(final String addr_) {
+        if (ctx_terminated) {
+            throw new ZException.CtxTerminated();
         }
 
         //  Process pending commands, if any.
-        boolean brc = process_commands (0, true);
+        boolean brc = process_commands (0, false);
         if (!brc)
             return false;
 
-        //  Clear any user-visible flags that are set on the message.
-        msg_.reset_flags (Msg.more);
-
-        //  At this point we impose the flags on the message.
-        if ((flags_ & ZMQ.ZMQ_SNDMORE) > 0)
-            msg_.set_flags (Msg.more);
-
-        //  Try to send the message.
-        brc = xsend (msg_, flags_);
-        if (brc)
-            return true;
-
-        //  In case of non-blocking send we'll simply propagate
-        //  the error - including EAGAIN - up the stack.
-        if ((flags_ & ZMQ.ZMQ_DONTWAIT) > 0 || options.sndtimeo == 0)
-            return false;
-
-        //  Compute the time when the timeout should occur.
-        //  If the timeout is infite, don't care. 
-        int timeout = options.sndtimeo;
-        long end = timeout < 0 ? 0 : (clock.now_ms () + timeout);
-
-        //  Oops, we couldn't send the message. Wait for the next
-        //  command, process it and try to send the message again.
-        //  If timeout is reached in the meantime, return EAGAIN.
-        while (true) {
-            if (!process_commands (timeout, false) )
-                return false;
-            brc = xsend (msg_, flags_);
-            if (brc)
-                break;
-            if (timeout > 0) {
-                timeout = (int) (end - clock.now_ms ());
-                if (timeout <= 0) {
-                    return false;
-                }
-            }
+        //  Parse addr_ string.
+        URI uri;
+        try {
+            uri = new URI(addr_);
+        } catch (URISyntaxException e) {
+            throw new IllegalArgumentException(e);
         }
-        return true;
+        String protocol = uri.getScheme();
+        String address = uri.getAuthority();
+        String path = uri.getPath();
+        /*
+        if (address == null && path.length() == 0) {
+            address = addr_.substring(protocol.length()+3);
+        }
+        if (uri.getPort() > 0) {
+            address = address + ":" + uri.getPort();
+        }
+        */
+
+
+        check_protocol (protocol);
+
+        if (protocol.equals("inproc")) {
+            Ctx.Endpoint endpoint = new Ctx.Endpoint(this, options);
+            register_endpoint (addr_, endpoint);
+            // Save last endpoint URI
+            options.last_endpoint = addr_;
+            return true;
+        }
+        if (protocol.equals("pgm") || protocol.equals("epgm")) {
+            //  For convenience's sake, bind can be used interchageable with
+            //  connect for PGM and EPGM transports.
+            return connect (addr_);
+        }
+
+        //  Remaining trasnports require to be run in an I/O thread, so at this
+        //  point we'll choose one.
+        IOThread io_thread = choose_io_thread (options.affinity);
+        if (io_thread == null) {
+            throw new IllegalStateException("Empty IO Thread");
+        }
+
+        if (protocol.equals("tcp")) {
+            TcpListener listener = new TcpListener (
+                io_thread, this, options);
+            try {
+                listener.set_address (address);
+            } catch (IOException e) {
+                listener.close();
+                monitor_event (ZMQ.ZMQ_EVENT_BIND_FAILED, addr_, e);
+                LOG.error("Bind Failed", e);
+                return false;
+            }
+
+            // Save last endpoint URI
+            options.last_endpoint = listener.get_address ();
+
+            add_endpoint (addr_, listener);
+            return true;
+        }
+
+        if (protocol.equals("ipc")) {
+            IpcListener listener = new IpcListener (
+                io_thread, this, options);
+            try {
+                listener.set_address (path);
+            } catch (IOException e) {
+                listener.close();
+                monitor_event (ZMQ.ZMQ_EVENT_BIND_FAILED, addr_, e);
+                return false;
+            }
+
+            // Save last endpoint URI
+            options.last_endpoint = listener.get_address ();
+
+            add_endpoint (addr_, listener);
+            return true;
+        }
+
+        assert (false);
+        return false;
     }
+
     public boolean connect (String addr_)
     {
         if (ctx_terminated) {
-            throw new IllegalStateException();
+            throw new ZException.CtxTerminated();
         }
 
         //  Process pending commands, if any.
@@ -344,429 +502,108 @@ public abstract class SocketBase extends Own
         add_endpoint (addr_, session);
         return true;
     }
-
-    boolean process_commands (int timeout_, boolean throttle_)
-    {
-        Command cmd;
-        boolean ret = true;
-        if (timeout_ != 0) {
-
-            //  If we are asked to wait, simply ask mailbox to wait.
-            cmd = mailbox.recv (timeout_);
-            //ret = false;
-        }
-        else {
-
-            //  If we are asked not to wait, check whether we haven't processed
-            //  commands recently, so that we can throttle the new commands.
-
-            //  Get the CPU's tick counter. If 0, the counter is not available.
-            long tsc = Clock.rdtsc ();
-
-            //  Optimised version of command processing - it doesn't have to check
-            //  for incoming commands each time. It does so only if certain time
-            //  elapsed since last command processing. Command delay varies
-            //  depending on CPU speed: It's ~1ms on 3GHz CPU, ~2ms on 1.5GHz CPU
-            //  etc. The optimisation makes sense only on platforms where getting
-            //  a timestamp is a very cheap operation (tens of nanoseconds).
-            if (tsc != 0 && throttle_) {
-
-                //  Check whether TSC haven't jumped backwards (in case of migration
-                //  between CPU cores) and whether certain time have elapsed since
-                //  last command processing. If it didn't do nothing.
-                if (tsc >= last_tsc && tsc - last_tsc <= Config.max_command_delay.getValue())
-                    return true;
-                last_tsc = tsc;
-            }
-
-            //  Check whether there are any commands pending for this thread.
-            cmd = mailbox.recv (0);
-        }
-
-        
-        //  Process all the commands available at the moment.
-        while (true) {
-            if (cmd == null)
-                break;
-            cmd.destination().process_command (cmd);
-            cmd = mailbox.recv (0);
-         }
-        if (ctx_terminated) {
-            return false;
-        }
-
-        return ret;
-    }
-
-    @Override
-    protected void process_bind (Pipe pipe_)
-    {       
-        attach_pipe (pipe_);
-    }       
-
-
-    void check_protocol (String protocol_)
-    {
-        //  First check out whether the protcol is something we are aware of.
-        if (!protocol_.equals("inproc") && !protocol_.equals("ipc") && !protocol_.equals("tcp") &&
-              !protocol_.equals("pgm") && !protocol_.equals("epgm")) {
-            throw new IllegalArgumentException(protocol_);
-        }
-
-        //  Check whether socket type and transport protocol match.
-        //  Specifically, multicast protocols can't be combined with
-        //  bi-directional messaging patterns (socket types).
-        if ((protocol_.equals("pgm") || protocol_.equals("epgm")) &&
-              options.type != ZMQ.ZMQ_PUB && options.type != ZMQ.ZMQ_SUB &&
-              options.type != ZMQ.ZMQ_XPUB && options.type != ZMQ.ZMQ_XSUB) {
-            throw new IllegalArgumentException(protocol_ + ",type=" + options.type);
-        }
-
-        //  Protocol is available.
-    }
     
-    void attach_pipe (Pipe pipe_) {
-        attach_pipe(pipe_, false);
-    }
-    
-    void attach_pipe (Pipe pipe_, boolean icanhasall_)
-    {
-        //  First, register the pipe so that we can terminate it later on.
-        
-        pipe_.set_event_sink (this);
-        pipes.add (pipe_);
 
-        //  Let the derived socket type know about new pipe.
-        xattach_pipe (pipe_, icanhasall_);
-
-        //  If the socket is already being closed, ask any new pipes to terminate
-        //  straight away.
-        if (is_terminating ()) {
-            register_term_acks (1);
-            pipe_.terminate (false);
-        }
-    }
-
-    @Override
-    public void in_event() {
-        //  This function is invoked only once the socket is running in the context
-        //  of the reaper thread. Process any commands from other threads/sockets
-        //  that may be available at the moment. Ultimately, the socket will
-        //  be destroyed.
-        process_commands (0, false);
-        check_destroy ();
-    }
-
-    @Override
-    public void out_event() {
-        throw new UnsupportedOperationException();
-    }
-    
-    @Override
-    public void connect_event() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void accept_event() {
-        throw new UnsupportedOperationException();
-    }
-    
-    @Override
-    public void timer_event(int id_) {
-        throw new UnsupportedOperationException();        
-    }
-
-    public Mailbox get_mailbox() {
-        return mailbox;
-    }
-    
-    void add_endpoint (String addr_, Own endpoint_)
+    //  Creates new endpoint ID and adds the endpoint to the map.
+    private void add_endpoint (String addr_, Own endpoint_)
     {
         //  Activate the session. Make it a child of this socket.
         launch_child (endpoint_);
         endpoints.put (addr_, endpoint_);
     }
-
-    public void close() {
-        //  Mark the socket as dead
-        tag = 0xdeadbeef;
-       
-        //  Transfer the ownership of the socket from this application thread
-        //  to the reaper thread which will take care of the rest of shutdown
-        //  process.
-        send_reap (this);
-
-    }
-
-    public void stop() {
-        //  Called by ctx when it is terminated (zmq_term).
-        //  'stop' command is sent from the threads that called zmq_term to
-        //  the thread owning the socket. This way, blocking call in the
-        //  owner thread can be interrupted.
-        send_stop ();
-        
-    }
-
-    public void start_reaping(Poller poller_) {
-        
-        // poller is io_thread now
-        //poller.rm_fd(mailbox.get_fd ());
-        
-        //  Plug the socket to the reaper thread.
-        poller = poller_;
-        handle = mailbox.get_fd();
-        poller.add_fd (handle, this);
-        poller.set_pollin (handle);
-
-        //  Initialise the termination and check whether it can be deallocated
-        //  immediately.
-        terminate ();
-        check_destroy ();
-    }
     
-    private void check_destroy ()
-    {
-        //  If the object was already marked as destroyed, finish the deallocation.
-        if (destroyed) {
+    public boolean term_endpoint(String addr_) {
 
-            //  Remove the socket from the reaper's poller.
-            poller.rm_fd (handle);
-            //  Remove the socket from the context.
-            destroy_socket (this);
-
-            //  Notify the reaper about the fact.
-            send_reaped ();
-            
-            //  Deallocate.
-            // super.process_destroy ();
-            
-            try {
-                handle.close();
-            } catch (IOException e) {
-                LOG.error("Channel close error", e);
-            }
-        }
-    }
-
-    public void monitor_event(int event, Object ... args) {
-        get_ctx().monitor_event(this, event, args);
-    }
-
-    @Override
-    protected void process_destroy ()
-    {
-        destroyed = true;
-    }
-    
-    protected void process_term (int linger_)
-    {
-        //  Unregister all inproc endpoints associated with this socket.
-        //  Doing this we make sure that no new pipes from other sockets (inproc)
-        //  will be initiated.
-        unregister_endpoints (this);
-
-        //  Ask all attached pipes to terminate.
-        for (int i = 0; i != pipes.size (); ++i)
-            pipes.get(i).terminate (false);
-        register_term_acks (pipes.size ());
-
-        //  Continue the termination process immediately.
-        super.process_term (linger_);
-    }
-    
-    protected void process_stop ()
-    {
-        //  Here, someone have called zmq_term while the socket was still alive.
-        //  We'll remember the fact so that any blocking call is interrupted and any
-        //  further attempt to use the socket will return ETERM. The user is still
-        //  responsible for calling zmq_close on the socket though!
-        ctx_terminated = true;
-        
-    }
-
-
-    @Override
-    public void terminated(Pipe pipe_) {
-        //  Notify the specific socket type about the pipe termination.
-        xterminated (pipe_);
-
-        //  Remove the pipe from the list of attached pipes and confirm its
-        //  termination if we are already shutting down.
-        pipes.remove(pipe_);
-        if (is_terminating ())
-            unregister_term_ack ();
-
-    }
-    
-    @Override
-    public void read_activated(Pipe pipe_) {
-        xread_activated (pipe_);
-    }
-    
-    @Override
-    public String toString() {
-        return super.toString() + "[" + options.socket_id + "]";
-    }
-
-    
-    public int getsockopt(int option_) {
-        return (Integer) getsockoptx(option_);
-    }
-    
-    public Object getsockoptx(int option_) {
         if (ctx_terminated) {
-            throw new IllegalStateException();
-        }
-
-        if (option_ == ZMQ.ZMQ_RCVMORE) {
-            return rcvmore ? 1 : 0;
+            throw new ZException.CtxTerminated();
         }
         
-        if (option_ == ZMQ.ZMQ_FD) {
-            return mailbox.get_fd();
+        //  Check whether endpoint address passed to the function is valid.
+        if (addr_ == null) {
+            throw new IllegalArgumentException();
         }
-        
-        if (option_ == ZMQ.ZMQ_EVENTS) {
-            boolean rc = process_commands (0, false);
-            if (!rc)
-                return -1;
-            int val = 0;
-            if (has_out ())
-                val |= ZMQ.ZMQ_POLLOUT;
-            if (has_in ())
-                val |= ZMQ.ZMQ_POLLIN;
-            return val;
+
+        //  Process pending commands, if any, since there could be pending unprocessed process_own()'s
+        //  (from launch_child() for example) we're asked to terminate now.
+        boolean rc = process_commands (0, false);
+        if (!rc)
+            return rc;
+
+        if (!endpoints.containsKey(addr_)) {
+            return false;
         }
-        //  If the socket type doesn't support the option, pass it to
-        //  the generic option parser.
-        return options.getsockopt (option_);
+        //  Find the endpoints range (if any) corresponding to the addr_ string.
+        Iterator<Entry<String, Own>> it = endpoints.entrySet().iterator();
 
-    }
+        while(it.hasNext()) {
+            Entry<String, Own> e = it.next();
+            term_child(e.getValue());
+            it.remove();
+        }
+        return true;
 
-    private boolean has_out() {
-        return xhas_out ();
-    }
-
-    private boolean has_in() {
-        return xhas_in ();
-    }
-
-    protected void xread_activated(Pipe pipe_) {
-        throw new UnsupportedOperationException("Must Override");
-    }
-
-    protected Msg xrecv(int flags_) {
-        throw new UnsupportedOperationException("Must Override");
     }
     
-    protected boolean xsend(Msg msg_, int flags_) {
-        throw new UnsupportedOperationException("Must Override");
-    }
-
-    protected boolean xhas_in() {
-        throw new UnsupportedOperationException("Must Override");
-    }
-    protected boolean xhas_out() {
-        throw new UnsupportedOperationException("Must Override");
-    }
-
-    public boolean bind(final String addr_) {
+    public boolean send (Msg msg_, int flags_)
+    {
         if (ctx_terminated) {
-            throw new IllegalStateException();
+            return false;
+        }
+        
+        //  Check whether message passed to the function is valid.
+        if (msg_ == null || !msg_.check ()) {
+            throw new IllegalArgumentException(msg_.toString());
         }
 
         //  Process pending commands, if any.
-        boolean brc = process_commands (0, false);
+        boolean brc = process_commands (0, true);
         if (!brc)
             return false;
 
-        //  Parse addr_ string.
-        URI uri;
-        try {
-            uri = new URI(addr_);
-        } catch (URISyntaxException e) {
-            throw new IllegalArgumentException(e);
-        }
-        String protocol = uri.getScheme();
-        String address = uri.getAuthority();
-        String path = uri.getPath();
-        /*
-        if (address == null && path.length() == 0) {
-            address = addr_.substring(protocol.length()+3);
-        }
-        if (uri.getPort() > 0) {
-            address = address + ":" + uri.getPort();
-        }
-        */
+        //  Clear any user-visible flags that are set on the message.
+        msg_.reset_flags (Msg.more);
 
+        //  At this point we impose the flags on the message.
+        if ((flags_ & ZMQ.ZMQ_SNDMORE) > 0)
+            msg_.set_flags (Msg.more);
 
-        check_protocol (protocol);
-
-        if (protocol.equals("inproc")) {
-            Ctx.Endpoint endpoint = new Ctx.Endpoint(this, options);
-            register_endpoint (addr_, endpoint);
-            // Save last endpoint URI
-            options.last_endpoint = addr_;
+        //  Try to send the message.
+        brc = xsend (msg_, flags_);
+        if (brc)
             return true;
-        }
-        if (protocol.equals("pgm") || protocol.equals("epgm")) {
-            //  For convenience's sake, bind can be used interchageable with
-            //  connect for PGM and EPGM transports.
-            return connect (addr_);
-        }
 
-        //  Remaining trasnports require to be run in an I/O thread, so at this
-        //  point we'll choose one.
-        IOThread io_thread = choose_io_thread (options.affinity);
-        if (io_thread == null) {
-            throw new IllegalStateException("Empty IO Thread");
-        }
+        //  In case of non-blocking send we'll simply propagate
+        //  the error - including EAGAIN - up the stack.
+        if ((flags_ & ZMQ.ZMQ_DONTWAIT) > 0 || options.sndtimeo == 0)
+            return false;
 
-        if (protocol.equals("tcp")) {
-            TcpListener listener = new TcpListener (
-                io_thread, this, options);
-            try {
-                listener.set_address (address);
-            } catch (IOException e) {
-                listener.close();
-                monitor_event (ZMQ.ZMQ_EVENT_BIND_FAILED, addr_, e);
-                LOG.error("Bind Failed", e);
+        //  Compute the time when the timeout should occur.
+        //  If the timeout is infite, don't care. 
+        int timeout = options.sndtimeo;
+        long end = timeout < 0 ? 0 : (clock.now_ms () + timeout);
+
+        //  Oops, we couldn't send the message. Wait for the next
+        //  command, process it and try to send the message again.
+        //  If timeout is reached in the meantime, return EAGAIN.
+        while (true) {
+            if (!process_commands (timeout, false) )
                 return false;
+            brc = xsend (msg_, flags_);
+            if (brc)
+                break;
+            if (timeout > 0) {
+                timeout = (int) (end - clock.now_ms ());
+                if (timeout <= 0) {
+                    return false;
+                }
             }
-
-            // Save last endpoint URI
-            options.last_endpoint = listener.get_address ();
-
-            add_endpoint (addr_, listener);
-            return true;
         }
-
-        if (protocol.equals("ipc")) {
-            IpcListener listener = new IpcListener (
-                io_thread, this, options);
-            try {
-                listener.set_address (path);
-            } catch (IOException e) {
-                listener.close();
-                monitor_event (ZMQ.ZMQ_EVENT_BIND_FAILED, addr_, e);
-                return false;
-            }
-
-            // Save last endpoint URI
-            options.last_endpoint = listener.get_address ();
-
-            add_endpoint (addr_, listener);
-            return true;
-        }
-
-        assert (false);
-        return false;
+        return true;
     }
+
 
     public Msg recv(int flags_) {
         if (ctx_terminated) {
-            //throw new IllegalStateException();
             return null;
         }
         
@@ -845,7 +682,277 @@ public abstract class SocketBase extends Own
         return msg_;
 
     }
+    
 
+    public void close() {
+        //  Mark the socket as dead
+        tag = 0xdeadbeef;
+       
+        //  Transfer the ownership of the socket from this application thread
+        //  to the reaper thread which will take care of the rest of shutdown
+        //  process.
+        send_reap (this);
+
+    }
+
+
+    //  These functions are used by the polling mechanism to determine
+    //  which events are to be reported from this socket.
+    public boolean has_in() {
+        return xhas_in ();
+    }
+    
+    public boolean has_out() {
+        return xhas_out ();
+    }
+    
+
+    //  Using this function reaper thread ask the socket to regiter with
+    //  its poller.
+    public void start_reaping(Poller poller_) {
+        
+        // poller is io_thread now
+        //poller.rm_fd(mailbox.get_fd ());
+        
+        //  Plug the socket to the reaper thread.
+        poller = poller_;
+        handle = mailbox.get_fd();
+        poller.add_fd (handle, this);
+        poller.set_pollin (handle);
+
+        //  Initialise the termination and check whether it can be deallocated
+        //  immediately.
+        terminate ();
+        check_destroy ();
+    }
+    
+    //  Processes commands sent to this socket (if any). If timeout is -1,
+    //  returns only after at least one command was processed.
+    //  If throttle argument is true, commands are processed at most once
+    //  in a predefined time period.
+    private boolean process_commands (int timeout_, boolean throttle_)
+    {
+        Command cmd;
+        boolean ret = true;
+        if (timeout_ != 0) {
+
+            //  If we are asked to wait, simply ask mailbox to wait.
+            cmd = mailbox.recv (timeout_);
+            //ret = false;
+        }
+        else {
+
+            //  If we are asked not to wait, check whether we haven't processed
+            //  commands recently, so that we can throttle the new commands.
+
+            //  Get the CPU's tick counter. If 0, the counter is not available.
+            long tsc = Clock.rdtsc ();
+
+            //  Optimised version of command processing - it doesn't have to check
+            //  for incoming commands each time. It does so only if certain time
+            //  elapsed since last command processing. Command delay varies
+            //  depending on CPU speed: It's ~1ms on 3GHz CPU, ~2ms on 1.5GHz CPU
+            //  etc. The optimisation makes sense only on platforms where getting
+            //  a timestamp is a very cheap operation (tens of nanoseconds).
+            if (tsc != 0 && throttle_) {
+
+                //  Check whether TSC haven't jumped backwards (in case of migration
+                //  between CPU cores) and whether certain time have elapsed since
+                //  last command processing. If it didn't do nothing.
+                if (tsc >= last_tsc && tsc - last_tsc <= Config.max_command_delay.getValue())
+                    return true;
+                last_tsc = tsc;
+            }
+
+            //  Check whether there are any commands pending for this thread.
+            cmd = mailbox.recv (0);
+        }
+
+        
+        //  Process all the commands available at the moment.
+        while (true) {
+            if (cmd == null)
+                break;
+            cmd.destination().process_command (cmd);
+            cmd = mailbox.recv (0);
+         }
+        if (ctx_terminated) {
+            return false;
+        }
+
+        return ret;
+    }
+
+
+    
+
+
+
+    @Override
+    protected void process_stop ()
+    {
+        //  Here, someone have called zmq_term while the socket was still alive.
+        //  We'll remember the fact so that any blocking call is interrupted and any
+        //  further attempt to use the socket will return ETERM. The user is still
+        //  responsible for calling zmq_close on the socket though!
+        ctx_terminated = true;
+        
+    }
+
+    @Override
+    protected void process_bind (Pipe pipe_)
+    {       
+        attach_pipe (pipe_);
+    }       
+
+    @Override
+    protected void process_term (int linger_)
+    {
+        //  Unregister all inproc endpoints associated with this socket.
+        //  Doing this we make sure that no new pipes from other sockets (inproc)
+        //  will be initiated.
+        unregister_endpoints (this);
+
+        //  Ask all attached pipes to terminate.
+        for (int i = 0; i != pipes.size (); ++i)
+            pipes.get(i).terminate (false);
+        register_term_acks (pipes.size ());
+
+        //  Continue the termination process immediately.
+        super.process_term (linger_);
+    }
+    
+    //  Delay actual destruction of the socket.
+    @Override
+    protected void process_destroy ()
+    {
+        destroyed = true;
+    }
+    
+    //  The default implementation assumes there are no specific socket
+    //  options for the particular socket type. If not so, overload this
+    //  method.
+    protected void xsetsockopt(int option_, Object optval_) {};
+
+
+
+    protected boolean xhas_out() {
+        return false;
+    }
+
+    protected boolean xsend(Msg msg_, int flags_) {
+        throw new UnsupportedOperationException("Must Override");
+    }
+
+    protected boolean xhas_in() {
+        return false;
+    }
+    
+
+    protected Msg xrecv(int flags_) {
+        throw new UnsupportedOperationException("Must Override");
+    }
+    
+    protected void xread_activated(Pipe pipe_) {
+        throw new UnsupportedOperationException("Must Override");
+    }
+
+    protected void xwrite_activated(Pipe pipe_) {
+        throw new UnsupportedOperationException("Must Override");
+    }
+
+    protected void xhiccuped(Pipe pipe_) {
+        throw new UnsupportedOperationException("Must override");
+    }
+
+
+    @Override
+    public void in_event() {
+        //  This function is invoked only once the socket is running in the context
+        //  of the reaper thread. Process any commands from other threads/sockets
+        //  that may be available at the moment. Ultimately, the socket will
+        //  be destroyed.
+        process_commands (0, false);
+        check_destroy ();
+    }
+
+    @Override
+    public void out_event() {
+        throw new UnsupportedOperationException();
+    }
+    
+    @Override
+    public void connect_event() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void accept_event() {
+        throw new UnsupportedOperationException();
+    }
+    
+    @Override
+    public void timer_event(int id_) {
+        throw new UnsupportedOperationException();        
+    }
+
+
+    //  To be called after processing commands or invoking any command
+    //  handlers explicitly. If required, it will deallocate the socket.
+    private void check_destroy ()
+    {
+        //  If the object was already marked as destroyed, finish the deallocation.
+        if (destroyed) {
+
+            //  Remove the socket from the reaper's poller.
+            poller.rm_fd (handle);
+            //  Remove the socket from the context.
+            destroy_socket (this);
+
+            //  Notify the reaper about the fact.
+            send_reaped ();
+            
+            //  Deallocate.
+            super.process_destroy ();
+            
+            destory();
+        }
+    }
+
+    @Override
+    public void read_activated(Pipe pipe_) {
+        xread_activated (pipe_);
+    }
+
+    @Override
+    public void write_activated (Pipe pipe_)
+    {
+        xwrite_activated (pipe_);
+    }
+    
+    @Override
+    public void hiccuped(Pipe pipe_) {
+        xhiccuped(pipe_);
+    }
+    
+
+    @Override
+    public void terminated(Pipe pipe_) {
+        //  Notify the specific socket type about the pipe termination.
+        xterminated (pipe_);
+
+        //  Remove the pipe from the list of attached pipes and confirm its
+        //  termination if we are already shutting down.
+        pipes.remove(pipe_);
+        if (is_terminating ())
+            unregister_term_ack ();
+
+    }
+    
+    
+
+    //  Moves the flags from the message to local variables,
+    //  to be later retrieved by getsockopt.
     private void extract_flags(Msg msg_) {
         //  Test whether IDENTITY flag is valid for this socket type.
         if ((msg_.flags () & Msg.identity) > 0)
@@ -855,61 +962,23 @@ public abstract class SocketBase extends Own
         rcvmore = msg_.has_more();
     }
 
-    public void setsockopt(int option_, Object optval_) {
-        
-        if (ctx_terminated) {
-            throw new IllegalStateException();
-        }
 
-        //  First, check whether specific socket type overloads the option.
-        xsetsockopt (option_, optval_);
-
-        //  If the socket type doesn't support the option, pass it to
-        //  the generic option parser.
-        options.setsockopt (option_, optval_);
+    public void monitor_event(int event, Object ... args) {
+        get_ctx().monitor_event(this, event, args);
     }
+
+    
+    
+    @Override
+    public String toString() {
+        return super.toString() + "[" + options.socket_id + "]";
+    }
+
+    
+
 
     public SelectableChannel get_fd() {
         return mailbox.get_fd();
     }
 
-    public void hiccuped(Pipe pipe_) {
-        xhiccuped(pipe_);
-    }
-    
-    protected void xhiccuped(Pipe pipe_) {
-        throw new UnsupportedOperationException("Must override");
-    }
-
-    public boolean term_endpoint(String addr_) {
-
-        if (ctx_terminated) {
-            throw new IllegalStateException();
-        }
-        
-        //  Check whether endpoint address passed to the function is valid.
-        if (addr_ == null) {
-            throw new IllegalArgumentException();
-        }
-
-        //  Process pending commands, if any, since there could be pending unprocessed process_own()'s
-        //  (from launch_child() for example) we're asked to terminate now.
-        boolean rc = process_commands (0, false);
-        if (!rc)
-            return rc;
-
-        if (!endpoints.containsKey(addr_)) {
-            return false;
-        }
-        //  Find the endpoints range (if any) corresponding to the addr_ string.
-        Iterator<Entry<String, Own>> it = endpoints.entrySet().iterator();
-
-        while(it.hasNext()) {
-            Entry<String, Own> e = it.next();
-            term_child(e.getValue());
-            it.remove();
-        }
-        return true;
-
-    }
 }

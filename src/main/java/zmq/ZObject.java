@@ -1,6 +1,6 @@
 package zmq;
 
-public class ZObject {
+public abstract class ZObject {
 
 
     //  Context provides access to the global state.
@@ -327,8 +327,4 @@ public class ZObject {
         throw new UnsupportedOperationException();
     }
     
-    //@Override
-    //public String toString() {
-    //    return super.toString() + "[" + tid + "]";
-    //}
 }

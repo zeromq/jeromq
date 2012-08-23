@@ -20,6 +20,7 @@
 */
 package zmq;
 
+import java.nio.channels.SocketChannel;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
@@ -142,6 +143,22 @@ public class Ctx {
         endpoints = new HashMap<String, Endpoint>();
     }
     
+    protected void destroy() {
+        
+        for  (IOThread it: io_threads) {
+            it.stop();
+        }
+        for  (IOThread it: io_threads) {
+            it.destroy();
+        }
+
+        if (reaper != null)
+            reaper.destroy();
+        term_mailbox.close();
+        
+        tag = 0xdeadbeef;
+    }
+    
     //  Returns false if object is not a context.
     public boolean check_tag ()
     {
@@ -195,15 +212,7 @@ public class Ctx {
         slot_sync.unlock ();
 
         //  Deallocate the resources.
-        
-        for  (IOThread it: io_threads) {
-            it.stop();
-            it.destroy();
-        }
-        
-        reaper.stop();
-        reaper.destroy();
-        term_mailbox.close();
+        destroy();
         
     }
     
@@ -327,23 +336,25 @@ public class Ctx {
     public void destroy_socket(SocketBase socket_) {
         slot_sync.lock ();
 
+        int tid;
         //  Free the associated thread slot.
-        int tid = socket_.get_tid ();
-        empty_slots.add (tid);
-        slots [tid].close();
-        slots [tid] = null;
-
-        //  Remove the socket from the list of sockets.
-        sockets.remove (socket_);
-
-        //  If zmq_term() was already called and there are no more socket
-        //  we can ask reaper thread to terminate.
-        if (terminating && sockets.isEmpty ())
-            reaper.stop ();
-
-        slot_sync.unlock ();
-        
-        LOG.debug("Release Slot [" + tid + "] ");
+        try {
+            tid = socket_.get_tid ();
+            empty_slots.add (tid);
+            slots [tid].close();
+            slots [tid] = null;
+    
+            //  Remove the socket from the list of sockets.
+            sockets.remove (socket_);
+    
+            //  If zmq_term() was already called and there are no more socket
+            //  we can ask reaper thread to terminate.
+            if (terminating && sockets.isEmpty ())
+                reaper.stop ();
+        } finally {
+            slot_sync.unlock ();
+        }
+        LOG.debug("Released Slot [" + tid + "] ");
     }
     
     //  Returns reaper thread object.
@@ -439,8 +450,37 @@ public class Ctx {
     
     public void monitor_event (SocketBase socket_, int event_, Object ... args_)
     {
+        
+        
+        log_event (socket_, event_, args_);
+        
         if (monitor_fn != null) {
             monitor_fn.monitor (socket_, event_, args_);
+        }
+    }
+
+    private void log_event(SocketBase socket_, int event_, Object[] args_) {
+        
+        switch (event_) {
+        case ZMQ.ZMQ_EVENT_ACCEPTED:
+            String endpoint = (String) args_[0];
+            SocketChannel ch = (SocketChannel) args_[1];
+            LOG.info("{} Accepted {}", new Object[] { endpoint, ch.socket().getRemoteSocketAddress()});
+            break;
+            
+        case ZMQ.ZMQ_EVENT_CLOSED:
+            endpoint = (String) args_[0];
+            LOG.info("{} is Closed", new Object[] { endpoint });
+            break;
+            
+        case ZMQ.ZMQ_EVENT_LISTENING:
+            String bind = (String) args_[0];
+            endpoint = (String) args_[1];
+            LOG.info("{}/{} Listening", new Object[] { bind, endpoint });
+            break;
+            
+        default:
+            break;
         }
     }
 

@@ -28,14 +28,22 @@ public class Sub extends XSub {
             return ;
         }
 
-        String val = (String) optval_;
+        byte[] val;
+        
+        if (optval_ instanceof String)
+            val = ((String)optval_).getBytes();
+        else if (optval_ instanceof byte[])
+            val = (byte[]) optval_;
+        else
+            throw new IllegalArgumentException();
+            
         //  Create the subscription message.
-        Msg msg = new Msg(val.length() + 1);
+        Msg msg = new Msg(val.length + 1);
         if (option_ == ZMQ.ZMQ_SUBSCRIBE)
             msg.put((byte)1);
         else if (option_ == ZMQ.ZMQ_UNSUBSCRIBE)
             msg.put((byte)0);
-        msg.put (val.getBytes(),1);
+        msg.put (val,1);
 
         //  Pass it further on in the stack.
         boolean rc = super.xsend (msg, 0);

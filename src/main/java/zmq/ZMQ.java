@@ -308,7 +308,7 @@ public class ZMQ {
     }
 
     
-    public static boolean zmq_device (Selector selector, int device_, SocketBase insocket_,
+    public static boolean zmq_device (int device_, SocketBase insocket_,
             SocketBase outsocket_)
     {
 
@@ -316,16 +316,12 @@ public class ZMQ {
             throw new IllegalArgumentException();
         }
 
-        if (selector == null || !selector.isOpen()) {
-            throw new IllegalArgumentException();
-        }
-        
         if (device_ != ZMQ_FORWARDER && device_ != ZMQ_QUEUE &&
               device_ != ZMQ_STREAMER) {
             throw new IllegalArgumentException();
         }
         
-        return Device.device(selector, insocket_, outsocket_);
+        return Device.device(insocket_, outsocket_);
 
         
     }
@@ -397,6 +393,8 @@ public class ZMQ {
                 
                 selector.selectedKeys().clear();
             } catch (ClosedSelectorException e) {
+                return -1;
+            } catch (ZException.CtxTerminated e) {
                 return -1;
             } catch (IOException e) {
                 throw new ZException.IOException(e);

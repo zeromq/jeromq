@@ -16,6 +16,12 @@ public class ZException  {
     public static class ConnectionRefused extends RuntimeException {
         private static final long serialVersionUID = 2962118056167320315L;
     }
+    
+    public static class CtxTerminated extends RuntimeException {
+
+        private static final long serialVersionUID = 7074545575003946832L;
+        
+    }
 
     public static class InstantiationException extends RuntimeException {
         private static final long serialVersionUID = -4404921838608052955L;

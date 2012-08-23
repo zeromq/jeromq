@@ -19,11 +19,12 @@
 */
 package zmq;
 
+import java.io.IOException;
 import java.nio.channels.Selector;
 
 public class Device {
     
-    public static boolean device (Selector selector, SocketBase insocket_,
+    public static boolean device (SocketBase insocket_,
             SocketBase outsocket_)
     {
 
@@ -42,7 +43,12 @@ public class Device {
         items[0] = new PollItem (insocket_, ZMQ.ZMQ_POLLIN );
         items[1] = new PollItem (outsocket_, ZMQ.ZMQ_POLLIN );
         
-        assert (selector != null && selector.isOpen());
+        Selector selector;
+        try {
+            selector = Selector.open();
+        } catch (IOException e) {
+            throw new ZException.IOException(e);
+        }
         
         while (true) {
             //  Wait while there are either requests or replies to process.
@@ -84,7 +90,12 @@ public class Device {
             }
 
         }
-
+        
+        try {
+            selector.close();
+        } catch (Exception e) {
+        }
+        
         return success;
         
     }

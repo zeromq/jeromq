@@ -22,6 +22,7 @@
 package zmq;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import zmq.TcpAddress.TcpAddressMask;
@@ -169,11 +170,19 @@ public class Options {
             return;
             
         case ZMQ.ZMQ_IDENTITY:
-            String val = (String) optval_;
-            if (val == null || val.length() > 255) {
+            byte[] val;
+            
+            if (optval_ instanceof String)
+                val = ((String) optval_).getBytes();
+            else if (optval_ instanceof byte[])
+                val = (byte[]) optval_;
+            else 
+                throw new IllegalArgumentException("indentity " + optval_);
+            
+            if (val == null || val.length > 255) {
                 throw new IllegalArgumentException("indentity " + optval_);
             }
-            identity = val.getBytes();
+            identity = Arrays.copyOf(val, val.length);
             identity_size = (byte)identity.length;
             return;
             

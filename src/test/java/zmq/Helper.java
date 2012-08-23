@@ -24,10 +24,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
-import java.net.SocketAddress;
 import java.nio.ByteBuffer;
-import java.nio.channels.SocketChannel;
-import java.nio.channels.spi.SelectorProvider;
+import java.nio.channels.WritableByteChannel;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -42,19 +40,15 @@ public class Helper {
         
     }
     
-    public static class DummySocketChannel extends SocketChannel {
+    public static class DummySocketChannel implements WritableByteChannel {
 
         private int bufsize;
         private byte[] buf;
-        protected DummySocketChannel(SelectorProvider provider) {
-            super(provider);
-        }
         
         public DummySocketChannel() {
             this(64);
         }
         public DummySocketChannel(int bufsize) {
-            super(SelectorProvider.provider());
             this.bufsize = bufsize;
             buf = new byte[bufsize];
         }
@@ -62,43 +56,15 @@ public class Helper {
         public byte[] data () {
             return buf;
         }
-
         @Override
-        public boolean connect(SocketAddress remote) throws IOException {
-            return false;
+        public void close() throws IOException {
+            
         }
-
         @Override
-        public boolean finishConnect() throws IOException {
-            return false;
+        public boolean isOpen() {
+            return true;
         }
-
-        @Override
-        public boolean isConnected() {
-            return false;
-        }
-
-        @Override
-        public boolean isConnectionPending() {
-            return false;
-        }
-
-        @Override
-        public int read(ByteBuffer dst) throws IOException {
-            return 0;
-        }
-
-        @Override
-        public long read(ByteBuffer[] dsts, int offset, int length)
-                throws IOException {
-            return 0;
-        }
-
-        @Override
-        public Socket socket() {
-            return null;
-        }
-
+        
         @Override
         public int write(ByteBuffer src) throws IOException {
             int remaining = src.remaining();
@@ -111,25 +77,6 @@ public class Helper {
             return remaining;
         }
 
-        @Override
-        public long write(ByteBuffer[] srcs, int offset, int length)
-                throws IOException {
-            return 0;
-        }
-
-        @Override
-        protected void implCloseSelectableChannel() throws IOException {
-            
-        }
-
-        @Override
-        protected void implConfigureBlocking(boolean arg0) throws IOException {
-            
-        }
-        
-        public SocketAddress getRemoteAddress () throws IOException {
-            return null;
-        }
     }
     
     public static DummyCtx CTX = new DummyCtx();
@@ -146,6 +93,14 @@ public class Helper {
         public DummySocket() {
             super(CTX, counter.get(), counter.get());
             counter.incrementAndGet();
+        }
+
+        @Override
+        protected void xattach_pipe(Pipe pipe_, boolean icanhasall_) {
+        }
+
+        @Override
+        protected void xterminated(Pipe pipe_) {
         }
         
     }

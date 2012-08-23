@@ -1,11 +1,11 @@
-package org.jeromq;
+package org.jeromq.codec;
 
 import java.nio.ByteBuffer;
 
 import zmq.DecoderBase;
 import zmq.Msg;
 
-public class ZDecoder {
+public class Persistence {
 
     public static class PersistDecoder extends DecoderBase {
         

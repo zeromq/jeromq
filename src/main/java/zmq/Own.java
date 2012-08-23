@@ -82,9 +82,14 @@ abstract public class Own extends ZObject {
         owned = new HashSet<Own>();
     }
 	
+	protected void destory() {
+	    
+	}
     //  A place to hook in when phyicallal destruction of the object
     //  is to be delayed.
-    abstract protected void process_destroy ();
+    protected void process_destroy () {
+        destory();
+    }
 
     
     private void set_owner (Own owner_)

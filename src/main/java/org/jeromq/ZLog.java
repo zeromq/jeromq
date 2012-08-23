@@ -37,9 +37,9 @@ public class ZLog {
 
     private final static String SUFFIX = ".zmq";
     
-    private final ZLogManager mgr;
     private final String topic;
 
+    private final ZLogManager.ZLogConfig conf;
     private final File path;
     private final long segmentSize;
     private long start;
@@ -50,11 +50,11 @@ public class ZLog {
     private Deque<Segment> segments = new ArrayDeque<Segment>();
     private Segment current;
     
-    public ZLog(ZLogManager mgr, String topic, long segmentSize) {
+    public ZLog(ZLogManager.ZLogConfig conf, String topic) {
 
-        this.mgr = mgr;
         this.topic = topic;
-        this.segmentSize = segmentSize;
+        this.conf = conf;
+        this.segmentSize = conf.segment_size;
         
         start = 0L;
         offset = 0L;
@@ -62,7 +62,7 @@ public class ZLog {
         pendingBytes = 0L;
         current = null;
         
-        path = new File(mgr.path(), topic);
+        path = new File(conf.base_path, topic);
         if (!path.exists())
             path.mkdirs();
         
@@ -189,6 +189,7 @@ public class ZLog {
             return getBuffer(false);
         }
         
+        @SuppressWarnings("resource")
         public MappedByteBuffer getBuffer (boolean writable) throws IOException {
             if (buffer != null)
                 return buffer;
