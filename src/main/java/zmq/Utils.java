@@ -1,7 +1,27 @@
+/*
+    Copyright (c) 2009-2011 250bpm s.r.o.
+    Copyright (c) 2007-2009 iMatix Corporation
+    Copyright (c) 2011-2012 Spotify AB
+    Copyright (c) 2007-2011 Other contributors as noted in the AUTHORS file
+
+    This file is part of 0MQ.
+
+    0MQ is free software; you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License as published by
+    the Free Software Foundation; either version 3 of the License, or
+    (at your option) any later version.
+
+    0MQ is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Lesser General Public License for more details.
+
+    You should have received a copy of the GNU Lesser General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 package zmq;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.Array;
 import java.net.Socket;
@@ -55,9 +75,6 @@ public class Utils {
         s.configureBlocking(false);
     }
     
-    public static <T> T[] realloc(Class<T> klass, T[] src, int size) {
-        return realloc(klass, src, size, true);
-    }
     @SuppressWarnings("unchecked")
     public static <T> T[] realloc(Class<T> klass, T[] src, int size, boolean ended) {
         T[] dest;
@@ -91,46 +108,6 @@ public class Utils {
             items.set(index2_, item1);
         if (item2 != null)
             items.set(index1_, item2);
-    }
-
-    public static void memcpy(byte[] dest, byte[] src, int size) {
-        memcpy(dest, 0, src, 0, size);
-    }
-    
-    public static void memcpy(byte[] dest, String src) {
-        memcpy(dest, 0, src!=null?src.getBytes():null, 0, src!=null?src.length():0);
-    }
-
-    public static void memcpy(byte[] dest, int to, byte[] src, int from, int size) {
-        if (src == null || dest == null)
-            return;
-        
-        System.arraycopy(src, from, dest, to, size);
-    }
-
-    public static void memcpy(ByteBuffer dest, byte[] src, int size) {
-        memcpy(dest, 0, src, 0, size);
-    }
-    
-    public static void memcpy(ByteBuffer dest, String src) {
-        memcpy(dest, 0, src!=null?src.getBytes():null, 0, src!=null?src.length():0);
-    }
-
-    public static void memcpy(ByteBuffer dest, int to, byte[] src, int from, int size) {
-        if (src == null || dest == null)
-            return;
-        
-        dest.position(to);
-        dest.put(src, from, size);
-    }
-
-    public static void memcpy(ByteBuffer dest, ByteBuffer src) {
-        if (dest.remaining() >= src.remaining()) {
-            dest.put(src);
-        } else {
-            while (dest.hasRemaining())
-                dest.put(src.get()); 
-        }
     }
 
     public static byte[] bytes(ByteBuffer buf) {

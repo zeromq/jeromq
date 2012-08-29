@@ -158,7 +158,6 @@ public abstract class SocketBase extends Own
     
     public void destroy() {
         assert (destroyed);
-        super.destory();
         
     }
 
@@ -239,6 +238,22 @@ public abstract class SocketBase extends Own
     }
     
     public int getsockopt(int option_) {
+        
+        if (option_ == ZMQ.ZMQ_RCVMORE) {
+            return rcvmore ? 1 : 0;
+        }
+        if (option_ == ZMQ.ZMQ_EVENTS) {
+            boolean rc = process_commands (0, false);
+            if (!rc)
+                return -1;
+            int val = 0;
+            if (has_out ())
+                val |= ZMQ.ZMQ_POLLOUT;
+            if (has_in ())
+                val |= ZMQ.ZMQ_POLLIN;
+            return val;
+        }
+        
         return (Integer) getsockoptx(option_);
     }
     
@@ -330,7 +345,7 @@ public abstract class SocketBase extends Own
             try {
                 listener.set_address (address);
             } catch (IOException e) {
-                listener.close();
+                listener.destroy();
                 monitor_event (ZMQ.ZMQ_EVENT_BIND_FAILED, addr_, e);
                 LOG.error("Bind Failed", e);
                 return false;
@@ -349,7 +364,7 @@ public abstract class SocketBase extends Own
             try {
                 listener.set_address (path);
             } catch (IOException e) {
-                listener.close();
+                listener.destroy();
                 monitor_event (ZMQ.ZMQ_EVENT_BIND_FAILED, addr_, e);
                 return false;
             }
@@ -426,7 +441,7 @@ public abstract class SocketBase extends Own
             //  If required, send the identity of the local socket to the peer.
             if (options.send_identity) {
                 Msg id = new Msg(options.identity_size);
-                Utils.memcpy(id.data (), options.identity, options.identity_size);
+                id.put(options.identity, 0 , options.identity_size);
                 id.set_flags (Msg.identity);
                 boolean written = pipes [0].write (id);
                 assert (written);
@@ -436,7 +451,7 @@ public abstract class SocketBase extends Own
             //  If required, send the identity of the peer to the local socket.
             if (peer.options.send_identity) {
                 Msg id = new Msg(peer.options.identity_size);
-                Utils.memcpy (id.data (), peer.options.identity, options.identity_size);
+                id.put(peer.options.identity, 0 , peer.options.identity_size);
                 id.set_flags (Msg.identity);
                 boolean written = pipes [1].write (id);
                 assert (written);
@@ -607,15 +622,8 @@ public abstract class SocketBase extends Own
             return null;
         }
         
-        //  Check whether message passed to the function is valid.
-        //if (msg_ == null || !msg_.check ()) {
-        //    throw new IllegalArgumentException(msg_.toString());
-        //}
-        
         //  Get the message.
         Msg msg_ = xrecv (flags_);
-        //if (rc != 0)
-        //    return false;
 
         //  Once every inbound_poll_rate messages check for signals and process
         //  incoming commands. This happens only if we are not polling altogether
@@ -784,10 +792,6 @@ public abstract class SocketBase extends Own
     }
 
 
-    
-
-
-
     @Override
     protected void process_stop ()
     {
@@ -915,7 +919,6 @@ public abstract class SocketBase extends Own
             //  Deallocate.
             super.process_destroy ();
             
-            destory();
         }
     }
 

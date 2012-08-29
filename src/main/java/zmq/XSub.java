@@ -22,9 +22,6 @@
 
 package zmq;
 
-import java.nio.ByteBuffer;
-import java.util.ArrayDeque;
-
 public class XSub extends SocketBase {
     
     public static class XSubSession extends SessionBase {
@@ -108,6 +105,12 @@ public class XSub extends SocketBase {
         pipe_.flush ();
     }
     
+    
+    @Override
+    protected void xread_activated (Pipe pipe_) {
+        fq.activated (pipe_);
+    }
+    
     @Override
     protected void xwrite_activated (Pipe pipe_)
     {
@@ -136,7 +139,6 @@ public class XSub extends SocketBase {
         byte[] data = msg_.data(); 
         // Malformed subscriptions.
         if (data.length < 1 || (data[0] != 0 && data[0] != 1)) {
-            //throw new IllegalArgumentException();
             return false;
         }
         
@@ -150,6 +152,12 @@ public class XSub extends SocketBase {
                 return dist.send_to_all (msg_, flags_);
         }
 
+        return true;
+    }
+    
+    @Override
+    protected boolean xhas_out () {
+        //  Subscription can be added/removed anytime.
         return true;
     }
 
@@ -194,13 +202,48 @@ public class XSub extends SocketBase {
         }
     }
 
+    @Override
+    protected boolean xhas_in () {
+        //  There are subsequent parts of the partly-read message available.
+        if (more)
+            return true;
+
+        //  If there's already a message prepared by a previous call to zmq_poll,
+        //  return straight ahead.
+        if (has_message)
+            return true;
+
+        //  TODO: This can result in infinite loop in the case of continuous
+        //  stream of non-matching messages.
+        while (true) {
+
+            //  Get a message using fair queueing algorithm.
+            message = fq.recv ();
+
+            //  If there's no message available, return immediately.
+            //  The same when error occurs.
+            if (message == null) {
+                return false;
+            }
+
+            //  Check whether the message matches at least one subscription.
+            if (!options.filter || match (message)) {
+                has_message = true;
+                return true;
+            }
+
+            //  Message doesn't match. Pop any remaining parts of the message
+            //  from the pipe.
+            while (message.has_more()) {
+                message = fq.recv ();
+                assert (message != null);
+            }
+        }
+
+    }
     private boolean match(Msg msg_) {
         return subscriptions.check ( msg_.data() );
     }
-    
-    @Override
-    protected void xread_activated (Pipe pipe_) {
-        fq.activated (pipe_);
-    }
+
     
 }

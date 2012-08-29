@@ -36,7 +36,7 @@ public class Device {
 
         boolean success = true;
         int rc;
-        int more;
+        long more;
         Msg msg;
         PollItem items [] = new PollItem[2];
         
@@ -50,7 +50,7 @@ public class Device {
             throw new ZException.IOException(e);
         }
         
-        while (true) {
+        while (success) {
             //  Wait while there are either requests or replies to process.
             rc = ZMQ.zmq_poll (selector, items, -1);
             if (rc < 0)
@@ -60,8 +60,10 @@ public class Device {
             if (items [0].isReadable()) {
                 while (true) {
                     msg = insocket_.recv (0);
-                    if (msg == null)
+                    if (msg == null) {
+                        success = false;
                         break;
+                    }
 
                     more = insocket_.getsockopt (ZMQ.ZMQ_RCVMORE);
 
@@ -73,11 +75,13 @@ public class Device {
                 }
             }
             //  Process a reply.
-            if (items [1].isReadable()) {
+            if (success && items [1].isReadable()) {
                 while (true) {
                     msg = outsocket_.recv (0);
-                    if (msg == null)
+                    if (msg == null) {
+                        success = false;
                         break;
+                    }
 
                     more = outsocket_.getsockopt (ZMQ.ZMQ_RCVMORE);
 

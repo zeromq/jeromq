@@ -45,7 +45,7 @@ public class ZLog {
     private long start;
     private long offset;
     private long pendingMessages;
-    private long pendingBytes;
+    private long lastFlush;
 
     private Deque<Segment> segments = new ArrayDeque<Segment>();
     private Segment current;
@@ -59,7 +59,7 @@ public class ZLog {
         start = 0L;
         offset = 0L;
         pendingMessages = 0L;
-        pendingBytes = 0L;
+        lastFlush = System.currentTimeMillis();
         current = null;
         
         path = new File(conf.base_path, topic);
@@ -137,10 +137,13 @@ public class ZLog {
         buf.put(msg.buf());
         
         pendingMessages += 1L;
-        pendingBytes += size;
         
-        return offset + buf.position();
+        long ret = offset + buf.position();
+        tryFlush();
+        
+        return ret;
     }
+
 
     public void flush() {
         if (current == null)
@@ -148,7 +151,15 @@ public class ZLog {
         current.flush();
         offset = current.offset();
         pendingMessages = 0;
-        pendingBytes = 0;
+        lastFlush = System.currentTimeMillis();
+    }
+    
+
+    private void tryFlush() {
+        if (pendingMessages >= conf.flush_messages
+                || System.currentTimeMillis() - lastFlush >= conf.flush_interval) {
+            flush();
+        }
     }
     
     public void close() {

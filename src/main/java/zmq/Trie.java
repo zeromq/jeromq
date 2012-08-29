@@ -44,7 +44,8 @@ public class Trie {
         next = null;
     }
     
-    
+    //  Add key to the trie. Returns true if this is a new item in the trie
+    //  rather than a duplicate.
     public boolean add (byte[] prefix_)
     {
         return add (prefix_, 0);
@@ -115,6 +116,8 @@ public class Trie {
         return Utils.realloc(Trie.class, table, size, ended);
     }
     
+    //  Remove key from the trie. Returns true if the item is actually
+    //  removed from the trie.
     public boolean rm (byte[] prefix_, int start_)
     {
         if (prefix_ == null || prefix_.length == start_) {
@@ -209,6 +212,7 @@ public class Trie {
         return ret;
     }
     
+    //  Check whether particular key is in the trie.
     public boolean check (byte[] data_)
     {
         //  This function is on critical path. It deliberately doesn't use
@@ -242,6 +246,8 @@ public class Trie {
             start++;
         }
     }
+    
+    //  Apply the function supplied to each subscription in the trie.
     public void apply(ITrieHandler func, Object arg_) {
         apply_helper(null, 0, 0, func, arg_ );
     }
@@ -281,7 +287,7 @@ public class Trie {
     }
 
 
-    boolean is_redundant ()
+    private boolean is_redundant ()
     {
         return refcnt == 0 && live_nodes == 0;
     }

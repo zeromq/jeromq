@@ -28,11 +28,15 @@ public class ZLogManager {
     public static class ZLogConfig {
         protected String base_dir;
         protected long segment_size;
+        protected long flush_messages;
+        protected long flush_interval;
         protected File base_path;
         
         private ZLogConfig() {
             set("base_dir", System.getProperty("java.io.tmpdir"));
             set("segment_size", 2L*1024L*1024L*1024L); // 2G
+            set("flush_messages", 10000) ; 
+            set("flush_interval", 1000) ; // 1s
         }
         
         public ZLogConfig set(String name, Object value) {

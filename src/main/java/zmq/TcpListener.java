@@ -23,7 +23,6 @@ package zmq;
 import java.io.IOException;
 import java.net.Socket;
 import java.nio.channels.IllegalBlockingModeException;
-import java.nio.channels.SelectableChannel;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 
@@ -32,9 +31,9 @@ import org.slf4j.LoggerFactory;
 
 public class TcpListener extends Own implements IPollEvents {
 
-    Logger LOG = LoggerFactory.getLogger(TcpListener.class);
+    private static Logger LOG = LoggerFactory.getLogger(TcpListener.class);
     //  Address to listen on.
-    final private TcpAddress address;
+    private final TcpAddress address;
 
     //  Underlying socket.
     private ServerSocketChannel handle;
@@ -55,6 +54,13 @@ public class TcpListener extends Own implements IPollEvents {
         handle = null;
         socket = socket_;
     }
+    
+    @Override
+    public void destroy () {
+        if (handle != null)
+            close();
+    }
+    
     
     @Override
     protected void process_plug ()
@@ -113,13 +119,9 @@ public class TcpListener extends Own implements IPollEvents {
         socket.monitor_event (ZMQ.ZMQ_EVENT_ACCEPTED, endpoint, fd);
     }
     
-    @Override
-    protected void process_destroy () {
-        if (handle != null)
-            close();
-    }
-    
-    public void close () {
+
+    //  Close the listening socket.
+    private void close () {
         if (handle == null) 
             return;
         
@@ -144,11 +146,15 @@ public class TcpListener extends Own implements IPollEvents {
         handle = ServerSocketChannel.open();
         handle.configureBlocking(false);
         handle.socket().setReuseAddress(true);
-        handle.socket().bind(address.address(), options.backlog);
+        handle.socket().bind(address.address(), (int)options.backlog);
         
         socket.monitor_event(ZMQ.ZMQ_EVENT_LISTENING, addr_, endpoint, handle);
     }
 
+    //  Accept the new connection. Returns the file descriptor of the
+    //  newly created connection. The function may return retired_fd
+    //  if the connection was dropped while waiting in the listen backlog
+    //  or was denied because of accept filters.
     private SocketChannel accept() {
         Socket sock = null;
         try {

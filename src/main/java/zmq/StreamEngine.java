@@ -1,3 +1,23 @@
+/*
+    Copyright (c) 2009-2011 250bpm s.r.o.
+    Copyright (c) 2007-2009 iMatix Corporation
+    Copyright (c) 2007-2011 Other contributors as noted in the AUTHORS file
+
+    This file is part of 0MQ.
+
+    0MQ is free software; you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License as published by
+    the Free Software Foundation; either version 3 of the License, or
+    (at your option) any later version.
+
+    0MQ is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Lesser General Public License for more details.
+
+    You should have received a copy of the GNU Lesser General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 package zmq;
 
 import java.io.IOException;
@@ -73,10 +93,10 @@ public class StreamEngine implements IEngine, IPollEvents {
             
             //  Set the socket buffer limits for the underlying socket.
             if (options.sndbuf != 0) {
-                handle.socket().setSendBufferSize(options.sndbuf);
+                handle.socket().setSendBufferSize((int)options.sndbuf);
             }
             if (options.rcvbuf != 0) {
-                handle.socket().setReceiveBufferSize(options.rcvbuf);
+                handle.socket().setReceiveBufferSize((int)options.rcvbuf);
             }
 
         } catch (IOException e) {
@@ -98,50 +118,6 @@ public class StreamEngine implements IEngine, IPollEvents {
         }
     }
 
-    @Override
-    public void activate_in ()
-    {
-        if (input_error) {
-            //  There was an input error but the engine could not
-            //  be terminated (due to the stalled decoder).
-            //  Flush the pending message and terminate the engine now.
-            decoder.process_buffer (inbuf, 0);
-            assert (!decoder.stalled ());
-            session.flush ();
-            error ();
-            return;
-        }
-
-        io_object.set_pollin (handle);
-
-        //  Speculative read.
-        io_object.in_event ();
-    }
-
-    private void error() {
-        assert (session!=null);
-        session.monitor_event (ZMQ.ZMQ_EVENT_DISCONNECTED, endpoint, handle);
-        session.detach ();
-        unplug ();
-        destroy();
-    }
-
-    private void unplug() {
-        assert (plugged);
-        plugged = false;
-
-        //  Cancel all fd subscriptions.
-        io_object.rm_fd (handle);
-
-        //  Disconnect from I/O threads poller object.
-        io_object.unplug ();
-
-        //  Disconnect from session object.
-        encoder.set_session (null);
-        decoder.set_session (null);
-        session = null;
-    }
-    
     public void plug (IOThread io_thread_,
             SessionBase session_)
     {
@@ -165,6 +141,28 @@ public class StreamEngine implements IEngine, IPollEvents {
         //  Flush all the data that may have been already received downstream.
         in_event ();
         
+    }
+    
+    private void unplug() {
+        assert (plugged);
+        plugged = false;
+
+        //  Cancel all fd subscriptions.
+        io_object.rm_fd (handle);
+
+        //  Disconnect from I/O threads poller object.
+        io_object.unplug ();
+
+        //  Disconnect from session object.
+        encoder.set_session (null);
+        decoder.set_session (null);
+        session = null;
+    }
+    
+    @Override
+    public void terminate() {
+        unplug ();
+        destroy();
     }
 
     @Override
@@ -224,28 +222,6 @@ public class StreamEngine implements IEngine, IPollEvents {
 
     }
     
-    private int read (ByteBuffer buf) {
-        int nbytes = 0 ;
-        try {
-            nbytes = handle.read(buf);
-        } catch (IOException e) {
-            return -1;
-        }
-        
-        return nbytes;
-    }
-    
-    private int write (Transfer buf) {
-        int nbytes = 0 ;
-        try {
-            nbytes = buf.transferTo(handle);
-        } catch (IOException e) {
-            return -1;
-        }
-        
-        return nbytes;
-    }
-
     @Override
     public void out_event() {
         //  If write buffer is empty, try to read new data from the encoder.
@@ -279,6 +255,7 @@ public class StreamEngine implements IEngine, IPollEvents {
         outsize -= nbytes;
         
     }
+    
 
     @Override
     public void connect_event() {
@@ -298,6 +275,7 @@ public class StreamEngine implements IEngine, IPollEvents {
         
     }
 
+    
     @Override
     public void activate_out() {
         io_object.set_pollout (handle);
@@ -310,11 +288,61 @@ public class StreamEngine implements IEngine, IPollEvents {
         
     }
 
+
+    
     @Override
-    public void terminate() {
+    public void activate_in ()
+    {
+        if (input_error) {
+            //  There was an input error but the engine could not
+            //  be terminated (due to the stalled decoder).
+            //  Flush the pending message and terminate the engine now.
+            decoder.process_buffer (inbuf, 0);
+            assert (!decoder.stalled ());
+            session.flush ();
+            error ();
+            return;
+        }
+
+        io_object.set_pollin (handle);
+
+        //  Speculative read.
+        io_object.in_event ();
+    }
+
+    private void error() {
+        assert (session!=null);
+        session.monitor_event (ZMQ.ZMQ_EVENT_DISCONNECTED, endpoint, handle);
+        session.detach ();
         unplug ();
         destroy();
     }
+
+    private int write (Transfer buf) {
+        int nbytes = 0 ;
+        try {
+            nbytes = buf.transferTo(handle);
+        } catch (IOException e) {
+            return -1;
+        }
+        
+        return nbytes;
+    }
+
+    
+    
+    private int read (ByteBuffer buf) {
+        int nbytes = 0 ;
+        try {
+            nbytes = handle.read(buf);
+        } catch (IOException e) {
+            return -1;
+        }
+        
+        return nbytes;
+    }
+    
+
 
 
 }

@@ -49,7 +49,6 @@ public class Dealer extends SocketBase {
         
         fq = new FQ();
         lb = new LB();
-        prefetched_msg = new Msg();
         //  TODO: Uncomment the following line when DEALER will become true DEALER
         //  rather than generic dealer socket.
         //  If the socket is closing we can drop all the outbound requests. There'll
@@ -86,7 +85,7 @@ public class Dealer extends SocketBase {
         Msg msg_ = null;
         //  If there is a prefetched message, return it.
         if (prefetched) {
-            msg_ = new Msg(prefetched_msg);
+            msg_ = prefetched_msg ;
             prefetched = false;
             return msg_;
         }

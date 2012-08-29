@@ -30,6 +30,12 @@ public class PollItem {
     private int interest;
     private int ready;
     
+    public PollItem(SocketBase s_) {
+        s = s_;
+        c = null;
+        zinterest = interest = -1;
+    }
+    
     public PollItem(SocketBase s_, int ops) {
         s = s_;
         c = null;
@@ -39,6 +45,7 @@ public class PollItem {
     public PollItem(SelectableChannel c_, int ops) {
         s = null;
         c = c_;
+        init (ops);
     }
     
     private void init (int ops) {
@@ -61,6 +68,10 @@ public class PollItem {
     public boolean isWriteable() {
         return (ready & ZMQ.ZMQ_POLLOUT) > 0;
     }
+    
+    public boolean isError() {
+        return (ready & ZMQ.ZMQ_POLLERR) > 0;
+    }
 
     public SelectableChannel getChannel() {
         if (s != null)
@@ -72,12 +83,17 @@ public class PollItem {
     public int interestOps() {
         return interest;
     }
-    
+
+    public int interestOps(int ops) {
+        init(ops);
+        return interest;
+    }
+
     public boolean readyOps(SelectionKey key) {
         ready = 0;
         
         if (s != null) {
-            int events = s.getsockopt(ZMQ.ZMQ_EVENTS);
+            long events = s.getsockopt(ZMQ.ZMQ_EVENTS);
             if ( (zinterest & ZMQ.ZMQ_POLLOUT) > 0 && (events & ZMQ.ZMQ_POLLOUT) > 0 ) {
                 ready |= ZMQ.ZMQ_POLLOUT;
             }
@@ -97,6 +113,10 @@ public class PollItem {
         }
         
         return ready > 0;
+    }
+
+    public SocketBase socket() {
+        return s;
     }
 
 }

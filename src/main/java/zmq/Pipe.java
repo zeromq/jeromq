@@ -22,15 +22,15 @@
 
 package zmq;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+//import org.slf4j.Logger;
+//import org.slf4j.LoggerFactory;
 
 //  Note that pipe can be stored in three different arrays.
 //  The array of inbound pipes (1), the array of outbound pipes (2) and
 //  the generic array of pipes to deallocate (3).
 public class Pipe extends ZObject {
 
-    private static Logger LOG = LoggerFactory.getLogger(Pipe.class);
+    //private static Logger LOG = LoggerFactory.getLogger(Pipe.class);
     
     public interface IPipeEvents {
 
@@ -278,10 +278,6 @@ public class Pipe extends ZObject {
     //  Flush the messages downsteam.
     public void flush ()
     {
-        //  If terminate() was already called do nothing.
-        if (state == State.terminated && state == State.double_terminated)
-            return;
-
         //  The peer does not exist anymore at this point.
         if (state == State.terminating)
             return;

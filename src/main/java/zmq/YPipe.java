@@ -1,6 +1,25 @@
+/*  
+    Copyright (c) 2009-2011 250bpm s.r.o.
+    Copyright (c) 2007-2009 iMatix Corporation
+    Copyright (c) 2007-2011 Other contributors as noted in the AUTHORS file
+
+    This file is part of 0MQ.
+
+    0MQ is free software; you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License as published by
+    the Free Software Foundation; either version 3 of the License, or
+    (at your option) any later version.
+
+    0MQ is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Lesser General Public License for more details.
+
+    You should have received a copy of the GNU Lesser General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 package zmq;
 
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 
@@ -10,93 +29,42 @@ public class YPipe<T extends IReplaceable> {
     //  Front of the queue points to the first prefetched item, back of
     //  the pipe points to last un-flushed item. Front is used only by
     //  reader thread, while back is used only by writer thread.
-    final YQueue<T> queue;
+    private final YQueue<T> queue;
 
     //  Points to the first un-flushed item. This variable is used
     //  exclusively by writer thread.
-    long w;
+    private long w;
 
     //  Points to the first un-prefetched item. This variable is used
     //  exclusively by reader thread.
-    long r;
+    private long r;
 
     //  Points to the first item to be flushed in the future.
-    long f;
+    private long f;
 
     //  The single point of contention between writer and reader thread.
     //  Points past the last flushed item. If it is NULL,
     //  reader is asleep. This pointer should be always accessed using
     //  atomic operations.
-    final AtomicLong c;
+    private final AtomicLong c;
 
     public YPipe(Class<T> klass, int qsize ) {
         this(klass, qsize, false);
     }
     
-	public YPipe(Class<T> klass, int qsize, boolean allocate) {
-		queue = new YQueue<T>(klass, qsize, allocate);
+    public YPipe(Class<T> klass, int qsize, boolean allocate) {
+        queue = new YQueue<T>(klass, qsize, allocate);
         queue.push();
         w = r = f = queue.back_pos();
         c = new AtomicLong(queue.back_pos());
             
-	}
-
-	//  Reads an item from the pipe. Returns false if there is no value.
-    //  available.
-	T read ()
-    {
-        //  Try to prefetch a value.
-        if (!check_read ())
-            return null;
-	    //if (queue.isEmpty()) {
-	    //    return null;
-	    //}
-
-        //  There was at least one value prefetched.
-        //  Return it to the caller.
-        T value_ = queue.front();
-        queue.pop ();
-        return value_;
-    }
-	
-	//  Check whether item is available for reading.
-    boolean check_read ()
-    {
-        //  Was the value prefetched already? If so, return.
-        long h = queue.front_pos();
-        if (h != r && r != -1)
-             return true;
-
-        //  There's no prefetched value, so let us prefetch more values.
-        //  Prefetching is to simply retrieve the
-        //  pointer from c in atomic fashion. If there are no
-        //  items to prefetch, set c to NULL (using compare-and-swap).
-        //r = c.get();
-        //r = c.getAndSet(-1);
-        if (c.compareAndSet (h, -1)) {
-            // nothing to read, h == r must be the same
-        //     r = h;
-        } else {
-            // something to have been written
-             r = c.get();
-        }
-        
-        //  If there are no elements prefetched, exit.
-        //  During pipe's lifetime r should never be NULL, however,
-        //  it can happen during pipe shutdown when items
-        //  are being deallocated.
-        if (h == r || r == -1)
-            return false;
-
-        //  There was at least one value prefetched.
-        return true;
     }
 
     //  Write an item to the pipe.  Don't flush it yet. If incomplete is
     //  set to true the item is assumed to be continued by items
     //  subsequently written to the pipe. Incomplete items are never
     //  flushed down the stream.
-    void write (final T value_, boolean incomplete_)
+    public void write (final T value_, boolean incomplete_)
     {
         //  Place the value to the queue, add new terminator element.
         queue.back(value_);
@@ -108,10 +76,21 @@ public class YPipe<T extends IReplaceable> {
         }
     }
     
+    //  Pop an incomplete item from the pipe. Returns true is such
+    //  item exists, false otherwise.
+    public T unwrite ()
+    {
+        
+        if (f == queue.back_pos())
+            return null;
+        queue.unpush();
+        return queue.back();
+    }
+    
     //  Flush all the completed items into the pipe. Returns false if
     //  the reader thread is sleeping. In that case, caller is obliged to
     //  wake the reader up before using the pipe again.
-    boolean flush ()
+    public boolean flush ()
     {
         //  If there are no un-flushed items, do nothing.
         if (w == f) {
@@ -138,17 +117,56 @@ public class YPipe<T extends IReplaceable> {
         return true;
     }
     
-    //  Pop an incomplete item from the pipe. Returns true is such
-    //  item exists, false otherwise.
-    T unwrite ()
+    //  Check whether item is available for reading.
+    public boolean check_read ()
     {
+        //  Was the value prefetched already? If so, return.
+        long h = queue.front_pos();
+        if (h != r && r != -1)
+             return true;
+
+        //  There's no prefetched value, so let us prefetch more values.
+        //  Prefetching is to simply retrieve the
+        //  pointer from c in atomic fashion. If there are no
+        //  items to prefetch, set c to NULL (using compare-and-swap).
+        if (c.compareAndSet (h, -1)) {
+             // nothing to read, h == r must be the same
+        } else {
+            // something to have been written
+             r = c.get();
+        }
         
-        if (f == queue.back_pos())
-            return null;
-        queue.unpush();
-        return queue.back();
+        //  If there are no elements prefetched, exit.
+        //  During pipe's lifetime r should never be NULL, however,
+        //  it can happen during pipe shutdown when items
+        //  are being deallocated.
+        if (h == r || r == -1)
+            return false;
+
+        //  There was at least one value prefetched.
+        return true;
     }
 
+
+    //  Reads an item from the pipe. Returns false if there is no value.
+    //  available.
+    public T read ()
+    {
+        //  Try to prefetch a value.
+        if (!check_read ())
+            return null;
+
+        //  There was at least one value prefetched.
+        //  Return it to the caller.
+        T value_ = queue.front();
+        queue.pop ();
+        return value_;
+    }
+    
+    
+    //  Applies the function fn to the first elemenent in the pipe
+    //  and returns the value returned by the fn.
+    //  The pipe mustn't be empty or the function crashes.
     public T probe() {
         
         boolean rc = check_read ();

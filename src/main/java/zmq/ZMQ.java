@@ -1,13 +1,31 @@
+/*
+    Copyright (c) 2009-2011 250bpm s.r.o.
+    Copyright (c) 2007-2009 iMatix Corporation
+    Copyright (c) 2007-2011 Other contributors as noted in the AUTHORS file
+
+    This file is part of 0MQ.
+
+    0MQ is free software; you can redistribute it and/or modify it under
+    the terms of the GNU Lesser General Public License as published by
+    the Free Software Foundation; either version 3 of the License, or
+    (at your option) any later version.
+
+    0MQ is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Lesser General Public License for more details.
+
+    You should have received a copy of the GNU Lesser General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 package zmq;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
-import java.util.Iterator;
 
 
 public class ZMQ {
@@ -123,20 +141,21 @@ public class ZMQ {
     public static final int ZMQ_FORWARDER = 2;
     public static final int ZMQ_QUEUE = 3;
     
+    //  New context API
     public static Ctx zmq_ctx_new() {
         //  Create 0MQ context.
         Ctx ctx = new Ctx();
         return ctx;
     }
-
-    public static Ctx zmq_init(int io_threads_) {
-        if (io_threads_ >= 0) {
-            Ctx ctx = zmq_ctx_new ();
-            zmq_ctx_set (ctx, ZMQ_IO_THREADS, io_threads_);
-            return ctx;
+    
+    private static void zmq_ctx_destroy(Ctx ctx_) {
+        if (ctx_ == null || !ctx_.check_tag ()) {
+            throw new IllegalStateException();
         }
-        throw new IllegalArgumentException("io_threds must not be negative");
+       
+        ctx_.terminate ();
     }
+
     
     public static void zmq_ctx_set (Ctx ctx_, int option_, int optval_)
     {
@@ -154,6 +173,26 @@ public class ZMQ {
         return ctx_.get (option_);
     }
     
+
+    public static void zmq_ctx_set_monitor(Ctx ctx, IZmqMonitor monitor_) {
+        ctx.monitor (monitor_);
+    }
+
+    //  Stable/legacy context API
+    public static Ctx zmq_init(int io_threads_) {
+        if (io_threads_ >= 0) {
+            Ctx ctx = zmq_ctx_new ();
+            zmq_ctx_set (ctx, ZMQ_IO_THREADS, io_threads_);
+            return ctx;
+        }
+        throw new IllegalArgumentException("io_threds must not be negative");
+    }
+    
+    public static void zmq_term(Ctx ctx_) {
+        zmq_ctx_destroy (ctx_);
+    }
+    
+    // Sockets
     public static SocketBase zmq_socket (Ctx ctx_, int type_)
     {
         if (ctx_ == null || !ctx_.check_tag ()) {
@@ -163,31 +202,11 @@ public class ZMQ {
         return s;
     }
     
-    public static boolean zmq_connect (SocketBase s_, String addr_)
-    {
-        if (s_ == null || !s_.check_tag ()) {
-            throw new IllegalStateException();
-        }
-        return s_.connect (addr_);
-    }
-
     public static void zmq_close(SocketBase s_) {
         if (s_ == null || !s_.check_tag ()) {
             throw new IllegalStateException();
         }
         s_.close ();
-    }
-
-    public static void zmq_term(Ctx ctx_) {
-        zmq_ctx_destroy (ctx_);
-    }
-
-    private static void zmq_ctx_destroy(Ctx ctx_) {
-        if (ctx_ == null || !ctx_.check_tag ()) {
-            throw new IllegalStateException();
-        }
-       
-        ctx_.terminate ();
     }
 
     public static void zmq_setsockopt(SocketBase s_, int option_, Object optval_) {
@@ -199,13 +218,18 @@ public class ZMQ {
         s_.setsockopt (option_, optval_);
 
     }
-    
+
     public static Object zmq_getsockoptx(SocketBase s_, int option_) {
         if (s_ == null || !s_.check_tag ()) {
             throw new IllegalStateException();
         }
 
         return s_.getsockoptx (option_);
+    }
+
+    public static int zmq_getsockopt(SocketBase s_, int opt) {
+        
+        return s_.getsockopt(opt);
     }
 
 
@@ -218,6 +242,31 @@ public class ZMQ {
         return s_.bind(addr_);
     }
     
+    public static boolean zmq_connect (SocketBase s_, String addr_)
+    {
+        if (s_ == null || !s_.check_tag ()) {
+            throw new IllegalStateException();
+        }
+        return s_.connect (addr_);
+    }
+    
+    public static boolean zmq_unbind(SocketBase s_, String addr_) {
+        
+        if (s_ == null || !s_.check_tag ()) {
+            throw new IllegalStateException();
+        }
+        return s_.term_endpoint (addr_);
+    }
+    
+    public static boolean zmq_disconnect(SocketBase s_, String addr_) {
+
+        if (s_ == null || !s_.check_tag ()) {
+            throw new IllegalStateException();
+        }
+        return s_.term_endpoint (addr_);
+    }
+
+    // Sending functions.
     public static int zmq_send(SocketBase s_, String str, 
             int flags_) {
         byte [] data = str.getBytes();
@@ -260,13 +309,8 @@ public class ZMQ {
         return sz;
     }
 
-    public static int zmq_msg_size(Msg msg_) {
-        return msg_.size();
-    }
 
-    //public static int zmq_recvmsg(SocketBase s_, Msg msg_, int flags_) {
-    //    return zmq_msg_recv (msg_, s_, flags_);
-    //}
+    // Receiving functions.
     
     public static Msg zmq_recv (SocketBase s_, int flags_)
     {
@@ -289,14 +333,39 @@ public class ZMQ {
     {
         return s_.recv (flags_);
     }
-
-    public static int zmq_getsockopt(SocketBase s_, int opt) {
-        
-        return s_.getsockopt(opt);
+    
+    public static Msg zmq_msg_init() {
+        return new Msg();
+    }
+    
+    public static Msg zmq_msg_init_size(int message_size) {
+        return new Msg(message_size);
     }
 
-    public static void zmq_ctx_set_monitor(Ctx ctx, IZmqMonitor monitor_) {
-        ctx.monitor (monitor_);
+    public static int zmq_msg_size(Msg msg_) {
+        return msg_.size();
+    }
+
+    public static Msg zmq_recvmsg(SocketBase s_, int flags_) {
+        return zmq_recv (s_, flags_);
+    }
+
+    public static int zmq_sendmsg(SocketBase s_, Msg msg_, int flags_) {
+        return zmq_send (s_, msg_, flags_);
+    }
+
+    public static int zmq_msg_get(Msg msg_) {
+        return zmq_msg_get (msg_, ZMQ_MORE);
+    }
+
+    public static int zmq_msg_get (Msg msg_, int option_)
+    {
+        switch (option_) {
+            case ZMQ_MORE:
+                return msg_.has_more() ? 1: 0;
+            default:
+                throw new IllegalArgumentException();
+        }
     }
 
     public static void zmq_sleep(int s) {
@@ -326,6 +395,7 @@ public class ZMQ {
         
     }
 
+    // Polling.
     public static int zmq_poll(Selector selector, PollItem[] items_, long timeout_ ) {
 
         if (items_ == null) {
@@ -345,6 +415,8 @@ public class ZMQ {
         long end = 0;
         
         for (PollItem item: items_) {
+            if (item == null) 
+                continue;
             SelectableChannel ch = item.getChannel();  // mailbox channel if ZMQ socket
             SelectionKey key = ch.keyFor(selector);
 
@@ -438,17 +510,7 @@ public class ZMQ {
         return nevents;
     }
     
-    public static Msg zmq_recvmsg(SocketBase s_, int flags_) {
-        return zmq_recv (s_, flags_);
-    }
 
-    public static int zmq_sendmsg(SocketBase s_, Msg msg_, int flags_) {
-        return zmq_send (s_, msg_, flags_);
-    }
-
-    public static Msg zmq_msg_init() {
-        return new Msg();
-    }
 
     public static long zmq_stopwatch_start() {
         return System.nanoTime();
@@ -458,38 +520,10 @@ public class ZMQ {
         return (System.nanoTime() - watch) / 1000;
     }
 
-    public static Msg zmq_msg_init_size(int message_size) {
-        return new Msg(message_size);
+    public static int ZMQ_MAKE_VERSION(int major, int minor, int patch) {
+        return ((major) * 10000 + (minor) * 100 + (patch));
     }
 
-    public static int zmq_msg_get(Msg msg_) {
-        return zmq_msg_get (msg_, ZMQ_MORE);
-    }
-
-    public static int zmq_msg_get (Msg msg_, int option_)
-    {
-        switch (option_) {
-            case ZMQ_MORE:
-                return msg_.has_more() ? 1: 0;
-            default:
-                throw new IllegalArgumentException();
-        }
-    }
-
-    public static boolean zmq_unbind(SocketBase s_, String addr_) {
-        
-        if (s_ == null || !s_.check_tag ()) {
-            throw new IllegalStateException();
-        }
-        return s_.term_endpoint (addr_);
-    }
-
-    public static boolean zmq_disconnect(SocketBase s_, String addr_) {
-
-        if (s_ == null || !s_.check_tag ()) {
-            throw new IllegalStateException();
-        }
-        return s_.term_endpoint (addr_);
-    }
+    
 
 }

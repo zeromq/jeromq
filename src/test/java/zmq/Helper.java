@@ -151,7 +151,7 @@ public class Helper {
         Msg msg;
         msg = ZMQ.zmq_recv (sb, 0);
         assert (msg.size() == 32);
-        int rcvmore = ZMQ.zmq_getsockopt (sb, ZMQ.ZMQ_RCVMORE);
+        long rcvmore = ZMQ.zmq_getsockopt (sb, ZMQ.ZMQ_RCVMORE);
         assert (rcvmore == 1);
         msg = ZMQ.zmq_recv (sb, 0);
         assert (rc == 32);
@@ -166,11 +166,11 @@ public class Helper {
         msg = ZMQ.zmq_recv (sc, 0);
         assert (rc == 32);
         rcvmore = ZMQ.zmq_getsockopt (sc, ZMQ.ZMQ_RCVMORE);
-        assertThat (rcvmore , is(1));
+        assertThat (rcvmore , is(1L));
         msg = ZMQ.zmq_recv (sc,  0);
         assert (rc == 32);
         rcvmore = ZMQ.zmq_getsockopt (sc, ZMQ.ZMQ_RCVMORE);
-        assertThat (rcvmore , is(0));
+        assertThat (rcvmore , is(0L));
         //  Check whether the message is still the same.
         //assert (memcmp (buf2, content, 32) == 0);
     }

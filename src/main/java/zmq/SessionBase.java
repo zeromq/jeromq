@@ -144,7 +144,7 @@ public class SessionBase extends Own implements Pipe.IPipeEvents, IPollEvents {
     }
     
     @Override
-    protected void process_destroy () {
+    public void destroy () {
         assert (pipe == null);
 
         //  If there's still a pending linger timer, remove it.

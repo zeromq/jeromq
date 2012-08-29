@@ -22,8 +22,6 @@ package org.jeromq;
 
 
 import java.io.File;
-import java.nio.BufferOverflowException;
-import java.nio.ByteBuffer;
 
 import org.jeromq.ZMQ.Msg;
 import org.junit.Before;

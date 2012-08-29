@@ -37,8 +37,7 @@ public class Msg implements IReplaceable {
     private final static byte type_vsm = 102;
     private final static byte type_lmsg = 103;
     private final static byte type_delimiter = 104;
-    private final static byte type_bulk = 105;
-    private final static byte type_max = 106;
+    private final static byte type_max = 105;
     
     private byte type;
     private byte flags;
@@ -79,13 +78,15 @@ public class Msg implements IReplaceable {
         this(src.getBytes(), false);
     }
     
-    public Msg(byte[] src, boolean copy ) {
+    public Msg(byte[] src, boolean copy) {
         this();
-        size = src.length;
-        if (copy)
-            data = Arrays.copyOf(src, src.length);
-        else
-            data = src;
+        if (src != null) {
+            size = src.length;
+            if (copy)
+                data = Arrays.copyOf(src, src.length);
+            else
+                data = src;
+        }
     }
     
     

@@ -47,7 +47,7 @@ abstract public class PollerBase {
     //  Add a timeout to expire in timeout_ milliseconds. After the
     //  expiration timer_event on sink_ object will be called with
     //  argument set to id_.
-    public void add_timer (int timeout_, IPollEvents sink_, int id_)
+    public void add_timer (long timeout_, IPollEvents sink_, int id_)
     {
         long expiration = clock.now_ms () + timeout_;
         TimerInfo info = new TimerInfo(sink_, id_);

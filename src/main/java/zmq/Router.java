@@ -278,8 +278,6 @@ public class Router extends SocketBase {
             prefetched = true;
 
             Blob identity = pipe[0].get_identity ();
-           // msg_ = new Msg(identity.size());
-            //msg_.put(identity.data(),0);
             msg_ = new Msg(identity.data());
             msg_.set_flags (Msg.more);
             identity_sent = true;

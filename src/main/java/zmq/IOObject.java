@@ -122,7 +122,7 @@ public class IOObject implements IPollEvents {
         handler.timer_event(id_);
     }
     
-    public void add_timer (int timeout_, int id_)
+    public void add_timer (long timeout_, int id_)
     {
         poller.add_timer (timeout_, this, id_);
     }

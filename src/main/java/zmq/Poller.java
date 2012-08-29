@@ -50,6 +50,10 @@ public class Poller extends PollerBase implements Runnable {
     final private Selector selector;
     final private String name;
     
+    public Poller() {
+        this("poller");
+    }
+    
     public Poller(String name_) {
         
         name = name_;

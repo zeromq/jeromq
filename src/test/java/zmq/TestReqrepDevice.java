@@ -64,7 +64,7 @@ public class TestReqrepDevice {
         int rc;
         Msg msg;
         String buff;
-        int rcvmore;
+        long rcvmore;
         
         rc = ZMQ.zmq_send (req, "ABC", ZMQ.ZMQ_SNDMORE);
         assertThat (rc ,is( 3));
@@ -93,7 +93,7 @@ public class TestReqrepDevice {
         buff = new String(msg.data());
         assertThat (buff, is("DEFG") );
         rcvmore = ZMQ.zmq_getsockopt (rep, ZMQ.ZMQ_RCVMORE);
-        assertThat (rcvmore, is(0));
+        assertThat (rcvmore, is(0L));
         
         //  Send the reply.
         rc = ZMQ.zmq_send (rep, "GHIJKL", ZMQ.ZMQ_SNDMORE);
@@ -124,7 +124,7 @@ public class TestReqrepDevice {
         buff = new String(msg.data());
         assertThat (buff, is("MN") );
         rcvmore = ZMQ.zmq_getsockopt (req, ZMQ.ZMQ_RCVMORE);
-        assertThat (rcvmore, is(0));
+        assertThat (rcvmore, is(0L));
         
         //  Clean up.
         ZMQ.zmq_close (req);

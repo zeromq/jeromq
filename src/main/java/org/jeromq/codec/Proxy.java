@@ -39,7 +39,10 @@ public class Proxy {
         abstract protected boolean parseBody(byte[] body);
         abstract protected int headerSize() ;
             
-
+        protected byte[] getIdentity() {
+            return null;
+        }
+        
         @Override
         protected boolean next() {
             switch ((State)state()) {
@@ -80,7 +83,7 @@ public class Proxy {
             }
             
             if (!identity_sent) {
-                Msg identity = new Msg();
+                Msg identity = new Msg(getIdentity());
                 session.write(identity);
                 identity_sent = true;
             }
@@ -124,7 +127,7 @@ public class Proxy {
 
         abstract protected byte[] getHeader(byte[] body);
         abstract protected int headerSize() ;
-            
+        
         
         @Override
         protected boolean next() {
