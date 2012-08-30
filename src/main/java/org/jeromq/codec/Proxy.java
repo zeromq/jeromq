@@ -27,8 +27,7 @@ public class Proxy {
             
             header = new byte[headerSize()];
 
-            next_step(header, 4, State.read_header);
-            //send_identity();
+            next_step(header, header.length, State.read_header);
             
             bottom = new Msg();
             bottom.set_flags (Msg.more);
@@ -41,6 +40,10 @@ public class Proxy {
             
         protected byte[] getIdentity() {
             return null;
+        }
+        
+        protected boolean preserveHeader() {
+            return false;
         }
         
         @Override
@@ -88,6 +91,9 @@ public class Proxy {
                 identity_sent = true;
             }
             
+            if (preserveHeader()) {
+                session.write(new Msg(header, true));
+            }
             session.write(bottom);
             session.write(msg);
             

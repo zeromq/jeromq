@@ -18,10 +18,12 @@ package org.jeromq;
 
 import java.io.File;
 import java.lang.reflect.Field;
+import java.util.HashMap;
 
 public class ZLogManager {
 
     private ZLogConfig conf;
+    private final HashMap<String, ZLog> logs;
     private static ThreadLocal<Boolean> initialized = new ThreadLocal<Boolean>(); 
     private static ZLogManager instance = null;
 
@@ -34,7 +36,7 @@ public class ZLogManager {
         
         private ZLogConfig() {
             set("base_dir", System.getProperty("java.io.tmpdir"));
-            set("segment_size", 2L*1024L*1024L*1024L); // 2G
+            set("segment_size", 536870912L); // 2G
             set("flush_messages", 10000) ; 
             set("flush_interval", 1000) ; // 1s
         }
@@ -108,6 +110,7 @@ public class ZLogManager {
     }
     public ZLogManager() {
         conf = new ZLogConfig();
+        logs = new HashMap<String, ZLog>();
     }
     
     public ZLogConfig getConfig() {
@@ -117,7 +120,12 @@ public class ZLogManager {
     // A ZLog instance must not be shared between thread
     // It is highly recommended that a single thread who own a single ZMQ worker socket also own ZLog instances
     public ZLog get(String topic) {
-        return new ZLog(getConfig(), topic);
+        ZLog log = logs.get(topic);
+        if (log == null) {
+            log = new ZLog(getConfig(), topic);
+            logs.put(topic, log);
+        }
+        return log;
     }
     
     public static ZLogManager instance() {

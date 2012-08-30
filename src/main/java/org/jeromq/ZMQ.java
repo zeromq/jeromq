@@ -939,6 +939,10 @@ public class ZMQ {
         public Msg(String data) {
             base = new zmq.Msg(data);
         }
+        
+        public Msg(ByteBuffer data) {
+            base = new zmq.Msg(data);
+        }
 
         public int headerSize() {
             return base.header_size();

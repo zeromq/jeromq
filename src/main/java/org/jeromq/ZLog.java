@@ -19,7 +19,6 @@ package org.jeromq;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
@@ -40,8 +39,7 @@ public class ZLog {
     private final String topic;
 
     private final ZLogManager.ZLogConfig conf;
-    private final File path;
-    private final long segmentSize;
+    private File path;
     private long start;
     private long offset;
     private long pendingMessages;
@@ -54,8 +52,15 @@ public class ZLog {
 
         this.topic = topic;
         this.conf = conf;
-        this.segmentSize = conf.segment_size;
         
+        reset();
+        
+    }
+    
+    public void reset() {
+
+        close();
+
         start = 0L;
         offset = 0L;
         pendingMessages = 0L;
@@ -63,6 +68,7 @@ public class ZLog {
         current = null;
         
         path = new File(conf.base_path, topic);
+
         if (!path.exists())
             path.mkdirs();
         
@@ -74,8 +80,9 @@ public class ZLog {
                         return arg0.compareTo(arg1);
                     }
         });
+        segments.clear();
         for (File f: files) {
-            offset = Long.valueOf(f.getName());
+            offset = Long.valueOf(f.getName().replace(SUFFIX, ""));
             segments.add(new Segment(this, offset));
         }
         
@@ -83,6 +90,7 @@ public class ZLog {
             start = segments.getFirst().start();
             current = segments.getLast();
         }
+
     }
 
     public File path() {
@@ -90,7 +98,7 @@ public class ZLog {
     }
     
     public long segmentSize() {
-        return segmentSize;
+        return conf.segment_size;
     }
     
     public int count() {
@@ -166,6 +174,7 @@ public class ZLog {
         if (current == null)
             return;
         current.close();
+        current = null;
     }
     
     private static class Segment {

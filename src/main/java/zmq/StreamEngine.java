@@ -200,7 +200,6 @@ public class StreamEngine implements IEngine, IPollEvents {
                 io_object.reset_pollin (handle);
 
             //  Adjust the buffer.
-            //inpos += processed;
             insize -= processed;
         }
 

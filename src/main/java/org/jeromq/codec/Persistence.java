@@ -5,6 +5,7 @@ import java.nio.ByteBuffer;
 import zmq.DecoderBase;
 import zmq.Msg;
 
+//FIXME: not fully implemented yet
 public class Persistence {
 
     public static class PersistDecoder extends DecoderBase {

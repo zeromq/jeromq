@@ -42,6 +42,7 @@ public class TestZLogManager {
         ZLogManager.instance().getConfig()
             .set("base_dir", datadir)
             .set("segment_size", 1024);
+        ZLogManager.instance().get("new_topic").reset();
     }
     @Test
     public void testNewTopic() throws Exception {
@@ -62,7 +63,8 @@ public class TestZLogManager {
     @Test
     public void testOverflow() throws Exception {
         ZLogManager m = ZLogManager.instance();
-        m.getConfig().set("segment_size", 12L);
+        m.getConfig().set("segment_size", 12L)
+                .set("flush_interval", 10000L);
         ZLog log = m.get("new_topic");
         
         assertThat(log.start(), is(0L));

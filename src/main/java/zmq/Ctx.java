@@ -451,37 +451,41 @@ public class Ctx {
     public void monitor_event (SocketBase socket_, int event_, Object ... args_)
     {
         
-        
-        log_event (socket_, event_, args_);
-        
         if (monitor_fn != null) {
             monitor_fn.monitor (socket_, event_, args_);
         }
     }
 
-    private void log_event(SocketBase socket_, int event_, Object[] args_) {
+    public void log_event() {
         
-        switch (event_) {
-        case ZMQ.ZMQ_EVENT_ACCEPTED:
-            String endpoint = (String) args_[0];
-            SocketChannel ch = (SocketChannel) args_[1];
-            LOG.info("{} Accepted {}", new Object[] { endpoint, ch.socket().getRemoteSocketAddress()});
-            break;
-            
-        case ZMQ.ZMQ_EVENT_CLOSED:
-            endpoint = (String) args_[0];
-            LOG.info("{} is Closed", new Object[] { endpoint });
-            break;
-            
-        case ZMQ.ZMQ_EVENT_LISTENING:
-            String bind = (String) args_[0];
-            endpoint = (String) args_[1];
-            LOG.info("{}/{} Listening", new Object[] { bind, endpoint });
-            break;
-            
-        default:
-            break;
-        }
+        monitor_fn = new IZmqMonitor () {
+            @Override
+            public void monitor(SocketBase socket_, int event_, Object[] args_) {
+        
+                switch (event_) {
+                case ZMQ.ZMQ_EVENT_ACCEPTED:
+                    String endpoint = (String) args_[0];
+                    SocketChannel ch = (SocketChannel) args_[1];
+                    LOG.info("{} Accepted {}", new Object[] { endpoint, ch.socket().getRemoteSocketAddress()});
+                    break;
+                    
+                case ZMQ.ZMQ_EVENT_DISCONNECTED:
+                    endpoint = (String) args_[0];
+                    ch = (SocketChannel) args_[1];
+                    LOG.info("{} is Disconnected", new Object[] { ch.socket().getRemoteSocketAddress() });
+                    break;
+                    
+                case ZMQ.ZMQ_EVENT_LISTENING:
+                    String bind = (String) args_[0];
+                    endpoint = (String) args_[1];
+                    LOG.info("{} Listening", new Object[] { bind, endpoint });
+                    break;
+                    
+                default:
+                    break;
+                }
+            }
+        };
     }
 
 

@@ -89,7 +89,13 @@ public class Msg implements IReplaceable {
         }
     }
     
+    public Msg(ByteBuffer src) {
+        init();
+        type = type_lmsg;
+        buf = src.duplicate();
+    }
     
+
     public boolean is_delimiter ()
     {
         return type == type_delimiter;
