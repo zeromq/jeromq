@@ -83,11 +83,11 @@ public class Decoder extends DecoderBase {
 
 
     private boolean one_byte_size_ready() {
-        //  First byte of size is read. If it is 0xff read 8-byte size.
+        //  First byte of size is read. If it is 0xff(-1 for java byte) read 8-byte size.
         //  Otherwise allocate the buffer for message data and read the
         //  message data into it.
         byte first = tmpbuf[0];
-        if (first == 0xff) {
+        if (first == -1) {
             next_step (tmpbuf, 8, Step.eight_byte_size_ready);
         } else {
 
@@ -179,7 +179,9 @@ public class Decoder extends DecoderBase {
         
         boolean rc = session.write (in_progress);
         if (!rc) {
-            // full
+            if (!ZError.is(ZError.EAGAIN))
+                decoding_error();
+            
             return false;
         }
         

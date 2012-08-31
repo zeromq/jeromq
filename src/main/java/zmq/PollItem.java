@@ -89,11 +89,14 @@ public class PollItem {
         return interest;
     }
 
-    public boolean readyOps(SelectionKey key) {
+    public int readyOps(SelectionKey key) {
         ready = 0;
         
         if (s != null) {
-            long events = s.getsockopt(ZMQ.ZMQ_EVENTS);
+            int events = s.getsockopt(ZMQ.ZMQ_EVENTS);
+            if (events < 0)
+                return -1;
+            
             if ( (zinterest & ZMQ.ZMQ_POLLOUT) > 0 && (events & ZMQ.ZMQ_POLLOUT) > 0 ) {
                 ready |= ZMQ.ZMQ_POLLOUT;
             }
@@ -112,7 +115,7 @@ public class PollItem {
             }
         }
         
-        return ready > 0;
+        return ready;
     }
 
     public SocketBase socket() {

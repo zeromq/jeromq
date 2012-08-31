@@ -223,6 +223,7 @@ public class XSub extends SocketBase {
             //  If there's no message available, return immediately.
             //  The same when error occurs.
             if (message == null) {
+                assert(ZError.is(ZError.EAGAIN));
                 return false;
             }
 

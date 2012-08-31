@@ -130,7 +130,7 @@ public class TcpConnecter extends Own implements IPollEvents {
         } catch (SocketException e) {
             err = true;
         } catch (IOException e) {
-            throw new ZException.IOException(e);
+            throw new ZError.IOException(e);
         }
 
         io_object.rm_fd (handle);
@@ -158,7 +158,7 @@ public class TcpConnecter extends Own implements IPollEvents {
         StreamEngine engine = null;
         try {
             engine = new StreamEngine (fd, options, endpoint);
-        } catch (ZException.InstantiationException e) {
+        } catch (ZError.InstantiationException e) {
             LOG.error("Failed to initialize StreamEngine", e.getCause());
             session.monitor_event (ZMQ.ZMQ_EVENT_CONNECT_FAILED, endpoint, e.getCause());
             return;

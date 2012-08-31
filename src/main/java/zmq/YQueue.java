@@ -46,7 +46,7 @@ public class YQueue<T extends IReplaceable> {
                     try {
                         values[i] = klass.newInstance();
                     } catch (Exception e) {
-                        throw new ZException.InstantiationException(e);
+                        throw new ZError.InstantiationException(e);
                     }
                  }
              }

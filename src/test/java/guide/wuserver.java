@@ -12,7 +12,7 @@ import org.jeromq.ZMQ;
 //
 public class wuserver {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         //  Prepare our context and publisher
         ZMQ.Context context = ZMQ.context(1);
 
@@ -33,6 +33,8 @@ public class wuserver {
             //  Send message to all subscribers
             String update = String.format("%05d %d %d", zipcode, temperature, relhumidity);
             publisher.send(update.getBytes(), 0);
+            
+            Thread.sleep(100);
         }
     }
 }

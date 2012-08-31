@@ -32,7 +32,7 @@ public class Encoder extends EncoderBase {
     
 
     private Msg in_progress;
-    final private ByteBuffer tmpbuf;
+    private final ByteBuffer tmpbuf;
     
     public Encoder(int bufsize_) {
         super(bufsize_);
@@ -82,6 +82,7 @@ public class Encoder extends EncoderBase {
         
         in_progress = session.read ();
         if (in_progress == null) {
+            assert(ZError.is(ZError.EAGAIN));
             return false;
         }
 

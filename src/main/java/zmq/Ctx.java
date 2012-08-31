@@ -299,18 +299,18 @@ public class Ctx {
     
             //  Once zmq_term() was called, we can't create new sockets.
             if (terminating) {
-                throw new IllegalStateException();
+                ZError.ETERM();
+                return null;
             }
     
             //  If max_sockets limit was reached, return error.
             if (empty_slots.isEmpty ()) {
-                throw new ZException.NoFreeSlot();
+                ZError.EMFILE();
+                return null;
             }
     
             //  Choose a slot for the socket.
             int slot = empty_slots.pollLast();
-            //uint32_t slot = empty_slots..back ();
-            //empty_slots.pop_back ();
     
             //  Generate new unique socket ID.
             int sid = max_socket_id.incrementAndGet();
@@ -324,7 +324,7 @@ public class Ctx {
             sockets.add (s);
             slots [slot] = s.get_mailbox ();
             
-            LOG.debug("NEW Slot [" + slot + "] " + slots [slot]);
+            LOG.debug("NEW Slot [" + slot + "] " + s);
         } finally {
             slot_sync.unlock ();
         }
@@ -392,7 +392,7 @@ public class Ctx {
     }
     
     //  Management of inproc endpoints.
-    public void register_endpoints(String addr_, Endpoint endpoint_) {
+    public boolean register_endpoint(String addr_, Endpoint endpoint_) {
         endpoints_sync.lock ();
 
         Endpoint inserted = null;
@@ -402,8 +402,10 @@ public class Ctx {
             endpoints_sync.unlock ();
         }
         if (inserted != null) {
-            throw new ZException.AddrInUse();
+            ZError.EADDRINUSE();
+            return false;
         }
+        return true;
     }
 
     public void unregister_endpoints(SocketBase socket_) {
@@ -433,14 +435,15 @@ public class Ctx {
         try {
             endpoint = endpoints.get(addr_);
             if (endpoint == null) {
-                throw new ZException.ConnectionRefused();
+                ZError.ECONNREFUSED();
+                return new Endpoint(null, new Options());
             }
     
             //  Increment the command sequence number of the peer so that it won't
             //  get deallocated until "bind" command is issued by the caller.
             //  The subsequent 'bind' has to be called with inc_seqnum parameter
             //  set to false, so that the seqnum isn't incremented twice.
-             endpoint.socket.inc_seqnum ();
+            endpoint.socket.inc_seqnum ();
         } finally {
             endpoints_sync.unlock ();
         }

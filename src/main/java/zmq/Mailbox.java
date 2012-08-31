@@ -32,7 +32,6 @@ public class Mailbox {
     //private static Logger LOG = LoggerFactory.getLogger(Mailbox.class);
     
     //  The pipe to store actual commands.
-    //typedef ypipe_t <command_t, command_pipe_granularity> cpipe_t;
     private final YPipe<Command> cpipe;
 
     //  Signaler to pass signals from writer thread to reader thread.
@@ -112,15 +111,16 @@ public class Mailbox {
 
         //  Wait for signal from the command sender.
         boolean rc = signaler.wait_event (timeout_);
-        if (!rc)
+        if (!rc && (ZError.is(ZError.EAGAIN) || ZError.is(ZError.EINTR)))
             return null;
 
+        assert (rc);
         //  We've got the signal. Now we can switch into active state.
         active = true;
 
         //  Get a command.
         cmd_ = cpipe.read ();
-        //assert (cmd_ != null);
+        assert (cmd_ != null);
         
         return cmd_;
     }

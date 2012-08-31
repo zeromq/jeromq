@@ -47,7 +47,7 @@ public class Device {
         try {
             selector = Selector.open();
         } catch (IOException e) {
-            throw new ZException.IOException(e);
+            throw new ZError.IOException(e);
         }
         
         while (success) {

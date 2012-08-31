@@ -21,8 +21,6 @@ package zmq;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.channels.ClosedByInterruptException;
-import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -49,14 +47,14 @@ public class Signaler {
             Utils.unblock_socket (w);
             Utils.unblock_socket (r);
         } catch (IOException e) {
-            throw new ZException.IOException(e);
+            throw new ZError.IOException(e);
         }
         
         try {
             selector = Selector.open();
             r.register(selector, SelectionKey.OP_READ);
         } catch (IOException e) {
-            throw new ZException.IOException(e);
+            throw new ZError.IOException(e);
         }
         
         sdummy = ByteBuffer.allocate(1);
@@ -82,7 +80,7 @@ public class Signaler {
         try {
             pipe = Pipe.open();
         } catch (IOException e) {
-            throw new ZException.IOException(e);
+            throw new ZError.IOException(e);
         }
         r = pipe.source();
         w = pipe.sink();
@@ -101,15 +99,15 @@ public class Signaler {
                 sdummy.rewind();
                 nbytes = w.write(sdummy);
             } catch (IOException e) {
-                throw new ZException.IOException(e);
+                throw new ZError.IOException(e);
             }
             if (nbytes == 0) {
                 continue;
-            } else {
-                break;
             }
+            assert (nbytes == 1);
+            break;
         }
-        assert (nbytes == 1);
+        
     }
 
     boolean wait_event (long timeout_) {
@@ -125,13 +123,12 @@ public class Signaler {
             } else {
                 rc = selector.select(timeout_);
             }
-        } catch (ClosedSelectorException e) {
-            return false;
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new ZError.IOException(e);
         }
         
         if (rc == 0) {
+            ZError.EAGAIN();
             return false;
         }
         selector.selectedKeys().clear();
@@ -148,10 +145,8 @@ public class Signaler {
         int nbytes;
         try {
             nbytes = r.read(dummy);
-        } catch (ClosedByInterruptException e) {
-            return;
         } catch (IOException e) {
-            throw new ZException.IOException(e);
+            throw new ZError.IOException(e);
         } 
         assert (nbytes >= 0);
     }

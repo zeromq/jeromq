@@ -81,6 +81,7 @@ public class Req extends Dealer {
         Msg msg_ = null;
         //  If request wasn't send, we can't wait for reply.
         if (!receiving_reply) {
+            ZError.EFSM();
             throw new IllegalStateException("Cannot wait before send");
         }
 
@@ -98,6 +99,7 @@ public class Req extends Dealer {
                     if (!msg_.has_more())
                         break;
                 }
+                ZError.EAGAIN();
                 return null;
             }
 

@@ -1,20 +1,4 @@
 /*
-    This file is part of 0MQ.
-
-    0MQ is free software; you can redistribute it and/or modify it under
-    the terms of the GNU Lesser General Public License as published by
-    the Free Software Foundation; either version 3 of the License, or
-    (at your option) any later version.
-
-    0MQ is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Lesser General Public License for more details.
-
-    You should have received a copy of the GNU Lesser General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/ 
-/*
   Copyright (c) 2007-2010 iMatix Corporation
 
   This file is part of 0MQ.
@@ -45,7 +29,7 @@ import zmq.DecoderBase;
 import zmq.EncoderBase;
 import zmq.PollItem;
 import zmq.SocketBase;
-import zmq.ZException;
+import zmq.ZError;
 
 public class ZMQ {
     
@@ -861,9 +845,13 @@ public class ZMQ {
                 return msg.data();
             }
             
+            mayRaise();
+            
             return null;
         }
         
+
+
         /**
          * Receive a message in to a specified buffer.
          * 
@@ -918,6 +906,12 @@ public class ZMQ {
         public boolean sendMsg(Msg msg, int flags) {
             return base.send(msg.base, flags);
         }            
+        
+        private void mayRaise() {
+            if (!zmq.ZError.is(zmq.ZError.EAGAIN))
+                throw new ZMQException(zmq.ZError.errno());
+
+        }
     }
 
     public static class Msg {
@@ -1006,7 +1000,7 @@ public class ZMQ {
             try {
                 selector = Selector.open();
             } catch (IOException e) {
-                throw new ZException.IOException(e);
+                throw new ZError.IOException(e);
             }
         }
 
@@ -1067,7 +1061,8 @@ public class ZMQ {
                 nitems[pos] = new PollItem(socket.base, events);
                 items = nitems;
             }
-            next = pos;
+            if (pos >= next)
+                next = pos + 1;
             return pos;
         }
         
@@ -1225,8 +1220,41 @@ public class ZMQ {
         }
     }
 
+    public enum Error {
+        
+        ENOTSUP(ZError.ENOTSUP),
+        EPROTONOSUPPORT(ZError.EPROTONOSUPPORT),
+        ENOBUFS(ZError.ENOBUFS),
+        ENETDOWN(ZError.ENETDOWN),
+        EADDRINUSE(ZError.EADDRINUSE),
+        EADDRNOTAVAIL(ZError.EADDRNOTAVAIL),
+        ECONNREFUSED(ZError.ECONNREFUSED),
+        EINPROGRESS(ZError.EINPROGRESS),
+        EMTHREAD(ZError.EMTHREAD),
+        EFSM(ZError.EFSM),
+        ENOCOMPATPROTO(ZError.ENOCOMPATPROTO),
+        ETERM(ZError.ETERM);
 
+        private final long code;
 
+        Error(long code) {
+            this.code = code;
+        }
+
+        public long getCode() {
+            return code;
+        }
+
+        public static Error findByCode(int code) {
+            for (Error e : Error.class.getEnumConstants()) {
+                if (e.getCode() == code) {
+                    return e;
+                }
+            }
+            throw new IllegalArgumentException("Unknown " + Error.class.getName() + " enum code:" + code);
+        }
+    }
+    
     public static boolean device(int type_, Socket sa, Socket sb) {
         return zmq.ZMQ.zmq_device(type_, sa.base, sb.base);
     }

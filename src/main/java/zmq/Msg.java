@@ -232,8 +232,7 @@ public class Msg implements IReplaceable {
             throw new IllegalStateException();
         }
 
-        data = null;
-        buf = null;
+        init();
     }
 
 

@@ -97,7 +97,7 @@ public class LocalThr {
                 return ;
             }
             if (ZMQ.zmq_msg_size (msg) != message_size) {
-                printf ("message of incorrect size received\n");
+                printf ("message of incorrect size received " + ZMQ.zmq_msg_size(msg));
                 return;
             }
         }

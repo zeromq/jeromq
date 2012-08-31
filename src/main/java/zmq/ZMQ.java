@@ -22,7 +22,6 @@ package zmq;
 
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
-import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -399,6 +398,7 @@ public class ZMQ {
     public static int zmq_poll(Selector selector, PollItem[] items_, long timeout_ ) {
 
         if (items_ == null) {
+            ZError.EFAULT();
             throw new IllegalArgumentException();
         }
         if (items_.length == 0) {
@@ -425,7 +425,7 @@ public class ZMQ {
                     key = ch.register(selector, item.interestOps());
                     key.attach(item);
                 } catch (ClosedChannelException e) {
-                    throw new ZException.IOException(e);
+                    throw new ZError.IOException(e);
                 }
             } else {
                 if (item.interestOps() != key.interestOps())
@@ -435,6 +435,7 @@ public class ZMQ {
         
         boolean first_pass = true;
         int nevents = 0;
+        int ready;
         
         while (true) {
 
@@ -458,18 +459,18 @@ public class ZMQ {
 
                 for (SelectionKey key: selector.keys()) {
                     PollItem item = (PollItem)key.attachment();
-                    if (item.readyOps(key)) {
+                    ready = item.readyOps(key);
+                    if (ready < 0)
+                        return -1;
+                    
+                    if (ready > 0) {
                         nevents++;
                     }
                 }
                 
                 selector.selectedKeys().clear();
-            } catch (ClosedSelectorException e) {
-                return -1;
-            } catch (ZException.CtxTerminated e) {
-                return -1;
             } catch (IOException e) {
-                throw new ZException.IOException(e);
+                throw new ZError.IOException(e);
             }            
             
             //  If timout is zero, exit immediately whether there are events or not.

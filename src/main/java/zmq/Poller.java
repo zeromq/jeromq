@@ -66,7 +66,7 @@ public class Poller extends PollerBase implements Runnable {
         try {
             selector = Selector.open();
         } catch (IOException e) {
-            throw new ZException.IOException(e);
+            throw new ZError.IOException(e);
         }
     }
 
@@ -208,7 +208,7 @@ public class Poller extends PollerBase implements Runnable {
             } catch (ClosedSelectorException e) {
                 break;
             } catch (IOException e) {
-                throw new ZException.IOException(e);
+                throw new ZError.IOException(e);
             }
             
             if (rc == 0) 

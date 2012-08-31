@@ -124,9 +124,9 @@ public abstract class ZObject {
 
     }
     
-    protected void register_endpoint (String addr_, Ctx.Endpoint endpoint_)
+    protected boolean register_endpoint (String addr_, Ctx.Endpoint endpoint_)
     {
-        ctx.register_endpoints (addr_, endpoint_);
+        return ctx.register_endpoint (addr_, endpoint_);
     }
     
     protected void unregister_endpoints (SocketBase socket_)

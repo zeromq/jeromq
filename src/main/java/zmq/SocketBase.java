@@ -21,7 +21,6 @@
 */
 package zmq;
 
-import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.channels.SelectableChannel;
@@ -226,7 +225,8 @@ public abstract class SocketBase extends Own
     public void setsockopt(int option_, Object optval_) {
         
         if (ctx_terminated) {
-            throw new ZException.CtxTerminated();
+            ZError.ETERM();
+            return;
         }
 
         //  First, check whether specific socket type overloads the option.
@@ -239,13 +239,19 @@ public abstract class SocketBase extends Own
     
     public int getsockopt(int option_) {
         
+        if (ctx_terminated) {
+            ZError.ETERM();
+            return -1;
+        }
+        
         if (option_ == ZMQ.ZMQ_RCVMORE) {
             return rcvmore ? 1 : 0;
         }
         if (option_ == ZMQ.ZMQ_EVENTS) {
             boolean rc = process_commands (0, false);
-            if (!rc)
+            if (!rc && (ZError.is(ZError.EINTR) || ZError.is(ZError.ETERM)))
                 return -1;
+            assert (rc);
             int val = 0;
             if (has_out ())
                 val |= ZMQ.ZMQ_POLLOUT;
@@ -259,7 +265,8 @@ public abstract class SocketBase extends Own
     
     public Object getsockoptx(int option_) {
         if (ctx_terminated) {
-            throw new ZException.CtxTerminated();
+            ZError.ETERM();
+            return null;
         }
 
         if (option_ == ZMQ.ZMQ_RCVMORE) {
@@ -289,7 +296,8 @@ public abstract class SocketBase extends Own
     
     public boolean bind(final String addr_) {
         if (ctx_terminated) {
-            throw new ZException.CtxTerminated();
+            ZError.ETERM();
+            return false;
         }
 
         //  Process pending commands, if any.
@@ -307,24 +315,17 @@ public abstract class SocketBase extends Own
         String protocol = uri.getScheme();
         String address = uri.getAuthority();
         String path = uri.getPath();
-        /*
-        if (address == null && path.length() == 0) {
-            address = addr_.substring(protocol.length()+3);
-        }
-        if (uri.getPort() > 0) {
-            address = address + ":" + uri.getPort();
-        }
-        */
-
 
         check_protocol (protocol);
 
         if (protocol.equals("inproc")) {
             Ctx.Endpoint endpoint = new Ctx.Endpoint(this, options);
-            register_endpoint (addr_, endpoint);
-            // Save last endpoint URI
-            options.last_endpoint = addr_;
-            return true;
+            boolean rc = register_endpoint (addr_, endpoint);
+            if (rc) {
+                // Save last endpoint URI
+                options.last_endpoint = addr_;
+            }
+            return rc;
         }
         if (protocol.equals("pgm") || protocol.equals("epgm")) {
             //  For convenience's sake, bind can be used interchageable with
@@ -336,18 +337,18 @@ public abstract class SocketBase extends Own
         //  point we'll choose one.
         IOThread io_thread = choose_io_thread (options.affinity);
         if (io_thread == null) {
-            throw new IllegalStateException("Empty IO Thread");
+            ZError.EMTHREAD();
+            return false;
         }
 
         if (protocol.equals("tcp")) {
             TcpListener listener = new TcpListener (
                 io_thread, this, options);
-            try {
-                listener.set_address (address);
-            } catch (IOException e) {
+            boolean rc = listener.set_address (address);
+            if (!rc) {
                 listener.destroy();
-                monitor_event (ZMQ.ZMQ_EVENT_BIND_FAILED, addr_, e);
-                LOG.error("Bind Failed", e);
+                monitor_event (ZMQ.ZMQ_EVENT_BIND_FAILED, addr_, ZError.errno());
+                LOG.error("Failed to Bind", ZError.exc());
                 return false;
             }
 
@@ -361,11 +362,10 @@ public abstract class SocketBase extends Own
         if (protocol.equals("ipc")) {
             IpcListener listener = new IpcListener (
                 io_thread, this, options);
-            try {
-                listener.set_address (path);
-            } catch (IOException e) {
+            boolean rc = listener.set_address (path);
+            if (!rc) {
                 listener.destroy();
-                monitor_event (ZMQ.ZMQ_EVENT_BIND_FAILED, addr_, e);
+                monitor_event (ZMQ.ZMQ_EVENT_BIND_FAILED, addr_, ZError.errno());
                 return false;
             }
 
@@ -383,7 +383,8 @@ public abstract class SocketBase extends Own
     public boolean connect (String addr_)
     {
         if (ctx_terminated) {
-            throw new ZException.CtxTerminated();
+            ZError.ETERM();
+            return false;
         }
 
         //  Process pending commands, if any.
@@ -530,7 +531,8 @@ public abstract class SocketBase extends Own
     public boolean term_endpoint(String addr_) {
 
         if (ctx_terminated) {
-            throw new ZException.CtxTerminated();
+            ZError.ETERM();
+            return false;
         }
         
         //  Check whether endpoint address passed to the function is valid.
@@ -562,11 +564,13 @@ public abstract class SocketBase extends Own
     public boolean send (Msg msg_, int flags_)
     {
         if (ctx_terminated) {
+            ZError.ETERM();
             return false;
         }
         
         //  Check whether message passed to the function is valid.
         if (msg_ == null || !msg_.check ()) {
+            ZError.EFAULT();
             throw new IllegalArgumentException(msg_.toString());
         }
 
@@ -586,6 +590,8 @@ public abstract class SocketBase extends Own
         brc = xsend (msg_, flags_);
         if (brc)
             return true;
+        if (!ZError.is(ZError.EAGAIN))
+            return false;
 
         //  In case of non-blocking send we'll simply propagate
         //  the error - including EAGAIN - up the stack.
@@ -606,9 +612,13 @@ public abstract class SocketBase extends Own
             brc = xsend (msg_, flags_);
             if (brc)
                 break;
+            if (!ZError.is(ZError.EAGAIN))
+                return false;
+            
             if (timeout > 0) {
                 timeout = (int) (end - clock.now_ms ());
                 if (timeout <= 0) {
+                    ZError.EAGAIN();
                     return false;
                 }
             }
@@ -619,11 +629,14 @@ public abstract class SocketBase extends Own
 
     public Msg recv(int flags_) {
         if (ctx_terminated) {
+            ZError.ETERM();
             return null;
         }
         
         //  Get the message.
         Msg msg_ = xrecv (flags_);
+        if (msg_ == null && !ZError.is(ZError.EAGAIN))
+            return null;
 
         //  Once every inbound_poll_rate messages check for signals and process
         //  incoming commands. This happens only if we are not polling altogether
@@ -677,10 +690,14 @@ public abstract class SocketBase extends Own
                 ticks = 0;
                 break;
             }
+            if (!ZError.is(ZError.EAGAIN))
+                return null;
+            
             block = true;
             if (timeout > 0) {
                 timeout = (int) (end - clock.now_ms ());
                 if (timeout <= 0) {
+                    ZError.EAGAIN();
                     return null;
                 }
             }
@@ -779,12 +796,17 @@ public abstract class SocketBase extends Own
         
         //  Process all the commands available at the moment.
         while (true) {
-            if (cmd == null)
+            if (cmd == null && ZError.is(ZError.EAGAIN))
                 break;
+
+            if (cmd == null && ZError.is(ZError.EINTR))
+                return false;
+            
             cmd.destination().process_command (cmd);
             cmd = mailbox.recv (0);
          }
         if (ctx_terminated) {
+            ZError.ETERM();
             return false;
         }
 

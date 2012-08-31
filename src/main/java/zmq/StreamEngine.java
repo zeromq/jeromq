@@ -76,15 +76,15 @@ public class StreamEngine implements IEngine, IPollEvents {
             decoder = dcon.newInstance(Config.in_batch_size.getValue(), options_.maxmsgsize);
             encoder = econ.newInstance(Config.in_batch_size.getValue());
         } catch (SecurityException e) {
-            throw new ZException.InstantiationException(e);
+            throw new ZError.InstantiationException(e);
         } catch (NoSuchMethodException e) {
-            throw new ZException.InstantiationException(e);
+            throw new ZError.InstantiationException(e);
         } catch (InvocationTargetException e) {
-            throw new ZException.InstantiationException(e);
+            throw new ZError.InstantiationException(e);
         } catch (IllegalAccessException e) {
-            throw new ZException.InstantiationException(e);
+            throw new ZError.InstantiationException(e);
         } catch (InstantiationException e) {
-            throw new ZException.InstantiationException(e);
+            throw new ZError.InstantiationException(e);
         }
         
         //  Put the socket into non-blocking mode.
@@ -100,7 +100,7 @@ public class StreamEngine implements IEngine, IPollEvents {
             }
 
         } catch (IOException e) {
-            throw new ZException.IOException(e);
+            throw new ZError.IOException(e);
         }
 
     }

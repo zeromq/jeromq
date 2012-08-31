@@ -25,7 +25,7 @@ import org.jeromq.ZMQ.Socket;
 import zmq.Msg;
 import zmq.PollItem;
 import zmq.SocketBase;
-import zmq.ZException;
+import zmq.ZError;
 import zmq.ZMQ;
 
 public class ZDevice {
@@ -64,7 +64,7 @@ public class ZDevice {
         try {
             selector = Selector.open();
         } catch (IOException e) {
-            throw new ZException.IOException(e);
+            throw new ZError.IOException(e);
         }
         
         while (success) {

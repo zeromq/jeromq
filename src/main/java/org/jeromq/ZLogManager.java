@@ -36,7 +36,7 @@ public class ZLogManager {
         
         private ZLogConfig() {
             set("base_dir", System.getProperty("java.io.tmpdir"));
-            set("segment_size", 536870912L); // 2G
+            set("segment_size", 536870912L); 
             set("flush_messages", 10000) ; 
             set("flush_interval", 1000) ; // 1s
         }

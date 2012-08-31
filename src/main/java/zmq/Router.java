@@ -210,6 +210,7 @@ public class Router extends SocketBase {
                     }
                 } else if (report_unroutable) {
                     more_out = false;
+                    ZError.EAGAIN();
                     return false;
                 }
             }
@@ -259,6 +260,7 @@ public class Router extends SocketBase {
         Pipe[] pipe = new Pipe[1];
         msg_ = fq.recvpipe (pipe);
         if (pipe[0] == null) {
+            ZError.EAGAIN();
             return null;
         }
 

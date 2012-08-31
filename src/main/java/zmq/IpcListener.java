@@ -21,7 +21,6 @@
 */
 package zmq;
 
-import java.io.IOException;
 import java.net.InetSocketAddress;
 
 // fake Unix domain socket
@@ -42,13 +41,13 @@ public class IpcListener extends TcpListener {
     
 
     //  Set address to listen on.
-    public void set_address(String addr_) throws IOException {
+    public boolean set_address(String addr_) {
         
         address.resolve (addr_, false);
         
         InetSocketAddress sock = (InetSocketAddress) address.address();
         String fake = sock.getAddress().getHostAddress() + ":" + sock.getPort();
-        super.set_address(fake);
+        return super.set_address(fake);
     }
 
 

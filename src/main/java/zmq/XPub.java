@@ -193,6 +193,7 @@ public class XPub extends SocketBase {
     protected Msg xrecv(int flags_) {
         //  If there is at least one 
         if (pending.isEmpty ()) {
+            ZError.EAGAIN();
             return null;
         }
 

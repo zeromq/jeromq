@@ -110,7 +110,7 @@ public class Dealer extends SocketBase {
 
         //  Try to read the next message to the pre-fetch buffer.
         prefetched_msg = xxrecv (ZMQ.ZMQ_DONTWAIT);
-        if (prefetched_msg == null)
+        if (prefetched_msg == null && ZError.is(ZError.EAGAIN))
             return false;
         prefetched = true;
         return true;

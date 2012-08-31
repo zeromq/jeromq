@@ -121,6 +121,7 @@ public class FQ {
 
         //  No message is available. Initialise the output parameter
         //  to be a 0-byte message.
+        ZError.EAGAIN();
         return null;
     }
 

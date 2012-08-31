@@ -22,7 +22,6 @@ package zmq;
 
 import java.io.IOException;
 import java.net.Socket;
-import java.nio.channels.IllegalBlockingModeException;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 
@@ -101,7 +100,7 @@ public class TcpListener extends Own implements IPollEvents {
         StreamEngine engine = null;
         try {
             engine = new StreamEngine (fd, options, endpoint);
-        } catch (ZException.InstantiationException e) {
+        } catch (ZError.InstantiationException e) {
             LOG.error("Failed to initialize StreamEngine", e.getCause());
             socket.monitor_event (ZMQ.ZMQ_EVENT_ACCEPT_FAILED, endpoint, e.getCause());
             return;
@@ -139,16 +138,28 @@ public class TcpListener extends Own implements IPollEvents {
     }
 
     //  Set address to listen on.
-    public void set_address(final String addr_) throws IOException {
+    public boolean set_address(final String addr_)  {
         address.resolve(addr_, options.ipv4only > 0 ? true : false);
         
         endpoint = address.toString();
-        handle = ServerSocketChannel.open();
-        handle.configureBlocking(false);
-        handle.socket().setReuseAddress(true);
-        handle.socket().bind(address.address(), (int)options.backlog);
+        try {
+            handle = ServerSocketChannel.open();
+            handle.configureBlocking(false);
+            handle.socket().setReuseAddress(true);
+            handle.socket().bind(address.address(), options.backlog);
+        } catch (SecurityException e) {
+            ZError.EACCES();
+            return false;
+        } catch (IllegalArgumentException e) {
+            ZError.ENOTSUP();
+            return false;
+        } catch (IOException e) {
+            ZError.exc(e);
+            return false;
+        }
         
         socket.monitor_event(ZMQ.ZMQ_EVENT_LISTENING, addr_, endpoint, handle);
+        return true;
     }
 
     //  Accept the new connection. Returns the file descriptor of the
@@ -159,10 +170,8 @@ public class TcpListener extends Own implements IPollEvents {
         Socket sock = null;
         try {
             sock = handle.socket().accept();
-        } catch (IllegalBlockingModeException e) {
-            return null;
         } catch (IOException e) {
-            throw new ZException.IOException(e);
+            return null;
         }
         
         if (!options.tcp_accept_filters.isEmpty ()) {
@@ -177,7 +186,6 @@ public class TcpListener extends Own implements IPollEvents {
                 try {
                     sock.close();
                 } catch (IOException e) {
-                    throw new ZException.IOException(e);
                 }
                 return null;
             }
