@@ -122,13 +122,13 @@ public class YPipe<T extends IReplaceable> {
     {
         //  Was the value prefetched already? If so, return.
         long h = queue.front_pos();
-        if (h != r && r != -1)
+        if (h != r) 
              return true;
 
         //  There's no prefetched value, so let us prefetch more values.
         //  Prefetching is to simply retrieve the
         //  pointer from c in atomic fashion. If there are no
-        //  items to prefetch, set c to NULL (using compare-and-swap).
+        //  items to prefetch, set c to -1 (using compare-and-swap).
         if (c.compareAndSet (h, -1)) {
              // nothing to read, h == r must be the same
         } else {
@@ -140,7 +140,7 @@ public class YPipe<T extends IReplaceable> {
         //  During pipe's lifetime r should never be NULL, however,
         //  it can happen during pipe shutdown when items
         //  are being deallocated.
-        if (h == r || r == -1)
+        if (h == r) 
             return false;
 
         //  There was at least one value prefetched.

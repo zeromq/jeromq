@@ -89,6 +89,7 @@ abstract public class DecoderBase {
             } else
                 b = read_buf;
         } else {
+            zero_copy = false;
             b = buf;
             b.clear();
         }

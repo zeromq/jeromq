@@ -85,7 +85,6 @@ public class RemoteThr {
 
         ZMQ.zmq_term (ctx);
 
-
     }
 
 

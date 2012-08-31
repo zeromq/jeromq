@@ -52,13 +52,6 @@ public class YQueue<T extends IReplaceable> {
              }
             
          }
-         protected void reset() {
-             if (!allocate) {
-                 for (int i=0; i != values.length; i++) {
-                    values[i] = null;
-                 }
-             }
-         }
     };
 
     //  Back position may point to invalid memory if the queue is empty,
@@ -129,9 +122,10 @@ public class YQueue<T extends IReplaceable> {
 
 
     public void pop() {
+        if (!allocate)
+            begin_chunk.values [begin_pos] = null;
         begin_pos++;
         if (begin_pos == size) {
-            begin_chunk.reset();
             begin_chunk = begin_chunk.next;
             begin_chunk.prev = null;
             begin_pos = 0;

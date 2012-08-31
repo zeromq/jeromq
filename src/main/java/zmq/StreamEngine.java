@@ -31,25 +31,25 @@ public class StreamEngine implements IEngine, IPollEvents {
     //final private IOObject io_object;
     private SocketChannel handle;
 
-    ByteBuffer inbuf;
-    int insize;
-    final DecoderBase decoder;
-    boolean input_error;
+    private ByteBuffer inbuf;
+    private int insize;
+    private final DecoderBase decoder;
+    private boolean input_error;
 
     private Transfer outbuf;
-    int outsize;
-    final EncoderBase encoder;
+    private int outsize;
+    private final EncoderBase encoder;
 
     //  The session this engine is attached to.
-    SessionBase session;
+    private SessionBase session;
 
     //  Detached transient session.
-    SessionBase leftover_session;
+    //private SessionBase leftover_session;
 
-    Options options;
+    private Options options;
 
     // String representation of endpoint
-    String endpoint;
+    private String endpoint;
 
     boolean plugged;
     

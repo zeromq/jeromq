@@ -151,7 +151,7 @@ public class ZError  {
     }
 
     public static void EAGAIN() {
-        errno(EAGAIN);
+        errno.set(EAGAIN);
     }
 
     public static void EINTR() {

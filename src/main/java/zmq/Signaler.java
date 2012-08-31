@@ -131,7 +131,10 @@ public class Signaler {
             ZError.EAGAIN();
             return false;
         }
+        
         selector.selectedKeys().clear();
+        
+        
         
         assert (rc == 1);
         return true;

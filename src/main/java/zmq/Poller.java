@@ -23,7 +23,6 @@ package zmq;
 
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
-import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -205,8 +204,6 @@ public class Poller extends PollerBase implements Runnable {
             int rc;
             try {
                 rc = selector.select(timeout);
-            } catch (ClosedSelectorException e) {
-                break;
             } catch (IOException e) {
                 throw new ZError.IOException(e);
             }
@@ -227,13 +224,14 @@ public class Poller extends PollerBase implements Runnable {
                     continue;
                 }
                 
-
-                if (key.isAcceptable()) {
-                    evt.accept_event();
-                } else if (key.isReadable() ) {
-                    evt.in_event();
-                } else if (key.isWritable()) {
+                if (key.isWritable()) {
                     evt.out_event();
+                } 
+                
+                if (key.isReadable() ) {
+                    evt.in_event();
+                } else if (key.isAcceptable()) {
+                    evt.accept_event();
                 } else if (key.isConnectable()) {
                     evt.connect_event();
                 } 

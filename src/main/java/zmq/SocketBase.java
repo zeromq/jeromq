@@ -575,8 +575,8 @@ public abstract class SocketBase extends Own
         }
 
         //  Process pending commands, if any.
-        boolean brc = process_commands (0, true);
-        if (!brc)
+        boolean rc = process_commands (0, true);
+        if (!rc)
             return false;
 
         //  Clear any user-visible flags that are set on the message.
@@ -587,8 +587,8 @@ public abstract class SocketBase extends Own
             msg_.set_flags (Msg.more);
 
         //  Try to send the message.
-        brc = xsend (msg_, flags_);
-        if (brc)
+        rc = xsend (msg_, flags_);
+        if (rc)
             return true;
         if (!ZError.is(ZError.EAGAIN))
             return false;
@@ -609,8 +609,8 @@ public abstract class SocketBase extends Own
         while (true) {
             if (!process_commands (timeout, false) )
                 return false;
-            brc = xsend (msg_, flags_);
-            if (brc)
+            rc = xsend (msg_, flags_);
+            if (rc)
                 break;
             if (!ZError.is(ZError.EAGAIN))
                 return false;
