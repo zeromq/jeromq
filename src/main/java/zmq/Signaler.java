@@ -25,6 +25,7 @@ import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.Pipe;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 //  This is a cross-platform equivalent to signal_fd. However, as opposed
 //  to signal_fd there can be at most one signal in the signaler at any
@@ -36,12 +37,17 @@ public class Signaler {
     private Pipe.SinkChannel w;
     private Pipe.SourceChannel r;
     private Selector selector;
-    ByteBuffer sdummy;
+    private ByteBuffer sdummy;
+    private ByteBuffer rdummy;
+ 
+    // Selector.selectNow at every sending message doesn't show enough performance
+    private final AtomicBoolean hasevt;
     
     public Signaler() {
         //  Create the socketpair for signaling.
         make_fdpair ();
 
+        hasevt = new AtomicBoolean(false);
         //  Set both fds to non-blocking mode.
         try {
             Utils.unblock_socket (w);
@@ -58,6 +64,7 @@ public class Signaler {
         }
         
         sdummy = ByteBuffer.allocate(1);
+        rdummy = ByteBuffer.allocate(1);
         sdummy.put((byte)0);
 
     }
@@ -107,7 +114,7 @@ public class Signaler {
             assert (nbytes == 1);
             break;
         }
-        
+        hasevt.set(true);
     }
 
     boolean wait_event (long timeout_) {
@@ -119,7 +126,9 @@ public class Signaler {
             if (timeout_ < 0) {
                 rc = selector.select(0);
             } else if (timeout_ == 0) {
-                rc = selector.selectNow();
+                if (hasevt.compareAndSet(true, false)) {
+                    rc = selector.selectNow();
+                }
             } else {
                 rc = selector.select(timeout_);
             }
@@ -134,8 +143,6 @@ public class Signaler {
         
         selector.selectedKeys().clear();
         
-        
-        
         assert (rc == 1);
         return true;
 
@@ -144,14 +151,14 @@ public class Signaler {
 
     public void recv ()
     {
-        ByteBuffer dummy = ByteBuffer.allocate(1);
         int nbytes;
         try {
-            nbytes = r.read(dummy);
+            nbytes = r.read(rdummy);
+            rdummy.rewind();
         } catch (IOException e) {
             throw new ZError.IOException(e);
         } 
-        assert (nbytes >= 0);
+        assert (nbytes == 1);
     }
     
     

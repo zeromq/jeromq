@@ -101,7 +101,13 @@ public class ZError  {
     }
     
     public static boolean is(int code) {
-        return errno.get() == code;
+        switch(code) {
+        case EINTR:
+            return false;
+        default:
+            return errno.get() == code;
+        }
+        
     }
     
     public static void ENOTSUP() {
