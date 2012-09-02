@@ -87,6 +87,7 @@ public class Dealer extends SocketBase {
         if (prefetched) {
             msg_ = prefetched_msg ;
             prefetched = false;
+            prefetched_msg = null;
             return msg_;
         }
 

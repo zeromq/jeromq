@@ -22,7 +22,7 @@
 package zmq;
 
 //  This structure defines the commands that can be sent between threads.
-public class Command implements IReplaceable {
+public class Command {
 
     //  Object to process the command.
     private ZObject destination;
@@ -101,14 +101,6 @@ public class Command implements IReplaceable {
     @Override
     public String toString() {
         return super.toString() + "[" + type + ", " + destination + "]";
-    }
-
-    @Override
-    public void replace(Object src_) {
-        Command src = (Command) src_;
-        destination = src.destination;
-        type = src.type;
-        arg = src.arg;
     }
 
 }

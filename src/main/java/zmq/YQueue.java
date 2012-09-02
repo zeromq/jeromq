@@ -23,7 +23,7 @@ package zmq;
 import java.lang.reflect.Array;
 
 
-public class YQueue<T extends IReplaceable> {
+public class YQueue<T> {
 
     //  Individual memory chunk to hold N elements.
     private class Chunk
@@ -34,7 +34,7 @@ public class YQueue<T extends IReplaceable> {
          Chunk next;
          
          @SuppressWarnings("unchecked")
-         protected Chunk(Class<T> klass, int size, long memory_ptr, boolean allocate) {
+         protected Chunk(Class<T> klass, int size, long memory_ptr) {
              values = (T[])(Array.newInstance(klass, size));
              pos = new long[size];
              assert values != null;
@@ -42,13 +42,6 @@ public class YQueue<T extends IReplaceable> {
              for (int i=0; i != values.length; i++) {
                  pos[i] = memory_ptr;
                  memory_ptr++;
-                 if (allocate) {
-                    try {
-                        values[i] = klass.newInstance();
-                    } catch (Exception e) {
-                        throw new ZError.InstantiationException(e);
-                    }
-                 }
              }
             
          }
@@ -67,7 +60,6 @@ public class YQueue<T extends IReplaceable> {
     private Chunk spare_chunk;
     private final Class<T> klass;
     private final int size;
-    private boolean allocate;
 
     //  People are likely to produce and consume at similar rates.  In
     //  this scenario holding onto the most recently freed chunk saves
@@ -76,13 +68,12 @@ public class YQueue<T extends IReplaceable> {
     private long memory_ptr;
     
 
-    public YQueue(Class<T> klass, int size, boolean allocate) {
+    public YQueue(Class<T> klass, int size) {
         
         this.klass = klass;
         this.size = size;
-        this.allocate = allocate;
         memory_ptr = 0;
-        begin_chunk = new Chunk(klass, size, memory_ptr, allocate);
+        begin_chunk = new Chunk(klass, size, memory_ptr);
         memory_ptr += size;
         begin_pos = 0;
         back_pos = 0;
@@ -113,17 +104,13 @@ public class YQueue<T extends IReplaceable> {
     }
     
     public T back(T val) {
-        if (allocate)
-            back_chunk.values[back_pos].replace(val);
-        else
-            back_chunk.values [back_pos] = val;
+        back_chunk.values [back_pos] = val;
         return val;
     }
 
 
     public void pop() {
-        if (!allocate)
-            begin_chunk.values [begin_pos] = null;
+        begin_chunk.values [begin_pos] = null;
         begin_pos++;
         if (begin_pos == size) {
             begin_chunk = begin_chunk.next;
@@ -149,7 +136,7 @@ public class YQueue<T extends IReplaceable> {
             end_chunk.next = sc;
             sc.prev = end_chunk;
         } else {
-            end_chunk.next =  new Chunk(klass, size, memory_ptr, allocate);
+            end_chunk.next =  new Chunk(klass, size, memory_ptr);
             memory_ptr += size;
             end_chunk.next.prev = end_chunk;
         }

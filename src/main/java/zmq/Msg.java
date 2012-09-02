@@ -24,7 +24,7 @@ package zmq;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
-public class Msg implements IReplaceable {
+public class Msg {
 
     //  Size in bytes of the largest message that is still copied around
     //  rather than being reference-counted.
@@ -287,11 +287,5 @@ public class Msg implements IReplaceable {
         put(str.getBytes(), i);
     }
     
-    @Override
-    public void replace(Object src) {
-        clone((Msg)src);
-    }
-
-
 
 }

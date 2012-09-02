@@ -29,7 +29,7 @@ public class TestYQueue {
     @Test
     public void testReuse() {
         // yqueue has a first empty entry
-        YQueue<Msg> p = new YQueue<Msg>(Msg.class, 3, true);
+        YQueue<Msg> p = new YQueue<Msg>(Msg.class, 3);
         
         p.push();
         
@@ -43,22 +43,24 @@ public class TestYQueue {
         m7.put("1234567".getBytes(),0);
 
         p.back(m1); 
-        Msg front = p.front();
-        assertThat(front.size(), is(1));
+        assertThat(p.back_pos(), is(0L));
 
         p.push(); 
         p.back(m2); p.push(); // might allocated new chunk
         p.back(m3); p.push();
+        assertThat(p.back_pos(), is(3L));
+
+        assertThat(p.front_pos(), is(0L));
         p.pop();
         p.pop();
         p.pop(); // offer the old chunk
+        assertThat(p.front_pos(), is(3L));
 
         p.back(m4); p.push();
         p.back(m5); p.push();// might reuse the old chunk
         p.back(m6); p.push();
-        p.back(m7); p.push();
         
-        assertThat(front.size(), is(7));
-        assertThat(front.data().length, is(7));
+        assertThat(p.back_pos(), is(0L));
+
     }
 }

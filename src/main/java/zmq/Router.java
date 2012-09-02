@@ -247,10 +247,12 @@ public class Router extends SocketBase {
         if (prefetched) {
             if (!identity_sent) {
                 msg_ = prefetched_id;
+                prefetched_id = null;
                 identity_sent = true;
             }
             else {
                 msg_ = prefetched_msg;
+                prefetched_msg = null;
                 prefetched = false;
             }
             more_in = msg_.has_more();
@@ -321,8 +323,6 @@ public class Router extends SocketBase {
         assert ((prefetched_msg.flags () & Msg.identity) == 0);
 
         Blob identity = pipe[0].get_identity ();
-        //prefetched_id = new Msg(identity.size());
-        //prefetched_id.put(identity.data());
         prefetched_id = new Msg(identity.data());
         prefetched_id.set_flags (Msg.more);
 

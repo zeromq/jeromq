@@ -23,7 +23,7 @@ package zmq;
 import java.util.concurrent.atomic.AtomicLong;
 
 
-public class YPipe<T extends IReplaceable> {
+public class YPipe<T> {
 
     //  Allocation-efficient queue to store pipe items.
     //  Front of the queue points to the first prefetched item, back of
@@ -48,12 +48,8 @@ public class YPipe<T extends IReplaceable> {
     //  atomic operations.
     private final AtomicLong c;
 
-    public YPipe(Class<T> klass, int qsize ) {
-        this(klass, qsize, false);
-    }
-    
-    public YPipe(Class<T> klass, int qsize, boolean allocate) {
-        queue = new YQueue<T>(klass, qsize, allocate);
+    public YPipe(Class<T> klass, int qsize) {
+        queue = new YQueue<T>(klass, qsize);
         queue.push();
         w = r = f = queue.back_pos();
         c = new AtomicLong(queue.back_pos());
