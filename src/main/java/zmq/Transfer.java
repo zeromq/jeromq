@@ -1,8 +1,6 @@
 /*
-    Copyright (c) 2009-2011 250bpm s.r.o.
-    Copyright (c) 2007-2010 iMatix Corporation
-    Copyright (c) 2007-2011 Other contributors as noted in the AUTHORS file
-
+    Copyright other contributors as noted in the AUTHORS file.
+    
     This file is part of 0MQ.
 
     0MQ is free software; you can redistribute it and/or modify it under
