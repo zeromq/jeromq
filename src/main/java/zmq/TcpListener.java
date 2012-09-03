@@ -148,10 +148,10 @@ public class TcpListener extends Own implements IPollEvents {
             handle.socket().setReuseAddress(true);
             handle.socket().bind(address.address(), options.backlog);
         } catch (SecurityException e) {
-            ZError.EACCES();
+            ZError.errno(ZError.EACCESS);
             return false;
         } catch (IllegalArgumentException e) {
-            ZError.ENOTSUP();
+            ZError.errno(ZError.ENOTSUP);
             return false;
         } catch (IOException e) {
             ZError.exc(e);

@@ -74,7 +74,7 @@ public class Pair extends SocketBase {
     protected boolean xsend (Msg msg_, int flags_)
     {
         if (pipe == null || !pipe.write (msg_)) {
-            ZError.EAGAIN();
+            ZError.errno(ZError.EAGAIN);
             return false;
         }
 
@@ -93,7 +93,7 @@ public class Pair extends SocketBase {
 
         Msg msg_ = null;
         if (pipe == null || (msg_ = pipe.read ()) == null) {
-            ZError.EAGAIN();
+            ZError.errno(ZError.EAGAIN);
             //  Initialise the output parameter to be a 0-byte message.
             return null;
         }

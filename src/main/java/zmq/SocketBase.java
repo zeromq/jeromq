@@ -225,7 +225,7 @@ public abstract class SocketBase extends Own
     public void setsockopt(int option_, Object optval_) {
         
         if (ctx_terminated) {
-            ZError.ETERM();
+            ZError.errno(ZError.ETERM);
             return;
         }
 
@@ -240,7 +240,7 @@ public abstract class SocketBase extends Own
     public int getsockopt(int option_) {
         
         if (ctx_terminated) {
-            ZError.ETERM();
+            ZError.errno(ZError.ETERM);
             return -1;
         }
         
@@ -265,7 +265,7 @@ public abstract class SocketBase extends Own
     
     public Object getsockoptx(int option_) {
         if (ctx_terminated) {
-            ZError.ETERM();
+            ZError.errno(ZError.ETERM);
             return null;
         }
 
@@ -296,7 +296,7 @@ public abstract class SocketBase extends Own
     
     public boolean bind(final String addr_) {
         if (ctx_terminated) {
-            ZError.ETERM();
+            ZError.errno(ZError.ETERM);
             return false;
         }
 
@@ -337,7 +337,7 @@ public abstract class SocketBase extends Own
         //  point we'll choose one.
         IOThread io_thread = choose_io_thread (options.affinity);
         if (io_thread == null) {
-            ZError.EMTHREAD();
+            ZError.errno(ZError.EMTHREAD);
             return false;
         }
 
@@ -383,7 +383,7 @@ public abstract class SocketBase extends Own
     public boolean connect (String addr_)
     {
         if (ctx_terminated) {
-            ZError.ETERM();
+            ZError.errno(ZError.ETERM);
             return false;
         }
 
@@ -531,7 +531,7 @@ public abstract class SocketBase extends Own
     public boolean term_endpoint(String addr_) {
 
         if (ctx_terminated) {
-            ZError.ETERM();
+            ZError.errno(ZError.ETERM);
             return false;
         }
         
@@ -564,13 +564,13 @@ public abstract class SocketBase extends Own
     public boolean send (Msg msg_, int flags_)
     {
         if (ctx_terminated) {
-            ZError.ETERM();
+            ZError.errno(ZError.ETERM);
             return false;
         }
         
         //  Check whether message passed to the function is valid.
         if (msg_ == null || !msg_.check ()) {
-            ZError.EFAULT();
+            ZError.errno(ZError.EFAULT);
             throw new IllegalArgumentException(msg_.toString());
         }
 
@@ -618,7 +618,7 @@ public abstract class SocketBase extends Own
             if (timeout > 0) {
                 timeout = (int) (end - clock.now_ms ());
                 if (timeout <= 0) {
-                    ZError.EAGAIN();
+                    ZError.errno(ZError.EAGAIN);
                     return false;
                 }
             }
@@ -629,7 +629,7 @@ public abstract class SocketBase extends Own
 
     public Msg recv(int flags_) {
         if (ctx_terminated) {
-            ZError.ETERM();
+            ZError.errno(ZError.ETERM);
             return null;
         }
         
@@ -697,7 +697,7 @@ public abstract class SocketBase extends Own
             if (timeout > 0) {
                 timeout = (int) (end - clock.now_ms ());
                 if (timeout <= 0) {
-                    ZError.EAGAIN();
+                    ZError.errno(ZError.EAGAIN);
                     return null;
                 }
             }
@@ -806,7 +806,7 @@ public abstract class SocketBase extends Own
             cmd = mailbox.recv (0);
          }
         if (ctx_terminated) {
-            ZError.ETERM();
+            ZError.errno(ZError.ETERM);
             return false;
         }
 

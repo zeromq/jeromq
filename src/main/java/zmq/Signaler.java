@@ -137,7 +137,7 @@ public class Signaler {
         }
         
         if (rc == 0) {
-            ZError.EAGAIN();
+            ZError.errno(ZError.EAGAIN);
             return false;
         }
         

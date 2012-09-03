@@ -187,7 +187,7 @@ public class SessionBase extends Own implements Pipe.IPipeEvents, IPollEvents {
         }
 
         if (pipe == null || (msg_ = pipe.read ()) == null ) {
-            ZError.EAGAIN();
+            ZError.errno(ZError.EAGAIN);
             return null;
         }
         incomplete_in = msg_.has_more();
@@ -209,7 +209,7 @@ public class SessionBase extends Own implements Pipe.IPipeEvents, IPollEvents {
             return true;
         }
 
-        ZError.EAGAIN();
+        ZError.errno(ZError.EAGAIN);
         return false;
     }
     

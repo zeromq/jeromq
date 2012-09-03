@@ -299,13 +299,13 @@ public class Ctx {
     
             //  Once zmq_term() was called, we can't create new sockets.
             if (terminating) {
-                ZError.ETERM();
+                ZError.errno(ZError.ETERM);
                 return null;
             }
     
             //  If max_sockets limit was reached, return error.
             if (empty_slots.isEmpty ()) {
-                ZError.EMFILE();
+                ZError.errno(ZError.EMFILE);
                 return null;
             }
     
@@ -402,7 +402,7 @@ public class Ctx {
             endpoints_sync.unlock ();
         }
         if (inserted != null) {
-            ZError.EADDRINUSE();
+            ZError.errno(ZError.EADDRINUSE);
             return false;
         }
         return true;
@@ -435,7 +435,7 @@ public class Ctx {
         try {
             endpoint = endpoints.get(addr_);
             if (endpoint == null) {
-                ZError.ECONNREFUSED();
+                ZError.errno(ZError.ECONNREFUSED);
                 return new Endpoint(null, new Options());
             }
     

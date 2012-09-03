@@ -109,7 +109,7 @@ public class LB {
 
         //  If there are no pipes we cannot send the message.
         if (active == 0) {
-            ZError.EAGAIN();
+            ZError.errno(ZError.EAGAIN);
             return false;
         }
 

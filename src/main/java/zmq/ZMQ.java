@@ -398,7 +398,7 @@ public class ZMQ {
     public static int zmq_poll(Selector selector, PollItem[] items_, long timeout_ ) {
 
         if (items_ == null) {
-            ZError.EFAULT();
+            ZError.errno(ZError.EFAULT);
             throw new IllegalArgumentException();
         }
         if (items_.length == 0) {
