@@ -136,7 +136,7 @@ public class YPipe<T> {
         //  During pipe's lifetime r should never be NULL, however,
         //  it can happen during pipe shutdown when items
         //  are being deallocated.
-        if (h == r) 
+        if (h == r || r == -1) 
             return false;
 
         //  There was at least one value prefetched.
@@ -155,6 +155,7 @@ public class YPipe<T> {
         //  There was at least one value prefetched.
         //  Return it to the caller.
         T value_ = queue.front();
+        
         queue.pop ();
         return value_;
     }
@@ -168,7 +169,10 @@ public class YPipe<T> {
         boolean rc = check_read ();
         assert (rc);
         
-        return queue.front ();
+        T value = queue.front ();
+        if (value == null)
+            throw new RuntimeException("null??");
+        return value;
     }
 
 

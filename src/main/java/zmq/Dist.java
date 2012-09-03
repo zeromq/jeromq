@@ -79,16 +79,18 @@ public class Dist {
     //  Mark the pipe as matching. Subsequent call to send_to_matching
     //  will send message also to this pipe.
     public void match(Pipe pipe_) {
+        
+        int idx = pipes.indexOf (pipe_);
         //  If pipe is already matching do nothing.
-        if (pipes.indexOf (pipe_) < matching)
+        if (idx < matching)
             return;
 
         //  If the pipe isn't eligible, ignore it.
-        if (pipes.indexOf (pipe_) >= eligible)
+        if (idx >= eligible)
             return;
 
         //  Mark the pipe as matching.
-        Utils.swap( pipes, pipes.indexOf (pipe_), matching);
+        Utils.swap( pipes, idx, matching);
         matching++;
 
     }
@@ -158,30 +160,12 @@ public class Dist {
         if (matching == 0) {
             return;
         }
-
-        if (msg_.is_vsm ()) {
-            for (int i = 0; i < matching; ++i)
-                if(!write (pipes.get(i), msg_))
-                    --i; //  Retry last write because index will have been swapped
-            return;
-        }
         
-        //  Add matching-1 references to the message. We already hold one reference,
-        //  that's why -1.
-        //msg_.add_refs ((int) matching - 1);
-
-        //  Push copy of the message to each matching pipe.
-        //int failed = 0;
         for (int i = 0; i < matching; ++i)
-            if (!write (pipes.get(i), msg_)) {
-                //++failed;
+            if(!write (pipes.get(i), msg_))
                 --i; //  Retry last write because index will have been swapped
-            }
-        //if (failed > 0)
-        //    msg_->rm_refs (failed);
-
-        //  Detach the original message from the data buffer. Note that we don't
-        //  close the message. That's because we've already used all the references.
+        return;
+        
     }
     
     public boolean has_out ()

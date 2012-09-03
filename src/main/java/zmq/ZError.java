@@ -106,6 +106,10 @@ public class ZError  {
         }
         
     }
+
+    public static void clear() {
+        errno.set(0);
+    }
     
 
 }

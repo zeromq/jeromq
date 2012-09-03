@@ -50,57 +50,62 @@ public class Device {
             throw new ZError.IOException(e);
         }
         
-        while (success) {
-            //  Wait while there are either requests or replies to process.
-            rc = ZMQ.zmq_poll (selector, items, -1);
-            if (rc < 0)
-                break;
-
-            //  Process a request.
-            if (items [0].isReadable()) {
-                while (true) {
-                    msg = insocket_.recv (0);
-                    if (msg == null) {
-                        success = false;
-                        break;
-                    }
-
-                    more = insocket_.getsockopt (ZMQ.ZMQ_RCVMORE);
-
-                    success = outsocket_.send (msg, more > 0? ZMQ.ZMQ_SNDMORE: 0);
-                    if (!success)
-                        break;
-                    if (more == 0)
-                        break;
-                }
-            }
-            //  Process a reply.
-            if (success && items [1].isReadable()) {
-                while (true) {
-                    msg = outsocket_.recv (0);
-                    if (msg == null) {
-                        success = false;
-                        break;
-                    }
-
-                    more = outsocket_.getsockopt (ZMQ.ZMQ_RCVMORE);
-
-                    success = insocket_.send (msg, more > 0? ZMQ.ZMQ_SNDMORE: 0);
-                    if (!success)
-                        break;
-                    if (more == 0)
-                        break;
-                }
-            }
-
-        }
-        
         try {
-            selector.close();
-        } catch (Exception e) {
+            while (!Thread.currentThread().isInterrupted()) {
+                //  Wait while there are either requests or replies to process.
+                rc = ZMQ.zmq_poll (selector, items, -1);
+                if (rc < 0)
+                    return false;
+    
+                //  Process a request.
+                if (items [0].isReadable()) {
+                    while (true) {
+                        msg = insocket_.recv (0);
+                        if (msg == null) {
+                            return false;
+                        }
+    
+                        more = insocket_.getsockopt (ZMQ.ZMQ_RCVMORE);
+                        
+                        if (more < 0)
+                            return false;
+    
+                        success = outsocket_.send (msg, more > 0? ZMQ.ZMQ_SNDMORE: 0);
+                        if (!success)
+                            return false;
+                        if (more == 0)
+                            break;
+                    }
+                }
+                //  Process a reply.
+                if (items [1].isReadable()) {
+                    while (true) {
+                        msg = outsocket_.recv (0);
+                        if (msg == null) {
+                            return false;
+                        }
+    
+                        more = outsocket_.getsockopt (ZMQ.ZMQ_RCVMORE);
+                        
+                        if (more < 0)
+                            return false;
+    
+                        success = insocket_.send (msg, more > 0? ZMQ.ZMQ_SNDMORE: 0);
+                        if (!success)
+                            return false;
+                        if (more == 0)
+                            break;
+                    }
+                }
+    
+            }
+        } finally {
+            try {
+                selector.close();
+            } catch (Exception e) {
+            }
         }
         
-        return success;
-        
+        return true;
     }
 }

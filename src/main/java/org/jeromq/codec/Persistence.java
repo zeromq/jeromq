@@ -1,5 +1,4 @@
 /*
-    Copyright (c) 1991-2011 iMatix Corporation <www.imatix.com>
     Copyright other contributors as noted in the AUTHORS file.
                 
     This file is part of 0MQ.

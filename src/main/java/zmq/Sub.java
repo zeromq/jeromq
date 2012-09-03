@@ -43,10 +43,11 @@ public class Sub extends XSub {
     }
 
     @Override
-    public void xsetsockopt (int option_, Object optval_)
+    public boolean xsetsockopt (int option_, Object optval_)
     {
         if (option_ != ZMQ.ZMQ_SUBSCRIBE && option_ != ZMQ.ZMQ_UNSUBSCRIBE) {
-            return ;
+            ZError.errno(ZError.EINVAL);
+            return false;
         }
 
         byte[] val;
@@ -68,15 +69,15 @@ public class Sub extends XSub {
 
         //  Pass it further on in the stack.
         boolean rc = super.xsend (msg, 0);
-        if (!rc)
-            throw new IllegalArgumentException();
+        return rc;
     }
     
     @Override
     protected boolean xsend (Msg msg_, int flags_)
     {
         //  Overload the XSUB's send.
-        throw new UnsupportedOperationException();
+        ZError.errno(ZError.ENOTSUP);
+        return false;
     }
 
     @Override

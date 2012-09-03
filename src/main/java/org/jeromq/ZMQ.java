@@ -21,6 +21,7 @@
 package org.jeromq;
 
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectableChannel;
@@ -280,6 +281,7 @@ public class ZMQ {
          */
         public void setLinger(long value) {
             base.setsockopt(zmq.ZMQ.ZMQ_LINGER, (int)value);
+            mayRaise();
         }
         
         /**
@@ -297,6 +299,7 @@ public class ZMQ {
          */
         public void setReconnectIVL(long value) {
             base.setsockopt(zmq.ZMQ.ZMQ_RECONNECT_IVL_MAX, (int)value);
+            mayRaise();
         }
         
 
@@ -316,6 +319,7 @@ public class ZMQ {
          */
         public void setBacklog(long value) {
             base.setsockopt(zmq.ZMQ.ZMQ_BACKLOG, (int)value);
+            mayRaise();
         }
         
 
@@ -334,6 +338,7 @@ public class ZMQ {
          */
         public void setReconnectIVLMax (long value) {
             base.setsockopt(zmq.ZMQ.ZMQ_RECONNECT_IVL_MAX, (int)value);
+            mayRaise();
         }
         
 
@@ -352,6 +357,7 @@ public class ZMQ {
          */
         public void setMaxMsgSize(long value) {
             base.setsockopt(zmq.ZMQ.ZMQ_MAXMSGSIZE, value);
+            mayRaise();
         }
         
 
@@ -370,6 +376,7 @@ public class ZMQ {
          */
         public void setSndHWM(long value) {
             base.setsockopt(zmq.ZMQ.ZMQ_SNDHWM, (int)value);
+            mayRaise();
         }
         
 
@@ -388,6 +395,7 @@ public class ZMQ {
          */
         public void setRcvHWM(long value) {
             base.setsockopt(zmq.ZMQ.ZMQ_RCVHWM, (int)value);
+            mayRaise();
         }
         
         
@@ -474,6 +482,7 @@ public class ZMQ {
          */
         public void setAffinity(long value) {
             base.setsockopt(zmq.ZMQ.ZMQ_AFFINITY, value);
+            mayRaise();
         }
         
         /**
@@ -504,6 +513,7 @@ public class ZMQ {
          */
         public void setIdentity(byte[] identity) {
             base.setsockopt(zmq.ZMQ.ZMQ_IDENTITY, identity);
+            mayRaise();
         }
         
         public void setIdentity(String identity) {
@@ -527,6 +537,7 @@ public class ZMQ {
          */
         public void setRate(long value) {
             base.setsockopt(zmq.ZMQ.ZMQ_RATE, (int)value);
+            mayRaise();
         }
 
 
@@ -554,6 +565,7 @@ public class ZMQ {
          */
         public void setRecoveryInterval (long value) {
             base.setsockopt(zmq.ZMQ.ZMQ_RECOVERY_IVL, (int)value);
+            mayRaise();
         }
 
         /**
@@ -600,6 +612,7 @@ public class ZMQ {
          */
         public void setMulticastHops (long value) {
             base.setsockopt(zmq.ZMQ.ZMQ_MULTICAST_HOPS, (int)value);
+            mayRaise();
         }
 
         /**
@@ -622,6 +635,7 @@ public class ZMQ {
          */
         public void setReceiveTimeOut(int value) {
             base.setsockopt(zmq.ZMQ.ZMQ_RCVTIMEO, value);
+            mayRaise();
         }
         
 
@@ -645,6 +659,7 @@ public class ZMQ {
          */
         public void setSendTimeOut(int value) {
             base.setsockopt(zmq.ZMQ.ZMQ_SNDTIMEO, value);
+            mayRaise();
         }
         
 
@@ -667,6 +682,7 @@ public class ZMQ {
          */
         public void setSendBufferSize(long value) {
             base.setsockopt(zmq.ZMQ.ZMQ_SNDBUF, (int)value);
+            mayRaise();
         }
         
         /**
@@ -688,6 +704,7 @@ public class ZMQ {
          */
         public void setReceiveBufferSize(long value) {
             base.setsockopt(zmq.ZMQ.ZMQ_RCVBUF, (int)value);
+            mayRaise();
         }
         
         /**
@@ -747,6 +764,7 @@ public class ZMQ {
          */
         public void subscribe(byte[] topic) {
             base.setsockopt(zmq.ZMQ.ZMQ_SUBSCRIBE, topic);
+            mayRaise();
         }
         
         public void subscribe(String topic) {
@@ -765,6 +783,7 @@ public class ZMQ {
          */        
         public void unsubscribe(byte[] topic) {
             base.setsockopt(zmq.ZMQ.ZMQ_UNSUBSCRIBE, topic);
+            mayRaise();
         }
         
         public void unsubscribe(String topic) {
@@ -876,6 +895,9 @@ public class ZMQ {
                 System.arraycopy(msg.data(), 0, buffer, offset, len);
                 return msg.size();
             }
+            
+            mayRaise();
+            
             return -1;
         }
         
@@ -892,6 +914,8 @@ public class ZMQ {
             if (msg != null) {
                 return new Msg(msg);
             }
+            
+            mayRaise();
             
             return null;
         }
@@ -910,7 +934,8 @@ public class ZMQ {
         }            
         
         private void mayRaise() {
-            if (!zmq.ZError.is(zmq.ZError.EAGAIN))
+            if (zmq.ZError.is(0) || zmq.ZError.is(zmq.ZError.EAGAIN) ) ;
+            else
                 throw new ZMQException(zmq.ZError.errno());
 
         }
@@ -969,7 +994,7 @@ public class ZMQ {
         }
     }
     
-    public static class Poller {
+    public static class Poller implements Closeable {
 
         /**
          * These values can be ORed to specify what we want to poll for.
@@ -1016,6 +1041,7 @@ public class ZMQ {
             this(context, SIZE_DEFAULT);
         }
         
+        @Override
         public void close () {
             try {
                 selector.close();

@@ -222,19 +222,22 @@ public abstract class SocketBase extends Own
         }
     }
     
-    public void setsockopt(int option_, Object optval_) {
+    public boolean setsockopt(int option_, Object optval_) {
         
         if (ctx_terminated) {
             ZError.errno(ZError.ETERM);
-            return;
+            return false;
         }
 
         //  First, check whether specific socket type overloads the option.
-        xsetsockopt (option_, optval_);
+        boolean rc = xsetsockopt (option_, optval_);
+        if (rc || !ZError.is(ZError.EINVAL))
+            return false;
 
         //  If the socket type doesn't support the option, pass it to
         //  the generic option parser.
-        options.setsockopt (option_, optval_);
+        ZError.clear();
+        return options.setsockopt (option_, optval_);
     }
     
     public int getsockopt(int option_) {
@@ -858,8 +861,10 @@ public abstract class SocketBase extends Own
     //  The default implementation assumes there are no specific socket
     //  options for the particular socket type. If not so, overload this
     //  method.
-    protected void xsetsockopt(int option_, Object optval_) {};
-
+    protected boolean xsetsockopt(int option_, Object optval_) {
+        ZError.errno(ZError.EINVAL);
+        return false;
+    }
 
 
     protected boolean xhas_out() {
