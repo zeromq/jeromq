@@ -129,7 +129,7 @@ public class ZFrame {
      * @param flags
      *          Valid send() method flags, defined in org.zeromq.ZMQ class
      */
-    private void send(Socket socket, int flags) {
+    public void send(Socket socket, int flags) {
         if (socket == null) {
             throw new IllegalArgumentException("socket parameter must be set");
         }
@@ -137,8 +137,6 @@ public class ZFrame {
             throw new IllegalAccessError("Cannot send frame without data");
         }
         
-        // Note the jzmq Socket.cpp JNI class does a memcpy of the byte data before calling
-        // the 0MQ send function, so don't have to clone the message data again here.
         socket.send(data, flags);
     }
     

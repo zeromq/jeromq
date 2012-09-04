@@ -1,7 +1,7 @@
 
 #JeroMQ
 
-Java POJO zeromq (http://zeromq.org) implementation
+Pure Java zeromq (http://zeromq.org) 
 
 ## Features
 
@@ -15,6 +15,7 @@ Java POJO zeromq (http://zeromq.org) implementation
 ## Not supported Features
 * ipc:// protocol. Java doesn't support UNIX domain socket.
 * pgm:// protocol. Cannot find a pgm Java implementation
+* cannot communicate with zeromq 2.x
 
 ## Extended Features
 * build your own StreamEngine's Decoder/Encoder

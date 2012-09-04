@@ -318,6 +318,8 @@ public abstract class SocketBase extends Own
         String protocol = uri.getScheme();
         String address = uri.getAuthority();
         String path = uri.getPath();
+        if (address == null)
+            address = path;
 
         check_protocol (protocol);
 
@@ -365,7 +367,7 @@ public abstract class SocketBase extends Own
         if (protocol.equals("ipc")) {
             IpcListener listener = new IpcListener (
                 io_thread, this, options);
-            boolean rc = listener.set_address (path);
+            boolean rc = listener.set_address (address);
             if (!rc) {
                 listener.destroy();
                 monitor_event (ZMQ.ZMQ_EVENT_BIND_FAILED, addr_, ZError.errno());
@@ -406,6 +408,8 @@ public abstract class SocketBase extends Own
         String protocol = uri.getScheme();
         String address = uri.getAuthority();
         String path = uri.getPath();
+        if (address == null)
+            address = path;
 
         check_protocol (protocol);
 
@@ -489,7 +493,7 @@ public abstract class SocketBase extends Own
         } else if(protocol.equals("ipc")) {
             paddr.resolved( new IpcAddress () );
             //alloc_assert (paddr.resolved.ipc_addr);
-            paddr.resolved().resolve (path, true);
+            paddr.resolved().resolve (address, true);
         }
         //  Create session.
         SessionBase session = SessionBase.create (io_thread, true, this,

@@ -206,6 +206,10 @@ public class ZMQ {
         public Poller poller (int size) {
             return new Poller (this, size);
         }
+        
+        public void log() {
+            ctx.log_event();
+        }
 
     }
     
@@ -225,6 +229,7 @@ public class ZMQ {
         protected Socket(Context context_, int type) {
             ctx = context_.ctx;
             base = ctx.create_socket(type);
+            mayRaise();
         }
         
         protected Socket(SocketBase base_) {
@@ -234,6 +239,13 @@ public class ZMQ {
 
         public SocketBase base() {
             return base;
+        }
+        
+        private void mayRaise() {
+            if (zmq.ZError.is(0) || zmq.ZError.is(zmq.ZError.EAGAIN) ) ;
+            else
+                throw new ZMQException(zmq.ZError.errno());
+
         }
         
         /**
@@ -933,11 +945,18 @@ public class ZMQ {
             return base.send(msg.base, flags);
         }            
         
-        private void mayRaise() {
-            if (zmq.ZError.is(0) || zmq.ZError.is(zmq.ZError.EAGAIN) ) ;
-            else
-                throw new ZMQException(zmq.ZError.errno());
 
+
+        public void dump() {
+            System.out.println("----------------------------------------");
+            while(true) {
+                Msg msg = recvMsg(0);
+                System.out.println(String.format("[%03d] %s", msg.size(), 
+                        msg.size() > 0 ? new String(msg.data()) : ""));
+                if (!hasReceiveMore()) {
+                    break;
+                }
+            }
         }
     }
 

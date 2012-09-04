@@ -354,7 +354,7 @@ public class Ctx {
         } finally {
             slot_sync.unlock ();
         }
-        LOG.debug("Released Slot [" + tid + "] ");
+        LOG.debug("Released Slot [" + socket_ + "] ");
     }
     
     //  Returns reaper thread object.
@@ -482,6 +482,12 @@ public class Ctx {
                     String bind = (String) args_[0];
                     endpoint = (String) args_[1];
                     LOG.info("{} Listening", new Object[] { bind, endpoint });
+                    break;
+                    
+                case ZMQ.ZMQ_EVENT_BIND_FAILED:
+                    bind = (String) args_[0];
+                    int code = (Integer) args_[1];
+                    LOG.info("{} Bind Failed {}", new Object[] { bind, code });
                     break;
                     
                 default:
