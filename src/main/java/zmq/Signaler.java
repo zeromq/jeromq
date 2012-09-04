@@ -25,7 +25,7 @@ import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.Pipe;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 //  This is a cross-platform equivalent to signal_fd. However, as opposed
 //  to signal_fd there can be at most one signal in the signaler at any
@@ -41,13 +41,13 @@ public class Signaler {
     private ByteBuffer rdummy;
  
     // Selector.selectNow at every sending message doesn't show enough performance
-    private final AtomicBoolean hasevt;
+    private AtomicLong wcursor = new AtomicLong(0L);
+    private long rcursor = 0L;
     
     public Signaler() {
         //  Create the socketpair for signaling.
         make_fdpair ();
 
-        hasevt = new AtomicBoolean(false);
         //  Set both fds to non-blocking mode.
         try {
             Utils.unblock_socket (w);
@@ -101,6 +101,8 @@ public class Signaler {
     {
         
         int nbytes = 0;
+        
+
         while (true) {
             try {
                 sdummy.rewind();
@@ -112,9 +114,9 @@ public class Signaler {
                 continue;
             }
             assert (nbytes == 1);
+            wcursor.incrementAndGet();
             break;
         }
-        hasevt.set(true);
     }
 
     boolean wait_event (long timeout_) {
@@ -126,8 +128,8 @@ public class Signaler {
             if (timeout_ < 0) {
                 rc = selector.select(0);
             } else if (timeout_ == 0) {
-                if (hasevt.compareAndSet(true, false)) {
-                    rc = selector.selectNow();
+                if (rcursor < wcursor.get()) {
+                    rc = 1;
                 }
             } else {
                 rc = selector.select(timeout_);
@@ -135,7 +137,8 @@ public class Signaler {
         } catch (IOException e) {
             throw new ZError.IOException(e);
         }
-        
+
+
         if (rc == 0) {
             ZError.errno(ZError.EAGAIN);
             return false;
@@ -151,14 +154,17 @@ public class Signaler {
 
     public void recv ()
     {
-        int nbytes;
-        try {
-            nbytes = r.read(rdummy);
-            rdummy.rewind();
-        } catch (IOException e) {
-            throw new ZError.IOException(e);
-        } 
+        int nbytes = 0;
+        while (nbytes == 0) {
+            try {
+                nbytes = r.read(rdummy);
+                rdummy.rewind();
+            } catch (IOException e) {
+                throw new ZError.IOException(e);
+            } 
+        }
         assert (nbytes == 1);
+        rcursor ++;
     }
     
     

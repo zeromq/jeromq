@@ -282,8 +282,9 @@ public abstract class SocketBase extends Own
         
         if (option_ == ZMQ.ZMQ_EVENTS) {
             boolean rc = process_commands (0, false);
-            if (!rc)
+            if (!rc && (ZError.is(ZError.EINTR) || ZError.is(ZError.ETERM)))
                 return -1;
+            assert (rc);
             int val = 0;
             if (has_out ())
                 val |= ZMQ.ZMQ_POLLOUT;

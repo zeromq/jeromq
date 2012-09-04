@@ -33,11 +33,12 @@ public class Encoder extends EncoderBase {
 
     private Msg in_progress;
     private final ByteBuffer tmpbuf;
+    private final byte[] tmpbytes;
     
     public Encoder(int bufsize_) {
         super(bufsize_);
         tmpbuf = ByteBuffer.allocate(10);
-        
+        tmpbytes = new byte[2];
         //  Write 0 bytes to the batch and go to message_ready state.
         next_step ((ByteBuffer)null, 0, Step.message_ready, true);
     }
@@ -95,19 +96,19 @@ public class Encoder extends EncoderBase {
         //  For messages less than 255 bytes long, write one byte of message size.
         //  For longer messages write 0xff escape character followed by 8-byte
         //  message size. In both cases 'flags' field follows.
-        tmpbuf.clear();
+        
         if (size < 255) {
-            tmpbuf.put((byte)size);
-            tmpbuf.put((byte) (in_progress.flags () & Msg.more));
-            next_step (tmpbuf, 2,Step.size_ready, false);
+            tmpbytes[0] = (byte)size;
+            tmpbytes[1] = (byte) (in_progress.flags () & Msg.more);
+            next_step (tmpbytes, 2,Step.size_ready, false);
         }
         else {
+            tmpbuf.rewind();
             tmpbuf.put((byte)0xff);
             tmpbuf.putLong (size);
             tmpbuf.put((byte) (in_progress.flags () & Msg.more));
             next_step (tmpbuf, 10, Step.size_ready, false);
         }
-        tmpbuf.flip();
         
         return true;
     }
