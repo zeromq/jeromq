@@ -48,7 +48,7 @@ abstract public class DecoderBase {
     private int bufsize;
     private ByteBuffer buf;
     
-    private Object state;
+    private int state;
     
     protected SessionBase session;
 
@@ -58,7 +58,7 @@ abstract public class DecoderBase {
     
     public DecoderBase (int bufsize_, long maxmsgsize_)
     {
-        state = null;
+        state = -1;
         to_read = 0;
         bufsize = bufsize_;
         session = null;
@@ -103,7 +103,7 @@ abstract public class DecoderBase {
     //  bytes actually processed.
     public int process_buffer(ByteBuffer buf_, int size_) {
         //  Check if we had an error in previous attempt.
-        if (state() == null)
+        if (state() < 0)
             return -1;
 
         //  In case of zero-copy simply adjust the pointers, no copying
@@ -115,7 +115,7 @@ abstract public class DecoderBase {
 
             while (to_read == 0) {
                 if (!next()) {
-                    if (state() == null)
+                    if (state() < 0)
                         return -1;
                     return size_;
                 }
@@ -132,7 +132,7 @@ abstract public class DecoderBase {
                 if (read_buf != null)
                     read_buf.flip();
                 if (!next ()) {
-                    if (state() == null) {
+                    if (state() < 0) {
                         return -1;
                     }
 
@@ -159,11 +159,11 @@ abstract public class DecoderBase {
     }
     
 
-    protected void next_step (Msg msg_, Object state_) {
+    protected void next_step (Msg msg_, int state_) {
         next_step(msg_.data(), msg_.size(), state_);
     }
     
-    protected void next_step (ByteBuffer buf_, int to_read_, Object state_)
+    protected void next_step (ByteBuffer buf_, int to_read_, int state_)
     {
         read_buf = buf_;
         read_array = null;
@@ -172,7 +172,7 @@ abstract public class DecoderBase {
         state = state_;
     }
     
-    protected void next_step (byte[] buf_, int to_read_, Object state_)
+    protected void next_step (byte[] buf_, int to_read_, int state_)
     {
         read_buf = null;
         read_array = buf_;
@@ -181,14 +181,20 @@ abstract public class DecoderBase {
         state = state_;
     }
     
-    protected Object state () {
+    protected int state () {
         return state;
     }
     
-    protected void state (Object state_) {
+    protected void state (int state_) {
         state = state_;
     }
     
+    
+    protected void decoding_error ()
+    {
+        state(-1);
+    }
+
     abstract protected boolean next();
     
     abstract public boolean stalled ();

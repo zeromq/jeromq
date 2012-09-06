@@ -83,33 +83,33 @@ public class YQueue<T> {
         end_pos = 0;
     }
     
-    public long front_pos() {
+    public final long front_pos() {
         return begin_chunk.pos[begin_pos];
     }
     
     //  Returns reference to the front element of the queue.
     //  If the queue is empty, behaviour is undefined.
-    public T front() {
+    public final T front() {
         return begin_chunk.values [begin_pos];
     }
 
-    public long back_pos() {
+    public final long back_pos() {
         return back_chunk.pos [back_pos];
     }
 
     //  Returns reference to the back element of the queue.
     //  If the queue is empty, behaviour is undefined.
-    public T back() {
+    public final T back() {
         return back_chunk.values [back_pos];
     }
     
-    public T back(T val) {
+    public final T back(T val) {
         back_chunk.values [back_pos] = val;
         return val;
     }
 
 
-    public void pop() {
+    public final void pop() {
         begin_chunk.values [begin_pos] = null;
         begin_pos++;
         if (begin_pos == size) {
@@ -120,7 +120,7 @@ public class YQueue<T> {
     }
 
     //  Adds an element to the back end of the queue.
-    public void push() {
+    public final void push() {
         back_chunk = end_chunk;
         back_pos = end_pos;
 
@@ -151,7 +151,7 @@ public class YQueue<T> {
     //  unpush is called. It cannot be done automatically as the read
     //  side of the queue can be managed by different, completely
     //  unsynchronised thread.
-    public void unpush() {
+    public final void unpush() {
         //  First, move 'back' one position backwards.
         if (back_pos > 0)
             back_pos--;

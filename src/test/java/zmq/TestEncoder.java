@@ -124,10 +124,8 @@ public class TestEncoder {
     static class CustomEncoder extends EncoderBase
     {
 
-        enum State {
-            read_header,
-            read_body
-        };
+        private final static int read_header = 0;
+        private final static int read_body = 1;
         
         ByteBuffer header = ByteBuffer.allocate(10);
         Msg msg;
@@ -135,12 +133,12 @@ public class TestEncoder {
         
         public CustomEncoder(int bufsize_) {
             super(bufsize_);
-            next_step(null, State.read_body, true);
+            next_step(null, read_body, true);
         }
 
         @Override
         protected boolean next() {
-            switch ((State)state()) {
+            switch (state()) {
             case read_header:
                 return read_header();
             case read_body:
@@ -151,7 +149,7 @@ public class TestEncoder {
 
         private boolean read_header() {
             next_step (msg.data (), msg.size (),
-                    State.read_body, !msg.has_more());
+                    read_body, !msg.has_more());
             return true;
                 
         }
@@ -167,7 +165,7 @@ public class TestEncoder {
             header.put("HEADER".getBytes());
             header.putInt(msg.size());
             header.flip();
-            next_step(header, 10, State.read_header, !msg.has_more());
+            next_step(header, 10, read_header, !msg.has_more());
             return true;
         }
 

@@ -111,7 +111,7 @@ public class Mailbox {
 
         //  Wait for signal from the command sender.
         boolean rc = signaler.wait_event (timeout_);
-        if (!rc && (ZError.is(ZError.EAGAIN) || ZError.is(ZError.EINTR)))
+        if (!rc)
             return null;
 
         assert (rc);

@@ -27,20 +27,20 @@ import java.util.List;
 public class LB {
 
     //  List of outbound pipes.
-    final List<Pipe> pipes;
+    private final List<Pipe> pipes;
     
     //  Number of active pipes. All the active pipes are located at the
     //  beginning of the pipes array.
-    int active;
+    private int active;
 
     //  Points to the last pipe that the most recent message was sent to.
-    int current;
+    private int current;
 
     //  True if last we are in the middle of a multipart message.
-    boolean more;
+    private boolean more;
 
     //  True if we are dropping current message.
-    boolean dropping;
+    private boolean dropping;
     
     public LB() {
         active = 0;
@@ -118,7 +118,8 @@ public class LB {
         more = msg_.has_more();
         if (!more) {
             pipes.get(current).flush ();
-            current = (current + 1) % active;
+            if (active > 1)
+                current = (current + 1) % active;
         }
 
         //  Detach the message from the data buffer.

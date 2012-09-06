@@ -122,10 +122,8 @@ public class TestDecoder {
     static class CustomDecoder extends DecoderBase
     {
 
-        enum State {
-            read_header,
-            read_body
-        };
+        private final static int read_header = 0;
+        private final static int read_body = 1;
         
         ByteBuffer header = ByteBuffer.allocate(10);
         Msg msg;
@@ -133,12 +131,12 @@ public class TestDecoder {
         
         public CustomDecoder(int bufsize_, long maxmsgsize_) {
             super(bufsize_, maxmsgsize_);
-            next_step(header, 10, State.read_header);
+            next_step(header, 10, read_header);
         }
 
         @Override
         protected boolean next() {
-            switch ((State)state()) {
+            switch (state()) {
             case read_header:
                 return read_header();
             case read_body:
@@ -155,7 +153,7 @@ public class TestDecoder {
             size = header.getInt();
             
             msg = new Msg(size);
-            next_step(msg, State.read_body);
+            next_step(msg, read_body);
             
             return true;
         }
@@ -164,13 +162,13 @@ public class TestDecoder {
             
             session.write(msg);
             header.clear();
-            next_step(header, 10, State.read_header);
+            next_step(header, 10, read_header);
             return true;
         }
 
         @Override
         public boolean stalled() {
-            return state() == State.read_body;
+            return state() == read_body;
         }
         
     }

@@ -21,12 +21,14 @@ package org.jeromq;
 
 import java.io.File;
 import java.lang.reflect.Field;
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
+
+import zmq.Utils;
 
 public class ZLogManager {
 
     private ZLogConfig conf;
-    private final HashMap<String, ZLog> logs;
+    private final ConcurrentHashMap<String, ZLog> logs;
     private static ThreadLocal<Boolean> initialized = new ThreadLocal<Boolean>(); 
     private static ZLogManager instance = null;
 
@@ -38,7 +40,7 @@ public class ZLogManager {
         protected File base_path;
         
         private ZLogConfig() {
-            set("base_dir", System.getProperty("java.io.tmpdir"));
+            set("base_dir", System.getProperty("java.io.tmpdir") + "/zlogs");
             set("segment_size", 536870912L); 
             set("flush_messages", 10000) ; 
             set("flush_interval", 1000) ; // 1s
@@ -97,8 +99,13 @@ public class ZLogManager {
         }
 
         private void postSet(String name, Object value) {
+            File file = null;
             if ("base_dir".equals(name)) {
-                File file = new File((String)value);
+                if (value == null) {
+                    file = new File(System.getProperty("java.io.tmpdir"), "zlogs");
+                } else {
+                    file = new File((String)value);
+                }
                 if (file.isFile()) {
                     throw new IllegalArgumentException("base_dir " + value + " cannot be file");
                 }
@@ -113,7 +120,7 @@ public class ZLogManager {
     }
     public ZLogManager() {
         conf = new ZLogConfig();
-        logs = new HashMap<String, ZLog>();
+        logs = new ConcurrentHashMap<String, ZLog>();
     }
     
     public ZLogConfig getConfig() {
@@ -126,9 +133,23 @@ public class ZLogManager {
         ZLog log = logs.get(topic);
         if (log == null) {
             log = new ZLog(getConfig(), topic);
-            logs.put(topic, log);
+            ZLog plog = logs.putIfAbsent(topic, log);
+            if (plog != null) 
+                log = plog;
         }
         return log;
+    }
+    
+    public void cleanup() {
+        File f = new File(conf.base_dir);
+        Utils.delete(f);
+    }
+    
+    synchronized public void shutdown() {
+        for (ZLog log: logs.values()) {
+            log.close();
+        }
+        logs.clear();
     }
     
     public static ZLogManager instance() {

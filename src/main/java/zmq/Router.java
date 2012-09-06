@@ -358,11 +358,9 @@ public class Router extends SocketBase {
             buf.putInt (next_peer_id++);
             buf.flip();
             identity = new Blob(buf);
-            //msg.close ();
         }
         else {
             identity = new Blob(msg.data ());
-            //msg.close ();
 
             //  Ignore peers with duplicate ID.
             if (outpipes.containsKey(identity))

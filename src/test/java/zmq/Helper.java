@@ -128,8 +128,9 @@ public class Helper {
         @Override
         public Msg read() {
             System.out.println("session.read " + out);
-            if (out.size() == 0)
+            if (out.size() == 0) {
                 return null;
+            }
             Msg msg = out.remove(0);
             
             return msg;

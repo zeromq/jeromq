@@ -82,11 +82,8 @@ public class IOThread extends ZObject implements IPollEvents {
         while (true) {
 
             //  Get the next command. If there is none, exit.
-            Command cmd = mailbox.recv ( 0);
-            if (cmd == null && ZError.is(ZError.EINTR))
-                continue;
-            
-            if (cmd == null && ZError.is(ZError.EAGAIN))
+            Command cmd = mailbox.recv (0);
+            if (cmd == null)
                 break;
 
             //  Process the command.

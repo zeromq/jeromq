@@ -28,12 +28,10 @@ public class Persistence {
 
     public static class PersistDecoder extends DecoderBase {
         
-        private enum Step {
-            one_byte_size_ready,
-            eight_byte_size_ready,
-            flags_ready,
-            message_ready
-        }
+        private final static int one_byte_size_ready = 0;
+        private final static int eight_byte_size_ready = 1;
+        private final static int flags_ready = 2;
+        private final static int message_ready = 3;
         
         final private ByteBuffer tmpbuf;
         private Msg in_progress;
@@ -47,18 +45,13 @@ public class Persistence {
             
         
             //  At the beginning, read one byte and go to one_byte_size_ready state.
-            next_step (tmpbuf, 1, Step.one_byte_size_ready);
+            next_step (tmpbuf, 1, one_byte_size_ready);
         }
         
             
-        private void decoding_error ()
-        {
-            state(null);
-        }
-
         @Override
         protected boolean next() {
-            switch((Step)state()) {
+            switch(state()) {
             case one_byte_size_ready:
                 return one_byte_size_ready ();
             case eight_byte_size_ready:
@@ -68,7 +61,7 @@ public class Persistence {
             case message_ready:
                 return message_ready ();
             default:
-                throw new IllegalStateException(state().toString());
+                return false;
             }
         }
 
@@ -81,7 +74,7 @@ public class Persistence {
             byte first = tmpbuf.get();
             if (first == 0xff) {
                 tmpbuf.clear();
-                next_step (tmpbuf, 8, Step.eight_byte_size_ready);
+                next_step (tmpbuf, 8, eight_byte_size_ready);
             } else {
 
                 //  There has to be at least one byte (the flags) in the message).
@@ -108,7 +101,7 @@ public class Persistence {
                 }
 
                 tmpbuf.clear();
-                next_step (tmpbuf, 1, Step.flags_ready);
+                next_step (tmpbuf, 1, flags_ready);
             }
             return true;
 
@@ -144,7 +137,7 @@ public class Persistence {
             in_progress = new Msg(msg_size);
             
             tmpbuf.clear();
-            next_step (tmpbuf, 1, Step.flags_ready);
+            next_step (tmpbuf, 1, flags_ready);
             
             return true;
 
@@ -159,7 +152,7 @@ public class Persistence {
             in_progress.set_flags (first);
 
             next_step (in_progress,
-                Step.message_ready);
+                message_ready);
 
             return true;
 
@@ -176,7 +169,7 @@ public class Persistence {
             }
             
             tmpbuf.clear();
-            next_step (tmpbuf, 1, Step.one_byte_size_ready);
+            next_step (tmpbuf, 1, one_byte_size_ready);
             
             return true;
         }
@@ -185,7 +178,7 @@ public class Persistence {
         
         public boolean stalled ()
         {
-            return state() == Step.message_ready;
+            return state() == message_ready;
         }
 
     }

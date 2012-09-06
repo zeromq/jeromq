@@ -25,7 +25,6 @@ import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.Pipe;
-import java.util.concurrent.atomic.AtomicLong;
 
 //  This is a cross-platform equivalent to signal_fd. However, as opposed
 //  to signal_fd there can be at most one signal in the signaler at any
@@ -41,8 +40,8 @@ public class Signaler {
     private ByteBuffer rdummy;
  
     // Selector.selectNow at every sending message doesn't show enough performance
-    private AtomicLong wcursor = new AtomicLong(0L);
-    private long rcursor = 0L;
+    private long wcursor = Long.MIN_VALUE;
+    private long rcursor = Long.MIN_VALUE;
     
     public Signaler() {
         //  Create the socketpair for signaling.
@@ -114,12 +113,12 @@ public class Signaler {
                 continue;
             }
             assert (nbytes == 1);
-            wcursor.incrementAndGet();
+            wcursor++;
             break;
         }
     }
 
-    boolean wait_event (long timeout_) {
+    public boolean wait_event (long timeout_) {
         
         int rc = 0;
         
@@ -128,7 +127,11 @@ public class Signaler {
             if (timeout_ < 0) {
                 rc = selector.select(0);
             } else if (timeout_ == 0) {
-                if (rcursor < wcursor.get()) {
+                // Thread-unsafe is fine here
+                // because wait_event(0) is called every read/send of SocketBase
+                // instant readiness is not strictly required
+                // On the other hand, we can save lots of system call and increase performance
+                if (rcursor < wcursor) {
                     rc = 1;
                 }
             } else {
@@ -140,7 +143,6 @@ public class Signaler {
 
 
         if (rc == 0) {
-            ZError.errno(ZError.EAGAIN);
             return false;
         }
         

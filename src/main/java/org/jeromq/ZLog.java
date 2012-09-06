@@ -21,16 +21,21 @@ package org.jeromq;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.BufferUnderflowException;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileChannel.MapMode;
+import java.nio.channels.FileLock;
+import java.nio.channels.OverlappingFileLockException;
 import java.text.NumberFormat;
 import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Deque;
+import java.util.regex.Pattern;
 
 import org.jeromq.ZMQ.Msg;
 
@@ -50,6 +55,7 @@ public class ZLog {
 
     private Deque<Segment> segments = new ArrayDeque<Segment>();
     private Segment current;
+    private static final Pattern pattern = Pattern.compile("\\d{20}\\" + SUFFIX);
     
     public ZLog(ZLogManager.ZLogConfig conf, String topic) {
 
@@ -57,7 +63,7 @@ public class ZLog {
         this.conf = conf;
         
         reset();
-        
+        recover();
     }
     
     public void reset() {
@@ -75,7 +81,13 @@ public class ZLog {
         if (!path.exists())
             path.mkdirs();
         
-        File [] files = path.listFiles();
+        File [] files = path.listFiles(
+                new FilenameFilter() {
+                    @Override
+                    public boolean accept(File dir, String name) {
+                        return pattern.matcher(name).matches();
+                    }
+                });
         Arrays.sort(files, 
                 new Comparator<File>() {
                     @Override
@@ -113,48 +125,43 @@ public class ZLog {
     }
     
     public long offset() {
-        return offset;
+        return current == null? offset: current.offset();
     }
     
-    public long append(Msg msg) {
-        if (current == null) {
-            current = new Segment(this, 0L);
-            segments.add(current);
-        }
-        
-        MappedByteBuffer buf;
-        try {
-            buf = current.getBuffer(true);
-        } catch (IOException e) {
-            e.printStackTrace();
-            return -1;
-        }
+    public long append(Msg msg) throws IOException {
         
         long size = msg.size() + msg.headerSize();
-        if (buf.remaining() < size) {
-            current.close();
-            offset = current.offset();
-            current = new Segment(this, offset);
-            segments.add(current);
-            try {
-                buf = current.getBuffer(true);
-            } catch (IOException e) {
-                e.printStackTrace();
-                return -1;
-            }
-        }
+        MappedByteBuffer buf = getBuffer(size, true);
         
         buf.put(msg.headerBuf());
         buf.put(msg.buf());
         
         pendingMessages += 1L;
         
-        long ret = offset + buf.position();
         tryFlush();
         
-        return ret;
+        return current.offset();
     }
 
+    public MappedByteBuffer getBuffer(long size, boolean writable) throws IOException {
+        
+        if (current == null) {
+            current = new Segment(this, 0L);
+            segments.add(current);
+        }
+        
+        MappedByteBuffer buf = current.getBuffer(writable);
+        
+        if (buf.remaining() < size) {
+            current.close();
+            offset = current.offset();
+            current = new Segment(this, offset);
+            segments.add(current);
+            buf = current.getBuffer(writable);
+        }
+        
+        return buf;
+    }
 
     public void flush() {
         if (current == null)
@@ -173,11 +180,30 @@ public class ZLog {
         }
     }
     
+    public void recover() {
+        if (current != null) {
+            try {
+                current.recover();
+            } catch (IOException e) {
+                throw new ZMQException.IOException(e);
+            }
+        }
+    }
+    
     public void close() {
         if (current == null)
             return;
         current.close();
         current = null;
+    }
+    
+    @Override
+    public String toString () {
+        if (current == null) {
+            return super.toString() + "[" + topic + "]";
+        } else {
+            return super.toString() + "[" + topic + "," + current.toString() +"]";
+        }
     }
     
     private static class Segment {
@@ -197,8 +223,10 @@ public class ZLog {
             this.path = new File(zlog.path(), getName(offset));
             if (path.exists()) 
                 size = path.length();
+            
         }
         
+
         private static String getName(long offset) {
             NumberFormat nf = NumberFormat.getInstance();
             nf.setMinimumIntegerDigits(20);
@@ -207,10 +235,6 @@ public class ZLog {
             return nf.format(offset) + SUFFIX;
         }
 
-        
-        public MappedByteBuffer getBuffer () throws IOException {
-            return getBuffer(false);
-        }
         
         @SuppressWarnings("resource")
         public MappedByteBuffer getBuffer (boolean writable) throws IOException {
@@ -228,7 +252,6 @@ public class ZLog {
             buffer = channel.map(mmode, 0, zlog.segmentSize());
             if (writable)
                 buffer.position((int)size);
-            //buffer.load();
             return buffer;
         }
 
@@ -249,6 +272,67 @@ public class ZLog {
         public long start() {
             return start;
         }
+        
+        @SuppressWarnings("resource")
+        public void recover() throws IOException {
+            FileChannel ch =  new RandomAccessFile(path, "rw").getChannel();
+            FileLock lock = null;
+            
+            while (true) {
+                try {
+                    lock = ch.lock();
+                    break;
+                } catch (OverlappingFileLockException e) {
+                }
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    break;
+                }
+            }
+            try {
+                int length;
+                byte shortLength;
+                long longLength;
+                long pos = 0L;
+                MappedByteBuffer buf = ch.map(MapMode.READ_ONLY, 0, ch.size());
+                while (true) {
+                    pos = buf.position();
+                    try {
+                        shortLength = buf.get();
+
+                        if (shortLength == 0) { 
+                            // corrupted
+                            break;
+                        } else if (shortLength == -1) { // 0xff
+                            longLength = buf.getLong();
+                            length = (int)longLength;
+                            length += 8;
+                        } else {
+                            length = shortLength;
+                            if (length < 0)
+                                length = (0xFF) & length;
+                            length ++;
+                        }
+                        buf.get();  // flag
+                        buf.position((int) (pos+length+1));
+                    } catch (BufferUnderflowException e) {
+                        // block corrupted
+                        break;
+                    } catch (IllegalArgumentException e) {
+                        // block corrupted
+                        break;
+                    }
+                }
+                if (pos < ch.size()) {
+                    ch.truncate(pos);
+                    size = pos;
+                }
+            } finally {
+                lock.release();
+                ch.close();
+            }
+        }
 
         public void close() {
             if (channel == null)
@@ -264,9 +348,11 @@ public class ZLog {
             buffer = null;
         }
         
-        public void recover() {
-            //TODO
+        @Override
+        public String toString() {
+            return path.getAbsolutePath() + "(" + offset() + ")";
         }
-
     }
+
+
 }

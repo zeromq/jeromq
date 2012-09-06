@@ -34,23 +34,21 @@ public class Proxy {
     public static abstract class ProxyDecoder extends DecoderBase
     {
 
-        enum State {
-            read_header,
-            read_body
-        };
+        private final static int read_header = 0;
+        private final static int read_body = 1;
         
-        byte[] header;
-        Msg msg;
-        int size = -1;
-        boolean identity_sent = false;
-        Msg bottom ;
+        private byte[] header;
+        private Msg msg;
+        private int size = -1;
+        private boolean identity_sent = false;
+        private Msg bottom ;
         
         public ProxyDecoder(int bufsize_, long maxmsgsize_) {
             super(bufsize_, maxmsgsize_);
             
             header = new byte[headerSize()];
 
-            next_step(header, header.length, State.read_header);
+            next_step(header, header.length, read_header);
             
             bottom = new Msg();
             bottom.set_flags (Msg.more);
@@ -71,7 +69,7 @@ public class Proxy {
         
         @Override
         protected boolean next() {
-            switch ((State)state()) {
+            switch (state()) {
             case read_header:
                 return readHeader();
             case read_body:
@@ -80,20 +78,17 @@ public class Proxy {
             return false;
         }
 
-        private void error() {
-            state(null);
-        }
-        
         private boolean readHeader() {
             size = parseHeader(header);
             
             if (size < 0) {
-                error();
+                decoding_error();
                 return false;
             }
+            
             msg = new Msg(size);
             
-            next_step(msg, State.read_body);
+            next_step(msg, read_body);
             
             return true;
         }
@@ -104,7 +99,7 @@ public class Proxy {
                 return false;
             
             if (!parseBody(msg.data())) {
-                error();
+                decoding_error();
                 return false;
             }
             
@@ -114,19 +109,22 @@ public class Proxy {
                 identity_sent = true;
             }
             
-            if (preserveHeader()) {
-                session.write(new Msg(header, true));
-            }
             session.write(bottom);
+            
+            if (preserveHeader()) {
+                Msg hmsg = new Msg(header, true);
+                hmsg.set_flags(Msg.more);
+                session.write(hmsg);
+            }
             session.write(msg);
             
-            next_step(header, 4, State.read_header);
+            next_step(header, headerSize(), read_header);
             return true;
         }
 
         @Override
         public boolean stalled() {
-            return state() == State.read_body;
+            return state() == read_body;
         }
         
     }
@@ -134,22 +132,19 @@ public class Proxy {
     public static abstract class ProxyEncoder extends EncoderBase
     {
 
-        enum State {
-            write_header,
-            write_body
-        };
+        private final static int write_header = 0;
+        private final static int write_body = 1;
         
-        ByteBuffer header ;
-        Msg msg;
-        int size = -1;
-        boolean message_ready;
-        boolean identity_recieved;
+        private ByteBuffer header ;
+        private Msg msg;
+        private boolean message_ready;
+        private boolean identity_received;
         
         public ProxyEncoder(int bufsize_) {
             super(bufsize_);
-            next_step(null, State.write_header, true);
+            next_step(null, write_header, true);
             message_ready = false;
-            identity_recieved = false;
+            identity_received = false;
             
             header = ByteBuffer.allocate(headerSize());
         }
@@ -160,7 +155,7 @@ public class Proxy {
         
         @Override
         protected boolean next() {
-            switch ((State)state()) {
+            switch (state()) {
             case write_header:
                 return write_header();
             case write_body:
@@ -170,7 +165,7 @@ public class Proxy {
         }
 
         private boolean write_body() {
-            next_step(msg, State.write_header, !msg.has_more());
+            next_step(msg, write_header, !msg.has_more());
             
             return true;
         }
@@ -185,8 +180,8 @@ public class Proxy {
             if (msg == null) {
                 return false;
             }
-            if (!identity_recieved) {
-                identity_recieved = true;
+            if (!identity_received) {
+                identity_received = true;
                 msg = session.read();
                 if (msg == null)
                     return false;
@@ -202,11 +197,15 @@ public class Proxy {
             
             message_ready = false;
 
-            header.clear();
-            header.put(getHeader(msg.data()));
-            header.flip();
-            
-            next_step(header, header.remaining(), State.write_body, false);
+            byte[] hbuf = getHeader(msg.data());
+            if (hbuf != null) {
+                header.clear();
+                header.put(hbuf);
+                header.flip();
+                next_step(header, header.remaining(), write_body, false);
+            } else {
+                next_step(hbuf, 0, write_body, false);
+            }
             return true;
         }
 

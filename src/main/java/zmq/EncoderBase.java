@@ -30,11 +30,12 @@ abstract public class EncoderBase {
     private byte[] write_array;
     private int write_pos;
 
-    //  Next step. If set to NULL, it means that associated data stream
+    //  Next step. If set to -1, it means that associated data stream
     //  is dead.
-    private Object next;
+    private int next;
 
     //  If true, first byte of the message is being written.
+    @SuppressWarnings("unused")
     private boolean beginning;
 
 
@@ -46,8 +47,11 @@ abstract public class EncoderBase {
 
     protected SessionBase session;
     
+    private boolean error;
+    
     protected EncoderBase (int bufsize_) {
         buf = ByteBuffer.allocateDirect(bufsize_);
+        error = false;
     }
 
     //  The function returns a batch of binary data. The data
@@ -57,22 +61,12 @@ abstract public class EncoderBase {
     //  in the batch.If there's no beginning of a message in the batch,
     //  offset is set to -1.
     
-    public Transfer get_data () {
-        return get_data(null, null);
-    }
-    
-    public Transfer get_data (ByteBuffer data_, int[] offset_) {
+    protected Transfer get_data () {
         
-        ByteBuffer buffer ;
-        if (data_ == null) {
-            buffer = buf;
-            buffer.clear();
-        } else {
-            buffer = data_;
-        }
+        ByteBuffer buffer = buf;
+        buffer.clear();
+
         int buffersize = buffer.remaining();
-        if (offset_ != null)
-            offset_[0] = -1;
 
         int pos = 0;
         while (pos < buffersize) {
@@ -83,9 +77,6 @@ abstract public class EncoderBase {
             if (to_write == 0) {
                 //  If we are to encode the beginning of a new message,
                 //  adjust the message offset.
-                if (beginning)
-                    if (offset_ != null && offset_[0] == -1)
-                        offset_[0] = buffer.position();
 
                 if (!next())
                     break;
@@ -101,7 +92,7 @@ abstract public class EncoderBase {
             //  As a consequence, large messages being sent won't block
             //  other engines running in the same I/O thread for excessive
             //  amounts of time.
-            if (buffer.position() == 0 && data_ == null && to_write >= buffersize) {
+            if (buffer.position() == 0 && to_write >= buffersize) {
                 Transfer t;
                 if (write_array != null) {
                     ByteBuffer b = ByteBuffer.wrap(write_array);
@@ -136,17 +127,27 @@ abstract public class EncoderBase {
 
     }
     
-    protected Object state () {
+    protected int state () {
         return next;
     }
     
-    protected void state (Object state_) {
+    protected void state (int state_) {
         next = state_;
+    }
+    
+    
+    protected void encoding_error ()
+    {
+        error = true;
+    }
+    
+    public final boolean is_error() {
+        return error;
     }
     
     abstract protected boolean next();
 
-    protected void next_step (Msg msg_, Object state_, boolean beginning_) {
+    protected void next_step (Msg msg_, int state_, boolean beginning_) {
         if (msg_ == null)
             next_step((ByteBuffer) null, 0, state_, beginning_);
         else
@@ -154,7 +155,7 @@ abstract public class EncoderBase {
     }
     
     protected void next_step (ByteBuffer buf_, int to_write_,
-            Object next_, boolean beginning_)
+            int next_, boolean beginning_)
     {
         
         write_buf = buf_;
@@ -166,7 +167,7 @@ abstract public class EncoderBase {
     }
     
     protected void next_step (byte[] buf_, int to_write_,
-            Object next_, boolean beginning_)
+            int next_, boolean beginning_)
     {
         write_buf = null;
         write_array = buf_;

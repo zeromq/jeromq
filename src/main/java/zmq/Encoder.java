@@ -25,34 +25,30 @@ import java.nio.ByteBuffer;
 
 public class Encoder extends EncoderBase {
 
-    private enum Step {
-        size_ready,
-        message_ready
-    }
+    private final static int size_ready = 0;
+    private final static int message_ready = 1;
     
 
     private Msg in_progress;
-    private final ByteBuffer tmpbuf;
-    private final byte[] tmpbytes;
+    private final byte[] tmpbuf;
     
     public Encoder(int bufsize_) {
         super(bufsize_);
-        tmpbuf = ByteBuffer.allocate(10);
-        tmpbytes = new byte[2];
+        tmpbuf = new byte[10];
         //  Write 0 bytes to the batch and go to message_ready state.
-        next_step ((ByteBuffer)null, 0, Step.message_ready, true);
+        next_step ((byte[])null, 0, message_ready, true);
     }
 
     
     @Override
     protected boolean next() {
-        switch((Step)state()) {
+        switch(state()) {
         case size_ready:
             return size_ready ();
         case message_ready:
             return message_ready ();
         default:
-            throw new IllegalStateException(state().toString());
+            return false;
         }
     }
 
@@ -63,7 +59,7 @@ public class Encoder extends EncoderBase {
     {
         //  Write message body into the buffer.
         next_step (in_progress.data (), in_progress.size (),
-            Step.message_ready, !in_progress.has_more());
+            message_ready, !in_progress.has_more());
         return true;
     }
 
@@ -83,7 +79,6 @@ public class Encoder extends EncoderBase {
         
         in_progress = session.read ();
         if (in_progress == null) {
-            assert(ZError.is(ZError.EAGAIN));
             return false;
         }
 
@@ -98,20 +93,21 @@ public class Encoder extends EncoderBase {
         //  message size. In both cases 'flags' field follows.
         
         if (size < 255) {
-            tmpbytes[0] = (byte)size;
-            tmpbytes[1] = (byte) (in_progress.flags () & Msg.more);
-            next_step (tmpbytes, 2,Step.size_ready, false);
+            tmpbuf[0] = (byte)size;
+            tmpbuf[1] = (byte) (in_progress.flags () & Msg.more);
+            next_step (tmpbuf, 2, size_ready, false);
         }
         else {
-            tmpbuf.rewind();
-            tmpbuf.put((byte)0xff);
-            tmpbuf.putLong (size);
-            tmpbuf.put((byte) (in_progress.flags () & Msg.more));
-            next_step (tmpbuf, 10, Step.size_ready, false);
+            ByteBuffer b = ByteBuffer.wrap(tmpbuf);
+            b.put((byte)0xff);
+            b.putLong(size);
+            b.put((byte) (in_progress.flags () & Msg.more));
+            next_step (tmpbuf, 10, size_ready, false);
         }
         
         return true;
     }
+
 
 
 }

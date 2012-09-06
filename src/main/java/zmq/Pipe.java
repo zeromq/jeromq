@@ -202,9 +202,7 @@ public class Pipe extends ZObject {
             return null;
 
         Msg msg_ = inpipe.read ();
-        //if (LOG.isDebugEnabled()) {
-        //    LOG.debug(parent.toString() + " read " + msg_);
-        //}
+
         if (msg_ == null) {
             in_active = false;
             return null;

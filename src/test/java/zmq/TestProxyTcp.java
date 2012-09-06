@@ -101,10 +101,8 @@ public class TestProxyTcp {
     static class ProxyDecoder extends DecoderBase
     {
 
-        enum State {
-            read_header,
-            read_body
-        };
+        private final static int read_header = 0;
+        private final static int read_body = 1;
         
         ByteBuffer header = ByteBuffer.allocate(4);
         Msg msg;
@@ -114,7 +112,7 @@ public class TestProxyTcp {
         
         public ProxyDecoder(int bufsize_, long maxmsgsize_) {
             super(bufsize_, maxmsgsize_);
-            next_step(header, 4, State.read_header);
+            next_step(header, 4, read_header);
             //send_identity();
             
             bottom = new Msg();
@@ -124,7 +122,7 @@ public class TestProxyTcp {
 
         @Override
         protected boolean next() {
-            switch ((State)state()) {
+            switch (state()) {
             case read_header:
                 return read_header();
             case read_body:
@@ -139,7 +137,7 @@ public class TestProxyTcp {
             size = Integer.parseInt(new String(h));
             System.out.println("Received " + size);
             msg = new Msg(size);
-            next_step(msg, State.read_body);
+            next_step(msg, read_body);
             
             return true;
         }
@@ -160,13 +158,13 @@ public class TestProxyTcp {
             session.write(bottom);
             session.write(msg);
             
-            next_step(header, 4, State.read_header);
+            next_step(header, 4, read_header);
             return true;
         }
 
         @Override
         public boolean stalled() {
-            return state() == State.read_body;
+            return state() == read_body;
         }
         
     }
@@ -174,10 +172,8 @@ public class TestProxyTcp {
     static class ProxyEncoder extends EncoderBase
     {
 
-        enum State {
-            write_header,
-            write_body
-        };
+        private final static int write_header = 0;
+        private final static int write_body = 1;
         
         ByteBuffer header = ByteBuffer.allocate(4);
         Msg msg;
@@ -187,14 +183,14 @@ public class TestProxyTcp {
         
         public ProxyEncoder(int bufsize_) {
             super(bufsize_);
-            next_step(null, State.write_header, true);
+            next_step(null, write_header, true);
             message_ready = false;
             identity_recieved = false;
         }
 
         @Override
         protected boolean next() {
-            switch ((State)state()) {
+            switch (state()) {
             case write_header:
                 return write_header();
             case write_body:
@@ -205,7 +201,7 @@ public class TestProxyTcp {
 
         private boolean write_body() {
             System.out.println("writer body ");
-            next_step(msg, State.write_header, !msg.has_more());
+            next_step(msg, write_header, !msg.has_more());
             
             return true;
         }
@@ -241,7 +237,7 @@ public class TestProxyTcp {
             header.put(String.format("%04d", msg.size()).getBytes());
             header.flip();
             
-            next_step(header, 4, State.write_body, false);
+            next_step(header, 4, write_body, false);
             return true;
         }
 

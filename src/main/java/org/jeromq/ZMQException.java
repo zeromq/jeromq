@@ -22,6 +22,25 @@ package org.jeromq;
 
 public class ZMQException extends RuntimeException {
 
+    public static class IOException extends RuntimeException {
+
+        private static final long serialVersionUID = 8440355423370109164L;
+
+        public IOException(java.io.IOException cause) {
+            super(cause);
+        }
+    }
+
+    public static class CtxTerminated extends ZMQException {
+
+        private static final long serialVersionUID = 7604861505419474892L;
+
+        public CtxTerminated() {
+            super(zmq.ZError.ETERM);
+        }
+
+    }
+
     private static final long serialVersionUID = 5957233088499712341L;
 
     private final long code;

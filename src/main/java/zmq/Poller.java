@@ -21,6 +21,7 @@
 package zmq;
 
 import java.io.IOException;
+import java.nio.channels.CancelledKeyException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
@@ -218,22 +219,23 @@ public class Poller extends PollerBase implements Runnable {
                 IPollEvents evt = (IPollEvents) key.attachment();
                 it.remove();
 
-                if (!key.isValid() ) {
-                    key.cancel();
-                    continue;
+
+
+                try {
+                    if (key.isWritable()) {
+                        evt.out_event();
+                    } 
+                    
+                    if (key.isReadable() ) {
+                        evt.in_event();
+                    } else if (key.isAcceptable()) {
+                        evt.accept_event();
+                    } else if (key.isConnectable()) {
+                        evt.connect_event();
+                    } 
+                } catch (CancelledKeyException e) {
+                    // channel might have been closed
                 }
-                
-                if (key.isWritable()) {
-                    evt.out_event();
-                } 
-                
-                if (key.isReadable() ) {
-                    evt.in_event();
-                } else if (key.isAcceptable()) {
-                    evt.accept_event();
-                } else if (key.isConnectable()) {
-                    evt.connect_event();
-                } 
                 
             }
 

@@ -525,6 +525,10 @@ public class ZMQ {
         return ((major) * 10000 + (minor) * 100 + (patch));
     }
 
+    public static String zmq_strerror(int errno) {
+        return "Errno = " + errno;
+    }
+
     
 
 }

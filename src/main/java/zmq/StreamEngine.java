@@ -231,6 +231,12 @@ public class StreamEngine implements IEngine, IPollEvents {
             //  If there is no data to send, stop polling for output.
             if (outbuf.remaining() == 0) {
                 io_object.reset_pollout (handle);
+                
+                // when we use custom encoder, we might want to close
+                if (encoder.is_error()) {
+                    error();
+                }
+
                 return;
             }
         }
@@ -252,7 +258,13 @@ public class StreamEngine implements IEngine, IPollEvents {
 
         //outpos += nbytes;
         outsize -= nbytes;
-        
+
+        // when we use custom encoder, we might want to close after sending a response
+        if (outsize == 0 && encoder.is_error()) {
+            error();
+            return;
+        }
+
     }
     
 

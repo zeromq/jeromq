@@ -84,10 +84,7 @@ public class Reaper extends ZObject implements IPollEvents {
 
             //  Get the next command. If there is none, exit.
             Command cmd = mailbox.recv (0);
-            if (cmd == null && ZError.is(ZError.EINTR))
-                continue;
-
-            if (cmd == null && ZError.is(ZError.EAGAIN))
+            if (cmd == null)
                 break;
                 
             //  Process the command.

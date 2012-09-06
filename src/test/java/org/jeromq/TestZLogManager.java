@@ -20,6 +20,10 @@ package org.jeromq;
 
 
 import java.io.File;
+import java.io.RandomAccessFile;
+import java.nio.MappedByteBuffer;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileChannel.MapMode;
 
 import org.jeromq.ZMQ.Msg;
 import org.junit.Before;
@@ -31,7 +35,7 @@ import static org.hamcrest.CoreMatchers.*;
 
 public class TestZLogManager {
 
-    private String datadir = "tmp";
+    private String datadir = ".tmp";
     
     @Before
     public void setUpt() {
@@ -39,7 +43,7 @@ public class TestZLogManager {
         Utils.delete(f);
         ZLogManager.instance().getConfig()
             .set("base_dir", datadir)
-            .set("segment_size", 1024);
+            .set("segment_size", 2048);
         ZLogManager.instance().get("new_topic").reset();
     }
     @Test
@@ -62,7 +66,7 @@ public class TestZLogManager {
     public void testOverflow() throws Exception {
         ZLogManager m = ZLogManager.instance();
         m.getConfig().set("segment_size", 12L)
-                .set("flush_interval", 10000L);
+                .set("flush_interval", 10000L); // do not flush
         ZLog log = m.get("new_topic");
         
         assertThat(log.start(), is(0L));
@@ -73,9 +77,32 @@ public class TestZLogManager {
         long pos = log.append(new Msg("1234567890"));
         assertThat(log.count(), is(2));
         assertThat(pos, is(19L));
-        assertThat(log.offset(), is(7L));
-        log.flush();
         assertThat(log.offset(), is(19L));
         log.close();
+    }
+    
+    @SuppressWarnings("resource")
+    @Test
+    public void testRecover() throws Exception {
+        ZLogManager m = ZLogManager.instance();
+        m.shutdown();
+
+        String path = datadir + "/new_topic/00000000000000000000.zmq";
+        FileChannel ch = new RandomAccessFile(path, "rw").getChannel();
+        MappedByteBuffer buf = ch.map(MapMode.READ_WRITE, 0, m.getConfig().segment_size);
+        buf.put((byte)5);
+        buf.put((byte)0);
+        buf.put("12345".getBytes());
+        buf.put((byte)11);
+        buf.put((byte)0);
+        buf.put("67890abcdef".getBytes());
+        ch.close();
+        
+        ZLog log = m.get("new_topic");
+        assertThat(log.offset(), is(20L));
+        
+        log.append(new Msg("hello"));
+        assertThat(log.offset(), is(27L));
+
     }
 }

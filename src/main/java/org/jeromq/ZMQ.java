@@ -241,8 +241,10 @@ public class ZMQ {
             return base;
         }
         
-        private void mayRaise() {
+        private static void mayRaise() {
             if (zmq.ZError.is(0) || zmq.ZError.is(zmq.ZError.EAGAIN) ) ;
+            else if (zmq.ZError.is(zmq.ZError.ETERM) ) 
+                throw new ZMQException.CtxTerminated();
             else
                 throw new ZMQException(zmq.ZError.errno());
 
@@ -1010,6 +1012,10 @@ public class ZMQ {
 
         public void put(byte[] data, int idx) {
             base.put(data, idx);
+        }
+        
+        public void put(Msg data, int idx) {
+            base.put(data.base, idx);
         }
     }
     

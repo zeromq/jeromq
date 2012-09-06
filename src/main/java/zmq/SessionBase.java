@@ -21,13 +21,8 @@
 */ 
 package zmq;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 public class SessionBase extends Own implements Pipe.IPipeEvents, IPollEvents {
 
-    private static Logger LOG = LoggerFactory.getLogger(SessionBase.class);
-    
     //  If true, this session (re)connects to the peer. Otherwise, it's
     //  a transient session created by the listener.
     private boolean connect;
@@ -156,7 +151,7 @@ public class SessionBase extends Own implements Pipe.IPipeEvents, IPollEvents {
         //  Close the engine.
         if (engine != null)
             engine.terminate ();
-
+        
     }
 
 
@@ -180,14 +175,10 @@ public class SessionBase extends Own implements Pipe.IPipeEvents, IPollEvents {
             send_identity = false;
             incomplete_in = false;
             
-            if (LOG.isDebugEnabled()) {
-                LOG.debug(toString() +  " send identity " + msg_);
-            }
             return msg_;
         }
 
         if (pipe == null || (msg_ = pipe.read ()) == null ) {
-            ZError.errno(ZError.EAGAIN);
             return null;
         }
         incomplete_in = msg_.has_more();
@@ -209,7 +200,6 @@ public class SessionBase extends Own implements Pipe.IPipeEvents, IPollEvents {
             return true;
         }
 
-        ZError.errno(ZError.EAGAIN);
         return false;
     }
     

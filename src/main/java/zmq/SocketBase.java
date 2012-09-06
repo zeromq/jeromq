@@ -804,12 +804,9 @@ public abstract class SocketBase extends Own
         
         //  Process all the commands available at the moment.
         while (true) {
-            if (cmd == null && ZError.is(ZError.EAGAIN))
+            if (cmd == null)
                 break;
 
-            if (cmd == null && ZError.is(ZError.EINTR))
-                return false;
-            
             cmd.destination().process_command (cmd);
             cmd = mailbox.recv (0);
          }

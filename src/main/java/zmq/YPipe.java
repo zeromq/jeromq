@@ -60,7 +60,7 @@ public class YPipe<T> {
     //  set to true the item is assumed to be continued by items
     //  subsequently written to the pipe. Incomplete items are never
     //  flushed down the stream.
-    public void write (final T value_, boolean incomplete_)
+    public final void write (final T value_, boolean incomplete_)
     {
         //  Place the value to the queue, add new terminator element.
         queue.back(value_);
@@ -86,7 +86,7 @@ public class YPipe<T> {
     //  Flush all the completed items into the pipe. Returns false if
     //  the reader thread is sleeping. In that case, caller is obliged to
     //  wake the reader up before using the pipe again.
-    public boolean flush ()
+    public final boolean flush ()
     {
         //  If there are no un-flushed items, do nothing.
         if (w == f) {
@@ -114,7 +114,7 @@ public class YPipe<T> {
     }
     
     //  Check whether item is available for reading.
-    public boolean check_read ()
+    public final boolean check_read ()
     {
         //  Was the value prefetched already? If so, return.
         long h = queue.front_pos();
@@ -146,7 +146,7 @@ public class YPipe<T> {
 
     //  Reads an item from the pipe. Returns false if there is no value.
     //  available.
-    public T read ()
+    public final T read ()
     {
         //  Try to prefetch a value.
         if (!check_read ())
@@ -164,14 +164,12 @@ public class YPipe<T> {
     //  Applies the function fn to the first elemenent in the pipe
     //  and returns the value returned by the fn.
     //  The pipe mustn't be empty or the function crashes.
-    public T probe() {
+    public final T probe() {
         
         boolean rc = check_read ();
         assert (rc);
         
         T value = queue.front ();
-        if (value == null)
-            throw new RuntimeException("null??");
         return value;
     }
 

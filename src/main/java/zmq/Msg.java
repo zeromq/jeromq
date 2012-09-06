@@ -47,22 +47,27 @@ public class Msg {
     private ByteBuffer buf;
     
     public Msg() {
-        this(false);
+        init(type_vsm);
     }
 
     public Msg(boolean buffered) {
-        init();
         if (buffered)
-            type = type_lmsg;
+            init(type_lmsg);
+        else
+            init(type_vsm);
     }
 
     public Msg(int size) {
-        this(size, false);
+        init(type_vsm);
+        size(size);
     }
     
     public Msg(int size, boolean buffered) {
-        this(buffered);
-        size(size, buffered);
+        if (buffered)
+            init(type_lmsg);
+        else
+            init(type_vsm);
+        size(size);
     }
 
     
@@ -90,9 +95,9 @@ public class Msg {
     }
     
     public Msg(ByteBuffer src) {
-        init();
-        type = type_lmsg;
+        init(type_lmsg);
         buf = src.duplicate();
+        size = buf.remaining();
     }
     
 
@@ -107,8 +112,8 @@ public class Msg {
          return type >= type_min && type <= type_max;
     }
 
-    private void init() {
-        type = type_vsm;
+    private void init(byte type_) {
+        type = type_;
         flags = 0;
         size = 0;
         data = null;
@@ -118,21 +123,14 @@ public class Msg {
 
     public void size (int size_)
     {
-        size(size_, false);
-    }
-
-    public void size (int size_, boolean buffered)
-    {
         size = size_;
-        if (buffered) {
-            type = type_lmsg;
+        if (type == type_lmsg) {
             flags = 0;
             
             buf = ByteBuffer.allocate(size_);
             data = null;
         }
         else {
-            type = type_vsm;
             flags = 0;
             data = new byte[size_];
             buf = null;
@@ -232,7 +230,7 @@ public class Msg {
             throw new IllegalStateException();
         }
 
-        init();
+        init(type_vsm);
     }
 
 
@@ -285,6 +283,10 @@ public class Msg {
 
     public void put(String str, int i) {
         put(str.getBytes(), i);
+    }
+
+    public void put(Msg data, int i) {
+        put(data.data, i);
     }
     
 
