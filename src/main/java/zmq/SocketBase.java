@@ -1013,4 +1013,29 @@ public abstract class SocketBase extends Own
         return mailbox.get_fd();
     }
 
+    public String typeString() {
+        switch (options.type) {
+        case ZMQ.ZMQ_PAIR:
+            return "PAIR";
+        case ZMQ.ZMQ_PUB:
+            return "PUB";
+        case ZMQ.ZMQ_SUB:
+            return "SUB";
+        case ZMQ.ZMQ_REQ:
+            return "REQ";
+        case ZMQ.ZMQ_REP:
+            return "REP";
+        case ZMQ.ZMQ_DEALER:
+            return "DEALER";
+        case ZMQ.ZMQ_ROUTER:
+            return "ROUTER";
+        case ZMQ.ZMQ_PULL:
+            return "PULL";
+        case ZMQ.ZMQ_PUSH:
+            return "PUSH";
+        default:
+            return "UNKOWN";
+        }
+    }
+
 }

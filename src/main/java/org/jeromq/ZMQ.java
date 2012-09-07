@@ -30,7 +30,6 @@ import java.nio.channels.Selector;
 import zmq.Ctx;
 import zmq.DecoderBase;
 import zmq.EncoderBase;
-import zmq.PollItem;
 import zmq.SocketBase;
 import zmq.ZError;
 
@@ -141,6 +140,10 @@ public class ZMQ {
      */
     @Deprecated
     public static final int DOWNSTREAM = PUSH;
+
+    public static final int POLLIN = zmq.ZMQ.ZMQ_POLLIN;
+    public static final int POLLOUT = zmq.ZMQ.ZMQ_POLLOUT;
+    public static final int POLLERR = zmq.ZMQ.ZMQ_POLLERR;
     
     /**
      * Create a new Context.
@@ -1032,7 +1035,7 @@ public class ZMQ {
         private static final int SIZE_INCREMENT = 16;
         
         private final Selector selector;
-        private PollItem items[];
+        private zmq.PollItem items[];
         private long timeout;
         private int next;
 
@@ -1045,7 +1048,7 @@ public class ZMQ {
          *            the number of Sockets this poller will contain.
          */
         protected Poller (Context context, int size) {
-            items = new PollItem[size];
+            items = new zmq.PollItem[size];
             timeout = -1L;
             next = 0;
             
@@ -1100,18 +1103,18 @@ public class ZMQ {
             
             int pos = 0;
             for (pos = 0; pos < items.length ;pos++) {
-                PollItem item = items[pos];
+                zmq.PollItem item = items[pos];
                 if (item == null) {
-                    items[pos] = new PollItem(socket.base, events);
+                    items[pos] = new zmq.PollItem(socket.base, events);
                     break;
                 }
             }
             if (pos == items.length) {
-                PollItem[] nitems = new PollItem[items.length + SIZE_INCREMENT];
+                zmq.PollItem[] nitems = new zmq.PollItem[items.length + SIZE_INCREMENT];
                 for (pos = 0; pos < items.length ;pos++) {
                     nitems[pos] = items[pos];
                 }
-                nitems[pos] = new PollItem(socket.base, events);
+                nitems[pos] = new zmq.PollItem(socket.base, events);
                 items = nitems;
             }
             if (pos >= next)
@@ -1127,7 +1130,7 @@ public class ZMQ {
          */
         public void unregister (Socket socket) {
             for (int pos = 0; pos < items.length ;pos++) {
-                PollItem item = items[pos];
+                zmq.PollItem item = items[pos];
                 if (item.socket() == socket.base) {
                     items[pos] = null;
                     break;
@@ -1236,7 +1239,7 @@ public class ZMQ {
          * @return true if the element was signalled.
          */
         public boolean pollin (int index) {
-            PollItem item ;
+            zmq.PollItem item ;
             if (index < 0 || index >= this.next || (item = items[index]) == null)
                 return false;
             return item.isReadable(); 
@@ -1250,7 +1253,7 @@ public class ZMQ {
          * @return true if the element was signalled.
          */
         public boolean pollout (int index) {
-            PollItem item ;
+            zmq.PollItem item ;
             if (index < 0 || index >= this.next || (item = items[index]) == null)
                 return false;
             return item.isWriteable(); 
@@ -1265,12 +1268,34 @@ public class ZMQ {
          * @return true if the element was signalled.
          */
         public boolean pollerr (int index) {
-            PollItem item ;
+            zmq.PollItem item ;
             if (index < 0 || index >= this.next || (item = items[index]) == null)
                 return false;
             return item.isError();
 
         }
+    }
+    
+    public static class PollItem {
+
+        private final zmq.PollItem base;
+        
+        public PollItem(Socket s, int ops) {
+            base = new zmq.PollItem(s.base, ops); 
+        }
+        
+        public zmq.PollItem base() {
+            return base;
+        }
+
+        public SelectableChannel getChannel() {
+            return base.getChannel();
+        }
+
+        public SocketBase getSocket() {
+            return base.getSocket();
+        }
+        
     }
 
     public enum Error {

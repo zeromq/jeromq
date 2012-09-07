@@ -62,35 +62,39 @@ public class PollItem {
         ready = 0;
     }
 
-    public boolean isReadable() {
+    public final boolean isReadable() {
         return (ready & ZMQ.ZMQ_POLLIN) > 0;
     }
 
-    public boolean isWriteable() {
+    public final boolean isWriteable() {
         return (ready & ZMQ.ZMQ_POLLOUT) > 0;
     }
     
-    public boolean isError() {
+    public final boolean isError() {
         return (ready & ZMQ.ZMQ_POLLERR) > 0;
     }
 
-    public SelectableChannel getChannel() {
+    public final SocketBase getSocket() {
+        return s;
+    }
+    
+    public final SelectableChannel getChannel() {
         if (s != null)
             return s.get_fd();
         else 
             return c;
     }
 
-    public int interestOps() {
+    public final int interestOps() {
         return interest;
     }
 
-    public int interestOps(int ops) {
+    public final int interestOps(int ops) {
         init(ops);
         return interest;
     }
 
-    public int readyOps(SelectionKey key) {
+    public final int readyOps(SelectionKey key) {
         ready = 0;
         
         if (s != null) {
@@ -118,9 +122,15 @@ public class PollItem {
         
         return ready;
     }
+    
 
-    public SocketBase socket() {
+    public final int readyOps() {
+        return ready;
+    }
+
+    public final SocketBase socket() {
         return s;
     }
+
 
 }

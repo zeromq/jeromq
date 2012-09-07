@@ -25,6 +25,7 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
+import java.util.HashMap;
 
 
 public class ZMQ {
@@ -300,6 +301,34 @@ public class ZMQ {
         return rc;
     }
 
+    // Send multiple messages.
+    //
+    // If flag bit ZMQ_SNDMORE is set the vector is treated as
+    // a single multi-part message, i.e. the last message has
+    // ZMQ_SNDMORE bit switched off.
+    //
+    public int zmq_sendiov (SocketBase s_, byte[][] a_, int count_, int flags_)
+    {
+        if (s_ == null || !s_.check_tag ()) {
+            throw new IllegalStateException();
+        }
+        int rc = 0;
+        Msg msg;
+       
+        for (int i = 0; i < count_; ++i) {
+            msg = new Msg(a_[i]);
+            if (i == count_ - 1)
+                flags_ = flags_ & ~ZMQ_SNDMORE;
+            rc = s_sendmsg (s_, msg, flags_);
+            if (rc < 0) {
+               rc = -1;
+               break;
+            }
+        }
+        return rc;
+
+    }
+
     private static int s_sendmsg(SocketBase s_, Msg msg_, int flags_) {
         int sz = zmq_msg_size (msg_);
         boolean rc = s_.send ( msg_, flags_);
@@ -327,6 +356,54 @@ public class ZMQ {
 
         return msg;
     }
+    
+     // Receive a multi-part message
+     // 
+     // Receives up to *count_ parts of a multi-part message.
+     // Sets *count_ to the actual number of parts read.
+     // ZMQ_RCVMORE is set to indicate if a complete multi-part message was read.
+     // Returns number of message parts read, or -1 on error.
+     //
+     // Note: even if -1 is returned, some parts of the message
+     // may have been read. Therefore the client must consult
+     // *count_ to retrieve message parts successfully read,
+     // even if -1 is returned.
+     //
+     // The iov_base* buffers of each iovec *a_ filled in by this 
+     // function may be freed using free().
+     //
+     // Implementation note: We assume zmq::msg_t buffer allocated
+     // by zmq::recvmsg can be freed by free().
+     // We assume it is safe to steal these buffers by simply
+     // not closing the zmq::msg_t.
+     //
+    public int zmq_recviov (SocketBase s_, byte[][] a_, int count_, int flags_)
+    {
+        if (s_ == null || !s_.check_tag ()) {
+            throw new IllegalStateException();
+        }
+
+        int nread = 0;
+        boolean recvmore = true;
+
+        for (int i = 0; recvmore && i < count_; ++i) {
+            // Cheat! We never close any msg
+            // because we want to steal the buffer.
+            Msg msg = s_recvmsg (s_, flags_);
+            if (msg == null) {
+                nread = -1;
+                break;
+            }
+
+            // Cheat: acquire zmq_msg buffer.
+            a_[i] = msg.data();
+
+            // Assume zmq_socket ZMQ_RVCMORE is properly set.
+            recvmore = msg.has_more();
+        }
+        return nread;
+    }
+
 
     public static Msg s_recvmsg (SocketBase s_, int flags_)
     {
@@ -414,23 +491,34 @@ public class ZMQ {
         long now = 0;
         long end = 0;
         
+        HashMap<PollItem, SelectionKey> saved = new HashMap<PollItem,SelectionKey>();
+        for (SelectionKey key: selector.keys()) {
+            saved.put((PollItem)key.attachment(), key);
+        }
+
         for (PollItem item: items_) {
             if (item == null) 
                 continue;
-            SelectableChannel ch = item.getChannel();  // mailbox channel if ZMQ socket
-            SelectionKey key = ch.keyFor(selector);
 
-            if (key == null) {
+            SelectableChannel ch = item.getChannel(); // mailbox channel if ZMQ socket
+            SelectionKey key = saved.remove(item);
+            
+            if (key != null) {
+                if (item.interestOps() != item.interestOps()) {
+                    key.interestOps(item.interestOps());
+                }
+            } else {
                 try {
                     key = ch.register(selector, item.interestOps());
                     key.attach(item);
                 } catch (ClosedChannelException e) {
                     throw new ZError.IOException(e);
                 }
-            } else {
-                if (item.interestOps() != key.interestOps())
-                    key.interestOps(item.interestOps());
-            }
+            } 
+        }
+
+        for (SelectionKey deprecated: saved.values()) {
+            deprecated.cancel();
         }
         
         boolean first_pass = true;
@@ -472,7 +560,6 @@ public class ZMQ {
             } catch (IOException e) {
                 throw new ZError.IOException(e);
             }            
-            
             //  If timout is zero, exit immediately whether there are events or not.
             if (timeout_ == 0)
                 break;
