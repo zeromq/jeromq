@@ -472,6 +472,25 @@ public class ZMQ {
     }
 
     // Polling.
+    public static int zmq_poll(PollItem[] items_, long timeout_) {
+        Selector selector = null;
+        try {
+            selector = Selector.open();
+        } catch (IOException e) {
+            throw new ZError.IOException(e);
+        }
+        
+
+        int ret = zmq_poll (selector, items_, timeout_);
+        
+        try {
+            selector.close();
+        } catch (IOException e) {
+        }
+        
+        return ret;
+        
+    }
     public static int zmq_poll(Selector selector, PollItem[] items_, long timeout_ ) {
 
         if (items_ == null) {

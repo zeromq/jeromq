@@ -19,6 +19,9 @@
 */
 package org.jeromq;
 
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.Arrays;
 
 import org.jeromq.ZMQ.Socket;
@@ -39,6 +42,10 @@ import org.jeromq.ZMQ.Socket;
  */
 
 public class ZFrame {
+    
+    public static final int MORE  =   1;
+    public static final int REUSE =   2;     // no effect at java
+    public static final int DONTWAIT = 4;
     
     private boolean more;
     
@@ -93,6 +100,9 @@ public class ZFrame {
         return data;
     }
 
+    public byte[] data() {
+        return data;
+    }
 
     /**
      * @return More flag, true if last read had MORE message parts to come
@@ -137,7 +147,10 @@ public class ZFrame {
             throw new IllegalAccessError("Cannot send frame without data");
         }
         
-        socket.send(data, flags);
+        int snd_flags = (flags & MORE) > 0? ZMQ.SNDMORE: 0;
+        snd_flags |= (flags & DONTWAIT) > 0? ZMQ.DONTWAIT: 0;
+        
+        socket.send(data, snd_flags);
     }
     
     /**
@@ -334,5 +347,45 @@ public class ZFrame {
         ZFrame f = new ZFrame();
         f.recv(socket, flags);
         return f;
+    }
+
+    public void print(String prefix) {
+        
+        StringWriter sw = new StringWriter();
+        PrintWriter pw = new PrintWriter(sw);
+        
+        if (prefix != null)
+            pw.printf ( "%s", prefix);
+        byte []data = getData();
+        int size = size();
+
+        boolean is_bin = false;
+        int char_nbr;
+        for (char_nbr = 0; char_nbr < size; char_nbr++)
+            if (data [char_nbr] < 9 || data [char_nbr] > 127)
+                is_bin = true;
+
+        pw.printf ( "[%03d] ", size);
+        int max_size = is_bin? 35: 70;
+        String elipsis = "";
+        if (size > max_size) {
+            size = max_size;
+            elipsis = "...";
+        }
+        for (char_nbr = 0; char_nbr < size; char_nbr++) {
+            if (is_bin)
+                pw.printf ("%02X", data [char_nbr]);
+            else
+                pw.printf ("%c", data [char_nbr]);
+        }
+        pw.printf ("%s\n", elipsis);
+        pw.flush();
+        pw.close();
+        try {
+            sw.close();
+        } catch (IOException e) {
+        }
+        
+        System.out.print(sw.toString());
     }
 }

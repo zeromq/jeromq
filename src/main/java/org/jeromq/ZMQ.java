@@ -1295,6 +1295,14 @@ public class ZMQ {
         public SocketBase getSocket() {
             return base.getSocket();
         }
+
+        public boolean isReadable() {
+            return base.isReadable();
+        }
+        
+        public boolean isWritable() {
+            return base.isWriteable();
+        }
         
     }
 
@@ -1337,6 +1345,15 @@ public class ZMQ {
         return zmq.ZMQ.zmq_device(type_, sa.base, sb.base);
     }
     
+    public static int poll (PollItem[] items, long timeout) {
+        
+        zmq.PollItem[] items_ = new zmq.PollItem[items.length];
+        for (int i=0; i < items.length; i++) {
+            items_[i] = items[i].base;
+        }
+        
+        return zmq.ZMQ.zmq_poll(items_, timeout);
+    }
     
 
     /**
