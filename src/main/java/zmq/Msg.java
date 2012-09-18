@@ -29,9 +29,9 @@ public class Msg {
     //  Size in bytes of the largest message that is still copied around
     //  rather than being reference-counted.
     
-    public final static byte more = 1;
-    public final static byte identity = 64;
-    public final static byte shared = -128;
+    public final static int more = 1;
+    public final static int identity = 64;
+    public final static int shared = 128;
     
     private final static byte type_min = 101;
     private final static byte type_vsm = 102;
@@ -40,7 +40,7 @@ public class Msg {
     private final static byte type_max = 105;
     
     private byte type;
-    private byte flags;
+    private int flags;
     private int size;
     private byte[] header;
     private byte[] data;
@@ -137,7 +137,7 @@ public class Msg {
         }
     }
 
-    public byte flags ()
+    public int flags ()
     {
         return flags;
     }
@@ -152,9 +152,9 @@ public class Msg {
         return type;
     }
     
-    public void set_flags (byte flags_)
+    public void set_flags (int flags_)
     {
-        flags |= flags_;
+        flags = flags | flags_;
     }
 
 
@@ -202,26 +202,28 @@ public class Msg {
         else
             return 2;
     }
-    public ByteBuffer header_buf()
-    {
-        ByteBuffer hbuf; 
+    
+    public byte[] header() {
         if (header == null) {
-            header = new byte[10];
-            hbuf = ByteBuffer.wrap(header);
             if (size < 255) {
-                hbuf.put((byte)size);
-                hbuf.put(flags);
+                header = new byte[2];
+                header[0] = (byte)size;
+                header[1] = (byte)flags;
             } else {
+                header = new byte[10];
+                ByteBuffer hbuf = ByteBuffer.wrap(header);
+
                 hbuf.put((byte)0xff);
-                hbuf.put(flags);
+                hbuf.put((byte)flags);
                 hbuf.putLong((long)size);
             }
-            hbuf.rewind();
-        } else {
-            hbuf = ByteBuffer.wrap(header);
-        }
-        hbuf.limit(header_size());
-        return hbuf;
+        } 
+        return header;
+        
+    }
+    public ByteBuffer header_buf()
+    {
+        return ByteBuffer.wrap(header());
     }
 
     public void close ()
@@ -248,8 +250,8 @@ public class Msg {
         data = m.data;
     }
 
-    public void reset_flags (byte f) {
-        flags = (byte) (flags &~ f);
+    public void reset_flags (int f) {
+        flags = flags &~ f;
     }
     
     public void put(byte[] src, int i) {

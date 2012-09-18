@@ -1,5 +1,4 @@
 /*
-    Copyright (c) 1991-2011 iMatix Corporation <www.imatix.com>
     Copyright other contributors as noted in the AUTHORS file.
                 
     This file is part of 0MQ.
@@ -23,12 +22,11 @@ import java.io.File;
 import java.lang.reflect.Field;
 import java.util.concurrent.ConcurrentHashMap;
 
-import zmq.Utils;
-
 public class ZLogManager {
 
-    private ZLogConfig conf;
+    private final ZLogConfig conf;
     private final ConcurrentHashMap<String, ZLog> logs;
+    
     private static ThreadLocal<Boolean> initialized = new ThreadLocal<Boolean>(); 
     private static ZLogManager instance = null;
 
@@ -37,13 +35,15 @@ public class ZLogManager {
         protected long segment_size;
         protected long flush_messages;
         protected long flush_interval;
+        protected long cleanup_interval;
         protected File base_path;
         
         private ZLogConfig() {
             set("base_dir", System.getProperty("java.io.tmpdir") + "/zlogs");
             set("segment_size", 536870912L); 
             set("flush_messages", 10000) ; 
-            set("flush_interval", 1000) ; // 1s
+            set("flush_interval", 1000) ; // 1 sec
+            set("cleanup_interval", 604800000L) ; // 1 week
         }
         
         public ZLogConfig set(String name, Object value) {
@@ -106,33 +106,44 @@ public class ZLogManager {
                 } else {
                     file = new File((String)value);
                 }
+                base_dir = file.getAbsolutePath();
+
                 if (file.isFile()) {
                     throw new IllegalArgumentException("base_dir " + value + " cannot be file");
                 }
                 if (!file.exists()) {
-                    file.mkdirs();
+                    if(!file.mkdirs()) {
+                        throw new RuntimeException("Cannot make directory " + file.getAbsolutePath());
+                    }
                 }
                 
                 assert (file.isDirectory());
                 base_path = file;
             }
         }
+        
     }
-    public ZLogManager() {
+    
+    private ZLogManager() {
         conf = new ZLogConfig();
         logs = new ConcurrentHashMap<String, ZLog>();
     }
     
-    public ZLogConfig getConfig() {
+    public ZLogConfig config() {
         return conf;
     }
     
-    // A ZLog instance must not be shared between thread
-    // It is highly recommended that a single thread who own a single ZMQ worker socket also own ZLog instances
+    /**
+     * Returns ZLog instance is a singleton
+     * Write operations, append, flush, close should be called by a single thread or must be synchronized
+     * 
+     * @param topic
+     * @return ZLog singleton instance
+     */
     public ZLog get(String topic) {
         ZLog log = logs.get(topic);
         if (log == null) {
-            log = new ZLog(getConfig(), topic);
+            log = new ZLog(conf, topic);
             ZLog plog = logs.putIfAbsent(topic, log);
             if (plog != null) 
                 log = plog;
@@ -140,9 +151,12 @@ public class ZLogManager {
         return log;
     }
     
-    public void cleanup() {
-        File f = new File(conf.base_dir);
-        Utils.delete(f);
+    /**
+     * 
+     * @return array of active topics 
+     */
+    public String[] topics() {
+        return logs.keySet().toArray(new String[0]);
     }
     
     synchronized public void shutdown() {
@@ -155,8 +169,9 @@ public class ZLogManager {
     public static ZLogManager instance() {
         if (initialized.get() == null) {
             synchronized(initialized) {
-                if (instance == null)
+                if (instance == null) {
                     instance = new ZLogManager(); 
+                }
                 initialized.set(Boolean.TRUE);
             }
         }

@@ -24,6 +24,7 @@ import java.io.RandomAccessFile;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileChannel.MapMode;
+import java.util.List;
 
 import org.jeromq.ZMQ.Msg;
 import org.junit.Before;
@@ -41,7 +42,7 @@ public class TestZLogManager {
     public void setUpt() {
         File f = new File(datadir, "new_topic");
         Utils.delete(f);
-        ZLogManager.instance().getConfig()
+        ZLogManager.instance().config()
             .set("base_dir", datadir)
             .set("segment_size", 2048);
         ZLogManager.instance().get("new_topic").reset();
@@ -65,7 +66,7 @@ public class TestZLogManager {
     @Test
     public void testOverflow() throws Exception {
         ZLogManager m = ZLogManager.instance();
-        m.getConfig().set("segment_size", 12L)
+        m.config().set("segment_size", 12L)
                 .set("flush_interval", 10000L); // do not flush
         ZLog log = m.get("new_topic");
         
@@ -87,9 +88,9 @@ public class TestZLogManager {
         ZLogManager m = ZLogManager.instance();
         m.shutdown();
 
-        String path = datadir + "/new_topic/00000000000000000000.zmq";
+        String path = datadir + "/new_topic/00000000000000000000.dat";
         FileChannel ch = new RandomAccessFile(path, "rw").getChannel();
-        MappedByteBuffer buf = ch.map(MapMode.READ_WRITE, 0, m.getConfig().segment_size);
+        MappedByteBuffer buf = ch.map(MapMode.READ_WRITE, 0, m.config().segment_size);
         buf.put((byte)5);
         buf.put((byte)0);
         buf.put("12345".getBytes());
@@ -104,5 +105,45 @@ public class TestZLogManager {
         log.append(new Msg("hello"));
         assertThat(log.offset(), is(27L));
 
+    }
+    
+    @Test
+    public void testReadMsg() throws Exception {
+        ZLogManager m = ZLogManager.instance();
+        m.config().set("segment_size", 13L)
+                .set("flush_interval", 10000L); // do not flush
+        ZLog log = m.get("new_topic");
+        
+        log.append(new Msg("12345678"));
+        log.append(new Msg("12345"));
+        log.append(new Msg("123"));
+        log.flush();
+        
+        long[] offsets = log.offsets();
+        assertThat(offsets[0], is(0L));
+        assertThat(offsets[1], is(10L));
+        
+        List<Msg> msgs = log.readMsg(10L, 1000);
+        assertThat(msgs.size(), is(2));
+        assertThat(msgs.get(0).size(), is(5));
+        assertThat(msgs.get(1).size(), is(3));
+    }
+    
+    @Test
+    public void testRead() throws Exception {
+        ZLogManager m = ZLogManager.instance();
+        m.config().set("segment_size", 13L)
+                .set("flush_interval", 10000L); // do not flush
+        ZLog log = m.get("new_topic");
+        
+        log.append(new Msg("12345678"));
+        log.append(new Msg("12345"));
+        log.append(new Msg("123"));
+        log.flush();
+        
+        FileChannel ch = log.open(10L);
+        assertThat(log.offset(), is(22L));
+        assertThat(ch.size(), is(13L));
+        ch.close();
     }
 }

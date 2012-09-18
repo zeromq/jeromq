@@ -1,5 +1,4 @@
 /*
-    Copyright (c) 1991-2011 iMatix Corporation <www.imatix.com>
     Copyright other contributors as noted in the AUTHORS file.
                 
     This file is part of 0MQ.
@@ -25,16 +24,20 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.BufferUnderflowException;
+import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileChannel.MapMode;
 import java.nio.channels.FileLock;
 import java.nio.channels.OverlappingFileLockException;
 import java.text.NumberFormat;
-import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.Deque;
+import java.util.ConcurrentModificationException;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.regex.Pattern;
 
 import org.jeromq.ZMQ.Msg;
@@ -42,36 +45,38 @@ import org.jeromq.ZMQ.Msg;
 
 public class ZLog {
 
-    private final static String SUFFIX = ".zmq";
+    private final static String SUFFIX = ".dat";
     
     private final String topic;
 
     private final ZLogManager.ZLogConfig conf;
     private File path;
     private long start;
-    private long offset;
     private long pendingMessages;
     private long lastFlush;
 
-    private Deque<Segment> segments = new ArrayDeque<Segment>();
+    private final TreeMap<Long, Segment> segments ;
     private Segment current;
     private static final Pattern pattern = Pattern.compile("\\d{20}\\" + SUFFIX);
+
+    private static final long LATEST = -1L;
+    private static final long EARLIEST = -2L;
     
     public ZLog(ZLogManager.ZLogConfig conf, String topic) {
 
         this.topic = topic;
         this.conf = conf;
         
+        segments = new TreeMap<Long, Segment>();
         reset();
         recover();
     }
     
-    public void reset() {
+    protected void reset() {
 
         close();
 
         start = 0L;
-        offset = 0L;
         pendingMessages = 0L;
         lastFlush = System.currentTimeMillis();
         current = null;
@@ -79,7 +84,9 @@ public class ZLog {
         path = new File(conf.base_path, topic);
 
         if (!path.exists())
-            path.mkdirs();
+            if(!path.mkdirs()) {
+                throw new RuntimeException("Cannot make directory " + path.getAbsolutePath());
+            }
         
         File [] files = path.listFiles(
                 new FilenameFilter() {
@@ -97,13 +104,13 @@ public class ZLog {
         });
         segments.clear();
         for (File f: files) {
-            offset = Long.valueOf(f.getName().replace(SUFFIX, ""));
-            segments.add(new Segment(this, offset));
+            long offset = Long.valueOf(f.getName().replace(SUFFIX, ""));
+            segments.put(offset, new Segment(this, offset));
         }
         
         if (!segments.isEmpty()) {
-            start = segments.getFirst().start();
-            current = segments.getLast();
+            start = segments.firstKey();
+            current = segments.lastEntry().getValue();
         }
 
     }
@@ -125,9 +132,105 @@ public class ZLog {
     }
     
     public long offset() {
-        return current == null? offset: current.offset();
+        return current == null? 0L: current.offset();
+    }
+
+    /**
+     * last element is always safely flushed offset
+     * 
+     * @return array of segment start offsets
+     */
+    public long[] offsets() {
+        long[] offsets = new long[segments.size()+1];
+        int i = 0;
+        while (true) {
+            // fail first instead of using a lock
+            try {
+                for (Long key: segments.keySet()) {
+                    offsets[i] = key;
+                    i++;
+                }
+                break;
+            } catch (ConcurrentModificationException e) {
+                // retry
+                offsets = new long[segments.size()+1];
+            }
+        }
+        offsets[i] = current == null? 0L : current.size();
+        return offsets;
+    }
+
+    /**
+     * For -1, it always returns start and last safely flushed offset
+     * 
+     * @param modifiedBefore timestamp in milli. -2 for first, -1 for latest 
+     * @param maxEntry maximum entries 
+     * @return array of segment start offsets which where modified since
+     */
+    public long[] offsets(long modifiedBefore, int maxEntry) {
+        
+        if (segments.isEmpty()) 
+            return new long[0] ;
+        
+        if (modifiedBefore == EARLIEST) // first
+            return new long[] { segments.firstKey() };
+        if (modifiedBefore == LATEST) {
+            Map.Entry<Long, Segment> last = segments.lastEntry();
+            return new long [] { last.getKey(), last.getKey() + last.getValue().size() };
+        }
+        
+        Segment[] values;
+        
+        while (true) {
+            // fail first instead of using a lock
+            try {
+                values = segments.values().toArray(new Segment[0]);
+                break;
+            } catch (ConcurrentModificationException e) {
+                //
+            }
+        }
+        int idx = values.length /2 ;
+        int top = values.length;
+        int bottom = -1;
+        while (idx > bottom && idx < top) {
+            Segment v = values[idx];
+            long lastMod = v.lastModified();
+            
+            if (lastMod < modifiedBefore) {
+                bottom = idx;
+            } else if (lastMod > modifiedBefore) {
+                top = idx;
+            } else {
+                break;
+            }
+            idx = (top + bottom) / 2;
+        }
+        if (bottom == -1) { // no matches
+            return new long[0];
+        }
+        int start = 0;
+        if (maxEntry > 0 && maxEntry < (idx+1)) {
+            start = idx - maxEntry + 1;
+        }
+        long [] offsets = new long[idx - start + 1 + (top == values.length ? 1: 0)];
+        for (int i = start; i <= idx; i++) {
+            offsets[i] = values[i].start();
+            i++;
+        }
+        if (top == values.length)
+            offsets[offsets.length-1] = current.size();
+        return offsets;
     }
     
+    /**
+     * This operation is not thread-safe. 
+     * This should be called by a single thread or must be synchronized by caller
+     *      
+     * @param msg
+     * @return last absolute position
+     * @throws IOException
+     */
     public long append(Msg msg) throws IOException {
         
         long size = msg.size() + msg.headerSize();
@@ -136,51 +239,108 @@ public class ZLog {
         buf.put(msg.headerBuf());
         buf.put(msg.buf());
         
-        pendingMessages += 1L;
+        pendingMessages = pendingMessages + 1L;
         
         tryFlush();
         
         return current.offset();
     }
 
-    public MappedByteBuffer getBuffer(long size, boolean writable) throws IOException {
+    private MappedByteBuffer getBuffer(long size, boolean writable) throws IOException {
         
         if (current == null) {
             current = new Segment(this, 0L);
-            segments.add(current);
+            segments.put(0L, current);
         }
         
         MappedByteBuffer buf = current.getBuffer(writable);
         
         if (buf.remaining() < size) {
             current.close();
-            offset = current.offset();
+            long offset = current.offset();
             current = new Segment(this, offset);
-            segments.add(current);
+            segments.put(offset, current);
             buf = current.getBuffer(writable);
+            cleanup();
         }
         
         return buf;
     }
+    
+    public List<Msg> readMsg(long start, int max) throws InvalidOffsetException, IOException {
+        
+        Map.Entry<Long, Segment> entry = segments.floorEntry(start);
+        List<Msg> results = new ArrayList<Msg>();
+        MappedByteBuffer buf;
+        Msg msg;
+        
+        if (entry == null) {
+            return results;
+        }
+        buf = entry.getValue().getBuffer(false);
+        buf.position((int) (start - entry.getKey()));
 
+        while ((msg = readMsg(buf)) != null) {
+            max = max - msg.size();
+            if (max <= 0)
+                break;
+            results.add(msg);
+        }
+        
+        return results;
+    }
+
+    public int read(long start, ByteBuffer dst) throws IOException {
+        Map.Entry<Long, Segment> entry = segments.floorEntry(start);
+        FileChannel ch;
+        ch = entry.getValue().getChannel(false);
+        ch.position(start - entry.getKey());
+        return ch.read(dst);
+        
+    }
+
+    /**
+     * By using memory mapped file, returned file channel might not be fully filled.
+     * 
+     * @param start absolute file offset
+     * @return FileChannel
+     * @throws IOException
+     */
+    public FileChannel open(long start) throws IOException {
+        Map.Entry<Long, Segment> entry = segments.floorEntry(start);
+        FileChannel ch;
+        ch = entry.getValue().getChannel(false);
+        ch.position(start - entry.getKey());
+        
+        return ch;
+    }
+
+    /**
+     * This operation is not thread-safe. 
+     * This should be called by a single thread or must be synchronized by caller
+     */
     public void flush() {
         if (current == null)
             return;
         current.flush();
-        offset = current.offset();
         pendingMessages = 0;
         lastFlush = System.currentTimeMillis();
     }
     
 
     private void tryFlush() {
-        if (pendingMessages >= conf.flush_messages
-                || System.currentTimeMillis() - lastFlush >= conf.flush_interval) {
-            flush();
+        boolean flush = false;
+        if (pendingMessages >= conf.flush_messages) {
+            flush = true;
         }
+        if (!flush && System.currentTimeMillis() - lastFlush >= conf.flush_interval) {
+            flush = true;
+        }
+        if (flush)
+            flush();
     }
     
-    public void recover() {
+    private void recover() {
         if (current != null) {
             try {
                 current.recover();
@@ -190,6 +350,22 @@ public class ZLog {
         }
     }
     
+    private void cleanup() {
+        long expire = System.currentTimeMillis() - conf.cleanup_interval;
+        
+        for (Segment seg: segments.values()) {
+            if (seg.lastModified() < expire) {
+                if (seg != current)
+                    seg.delete();
+            }
+            break;
+        }
+    }
+
+    /**
+     * This operation is not thread-safe. 
+     * This should be called by a single thread or must be synchronized by caller
+     */
     public void close() {
         if (current == null)
             return;
@@ -215,7 +391,7 @@ public class ZLog {
         private MappedByteBuffer buffer;
         private final File path;
         
-        public Segment(ZLog zlog, long offset) {
+        protected Segment(ZLog zlog, long offset) {
             
             this.zlog = zlog;
             this.start = offset;
@@ -223,7 +399,6 @@ public class ZLog {
             this.path = new File(zlog.path(), getName(offset));
             if (path.exists()) 
                 size = path.length();
-            
         }
         
 
@@ -235,46 +410,61 @@ public class ZLog {
             return nf.format(offset) + SUFFIX;
         }
 
-        
+
         @SuppressWarnings("resource")
-        public MappedByteBuffer getBuffer (boolean writable) throws IOException {
-            if (buffer != null)
+        protected FileChannel getChannel (boolean writable) throws IOException {
+            if (writable) {
+                if (channel == null)
+                    channel = new RandomAccessFile(path, "rw").getChannel();
+                return channel;
+            } else {
+                return new FileInputStream(path).getChannel();
+            }
+        }
+        
+        protected MappedByteBuffer getBuffer (boolean writable) throws IOException {
+            if (writable && buffer != null)
                 return buffer;
             
-            if (channel == null) {
-                if (writable)
-                    channel = new RandomAccessFile(path, "rw").getChannel();
-                else
-                    channel = new FileInputStream(path).getChannel();
+            FileChannel ch = getChannel(writable);
+            
+            if (writable) {
+                buffer = ch.map(MapMode.READ_WRITE, 0, zlog.segmentSize());
+                buffer.position((int)size);
+                return buffer;
+            } else {
+                MappedByteBuffer rbuf = ch.map(MapMode.READ_ONLY, 0, ch.size());
+                ch.close();
+                return rbuf;
             }
             
-            MapMode mmode = writable? MapMode.READ_WRITE : MapMode.READ_ONLY;
-            buffer = channel.map(mmode, 0, zlog.segmentSize());
-            if (writable)
-                buffer.position((int)size);
-            return buffer;
         }
 
 
-        public long offset() {
+        protected final long offset() {
             if (buffer == null)
                 return start + size;
             return start + buffer.position();
         }
         
-        public void flush() {
+        protected final long size() {
+            return size;
+        }
+        
+        
+        protected final long start() {
+            return size;
+        }
+        
+        protected void flush() {
             if (buffer != null) {
                 buffer.force();
                 size = buffer.position();
             }
         }
 
-        public long start() {
-            return start;
-        }
-        
         @SuppressWarnings("resource")
-        public void recover() throws IOException {
+        protected void recover() throws IOException {
             FileChannel ch =  new RandomAccessFile(path, "rw").getChannel();
             FileLock lock = null;
             
@@ -291,35 +481,15 @@ public class ZLog {
                 }
             }
             try {
-                int length;
-                byte shortLength;
-                long longLength;
-                long pos = 0L;
+                int pos = 0;
                 MappedByteBuffer buf = ch.map(MapMode.READ_ONLY, 0, ch.size());
                 while (true) {
                     pos = buf.position();
                     try {
-                        shortLength = buf.get();
-
-                        if (shortLength == 0) { 
-                            // corrupted
+                        Msg msg = readMsg(buf);
+                        if (msg == null)
                             break;
-                        } else if (shortLength == -1) { // 0xff
-                            longLength = buf.getLong();
-                            length = (int)longLength;
-                            length += 8;
-                        } else {
-                            length = shortLength;
-                            if (length < 0)
-                                length = (0xFF) & length;
-                            length ++;
-                        }
-                        buf.get();  // flag
-                        buf.position((int) (pos+length+1));
-                    } catch (BufferUnderflowException e) {
-                        // block corrupted
-                        break;
-                    } catch (IllegalArgumentException e) {
+                    } catch (InvalidOffsetException e) {
                         // block corrupted
                         break;
                     }
@@ -334,7 +504,7 @@ public class ZLog {
             }
         }
 
-        public void close() {
+        protected void close() {
             if (channel == null)
                 return;
             
@@ -348,11 +518,82 @@ public class ZLog {
             buffer = null;
         }
         
+        protected long lastModified() {
+            return path.lastModified();
+        }
+        
+        protected void delete() {
+            path.delete();
+        }
+        
         @Override
         public String toString() {
             return path.getAbsolutePath() + "(" + offset() + ")";
         }
     }
+    
+    public static class InvalidOffsetException extends Exception {
+
+        private static final long serialVersionUID = -1696298215013570232L;
+
+        public InvalidOffsetException(Throwable e) {
+            super(e);
+        }
+        
+        public InvalidOffsetException() {
+            super();
+        }
+        
+    }
+
+    private static Msg readMsg(ByteBuffer buf) throws InvalidOffsetException {
+        
+        if (!buf.hasRemaining())
+            return null;
+        
+        int length;
+        int shortLength;
+        long longLength;
+        byte flag;
+        Msg msg = null;
+        
+        try {
+            shortLength = buf.get();
+
+            if (shortLength == 0) { 
+                // not used
+                return null;
+            } else if (shortLength == -1) { // 0xff
+                longLength = buf.getLong();
+                length = (int)longLength;
+                if (length < 255)
+                    throw new InvalidOffsetException();
+            } else {
+                length = shortLength;
+                if (length < 0)
+                    length = (0xFF) & length;
+            }
+            if (length > buf.remaining())
+                throw new InvalidOffsetException();
+
+            flag = buf.get();  // flag
+            if (flag != 0 && flag != Msg.MORE)
+                throw new InvalidOffsetException();
+
+            msg = new Msg(length);
+            if (flag == Msg.MORE)
+                msg.setFlags(Msg.MORE);
+            buf.get(msg.data());
+        } catch (BufferUnderflowException e) {
+            // block corrupted
+            throw new InvalidOffsetException(e);
+        } catch (IllegalArgumentException e) {
+            throw new InvalidOffsetException(e);
+        }
+        
+        return msg;
+    }
+
 
 
 }

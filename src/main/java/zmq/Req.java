@@ -77,7 +77,7 @@ public class Req extends Dealer {
     }
 
     @Override
-    public Msg xrecv (int flags_)
+    protected Msg xrecv (int flags_)
     {
         Msg msg_ = null;
         //  If request wasn't send, we can't wait for reply.

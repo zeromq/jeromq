@@ -967,6 +967,7 @@ public class ZMQ {
 
     public static class Msg {
         
+        public final static int MORE = zmq.Msg.more;
         private final zmq.Msg base;
         
         public Msg() {
@@ -1001,6 +1002,10 @@ public class ZMQ {
             return base.header_buf();
         }
 
+        public byte[] header() {
+            return base.header();
+        }
+        
         public ByteBuffer buf() {
             return base.buf();
         }
@@ -1019,6 +1024,10 @@ public class ZMQ {
         
         public void put(Msg data, int idx) {
             base.put(data.base, idx);
+        }
+        
+        public void setFlags(int flags) {
+            base.set_flags(flags);
         }
     }
     

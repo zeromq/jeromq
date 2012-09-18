@@ -122,9 +122,6 @@ public class LB {
                 current = (current + 1) % active;
         }
 
-        //  Detach the message from the data buffer.
-        //msg_.init ();
-
         return true;
     }
 

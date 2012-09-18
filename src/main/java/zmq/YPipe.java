@@ -50,7 +50,6 @@ public class YPipe<T> {
 
     public YPipe(Class<T> klass, int qsize) {
         queue = new YQueue<T>(klass, qsize);
-        queue.push();
         w = r = f = queue.back_pos();
         c = new AtomicLong(queue.back_pos());
             
@@ -63,8 +62,7 @@ public class YPipe<T> {
     public final void write (final T value_, boolean incomplete_)
     {
         //  Place the value to the queue, add new terminator element.
-        queue.back(value_);
-        queue.push();
+        queue.push(value_);
 
         //  Move the "flush up to here" poiter.
         if (!incomplete_) {
@@ -154,9 +152,8 @@ public class YPipe<T> {
 
         //  There was at least one value prefetched.
         //  Return it to the caller.
-        T value_ = queue.front();
+        T value_ = queue.pop();
         
-        queue.pop ();
         return value_;
     }
     

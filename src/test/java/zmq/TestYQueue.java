@@ -31,8 +31,6 @@ public class TestYQueue {
         // yqueue has a first empty entry
         YQueue<Msg> p = new YQueue<Msg>(Msg.class, 3);
         
-        p.push();
-        
         Msg m1 = new Msg(1);
         Msg m2 = new Msg(2);
         Msg m3 = new Msg(3);
@@ -42,12 +40,11 @@ public class TestYQueue {
         Msg m7 = new Msg(7);
         m7.put("1234567".getBytes(),0);
 
-        p.back(m1); 
-        assertThat(p.back_pos(), is(0L));
+        p.push(m1); 
+        assertThat(p.back_pos(), is(1L));
 
-        p.push(); 
-        p.back(m2); p.push(); // might allocated new chunk
-        p.back(m3); p.push();
+        p.push(m2); // might allocated new chunk
+        p.push(m3); 
         assertThat(p.back_pos(), is(3L));
 
         assertThat(p.front_pos(), is(0L));
@@ -56,9 +53,9 @@ public class TestYQueue {
         p.pop(); // offer the old chunk
         assertThat(p.front_pos(), is(3L));
 
-        p.back(m4); p.push();
-        p.back(m5); p.push();// might reuse the old chunk
-        p.back(m6); p.push();
+        p.push(m4); 
+        p.push(m5); // might reuse the old chunk
+        p.push(m6); 
         
         assertThat(p.back_pos(), is(0L));
 

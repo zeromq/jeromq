@@ -77,10 +77,10 @@ public class YQueue<T> {
         memory_ptr += size;
         begin_pos = 0;
         back_pos = 0;
-        back_chunk = null;
+        back_chunk = begin_chunk;
         spare_chunk = begin_chunk;
         end_chunk = begin_chunk;
-        end_pos = 0;
+        end_pos = 1;
     }
     
     public final long front_pos() {
@@ -103,13 +103,8 @@ public class YQueue<T> {
         return back_chunk.values [back_pos];
     }
     
-    public final T back(T val) {
-        back_chunk.values [back_pos] = val;
-        return val;
-    }
-
-
-    public final void pop() {
+    public final T pop() {
+        T val = begin_chunk.values [begin_pos];
         begin_chunk.values [begin_pos] = null;
         begin_pos++;
         if (begin_pos == size) {
@@ -117,10 +112,12 @@ public class YQueue<T> {
             begin_chunk.prev = null;
             begin_pos = 0;
         }
+        return val;
     }
 
     //  Adds an element to the back end of the queue.
-    public final void push() {
+    public final void push(T val) {
+        back_chunk.values [back_pos] = val;
         back_chunk = end_chunk;
         back_pos = end_pos;
 
