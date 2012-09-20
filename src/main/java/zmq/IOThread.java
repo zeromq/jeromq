@@ -41,7 +41,6 @@ public class IOThread extends ZObject implements IPollEvents {
         super(ctx_, tid_);
         name = "iothread-" + tid_;
         poller = new Poller(name);
-        //alloc_assert (poller);
 
         mailbox = new Mailbox(name);
         mailbox_handle = mailbox.get_fd();

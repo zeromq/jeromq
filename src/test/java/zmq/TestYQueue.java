@@ -41,23 +41,23 @@ public class TestYQueue {
         m7.put("1234567".getBytes(),0);
 
         p.push(m1); 
-        assertThat(p.back_pos(), is(1L));
+        assertThat(p.back_pos(), is(1));
 
         p.push(m2); // might allocated new chunk
         p.push(m3); 
-        assertThat(p.back_pos(), is(3L));
+        assertThat(p.back_pos(), is(3));
 
-        assertThat(p.front_pos(), is(0L));
+        assertThat(p.front_pos(), is(0));
         p.pop();
         p.pop();
         p.pop(); // offer the old chunk
-        assertThat(p.front_pos(), is(3L));
+        assertThat(p.front_pos(), is(3));
 
         p.push(m4); 
         p.push(m5); // might reuse the old chunk
         p.push(m6); 
         
-        assertThat(p.back_pos(), is(0L));
+        assertThat(p.back_pos(), is(0));
 
     }
 }

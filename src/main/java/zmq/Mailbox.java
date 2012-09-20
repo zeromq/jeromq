@@ -26,7 +26,6 @@ import java.util.concurrent.locks.ReentrantLock;
 
 //import org.slf4j.Logger;
 //import org.slf4j.LoggerFactory;
-
 public class Mailbox {
 
     //private static Logger LOG = LoggerFactory.getLogger(Mailbox.class);
@@ -114,7 +113,6 @@ public class Mailbox {
         if (!rc)
             return null;
 
-        assert (rc);
         //  We've got the signal. Now we can switch into active state.
         active = true;
 

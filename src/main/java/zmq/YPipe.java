@@ -20,7 +20,7 @@
 */
 package zmq;
 
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicInteger;
 
 
 public class YPipe<T> {
@@ -33,25 +33,25 @@ public class YPipe<T> {
 
     //  Points to the first un-flushed item. This variable is used
     //  exclusively by writer thread.
-    private long w;
+    private int w;
 
     //  Points to the first un-prefetched item. This variable is used
     //  exclusively by reader thread.
-    private long r;
+    private int r;
 
     //  Points to the first item to be flushed in the future.
-    private long f;
+    private int f;
 
     //  The single point of contention between writer and reader thread.
     //  Points past the last flushed item. If it is NULL,
     //  reader is asleep. This pointer should be always accessed using
     //  atomic operations.
-    private final AtomicLong c;
+    private final AtomicInteger c;
 
     public YPipe(Class<T> klass, int qsize) {
         queue = new YQueue<T>(klass, qsize);
         w = r = f = queue.back_pos();
-        c = new AtomicLong(queue.back_pos());
+        c = new AtomicInteger(queue.back_pos());
             
     }
 
@@ -115,7 +115,7 @@ public class YPipe<T> {
     public final boolean check_read ()
     {
         //  Was the value prefetched already? If so, return.
-        long h = queue.front_pos();
+        int h = queue.front_pos();
         if (h != r) 
              return true;
 

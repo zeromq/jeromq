@@ -30,9 +30,6 @@ abstract public class PollerBase {
     //  registered.
     private final AtomicInteger load;
     
-    //  Clock instance private to this I/O thread.
-    private final Clock clock;
-    
     private final class TimerInfo {
         IPollEvents sink;
         int id;
@@ -47,7 +44,6 @@ abstract public class PollerBase {
     protected PollerBase() {
         load = new AtomicInteger(0);
         timers = new MultiMap<Long, TimerInfo>();
-        clock = new Clock();
     }
     
     //  Returns load of the poller. Note that this function can be
@@ -68,7 +64,7 @@ abstract public class PollerBase {
     //  argument set to id_.
     public void add_timer (long timeout_, IPollEvents sink_, int id_)
     {
-        long expiration = clock.now_ms () + timeout_;
+        long expiration = Clock.now_ms () + timeout_;
         TimerInfo info = new TimerInfo(sink_, id_);
         timers.put(expiration, info);
     }
@@ -100,7 +96,7 @@ abstract public class PollerBase {
             return 0L;
 
         //  Get the current time.
-        long current = clock.now_ms ();
+        long current = Clock.now_ms ();
 
         //   Execute the timers that are already due.
         Iterator<Entry<Long, TimerInfo>> it = timers.entrySet().iterator();

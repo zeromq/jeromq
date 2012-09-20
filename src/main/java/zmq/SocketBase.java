@@ -71,9 +71,6 @@ public abstract class SocketBase extends Own
     //  True if the last message received had MORE flag set.
     private boolean rcvmore;
 
-    //  Improves efficiency of time measurement.
-    private final Clock clock;
-
     protected SocketBase (Ctx parent_, int tid_, int sid_) 
     {
         super (parent_, tid_);
@@ -87,7 +84,6 @@ public abstract class SocketBase extends Own
         options.socket_id = sid_;
         
         endpoints = new MultiMap<String, Own>();
-        clock = new Clock();
         pipes = new ArrayList<Pipe>();
         
         mailbox = new Mailbox("socket-" + sid_);
@@ -483,7 +479,6 @@ public abstract class SocketBase extends Own
         if (io_thread == null) {
             throw new IllegalStateException("Empty IO Thread");
         }
-        poller = io_thread.get_poller();
         Address paddr = new Address (protocol, address);
 
         //  Resolve address (if needed by the protocol)
@@ -493,7 +488,6 @@ public abstract class SocketBase extends Own
                 address, options.ipv4only != 0 ? true : false);
         } else if(protocol.equals("ipc")) {
             paddr.resolved( new IpcAddress () );
-            //alloc_assert (paddr.resolved.ipc_addr);
             paddr.resolved().resolve (address, true);
         }
         //  Create session.
@@ -577,9 +571,9 @@ public abstract class SocketBase extends Own
         }
         
         //  Check whether message passed to the function is valid.
-        if (msg_ == null || !msg_.check ()) {
+        if (msg_ == null) {
             ZError.errno(ZError.EFAULT);
-            throw new IllegalArgumentException(msg_.toString());
+            throw new IllegalArgumentException();
         }
 
         //  Process pending commands, if any.
@@ -609,7 +603,7 @@ public abstract class SocketBase extends Own
         //  Compute the time when the timeout should occur.
         //  If the timeout is infite, don't care. 
         int timeout = options.sndtimeo;
-        long end = timeout < 0 ? 0 : (clock.now_ms () + timeout);
+        long end = timeout < 0 ? 0 : (Clock.now_ms () + timeout);
 
         //  Oops, we couldn't send the message. Wait for the next
         //  command, process it and try to send the message again.
@@ -617,14 +611,16 @@ public abstract class SocketBase extends Own
         while (true) {
             if (!process_commands (timeout, false) )
                 return false;
+            
             rc = xsend (msg_, flags_);
             if (rc)
                 break;
+            
             if (!ZError.is(ZError.EAGAIN))
                 return false;
             
             if (timeout > 0) {
-                timeout = (int) (end - clock.now_ms ());
+                timeout = (int) (end - Clock.now_ms ());
                 if (timeout <= 0) {
                     ZError.errno(ZError.EAGAIN);
                     return false;
@@ -636,6 +632,7 @@ public abstract class SocketBase extends Own
 
 
     public Msg recv(int flags_) {
+        
         if (ctx_terminated) {
             ZError.errno(ZError.ETERM);
             return null;
@@ -685,7 +682,7 @@ public abstract class SocketBase extends Own
         //  Compute the time when the timeout should occur.
         //  If the timeout is infite, don't care. 
         int timeout = options.rcvtimeo;
-        long end = timeout < 0 ? 0 : (clock.now_ms () + timeout);
+        long end = timeout < 0 ? 0 : (Clock.now_ms () + timeout);
 
         //  In blocking scenario, commands are processed over and over again until
         //  we are able to fetch a message.
@@ -703,7 +700,7 @@ public abstract class SocketBase extends Own
             
             block = true;
             if (timeout > 0) {
-                timeout = (int) (end - clock.now_ms ());
+                timeout = (int) (end - Clock.now_ms ());
                 if (timeout <= 0) {
                     ZError.errno(ZError.EAGAIN);
                     return null;
@@ -740,12 +737,9 @@ public abstract class SocketBase extends Own
     }
     
 
-    //  Using this function reaper thread ask the socket to regiter with
+    //  Using this function reaper thread ask the socket to register with
     //  its poller.
     public void start_reaping(Poller poller_) {
-        
-        // poller is io_thread now
-        //poller.rm_fd(mailbox.get_fd ());
         
         //  Plug the socket to the reaper thread.
         poller = poller_;
@@ -771,7 +765,6 @@ public abstract class SocketBase extends Own
 
             //  If we are asked to wait, simply ask mailbox to wait.
             cmd = mailbox.recv (timeout_);
-            //ret = false;
         }
         else {
 
@@ -779,7 +772,7 @@ public abstract class SocketBase extends Own
             //  commands recently, so that we can throttle the new commands.
 
             //  Get the CPU's tick counter. If 0, the counter is not available.
-            long tsc = Clock.rdtsc ();
+            long tsc = 0 ; // save cpu Clock.rdtsc ();
 
             //  Optimised version of command processing - it doesn't have to check
             //  for incoming commands each time. It does so only if certain time
@@ -809,7 +802,7 @@ public abstract class SocketBase extends Own
 
             cmd.destination().process_command (cmd);
             cmd = mailbox.recv (0);
-         }
+        }
         if (ctx_terminated) {
             ZError.errno(ZError.ETERM);
             return false;

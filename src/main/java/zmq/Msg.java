@@ -101,18 +101,18 @@ public class Msg {
     }
     
 
-    public boolean is_delimiter ()
+    public final boolean is_delimiter ()
     {
         return type == type_delimiter;
     }
 
 
-    public boolean check ()
+    public final boolean check ()
     {
          return type >= type_min && type <= type_max;
     }
 
-    private void init(byte type_) {
+    private final void init(byte type_) {
         type = type_;
         flags = 0;
         size = 0;
@@ -121,7 +121,7 @@ public class Msg {
         header = null;
     }
 
-    public void size (int size_)
+    public final void size (int size_)
     {
         size = size_;
         if (type == type_lmsg) {
@@ -137,42 +137,42 @@ public class Msg {
         }
     }
 
-    public int flags ()
+    public final int flags ()
     {
         return flags;
     }
     
-    public boolean has_more ()
+    public final boolean has_more ()
     {
         return (flags & Msg.more) > 0;
     }
     
-    public byte type ()
+    public final byte type ()
     {
         return type;
     }
     
-    public void set_flags (int flags_)
+    public final void set_flags (int flags_)
     {
         flags = flags | flags_;
     }
 
 
     
-    public void init_delimiter() {
+    public final void init_delimiter() {
         type = type_delimiter;
         flags = 0;
     }
 
     
-    public byte[] data ()
+    public final byte[] data ()
     {
         if (data == null && type == type_lmsg) 
             data = buf.array();
         return data;
     }
     
-    public ByteBuffer buf()
+    public final ByteBuffer buf()
     {
         if (buf == null && type != type_lmsg)
             buf = ByteBuffer.wrap(data);
@@ -180,16 +180,13 @@ public class Msg {
     }
     
     
-    public int size ()
+    public final int size ()
     {
-        //  Check the validity of the message.
-        assert (check ());
-
         return size;
     }
     
 
-    public int header_size ()
+    public final int header_size ()
     {
         if (header == null) {
             if (size < 255)
@@ -203,7 +200,7 @@ public class Msg {
             return 2;
     }
     
-    public byte[] header() {
+    public final byte[] header() {
         if (header == null) {
             if (size < 255) {
                 header = new byte[2];
@@ -221,12 +218,12 @@ public class Msg {
         return header;
         
     }
-    public ByteBuffer header_buf()
+    public final ByteBuffer header_buf()
     {
         return ByteBuffer.wrap(header());
     }
 
-    public void close ()
+    public final void close ()
     {
         if (!check ()) {
             throw new IllegalStateException();
@@ -250,11 +247,11 @@ public class Msg {
         data = m.data;
     }
 
-    public void reset_flags (int f) {
+    public final void reset_flags (int f) {
         flags = flags &~ f;
     }
     
-    public void put(byte[] src, int i) {
+    public final void put(byte[] src, int i) {
         
         if (src == null)
             return;
@@ -262,7 +259,7 @@ public class Msg {
         System.arraycopy(src, 0, data, i, src.length);
     }
     
-    public void put(byte[] src, int i, int len_) {
+    public final void put(byte[] src, int i, int len_) {
         
         if (len_ == 0 || src == null)
             return;
@@ -270,24 +267,24 @@ public class Msg {
         System.arraycopy(src, 0, data, i, len_);
     }
 
-    public boolean is_vsm() {
+    public final boolean is_vsm() {
         return type == type_vsm;
     }
 
     
-    public void put(byte b) {
+    public final void put(byte b) {
         data[0] = b;
     }
 
-    public void put(byte b, int i) {
+    public final void put(byte b, int i) {
         data[i] = b;
     }
 
-    public void put(String str, int i) {
+    public final void put(String str, int i) {
         put(str.getBytes(), i);
     }
 
-    public void put(Msg data, int i) {
+    public final void put(Msg data, int i) {
         put(data.data, i);
     }
     

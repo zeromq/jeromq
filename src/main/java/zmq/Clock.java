@@ -27,23 +27,23 @@ public class Clock {
     //  Physical time corresponding to the TSC above (in milliseconds).
     // private long last_time;
     
-    public Clock() {
+    private Clock() {
     }
 
     
     //  High precision timestamp.
-    public static long now_us() {
+    public static final long now_us() {
         return System.currentTimeMillis()  * 1000L;
     }
 
     //  Low precision timestamp. In tight loops generating it can be
     //  10 to 100 times faster than the high precision timestamp.
-    public long now_ms() {
+    public static final long now_ms() {
         return System.currentTimeMillis();
     }
     
     //  CPU's timestamp counter. Returns 0 if it's not available.
-    public static long rdtsc() {
+    public static final long rdtsc() {
         return 0;
     }
 }

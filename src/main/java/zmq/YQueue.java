@@ -29,14 +29,14 @@ public class YQueue<T> {
     private class Chunk
     {
          final T []values;
-         final long[] pos;
+         final int[] pos;
          Chunk prev;
          Chunk next;
          
          @SuppressWarnings("unchecked")
-         protected Chunk(Class<T> klass, int size, long memory_ptr) {
+         protected Chunk(Class<T> klass, int size, int memory_ptr) {
              values = (T[])(Array.newInstance(klass, size));
-             pos = new long[size];
+             pos = new int[size];
              assert values != null;
              prev = next = null;
              for (int i=0; i != values.length; i++) {
@@ -51,7 +51,7 @@ public class YQueue<T> {
     //  while begin & end positions are always valid. Begin position is
     //  accessed exclusively be queue reader (front/pop), while back and
     //  end positions are accessed exclusively by queue writer (back/push).
-    private Chunk begin_chunk;
+    private volatile Chunk begin_chunk;
     private int begin_pos;
     private Chunk back_chunk;
     private int back_pos;
@@ -65,7 +65,7 @@ public class YQueue<T> {
     //  this scenario holding onto the most recently freed chunk saves
     //  us from having to call malloc/free.
     
-    private long memory_ptr;
+    private int memory_ptr;
     
 
     public YQueue(Class<T> klass, int size) {
@@ -83,7 +83,7 @@ public class YQueue<T> {
         end_pos = 1;
     }
     
-    public final long front_pos() {
+    public final int front_pos() {
         return begin_chunk.pos[begin_pos];
     }
     
@@ -93,7 +93,7 @@ public class YQueue<T> {
         return begin_chunk.values [begin_pos];
     }
 
-    public final long back_pos() {
+    public final int back_pos() {
         return back_chunk.pos [back_pos];
     }
 
@@ -127,8 +127,6 @@ public class YQueue<T> {
 
         Chunk sc = spare_chunk;
         if (sc != begin_chunk) {
-            // writer thread could see old begin_chunk value, 
-            // but it would just waste a chunk
             spare_chunk = spare_chunk.next;
             end_chunk.next = sc;
             sc.prev = end_chunk;

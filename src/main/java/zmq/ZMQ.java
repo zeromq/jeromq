@@ -506,7 +506,6 @@ public class ZMQ {
             }
             return 0;
         }
-        Clock clock = new Clock();
         long now = 0;
         long end = 0;
         
@@ -599,7 +598,7 @@ public class ZMQ {
             //  first pass have taken negligible time). We also compute the time
             //  when the polling should time out.
             if (first_pass) {
-                now = clock.now_ms ();
+                now = Clock.now_ms ();
                 end = now + timeout_;
                 if (now == end)
                     break;
@@ -608,7 +607,7 @@ public class ZMQ {
             }
 
             //  Find out whether timeout have expired.
-            now = clock.now_ms ();
+            now = Clock.now_ms ();
             if (now >= end)
                 break;
             

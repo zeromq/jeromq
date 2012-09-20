@@ -100,7 +100,6 @@ public class Poller extends PollerBase implements Runnable {
         pollset.remove(handle);
         retired = true;
 
-        selector.wakeup();
         //  Decrease the load metric of the thread.
         adjust_load (-1);
     }
@@ -148,7 +147,6 @@ public class Poller extends PollerBase implements Runnable {
         pollset.put(handle_, ops);
         
         retired = true;
-        selector.wakeup();
 
     }
     

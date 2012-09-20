@@ -47,7 +47,6 @@ public class Reaper extends ZObject implements IPollEvents {
         terminating = false;
         name = "reaper-" + tid_;
         poller = new Poller(name);
-        //alloc_assert (poller);
 
         mailbox = new Mailbox(name);
         

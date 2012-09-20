@@ -40,7 +40,7 @@ public class Signaler {
     private ByteBuffer rdummy;
  
     // Selector.selectNow at every sending message doesn't show enough performance
-    private long wcursor = Long.MIN_VALUE;
+    private volatile long wcursor = Long.MIN_VALUE;
     private long rcursor = Long.MIN_VALUE;
     
     public Signaler() {
@@ -132,7 +132,7 @@ public class Signaler {
                 // instant readiness is not strictly required
                 // On the other hand, we can save lots of system call and increase performance
                 if (rcursor < wcursor) {
-                    rc = 1;
+                    return true;
                 }
             } else {
                 rc = selector.select(timeout_);
