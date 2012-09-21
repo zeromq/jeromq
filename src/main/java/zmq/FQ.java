@@ -44,40 +44,34 @@ public class FQ {
     //  there are following parts still waiting in the current pipe.
     private boolean more;
     
-    //  List operations
-    private int start;
-    
     public FQ () {
         active = 0;
         current = 0;
         more = false;
-
-        start = 0;
+        
         pipes = new ArrayList<Pipe>();
     }
     
     public void attach (Pipe pipe_)
     {
-        pipes.add(pipe_);
-        Utils.swap(pipes, active, pipes.size()-1);
+        pipes.add (pipe_);
+        Utils.swap (pipes, active, pipes.size () - 1);
         active++;
     }
     
-    
     public void terminated (Pipe pipe_)
     {
-        int index = pipes.indexOf (pipe_);
+        final int index = pipes.indexOf (pipe_);
 
         //  Remove the pipe from the list; adjust number of active pipes
         //  accordingly.
-        if (index >= start && index < active) {
+        if (index < active) {
             active--;
-            Utils.swap(pipes, index, active);
-            index = active;
+            Utils.swap (pipes, index, active);
             if (current == active)
-                current = start;
+                current = 0;
         }
-        pipes.remove(index);
+        pipes.remove (pipe_);
     }
 
     public void activated (Pipe pipe_)
@@ -97,9 +91,8 @@ public class FQ {
         Msg msg_;
 
         //  Round-robin over the pipes to get the next message.
-        while (active > start) {
+        while (active > 0) {
 
-            
             //  Try to fetch new message. If we've already read part of the message
             //  subsequent part should be immediately available.
             msg_ = pipes.get(current).read ();
@@ -117,18 +110,14 @@ public class FQ {
                 if (pipe_ != null)
                     pipe_[0] = pipes.get(current);
                 more = msg_.has_more();
-                if (!more) {
-                    current++;
-                    if (current == active)
-                        current = start;
-                }
+                if (!more)
+                    current = (current + 1) % active;
                 return msg_;
             }
-            
-            current++;
-            start = current;
+            active--;
+            Utils.swap (pipes, current, active);
             if (current == active)
-                start = active = current = 0;
+                current = 0;
         }
 
         //  No message is available. Initialise the output parameter
@@ -147,20 +136,18 @@ public class FQ {
         //  queueing algorithm. If there are no messages available current will
         //  get back to its original value. Otherwise it'll point to the first
         //  pipe holding messages, skipping only pipes with no messages available.
-        while (active > start) {
+        while (active > 0) {
             if (pipes.get(current).check_read ())
                 return true;
 
             //  Deactivate the pipe.
-            current++;
-            start = current;
-
+            active--;
+            Utils.swap (pipes, current, active);
             if (current == active)
-                start = active = current = 0;
+                current = 0;
         }
 
         return false;
     }
 
-    
 }

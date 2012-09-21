@@ -25,6 +25,7 @@ import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.Pipe;
+import java.util.concurrent.atomic.AtomicLong;
 
 //  This is a cross-platform equivalent to signal_fd. However, as opposed
 //  to signal_fd there can be at most one signal in the signaler at any
@@ -36,11 +37,11 @@ public class Signaler {
     private Pipe.SinkChannel w;
     private Pipe.SourceChannel r;
     private Selector selector;
-    private ByteBuffer sdummy;
     private ByteBuffer rdummy;
  
     // Selector.selectNow at every sending message doesn't show enough performance
-    private volatile long wcursor = Long.MIN_VALUE;
+    private final AtomicLong cursor = new AtomicLong(Long.MIN_VALUE);
+    private volatile long wcursor = Long.MIN_VALUE ;
     private long rcursor = Long.MIN_VALUE;
     
     public Signaler() {
@@ -62,9 +63,7 @@ public class Signaler {
             throw new ZError.IOException(e);
         }
         
-        sdummy = ByteBuffer.allocate(1);
         rdummy = ByteBuffer.allocate(1);
-        sdummy.put((byte)0);
 
     }
     
@@ -100,12 +99,12 @@ public class Signaler {
     {
         
         int nbytes = 0;
-        
+        ByteBuffer dummy = ByteBuffer.allocate(1);
+        dummy.limit(1);
 
         while (true) {
             try {
-                sdummy.rewind();
-                nbytes = w.write(sdummy);
+                nbytes = w.write(dummy);
             } catch (IOException e) {
                 throw new ZError.IOException(e);
             }
@@ -113,7 +112,7 @@ public class Signaler {
                 continue;
             }
             assert (nbytes == 1);
-            wcursor++;
+            wcursor = cursor.incrementAndGet();
             break;
         }
     }
