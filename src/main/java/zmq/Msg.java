@@ -100,6 +100,10 @@ public class Msg {
         size = buf.remaining();
     }
     
+    public final boolean is_identity ()
+    {
+        return (flags & identity) > 0 ;
+    }
 
     public final boolean is_delimiter ()
     {

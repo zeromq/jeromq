@@ -263,13 +263,17 @@ public class Router extends SocketBase {
 
         Pipe[] pipe = new Pipe[1];
         msg_ = fq.recvpipe (pipe);
-        if (pipe[0] == null) {
-            ZError.errno(ZError.EAGAIN);
-            return null;
-        }
+        
+        //  It's possible that we receive peer's identity. That happens
+        //  after reconnection. The current implementation assumes that
+        //  the peer always uses the same identity.
+        //  TODO: handle the situation when the peer changes its identity.
+        while (msg_ != null && msg_.is_identity ())
+            msg_ = fq.recvpipe (pipe);
 
-        //  Identity is not expected
-        assert ((msg_.flags () & Msg.identity) == 0);
+        if (msg_ == null)
+            return null;
+        
         assert (pipe[0] != null);
 
         //  If we are in the middle of reading a message, just return the next part.
@@ -318,12 +322,19 @@ public class Router extends SocketBase {
         //  The message, if read, is kept in the pre-fetch buffer.
         Pipe[] pipe = new Pipe[1];
         prefetched_msg = fq.recvpipe (pipe);
-        if (pipe[0] == null)
+
+        //  It's possible that we receive peer's identity. That happens
+        //  after reconnection. The current implementation assumes that
+        //  the peer always uses the same identity.
+        //  TODO: handle the situation when the peer changes its identity.
+        while (prefetched_msg != null && prefetched_msg.is_identity ())
+            prefetched_msg = fq.recvpipe (pipe);
+
+        if (prefetched_msg == null)
             return false;
 
-        //  Identity is not expected
-        assert ((prefetched_msg.flags () & Msg.identity) == 0);
-
+        assert (pipe[0] != null);
+        
         Blob identity = pipe[0].get_identity ();
         prefetched_id = new Msg(identity.data());
         prefetched_id.set_flags (Msg.more);
