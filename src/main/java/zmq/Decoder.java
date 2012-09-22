@@ -138,9 +138,9 @@ public class Decoder extends DecoderBase {
         }
 
         final int msg_size =  (int)(payload_length - 1);
-        //  in_progress is initialised at this point so in theory we should
+        //  in_progress is initialized at this point so in theory we should
         //  close it before calling init_size, however, it's a 0-byte
-        //  message and thus we can treat it as uninitialised...
+        //  message and thus we can treat it as uninitialized...
         in_progress = new Msg(msg_size);
         
         next_step (tmpbuf, 1, flags_ready);
@@ -153,7 +153,7 @@ public class Decoder extends DecoderBase {
 
         //  Store the flags from the wire into the message structure.
         
-        byte first = tmpbuf[0];
+        int first = tmpbuf[0];
         
         in_progress.set_flags (first);
 

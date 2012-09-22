@@ -32,14 +32,24 @@ import java.util.Map;
 
 public class Poller extends PollerBase implements Runnable {
 
+    private static class PollSet {
+        protected IPollEvents handler;
+        protected SelectionKey key;
+        protected int ops;
+        protected boolean cancelled;
+        
+        protected PollSet(IPollEvents handler) {
+            this.handler = handler;
+            key = null;
+            cancelled = false;
+            ops = 0;
+        }
+    }
     //  This table stores data for registered descriptors.
-    final private Map<SelectableChannel, IPollEvents> fd_table;
-
-    //  Pollset to pass to the poll function.
-    final private Map<SelectableChannel, Integer> pollset;
+    final private Map<SelectableChannel, PollSet> fd_table;
 
     //  If true, there's at least one retired event source.
-    volatile private boolean retired;
+    private boolean retired;
 
     //  If true, thread is in the process of shutting down.
     volatile private boolean stopping;
@@ -60,8 +70,7 @@ public class Poller extends PollerBase implements Runnable {
         stopping = false;
         stopped = false;
         
-        fd_table = new HashMap<SelectableChannel, IPollEvents>();
-        pollset = new HashMap<SelectableChannel, Integer>();
+        fd_table = new HashMap<SelectableChannel, PollSet>();
         try {
             selector = Selector.open();
         } catch (IOException e) {
@@ -83,21 +92,18 @@ public class Poller extends PollerBase implements Runnable {
             }
         }
     }
-    public void add_fd (SelectableChannel fd_, IPollEvents events_)
+    public final void add_fd (SelectableChannel fd_, IPollEvents events_)
     {
-        
-        fd_table.put(fd_, events_);
-        pollset.put(fd_, 0);
+        fd_table.put(fd_, new PollSet(events_));
         
         adjust_load (1);
         
     }
     
 
-    public void rm_fd(SelectableChannel handle) {
+    public final void rm_fd(SelectableChannel handle) {
         
-        fd_table.remove(handle);
-        pollset.remove(handle);
+        fd_table.get(handle).cancelled = true;
         retired = true;
 
         //  Decrease the load metric of the thread.
@@ -105,49 +111,46 @@ public class Poller extends PollerBase implements Runnable {
     }
     
 
-    public void set_pollin (SelectableChannel handle_)
+    public final void set_pollin (SelectableChannel handle_)
     {
-        register(handle_, SelectionKey.OP_READ);
+        register(handle_, SelectionKey.OP_READ, false);
     }
     
 
-    public void reset_pollin (SelectableChannel handle_) {
+    public final void reset_pollin (SelectableChannel handle_) {
         register(handle_, SelectionKey.OP_READ, true);
     }
     
-    public void set_pollout (SelectableChannel handle_)
+    public final void set_pollout (SelectableChannel handle_)
     {
-        register(handle_,  SelectionKey.OP_WRITE);
+        register(handle_,  SelectionKey.OP_WRITE, false);
     }
     
-    public void reset_pollout (SelectableChannel handle_) {
+    public final void reset_pollout (SelectableChannel handle_) {
         register(handle_, SelectionKey.OP_WRITE, true);
     }
 
-    public void set_pollconnect(SelectableChannel handle_) {
-        register(handle_, SelectionKey.OP_CONNECT);
+    public final void set_pollconnect(SelectableChannel handle_) {
+        register(handle_, SelectionKey.OP_CONNECT, false);
     }
     
-    public void set_pollaccept(SelectableChannel handle_) {
-        register(handle_, SelectionKey.OP_ACCEPT);        
+    public final void set_pollaccept(SelectableChannel handle_) {
+        register(handle_, SelectionKey.OP_ACCEPT, false);        
     }
 
-    private void register (SelectableChannel handle_, int ops) {
-        register (handle_, ops, false);
-    }
-
-    private void register (SelectableChannel handle_, int ops, boolean negate)
+    private final void register (SelectableChannel handle_, int ops, boolean negate)
     {
-
+        PollSet pollset = fd_table.get(handle_);
         
         if (negate) 
-            ops = pollset.get(handle_) &~ ops;
+            pollset.ops = pollset.ops &~ ops;
         else
-            ops = pollset.get(handle_) | ops;
-        pollset.put(handle_, ops);
+            pollset.ops = pollset.ops | ops;
         
-        retired = true;
-
+        if (pollset.key != null)
+            pollset.key.interestOps(pollset.ops);
+        else
+            retired = true;
     }
     
     public void start() {
@@ -173,26 +176,21 @@ public class Poller extends PollerBase implements Runnable {
             
             if (retired) {
                 
-                for (SelectableChannel ch: fd_table.keySet()) {
-                    SelectionKey key = ch.keyFor(selector);
-                    if (key == null) {
+                Iterator<Map.Entry<SelectableChannel,PollSet>> it = fd_table.entrySet().iterator();
+                while (it.hasNext()) {
+                    Map.Entry<SelectableChannel,PollSet> entry = it.next();
+                    SelectableChannel ch = entry.getKey();
+                    PollSet pollset = entry.getValue();
+                    if (pollset.key == null) {
                         try {
-                            key = ch.register(selector, pollset.get(ch));
-                            key.attach(fd_table.get(ch));
+                            pollset.key = ch.register(selector, pollset.ops, pollset.handler);
                         } catch (ClosedChannelException e) {
                             continue;
                         }
-                    } else if (key.isValid()) {
-                        key.attach(fd_table.get(ch));
-                        key.interestOps(pollset.get(ch));
+                    } else if (pollset.cancelled) {
+                        pollset.key.cancel();
+                        it.remove();
                     }
-                }
-                for (SelectionKey key: selector.keys()) {
-                    
-                    if (!fd_table.containsKey(key.channel())) {
-                        // removed
-                        key.cancel();
-                    } 
                 }
                 retired = false;
                 

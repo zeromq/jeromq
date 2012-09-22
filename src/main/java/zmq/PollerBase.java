@@ -48,7 +48,7 @@ abstract public class PollerBase {
     
     //  Returns load of the poller. Note that this function can be
     //  invoked from a different thread!
-    public int get_load ()
+    public final int get_load ()
     {
         return load.get ();
     }

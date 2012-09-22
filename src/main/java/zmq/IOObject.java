@@ -59,74 +59,74 @@ public class IOObject implements IPollEvents {
         handler = null;
     }
 
-    public void add_fd (SelectableChannel fd_)
+    public final void add_fd (SelectableChannel fd_)
     {
         poller.add_fd (fd_, this);
     }
     
-    public void rm_fd(SelectableChannel handle) {
+    public final void rm_fd(SelectableChannel handle) {
         poller.rm_fd(handle);
     }
     
-    public void set_pollin (SelectableChannel handle_)
+    public final void set_pollin (SelectableChannel handle_)
     {
         poller.set_pollin (handle_);
     }
 
-    public void set_pollout (SelectableChannel handle_)
+    public final void set_pollout (SelectableChannel handle_)
     {
         poller.set_pollout (handle_);
     }
 
-    public void set_pollconnect(SelectableChannel handle) {
+    public final void set_pollconnect(SelectableChannel handle) {
         poller.set_pollconnect(handle);
     }
     
-    public void set_pollaccept(SelectableChannel handle) {
+    public final void set_pollaccept(SelectableChannel handle) {
         poller.set_pollaccept(handle);
     }
     
-    public void reset_pollin(SelectableChannel handle) {
+    public final void reset_pollin(SelectableChannel handle) {
         poller.reset_pollin (handle);
     }
 
 
-    public void reset_pollout(SelectableChannel handle) {
+    public final void reset_pollout(SelectableChannel handle) {
         poller.reset_pollout (handle);
     }
 
     
     @Override
-    public void in_event() {
+    public final void in_event() {
         handler.in_event();
     }
 
     @Override
-    public void out_event() {
+    public final void out_event() {
         handler.out_event();
     }
     
     @Override
-    public void connect_event() {
+    public final void connect_event() {
         handler.connect_event();
     }
 
     @Override
-    public void accept_event() {
+    public final void accept_event() {
         handler.accept_event();
     }
     
     @Override
-    public void timer_event(int id_) {
+    public final void timer_event(int id_) {
         handler.timer_event(id_);
     }
     
-    public void add_timer (long timeout_, int id_)
+    public final void add_timer (long timeout_, int id_)
     {
         poller.add_timer (timeout_, this, id_);
     }
 
-    public void set_handler(IPollEvents handler) {
+    public final void set_handler(IPollEvents handler) {
         this.handler = handler;
     }
 

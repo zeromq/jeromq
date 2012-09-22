@@ -527,16 +527,17 @@ public class ZMQ {
                 }
             } else {
                 try {
-                    key = ch.register(selector, item.interestOps());
-                    key.attach(item);
+                    key = ch.register(selector, item.interestOps(),item);
                 } catch (ClosedChannelException e) {
                     throw new ZError.IOException(e);
                 }
             } 
         }
 
-        for (SelectionKey deprecated: saved.values()) {
-            deprecated.cancel();
+        if (!saved.isEmpty()) {
+            for (SelectionKey deprecated: saved.values()) {
+                deprecated.cancel();
+            }
         }
         
         boolean first_pass = true;
