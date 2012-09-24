@@ -72,8 +72,8 @@ public class ZError  {
     public static final int ENOCOMPATPROTO = 10003;
     public static final int ETERM = 10004;
     public static final int EIOEXC = 10005;
-    public static final int ESOCKET = 10005;
-    public static final int EMFILE = 10005;
+    public static final int ESOCKET = 10006;
+    public static final int EMFILE = 10007;
     public static int errno() {
         return errno.get();
     }

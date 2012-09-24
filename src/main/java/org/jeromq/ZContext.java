@@ -64,6 +64,8 @@ public class ZContext {
      */
     private boolean main;
     
+    private boolean logging;
+    
     /**
      * Class Constructor
      */
@@ -77,6 +79,7 @@ public class ZContext {
         ioThreads = ioThreads_;
         linger = 0;
         main = true;
+        logging = false;
     }
 
     /**
@@ -107,6 +110,9 @@ public class ZContext {
         if (context == null)
             context = ZMQ.context(ioThreads);
 
+        if (logging)
+            context.log();
+        
         // Create and register socket
         Socket socket = context.socket(type);
         sockets.add(socket);
@@ -204,5 +210,12 @@ public class ZContext {
      */
     public List<Socket> getSockets() {
         return sockets;
+    }
+    
+    /**
+     * 
+     */
+    public void log() {
+        logging = true;
     }
 }

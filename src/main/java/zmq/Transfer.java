@@ -37,12 +37,12 @@ public interface Transfer {
         }
         
         @Override
-        public int transferTo(WritableByteChannel s) throws IOException {
+        public final int transferTo(WritableByteChannel s) throws IOException {
             return s.write(buf);
         }
 
         @Override
-        public int remaining() {
+        public final int remaining() {
             return buf.remaining();
         }
         
@@ -57,12 +57,12 @@ public interface Transfer {
         }
         
         @Override
-        public int transferTo(WritableByteChannel s) throws IOException {
+        public final int transferTo(WritableByteChannel s) throws IOException {
             return (int) ch.transferTo(0L, 0L, s);
         }
 
         @Override
-        public int remaining() {
+        public final int remaining() {
             return 0;
         }
     }

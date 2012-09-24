@@ -25,7 +25,7 @@ import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.Pipe;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicInteger;
 
 //  This is a cross-platform equivalent to signal_fd. However, as opposed
 //  to signal_fd there can be at most one signal in the signaler at any
@@ -40,9 +40,8 @@ public class Signaler {
     private ByteBuffer rdummy;
  
     // Selector.selectNow at every sending message doesn't show enough performance
-    private final AtomicLong cursor = new AtomicLong(Long.MIN_VALUE);
-    private volatile long wcursor = Long.MIN_VALUE ;
-    private long rcursor = Long.MIN_VALUE;
+    private final AtomicInteger wcursor = new AtomicInteger(0);
+    private int rcursor = 0;
     
     public Signaler() {
         //  Create the socketpair for signaling.
@@ -111,8 +110,8 @@ public class Signaler {
             if (nbytes == 0) {
                 continue;
             }
+            wcursor.incrementAndGet();
             assert (nbytes == 1);
-            wcursor = cursor.incrementAndGet();
             break;
         }
     }
@@ -123,16 +122,17 @@ public class Signaler {
         
         try {
             
-            if (timeout_ < 0) {
-                rc = selector.select(0);
-            } else if (timeout_ == 0) {
-                // Thread-unsafe is fine here
-                // because wait_event(0) is called every read/send of SocketBase
+            if (timeout_ == 0) {
+                // wait_event(0) is called every read/send of SocketBase
                 // instant readiness is not strictly required
                 // On the other hand, we can save lots of system call and increase performance
-                if (rcursor < wcursor) {
+                if (rcursor < wcursor.get()) {
                     return true;
                 }
+                
+                return false;
+            } else if (timeout_ < 0 ) {
+                rc = selector.select(0);
             } else {
                 rc = selector.select(timeout_);
             }
@@ -147,7 +147,6 @@ public class Signaler {
         
         selector.selectedKeys().clear();
         
-        assert (rc == 1);
         return true;
 
     }
@@ -164,7 +163,6 @@ public class Signaler {
                 throw new ZError.IOException(e);
             } 
         }
-        assert (nbytes == 1);
         rcursor ++;
     }
     

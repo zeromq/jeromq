@@ -923,13 +923,31 @@ public class ZMQ {
          * 
          * @param flags
          *            the flags to apply to the receive operation.
-         * @return the message received, as a Msg object; null on error.
+         * @return the message received, as a Msg object; null on no message.
          */
         public Msg recvMsg(int flags) {
             zmq.Msg msg = base.recv(flags);
             
             if (msg != null) {
                 return new Msg(msg);
+            }
+            
+            mayRaise();
+            
+            return null;
+        }
+        
+        /**
+         * 
+         * @param flags the flags to apply to the receive operation.
+         * @return the message received, as a String object; null on no message.
+         */
+        public String recvStr(int flags) {
+            
+            zmq.Msg msg = base.recv(flags);
+            
+            if (msg != null) {
+                return new String(msg.data());
             }
             
             mayRaise();
@@ -963,6 +981,8 @@ public class ZMQ {
                 }
             }
         }
+
+
     }
 
     public static class Msg {

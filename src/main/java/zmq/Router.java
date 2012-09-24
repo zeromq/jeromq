@@ -149,7 +149,9 @@ public class Router extends SocketBase {
     public void xterminated(Pipe pipe_) {
         if (!anonymous_pipes.remove(pipe_)) {
             
-            assert(outpipes.remove(pipe_.get_identity()) != null);
+            Outpipe old = outpipes.remove(pipe_.get_identity());
+            assert(old != null);
+
             fq.terminated (pipe_);
             if (pipe_ == current_out)
                 current_out = null;

@@ -29,12 +29,12 @@ public class RemoteThr {
 
     public static void main(String[] argv) {
         String connect_to;
-        int message_count;
+        long message_count;
         int  message_size;
         Ctx ctx;
         SocketBase s;
         boolean rc;
-        int i;
+        long i;
         Msg msg;
 
         if (argv.length != 3) {
@@ -43,7 +43,7 @@ public class RemoteThr {
         }
         connect_to = argv [0];
         message_size = atoi (argv [1]);
-        message_count = atoi (argv [2]);
+        message_count = atol (argv [2]);
 
         ctx = ZMQ.zmq_init (1);
         if (ctx == null) {
@@ -91,6 +91,10 @@ public class RemoteThr {
 
     private static int atoi(String string) {
         return Integer.valueOf(string);
+    }
+    
+    private static long atol(String string) {
+        return Long.valueOf(string);
     }
 
     private static void printf(String string) {

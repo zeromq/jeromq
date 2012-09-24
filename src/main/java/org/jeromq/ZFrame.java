@@ -225,6 +225,16 @@ public class ZFrame {
         return false;
     }
     
+
+    /**
+     * Sets new contents for frame
+     * @param string
+     *          New byte array contents for frame
+     */
+    public void reset(String data) {
+        this.data = data.getBytes();
+    }
+    
     /**
      * Sets new contents for frame
      * @param data
@@ -388,4 +398,6 @@ public class ZFrame {
         
         System.out.print(sw.toString());
     }
+
+
 }

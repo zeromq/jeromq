@@ -53,7 +53,7 @@ public class PollItem {
         zinterest = ops;
         int interest_ = 0;
         if ((ops & ZMQ.ZMQ_POLLIN) > 0) {
-            interest_ |= SelectionKey.OP_READ;
+            interest_ |= SelectionKey.OP_READ ;
         }
         if ((ops & ZMQ.ZMQ_POLLOUT) > 0) {
             interest_ |= SelectionKey.OP_WRITE;
