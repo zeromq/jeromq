@@ -102,7 +102,7 @@ public class Msg {
     
     public final boolean is_identity ()
     {
-        return (flags & identity) > 0 ;
+        return (flags & identity) == identity ;
     }
 
     public final boolean is_delimiter ()
