@@ -411,6 +411,7 @@ public class ZLog {
         }
 
 
+        @SuppressWarnings("resource")
         protected FileChannel getChannel (boolean writable) throws IOException {
             if (writable) {
                 if (channel == null)
@@ -462,6 +463,7 @@ public class ZLog {
             }
         }
 
+        @SuppressWarnings("resource")
         protected void recover() throws IOException {
             FileChannel ch =  new RandomAccessFile(path, "rw").getChannel();
             FileLock lock = null;
