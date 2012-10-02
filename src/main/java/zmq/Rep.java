@@ -84,12 +84,21 @@ public class Rep extends Router {
                 Msg msg_ = super.xrecv (flags_);
                 if (msg_ == null)
                     return null;
-                assert (msg_.has_more());
-                boolean bottom = (msg_.size () == 0);
-                boolean rc = super.xsend (msg_, flags_);
-                assert (rc);
-                if (bottom)
-                    break;
+                
+                if (msg_.has_more()) {
+                    //  Empty message part delimits the traceback stack.
+                    boolean bottom = (msg_.size () == 0);
+                    
+                    //  Push it to the reply pipe.
+                    boolean rc = super.xsend (msg_, flags_);
+                    assert (rc);
+                    if (bottom)
+                        break;
+                } else {
+                    //  If the traceback stack is malformed, discard anything
+                    //  already sent to pipe (we're at end of invalid message).
+                    super.rollback();
+                }
             }
             request_begins = false;
         }
