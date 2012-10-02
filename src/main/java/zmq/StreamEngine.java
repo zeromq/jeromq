@@ -148,7 +148,8 @@ public class StreamEngine implements IEngine, IPollEvents {
         plugged = false;
 
         //  Cancel all fd subscriptions.
-        io_object.rm_fd (handle);
+        if (!input_error)
+            io_object.rm_fd (handle);
 
         //  Disconnect from I/O threads poller object.
         io_object.unplug ();
@@ -206,16 +207,15 @@ public class StreamEngine implements IEngine, IPollEvents {
         //  Flush all messages the decoder may have produced.
         session.flush ();
 
-        //  Input error has occurred. If the last decoded
-        //  message has already been accepted, we terminate
-        //  the engine immediately. Otherwise, we stop
-        //  waiting for input events and postpone the termination
-        //  until after the session has accepted the message.
+        //  An input error has occurred. If the last decoded message
+        //  has already been accepted, we terminate the engine immediately.
+        //  Otherwise, we stop waiting for socket events and postpone
+        //  the termination until after the message is accepted.
         if (disconnection) {
-            input_error = true;
-            if (decoder.stalled ())
-                io_object.reset_pollin (handle);
-            else
+            if (decoder.stalled ()) {
+                io_object.rm_fd (handle);
+                input_error = true;
+            } else
                 error ();
         }
 

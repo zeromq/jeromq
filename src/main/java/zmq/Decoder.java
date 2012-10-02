@@ -185,7 +185,7 @@ public class Decoder extends DecoderBase {
     
     public boolean stalled ()
     {
-        return state() == message_ready;
+        return to_read == 0;
     }
 
 

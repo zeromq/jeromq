@@ -42,7 +42,7 @@ abstract public class DecoderBase {
     private int read_pos;
 
     //  How much data to read before taking next step.
-    private int to_read;
+    protected int to_read;
 
     //  The buffer for data to decode.
     private int bufsize;
