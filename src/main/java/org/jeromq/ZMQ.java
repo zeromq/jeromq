@@ -27,8 +27,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.Selector;
 
-import org.jeromq.ZMQ.Context;
-
 import zmq.Ctx;
 import zmq.DecoderBase;
 import zmq.EncoderBase;

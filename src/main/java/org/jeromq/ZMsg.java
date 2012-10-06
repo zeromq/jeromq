@@ -370,6 +370,10 @@ public class ZMsg implements Iterable<ZFrame>, Deque<ZFrame> {
                         + super.toString(), e);
             } 
         }
+        
+        public void dump() {
+            dump(System.out);
+        }
 
     // ********* Convenience Deque methods for common data types *** //
         
@@ -501,6 +505,10 @@ public class ZMsg implements Iterable<ZFrame>, Deque<ZFrame> {
             return null;
         }
     }
+    
+    public ZFrame first() {
+        return getFirst();
+    }
 
     @Override
     public ZFrame getLast() {
@@ -509,6 +517,10 @@ public class ZMsg implements Iterable<ZFrame>, Deque<ZFrame> {
         } catch (NoSuchElementException e) {
             return null;
         }
+    }
+    
+    public ZFrame last() {
+        return getLast();
     }
 
     @Override
