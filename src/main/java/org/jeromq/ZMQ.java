@@ -1149,10 +1149,11 @@ public class ZMQ {
         private static final int SIZE_DEFAULT = 32;
         private static final int SIZE_INCREMENT = 16;
         
-        private final Selector selector;
+        private Selector selector;
         private zmq.PollItem items[];
         private long timeout;
         private int next;
+        private boolean autoClose;
 
         /**
          * Class constructor.
@@ -1166,12 +1167,7 @@ public class ZMQ {
             items = new zmq.PollItem[size];
             timeout = -1L;
             next = 0;
-            
-            try {
-                selector = Selector.open();
-            } catch (IOException e) {
-                throw new ZError.IOException(e);
-            }
+            autoClose = true;
         }
 
         /**
@@ -1184,14 +1180,31 @@ public class ZMQ {
             this(context, SIZE_DEFAULT);
         }
         
+        private void open () {
+            if (selector != null)
+                return;
+            
+            try {
+                selector = Selector.open();
+            } catch (IOException e) {
+                throw new ZError.IOException(e);
+            }
+        }
+        
         @Override
         public void close () {
             try {
-                selector.close();
+                if (selector != null) {
+                    selector.close();
+                    selector = null;
+                }
             } catch (IOException e) {
             }
         }
         
+        public void setAutoClose (boolean autoClose) {
+            this.autoClose = autoClose;
+        }
         /**
          * Register a Socket for polling on all events.
          * 
@@ -1315,9 +1328,9 @@ public class ZMQ {
          * 
          * @return how many objects where signalled by poll ().
          */
-        public long poll () {
-            long tout = -1;
-            if (this.timeout > -1) {
+        public int poll () {
+            long tout = -1L;
+            if (this.timeout > -1L) {
                 tout = this.timeout;
             }
             return poll(tout);
@@ -1340,10 +1353,13 @@ public class ZMQ {
          *
          * @return how many objects where signalled by poll ()
          */
-        public long poll(long tout) {
+        public int poll(long tout) {
             
-            
-            return zmq.ZMQ.zmq_poll (selector, items, tout);
+            open();
+            int ret = zmq.ZMQ.zmq_poll (selector, items, tout);
+            if (autoClose)
+                close();
+            return ret;
         }
         
         /**
