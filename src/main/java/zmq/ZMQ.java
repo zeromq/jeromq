@@ -21,6 +21,7 @@
 package zmq;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
@@ -134,6 +135,12 @@ public class ZMQ {
     public static final int ZMQ_EVENT_CLOSED = 128;
     public static final int ZMQ_EVENT_CLOSE_FAILED = 256;
     public static final int ZMQ_EVENT_DISCONNECTED = 512;
+
+    public static final int ZMQ_EVENT_ALL = ZMQ_EVENT_CONNECTED | ZMQ_EVENT_CONNECT_DELAYED |
+                ZMQ_EVENT_CONNECT_RETRIED | ZMQ_EVENT_LISTENING |
+                ZMQ_EVENT_BIND_FAILED | ZMQ_EVENT_ACCEPTED |
+                ZMQ_EVENT_ACCEPT_FAILED | ZMQ_EVENT_CLOSED |
+                ZMQ_EVENT_CLOSE_FAILED | ZMQ_EVENT_DISCONNECTED;
     
     public static final int ZMQ_POLLIN = 1;
     public static final int ZMQ_POLLOUT = 2;
@@ -143,6 +150,67 @@ public class ZMQ {
     public static final int ZMQ_FORWARDER = 2;
     public static final int ZMQ_QUEUE = 3;
     
+    public static class Event 
+    {
+        private static final int VALUE_INTEGER = 1;
+        private static final int VALUE_CHANNEL = 2;
+        
+        public final int event;
+        public final String addr;
+        private final Object arg;
+        private final int flag;
+
+        public Event (int event, String addr, Object arg) 
+        {
+            this.event = event;
+            this.addr = addr;
+            this.arg = arg;
+            if (arg instanceof Integer)
+                flag = VALUE_INTEGER;
+            else if (arg instanceof SelectableChannel)
+                flag = VALUE_CHANNEL;
+            else
+                flag = 0;
+        }
+        
+        public boolean write (SocketBase s) 
+        {
+            int size = 4 + 1 + addr.length () + 1; // event + len(addr) + addr + flag
+            if (flag == VALUE_INTEGER)
+                size += 4;
+            
+            ByteBuffer buffer = ByteBuffer.allocate (size);
+            buffer.putInt (event);
+            buffer.put ((byte) addr.length());
+            buffer.put ((byte) flag);
+            if (flag == VALUE_INTEGER)
+                buffer.putInt ((Integer)arg);
+
+            Msg msg = new Msg (buffer);
+            return s.send (msg, 0);
+        }
+        
+        public static Event read (SocketBase s) 
+        {
+            Msg msg = s.recv (0);
+            if (msg == null)
+                return null;
+            
+            ByteBuffer buffer = msg.buf ();
+            
+            int event = buffer.getInt ();
+            int len = buffer.get ();
+            byte [] addr = new byte [len];
+            buffer.get (addr);
+            int flag = buffer.get ();
+            Object arg = null;
+            
+            if (flag == VALUE_INTEGER)
+                arg = buffer.getInt ();
+            
+            return new Event (event, new String (addr), arg);
+        }
+    }
     //  New context API
     public static Ctx zmq_ctx_new() {
         //  Create 0MQ context.
@@ -175,10 +243,6 @@ public class ZMQ {
         return ctx_.get (option_);
     }
     
-
-    public static void zmq_ctx_set_monitor(Ctx ctx, IZmqMonitor monitor_) {
-        ctx.monitor (monitor_);
-    }
 
     //  Stable/legacy context API
     public static Ctx zmq_init(int io_threads_) {
@@ -232,6 +296,15 @@ public class ZMQ {
     public static int zmq_getsockopt(SocketBase s_, int opt) {
         
         return s_.getsockopt(opt);
+    }
+
+    public static boolean zmq_socket_monitor(SocketBase s_, final String addr_, int events_) {
+
+        if (s_ == null || !s_.check_tag ()) {
+            throw new IllegalStateException();
+        }
+        
+        return s_.monitor (addr_, events_);
     }
 
 

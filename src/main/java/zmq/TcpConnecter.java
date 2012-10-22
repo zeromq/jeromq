@@ -56,10 +56,13 @@ public class TcpConnecter extends Own implements IPollEvents {
     private SessionBase session;
 
     //  Current reconnect ivl, updated for backoff strategy
-    private long current_reconnect_ivl;
+    private int current_reconnect_ivl;
 
     // String representation of endpoint to connect to
     private String endpoint;
+
+    // Socket
+    private SocketBase socket;
     
     public TcpConnecter (IOThread io_thread_,
       SessionBase session_, final Options options_,
@@ -76,6 +79,7 @@ public class TcpConnecter extends Own implements IPollEvents {
         
         assert (addr != null);
         endpoint = addr.toString ();
+        socket = session_.get_soket ();
     }
     
     public void destroy ()
@@ -160,7 +164,7 @@ public class TcpConnecter extends Own implements IPollEvents {
             engine = new StreamEngine (fd, options, endpoint);
         } catch (ZError.InstantiationException e) {
             LOG.error("Failed to initialize StreamEngine", e.getCause());
-            session.monitor_event (ZMQ.ZMQ_EVENT_CONNECT_FAILED, endpoint, e.getCause());
+            socket.event_connect_delayed (endpoint, ZError.errno());
             return;
         }
             //alloc_assert (engine);
@@ -171,7 +175,7 @@ public class TcpConnecter extends Own implements IPollEvents {
         //  Shut the connecter down.
         terminate ();
 
-        session.monitor_event (ZMQ.ZMQ_EVENT_CONNECTED, endpoint, fd);
+        socket.event_connected (endpoint, fd);
     }
     
     @Override
@@ -201,7 +205,7 @@ public class TcpConnecter extends Own implements IPollEvents {
                 io_object.add_fd (handle);
                 handle_valid = true;
                 io_object.set_pollconnect (handle);
-                session.monitor_event (ZMQ.ZMQ_EVENT_CONNECT_DELAYED, endpoint, handle);
+                socket.event_connect_delayed (endpoint, ZError.errno());
                 return;
             }
         } catch (IOException e) {
@@ -215,18 +219,18 @@ public class TcpConnecter extends Own implements IPollEvents {
     //  Internal function to add a reconnect timer
     private void add_reconnect_timer()
     {
-        long rc_ivl = get_new_reconnect_ivl();
+        int rc_ivl = get_new_reconnect_ivl();
         io_object.add_timer (rc_ivl, reconnect_timer_id);
-        session.monitor_event (ZMQ.ZMQ_EVENT_CONNECT_RETRIED, endpoint, rc_ivl);
+        socket.event_connect_retried (endpoint, rc_ivl);
     }
     
     //  Internal function to return a reconnect backoff delay.
     //  Will modify the current_reconnect_ivl used for next call
     //  Returns the currently used interval
-    private long get_new_reconnect_ivl ()
+    private int get_new_reconnect_ivl ()
     {
         //  The new interval is the current interval + random value.
-        long this_interval = current_reconnect_ivl +
+        int this_interval = current_reconnect_ivl +
             (Utils.generate_random () % options.reconnect_ivl);
 
         //  Only change the current reconnect interval  if the maximum reconnect
@@ -279,13 +283,12 @@ public class TcpConnecter extends Own implements IPollEvents {
         assert (handle != null);
         try {
             handle.close();
-            session.monitor_event (ZMQ.ZMQ_EVENT_CLOSED, endpoint);
+            socket.event_closed (endpoint, handle);
             handle = null;
         } catch (IOException e) {
-            session.monitor_event (ZMQ.ZMQ_EVENT_CLOSE_FAILED, endpoint, e.getCause());
+            ZError.exc (e);
+            socket.event_close_failed (endpoint, ZError.errno());
         }
         
     }
-
-
 }

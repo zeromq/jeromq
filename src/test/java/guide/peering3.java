@@ -134,7 +134,6 @@ public class peering3 {
         Random rand = new Random(System.nanoTime());
     
         ZContext ctx = new ZContext();
-        ctx.log();
         
         //  Prepare local frontend and backend
         Socket localfe = ctx.createSocket(ZMQ.ROUTER);

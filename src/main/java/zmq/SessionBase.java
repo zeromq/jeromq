@@ -280,9 +280,9 @@ public class SessionBase extends Own implements Pipe.IPipeEvents, IPollEvents {
 
     }
 
-    public void monitor_event (int event_, Object ... args)
+    public SocketBase get_soket ()
     {
-        socket.monitor_event (event_, args);
+        return socket;
     }
 
     @Override

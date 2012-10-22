@@ -51,7 +51,10 @@ public class StreamEngine implements IEngine, IPollEvents {
     // String representation of endpoint
     private String endpoint;
 
-    boolean plugged;
+    private boolean plugged;
+    
+    // Socket
+    private SocketBase socket;
     
     private IOObject io_object;
     
@@ -67,6 +70,7 @@ public class StreamEngine implements IEngine, IPollEvents {
         options = options_;
         plugged = false;
         endpoint = endpoint_;
+        socket = null;
 
         try {
             Constructor<? extends DecoderBase> dcon = 
@@ -130,6 +134,7 @@ public class StreamEngine implements IEngine, IPollEvents {
         encoder.set_session (session_);
         decoder.set_session (session_);
         session = session_;
+        socket = session.get_soket ();
 
         io_object = new IOObject(null);
         io_object.set_handler(this);
@@ -323,7 +328,7 @@ public class StreamEngine implements IEngine, IPollEvents {
 
     private void error() {
         assert (session!=null);
-        session.monitor_event (ZMQ.ZMQ_EVENT_DISCONNECTED, endpoint, handle);
+        socket.event_disconnected (endpoint, handle);
         session.detach ();
         unplug ();
         destroy();

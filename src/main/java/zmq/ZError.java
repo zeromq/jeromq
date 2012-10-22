@@ -68,26 +68,29 @@ public class ZError  {
     public static final int ECONNREFUSED = 61;
     public static final int EHOSTUNREACH = 65;
     
-    public static final int EMTHREAD = 10001;
-    public static final int EFSM = 10002;
-    public static final int ENOCOMPATPROTO = 10003;
-    public static final int ETERM = 10004;
-    public static final int EIOEXC = 10005;
-    public static final int ESOCKET = 10006;
-    public static final int EMFILE = 10007;
-    public static int errno() {
+    private static final int ZMQ_HAUSNUMERO = 156384712;
+
+    public static final int EFSM = ZMQ_HAUSNUMERO + 51;
+    public static final int ENOCOMPATPROTO = ZMQ_HAUSNUMERO + 52;
+    public static final int ETERM = ZMQ_HAUSNUMERO + 53;
+    public static final int EMTHREAD = ZMQ_HAUSNUMERO + 54;
+
+    public static final int EIOEXC = ZMQ_HAUSNUMERO + 105;
+    public static final int ESOCKET = ZMQ_HAUSNUMERO + 106;
+    public static final int EMFILE = ZMQ_HAUSNUMERO + 107;
+    public static int errno () {
         return errno.get();
     }
     
-    public static void errno(int code) {
+    public static void errno (int code) {
         errno.set(code);
     }
     
-    public static Throwable exc() {
+    public static Throwable exc () {
         return exc.get();
     }
     
-    public static void exc(java.io.IOException e) {
+    public static void exc (java.io.IOException e) {
         if (e instanceof SocketException) {
             errno.set(ESOCKET);
         } else if (e instanceof ClosedChannelException) {
@@ -98,7 +101,7 @@ public class ZError  {
         exc.set(e);
     }
     
-    public static boolean is(int code) {
+    public static boolean is (int code) {
         switch(code) {
         case EINTR:
             return false;
@@ -108,7 +111,7 @@ public class ZError  {
         
     }
 
-    public static void clear() {
+    public static void clear () {
         errno.set(0);
     }
     

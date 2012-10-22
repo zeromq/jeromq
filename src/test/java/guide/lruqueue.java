@@ -88,7 +88,6 @@ public class lruqueue {
 
     public static void main(String[] args) {
         Context context = ZMQ.context(1);
-        context.log();
         //  Prepare our context and sockets
         Socket frontend  = context.socket(ZMQ.ROUTER);
         Socket backend  = context.socket(ZMQ.ROUTER);

@@ -214,10 +214,6 @@ public class ZMQ {
             return new Poller (this, size);
         }
         
-        public void log() {
-            ctx.log_event();
-        }
-
     }
     
     public static class Socket {
