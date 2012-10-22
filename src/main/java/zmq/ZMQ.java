@@ -68,7 +68,9 @@ public class ZMQ {
     public static final int ZMQ_XSUB = 10;
     
     /*  Deprecated aliases                                                        */
+    @Deprecated
     public static final int ZMQ_XREQ = ZMQ_DEALER;
+    @Deprecated
     public static final int ZMQ_XREP = ZMQ_ROUTER;
 
     /*  Socket options.                                                           */
@@ -116,6 +118,12 @@ public class ZMQ {
     /*  Send/recv options.                                                        */
     public static final int ZMQ_DONTWAIT = 1;
     public static final int ZMQ_SNDMORE = 2;
+    
+    /*  Deprecated aliases                                                        */
+    public static final int ZMQ_NOBLOCK = ZMQ_DONTWAIT;
+    public static final int ZMQ_FAIL_UNROUTABLE = ZMQ_ROUTER_MANDATORY;
+    public static final int ZMQ_ROUTER_BEHAVIOR = ZMQ_ROUTER_MANDATORY;
+    
     /******************************************************************************/
     /*  0MQ socket events and monitoring                                          */
     /******************************************************************************/
@@ -527,23 +535,24 @@ public class ZMQ {
         
     }
 
-    
+    //  The proxy functionality
+    public static boolean zmq_proxy (SocketBase frontend_, SocketBase backend_, SocketBase control_)
+    {
+        if (frontend_ == null || backend_ == null) {
+            ZError.errno (ZError.EFAULT);
+            throw new IllegalArgumentException();
+        }
+        return Proxy.proxy (
+            frontend_,
+            backend_,
+            control_);
+    }
+
+    @Deprecated
     public static boolean zmq_device (int device_, SocketBase insocket_,
             SocketBase outsocket_)
     {
-
-        if (insocket_ == null || outsocket_ == null) {
-            throw new IllegalArgumentException();
-        }
-
-        if (device_ != ZMQ_FORWARDER && device_ != ZMQ_QUEUE &&
-              device_ != ZMQ_STREAMER) {
-            throw new IllegalArgumentException();
-        }
-        
-        return Device.device(insocket_, outsocket_);
-
-        
+        return Proxy.proxy(insocket_, outsocket_, null);
     }
 
     // Polling.
@@ -692,8 +701,6 @@ public class ZMQ {
         return nevents;
     }
     
-
-
     public static long zmq_stopwatch_start() {
         return System.nanoTime();
     }
@@ -709,7 +716,4 @@ public class ZMQ {
     public static String zmq_strerror(int errno) {
         return "Errno = " + errno;
     }
-
-    
-
 }
