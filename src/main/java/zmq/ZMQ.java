@@ -95,7 +95,7 @@ public class ZMQ {
     public static final int ZMQ_SNDTIMEO = 28;
     public static final int ZMQ_IPV4ONLY = 31;
     public static final int ZMQ_LAST_ENDPOINT = 32;
-    public static final int ZMQ_ROUTER_BEHAVIOR = 33;
+    public static final int ZMQ_ROUTER_MANDATORY = 33;
     public static final int ZMQ_TCP_KEEPALIVE = 34;
     public static final int ZMQ_TCP_KEEPALIVE_CNT = 35;
     public static final int ZMQ_TCP_KEEPALIVE_IDLE = 36;
@@ -133,9 +133,9 @@ public class ZMQ {
     public static final int ZMQ_EVENT_CLOSE_FAILED = 256;
     public static final int ZMQ_EVENT_DISCONNECTED = 512;
     
-    public static final int  ZMQ_POLLIN = 1;
-    public static final int  ZMQ_POLLOUT = 2;
-    public static final int  ZMQ_POLLERR = 4;
+    public static final int ZMQ_POLLIN = 1;
+    public static final int ZMQ_POLLOUT = 2;
+    public static final int ZMQ_POLLERR = 4;
     
     public static final int ZMQ_STREAMER = 1;
     public static final int ZMQ_FORWARDER = 2;

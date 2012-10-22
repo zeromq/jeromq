@@ -86,7 +86,7 @@ public class Router extends SocketBase {
 
     // If true, report EAGAIN to the caller instead of silently dropping 
     // the message targeting an unknown peer.
-    private boolean report_unroutable;
+    private boolean mandatory;
 
     
     public Router(Ctx parent_, int tid_, int sid_) {
@@ -97,7 +97,7 @@ public class Router extends SocketBase {
         current_out = null;
         more_out = false;
         next_peer_id = Utils.generate_random (); 
-        report_unroutable = false;
+        mandatory = false;
         
         options.type = ZMQ.ZMQ_ROUTER;
         
@@ -136,11 +136,11 @@ public class Router extends SocketBase {
     @Override
     public boolean xsetsockopt (int option_, Object optval_)
     {
-        if (option_ != ZMQ.ZMQ_ROUTER_BEHAVIOR) {
+        if (option_ != ZMQ.ZMQ_ROUTER_MANDATORY) {
             ZError.errno(ZError.EINVAL);
             return false;
         }
-        report_unroutable = (Integer)optval_ == 1;
+        mandatory = (Integer) optval_ == 1;
         return true;
     }
 
@@ -202,7 +202,7 @@ public class Router extends SocketBase {
 
                 //  Find the pipe associated with the identity stored in the prefix.
                 //  If there's no such pipe just silently ignore the message, unless
-                //  report_unreachable is set.
+                //  mandatory is set.
                 Blob identity = new Blob(msg_.data());
                 Outpipe op = outpipes.get(identity);
 
@@ -212,7 +212,7 @@ public class Router extends SocketBase {
                         op.active = false;
                         current_out = null;
                     }
-                } else if (report_unroutable) {
+                } else if (mandatory) {
                     more_out = false;
                     ZError.errno(ZError.EAGAIN);
                     return false;
