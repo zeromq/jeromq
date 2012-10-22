@@ -84,7 +84,7 @@ public class Router extends SocketBase {
     //  algorithm. This value is the next ID to use (if not used already).
     private int next_peer_id;
 
-    // If true, report EAGAIN to the caller instead of silently dropping 
+    // If true, report EHOSTUNREACH to the caller instead of silently dropping 
     // the message targeting an unknown peer.
     private boolean mandatory;
 
@@ -214,7 +214,7 @@ public class Router extends SocketBase {
                     }
                 } else if (mandatory) {
                     more_out = false;
-                    ZError.errno(ZError.EAGAIN);
+                    ZError.errno(ZError.EHOSTUNREACH);
                     return false;
                 }
             }

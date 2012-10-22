@@ -66,6 +66,7 @@ public class ZError  {
     public static final int EISCONN = 56;
     public static final int ENOTCONN = 57;
     public static final int ECONNREFUSED = 61;
+    public static final int EHOSTUNREACH = 65;
     
     public static final int EMTHREAD = 10001;
     public static final int EFSM = 10002;
