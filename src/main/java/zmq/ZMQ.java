@@ -101,6 +101,8 @@ public class ZMQ {
     public static final int ZMQ_TCP_KEEPALIVE_IDLE = 36;
     public static final int ZMQ_TCP_KEEPALIVE_INTVL = 37;
     public static final int ZMQ_TCP_ACCEPT_FILTER = 38;
+    public static final int ZMQ_DELAY_ATTACH_ON_CONNECT = 39;
+    public static final int ZMQ_XPUB_VERBOSE = 40;
     
     /* Custom options */
     public static final int ZMQ_ENCODER = 1001;
