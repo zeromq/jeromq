@@ -94,10 +94,7 @@ public class Options {
     //  If 1, (X)SUB socket should filter the messages. If 0, it should not.
     boolean filter;
 
-    //  Sends identity to all new connections.
-    boolean send_identity;
-
-    //  Receivers identity from all new connections.
+    //  If true, the identity message is forwarded to the socket.
     boolean recv_identity;
 
     //  TCP keep-alive settings.
@@ -138,7 +135,6 @@ public class Options {
         delay_on_close = true;
         delay_on_disconnect = true;
         filter = false;
-        send_identity = false;
         recv_identity = false;
         tcp_keepalive = -1;
         tcp_keepalive_cnt = -1;
@@ -148,8 +144,8 @@ public class Options {
         
     	identity = null;
     	tcp_accept_filters = new ArrayList<TcpAddress.TcpAddressMask>();
-    	decoder = Decoder.class;
-    	encoder = Encoder.class;
+    	decoder = null;
+    	encoder = null;
     }
     
     @SuppressWarnings("unchecked")

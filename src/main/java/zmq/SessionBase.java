@@ -21,8 +21,10 @@
 */ 
 package zmq;
 
-public class SessionBase extends Own implements Pipe.IPipeEvents, IPollEvents {
-
+public class SessionBase extends Own implements 
+                        Pipe.IPipeEvents, IPollEvents, 
+                        IMsgSink, IMsgSource 
+{
     //  If true, this session (re)connects to the peer. Otherwise, it's
     //  a transient session created by the listener.
     private boolean connect;
@@ -54,9 +56,9 @@ public class SessionBase extends Own implements Pipe.IPipeEvents, IPollEvents {
     //  True is linger timer is running.
     private boolean has_linger_timer;
 
-    //  If true, identity is to be sent/recvd from the network.
-    private boolean send_identity;
-    private boolean recv_identity;
+    //  If true, identity has been sent/received from the network.
+    private boolean identity_sent;
+    private boolean identity_received;
     
     //  Protocol and address to use when connecting.
     private final Address addr;
@@ -132,8 +134,8 @@ public class SessionBase extends Own implements Pipe.IPipeEvents, IPollEvents {
         socket = socket_;
         io_thread = io_thread_;
         has_linger_timer = false;
-        send_identity = options_.send_identity;
-        recv_identity = options_.recv_identity;
+        identity_sent = false;
+        identity_received = false;
         addr = addr_;
         
     }
@@ -164,15 +166,16 @@ public class SessionBase extends Own implements Pipe.IPipeEvents, IPollEvents {
         pipe.set_event_sink (this);
     }
     
-    public Msg read() {
+    public Msg pull_msg () 
+    {
         
         Msg msg_ = null;
         
         //  First message to send is identity (if required).
-        if (send_identity) {
+        if (!identity_sent) {
             msg_ = new Msg(options.identity_size);
             msg_.put(options.identity, 0, options.identity_size);
-            send_identity = false;
+            identity_sent = true;
             incomplete_in = false;
             
             return msg_;
@@ -187,27 +190,31 @@ public class SessionBase extends Own implements Pipe.IPipeEvents, IPollEvents {
 
     }
     
-    public boolean write (Msg msg_)
+    public boolean push_msg (Msg msg_)
     {
         //  First message to receive is identity (if required).
-        if (recv_identity) {
+        if (!identity_received) {
             msg_.set_flags (Msg.identity);
-            recv_identity = false;
+            identity_received = true;
+            
+            if (!options.recv_identity) {
+                return true;
+            }
         }
-        
         
         if (pipe != null && pipe.write (msg_)) {
             return true;
         }
 
+        ZError.errno (ZError.EAGAIN);
         return false;
     }
     
 
     protected void reset() {
         //  Restore identity flags.
-        send_identity = options.send_identity;
-        recv_identity = options.recv_identity;
+        identity_sent = false;
+        identity_received = false;
     }
     
 
@@ -219,7 +226,8 @@ public class SessionBase extends Own implements Pipe.IPipeEvents, IPollEvents {
 
     //  Remove any half processed messages. Flush unflushed messages.
     //  Call this function when engine disconnect to get rid of leftovers.
-    private void clean_pipes() {
+    private void clean_pipes() 
+    {
         if (pipe != null) {
 
             //  Get rid of half-processed messages in the out pipe. Flush any
@@ -229,7 +237,7 @@ public class SessionBase extends Own implements Pipe.IPipeEvents, IPollEvents {
 
             //  Remove any half-read message from the in pipe.
             while (incomplete_in) {
-                Msg msg = read();
+                Msg msg = pull_msg ();
                 if (msg == null) {
                     assert (!incomplete_in);
                     break;

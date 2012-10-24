@@ -22,6 +22,8 @@ import java.nio.ByteBuffer;
 
 import zmq.DecoderBase;
 import zmq.EncoderBase;
+import zmq.IMsgSink;
+import zmq.IMsgSource;
 import zmq.Msg;
 
 /**
@@ -43,9 +45,12 @@ public class Proxy {
         private boolean identity_sent = false;
         private Msg bottom ;
         
-        public ProxyDecoder(int bufsize_, long maxmsgsize_) {
-            super(bufsize_, maxmsgsize_);
-            
+        private IMsgSink msg_sink;
+        
+        public ProxyDecoder(int bufsize_, long maxmsgsize_) 
+        {
+            super(bufsize_);
+
             header = new byte[headerSize()];
 
             next_step(header, header.length, read_header);
@@ -53,6 +58,12 @@ public class Proxy {
             bottom = new Msg();
             bottom.set_flags (Msg.more);
             
+        }
+        
+        @Override
+        public void set_msg_sink (IMsgSink msg_sink_)
+        {
+            msg_sink = msg_sink_;
         }
         
         abstract protected int parseHeader(byte[] header);
@@ -95,7 +106,7 @@ public class Proxy {
 
         private boolean readBody() {
             
-            if (session == null)
+            if (msg_sink == null)
                 return false;
             
             if (!parseBody(msg.data())) {
@@ -105,18 +116,18 @@ public class Proxy {
             
             if (!identity_sent) {
                 Msg identity = new Msg(getIdentity());
-                session.write(identity);
+                msg_sink.push_msg(identity);
                 identity_sent = true;
             }
             
-            session.write(bottom);
+            msg_sink.push_msg(bottom);
             
             if (preserveHeader()) {
                 Msg hmsg = new Msg(header, true);
                 hmsg.set_flags(Msg.more);
-                session.write(hmsg);
+                msg_sink.push_msg(hmsg);
             }
-            session.write(msg);
+            msg_sink.push_msg(msg);
             
             next_step(header, headerSize(), read_header);
             return true;
@@ -139,6 +150,7 @@ public class Proxy {
         private Msg msg;
         private boolean message_ready;
         private boolean identity_received;
+        private IMsgSource msg_source;
         
         public ProxyEncoder(int bufsize_) {
             super(bufsize_);
@@ -152,6 +164,11 @@ public class Proxy {
         abstract protected byte[] getHeader(byte[] body);
         abstract protected int headerSize() ;
         
+        @Override
+        public void set_msg_source (IMsgSource msg_source_)
+        {
+            msg_source = msg_source_;
+        }
         
         @Override
         protected boolean next() {
@@ -170,26 +187,27 @@ public class Proxy {
             return true;
         }
 
-        private boolean write_header() {
+        private boolean write_header() 
+        {
             
-            if (session == null)
+            if (msg_source == null)
                 return false;
             
-            msg = session.read();
+            msg = msg_source.pull_msg ();
             
             if (msg == null) {
                 return false;
             }
             if (!identity_received) {
                 identity_received = true;
-                msg = session.read();
+                msg = msg_source.pull_msg ();
                 if (msg == null)
                     return false;
             }
             
             if (!message_ready) {
                 message_ready = true;
-                msg = session.read();
+                msg = msg_source.pull_msg ();
                 if (msg == null) {
                     return false;
                 }

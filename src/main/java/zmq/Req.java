@@ -161,27 +161,27 @@ public class Req extends Dealer {
         }
         
         @Override
-        public boolean write (Msg msg_)
+        public boolean push_msg (Msg msg_)
         {
             switch (state) {
             case bottom:
                 if (msg_.flags () == Msg.more && msg_.size () == 0) {
                     state = State.body;
-                    return super.write (msg_);
+                    return super.push_msg (msg_);
                 }
                 break;
             case body:
                 if (msg_.flags () == Msg.more)
-                    return super.write (msg_);
+                    return super.push_msg (msg_);
                 if (msg_.flags () == 0) {
                     state = State.bottom;
-                    return super.write (msg_);
+                    return super.push_msg (msg_);
                 }
                 break;
             case identity:
                 if (msg_.flags () == 0) {
                     state = State.bottom;
-                    return super.write (msg_);
+                    return super.push_msg (msg_);
                 }
                 break;
             }

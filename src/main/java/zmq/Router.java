@@ -115,7 +115,6 @@ public class Router extends SocketBase {
         //  all the outstanding requests from that peer.
         //  options.delay_on_disconnect = false;
             
-        options.send_identity = true;
         options.recv_identity = true;
             
     }

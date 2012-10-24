@@ -453,20 +453,20 @@ public abstract class SocketBase extends Own
             //  Attach local end of the pipe to this socket object.
             attach_pipe (pipes [0]);
 
-            //  If required, send the identity of the local socket to the peer.
-            if (options.send_identity) {
-                Msg id = new Msg(options.identity_size);
-                id.put(options.identity, 0 , options.identity_size);
+            //  If required, send the identity of the peer to the local socket.
+            if (peer.options.recv_identity) {
+                Msg id = new Msg(peer.options.identity_size);
+                id.put(peer.options.identity, 0 , peer.options.identity_size);
                 id.set_flags (Msg.identity);
                 boolean written = pipes [0].write (id);
                 assert (written);
                 pipes [0].flush ();
             }
-
-            //  If required, send the identity of the peer to the local socket.
-            if (peer.options.send_identity) {
-                Msg id = new Msg(peer.options.identity_size);
-                id.put(peer.options.identity, 0 , peer.options.identity_size);
+            
+            //  If required, send the identity of the local socket to the peer.
+            if (options.recv_identity) {
+                Msg id = new Msg(options.identity_size);
+                id.put(options.identity, 0 , options.identity_size);
                 id.set_flags (Msg.identity);
                 boolean written = pipes [1].write (id);
                 assert (written);

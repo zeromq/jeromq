@@ -34,7 +34,7 @@ import java.nio.ByteBuffer;
 //  This class implements the state machine that parses the incoming buffer.
 //  Derived class should implement individual state machine actions.
 
-abstract public class DecoderBase {
+abstract public class DecoderBase implements IDecoder {
     
     //  Where to store the read data.
     private ByteBuffer read_buf;
@@ -49,20 +49,14 @@ abstract public class DecoderBase {
     private ByteBuffer buf;
     
     private int state;
-    
-    protected SessionBase session;
-
-    protected long maxmsgsize;
 
     boolean zero_copy;
     
-    public DecoderBase (int bufsize_, long maxmsgsize_)
+    public DecoderBase (int bufsize_)
     {
         state = -1;
         to_read = 0;
         bufsize = bufsize_;
-        session = null;
-        maxmsgsize = maxmsgsize_;
         buf = ByteBuffer.allocateDirect(bufsize_);
         read_array = null;
         zero_copy = false;
@@ -147,9 +141,9 @@ abstract public class DecoderBase {
             //  Copy the data from buffer to the message.
             int to_copy = Math.min (to_read, size_ - pos);
             if (read_array != null) {
-                buf.get(read_array, read_pos, to_copy);
+                buf_.get(read_array, read_pos, to_copy);
             } else {
-                buf.get(read_buf.array(), read_buf.arrayOffset() + read_pos, to_copy);
+                buf_.get(read_buf.array(), read_buf.arrayOffset() + read_pos, to_copy);
                 read_buf.position(read_pos + to_copy);
             }
             read_pos += to_copy;
@@ -197,10 +191,4 @@ abstract public class DecoderBase {
 
     abstract protected boolean next();
     
-    abstract public boolean stalled ();
-
-    public void set_session(SessionBase session_) { 
-        session = session_;
-    }
-
 }

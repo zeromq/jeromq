@@ -43,12 +43,13 @@ public class Decoder extends DecoderBase {
     
     private final byte[] tmpbuf;
     private Msg in_progress;
-    
+    private final long maxmsgsize;
+    private IMsgSink msg_sink;
 
     public Decoder (int bufsize_, long maxmsgsize_)
     {
-        super(bufsize_, maxmsgsize_);
-        
+        super(bufsize_);
+        maxmsgsize = maxmsgsize_;
         tmpbuf = new byte[8];
         
     
@@ -57,6 +58,12 @@ public class Decoder extends DecoderBase {
     }
     
 
+    //  Set the receiver of decoded messages.
+    @Override
+    public void set_msg_sink (IMsgSink msg_sink_) 
+    {
+        msg_sink = msg_sink_;
+    }
 
     @Override
     protected boolean next() {
@@ -132,7 +139,7 @@ public class Decoder extends DecoderBase {
         }
 
         //  Message size must fit within range of size_t data type.
-        if (payload_length - 1 > Long.MAX_VALUE) {
+        if (payload_length - 1 > Integer.MAX_VALUE) {
             decoding_error ();
             return false;
         }
@@ -168,10 +175,10 @@ public class Decoder extends DecoderBase {
         //  Message is completely read. Push it further and start reading
         //  new message. (in_progress is a 0-byte message after this point.)
         
-        if (session == null)
+        if (msg_sink == null)
             return false;
         
-        boolean rc = session.write (in_progress);
+        boolean rc = msg_sink.push_msg (in_progress);
         if (!rc) {
             return false;
         }
@@ -182,10 +189,12 @@ public class Decoder extends DecoderBase {
     }
 
 
-    
+    //  Returns true if there is a decoded message
+    //  waiting to be delivered to the session.
+    @Override
     public boolean stalled ()
     {
-        return to_read == 0;
+        return to_read == message_ready;
     }
 
 

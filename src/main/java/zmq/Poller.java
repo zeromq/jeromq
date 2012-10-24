@@ -215,19 +215,16 @@ public class Poller extends PollerBase implements Runnable {
                 IPollEvents evt = (IPollEvents) key.attachment();
                 it.remove();
 
-
-
                 try {
-                    if (key.isWritable()) {
-                        evt.out_event();
-                    } 
-                    
                     if (key.isReadable() ) {
                         evt.in_event();
                     } else if (key.isAcceptable()) {
                         evt.accept_event();
                     } else if (key.isConnectable()) {
                         evt.connect_event();
+                    } 
+                    if (key.isWritable()) {
+                        evt.out_event();
                     } 
                 } catch (CancelledKeyException e) {
                     // channel might have been closed
