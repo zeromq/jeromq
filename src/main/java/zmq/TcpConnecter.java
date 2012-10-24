@@ -50,8 +50,11 @@ public class TcpConnecter extends Own implements IPollEvents {
     private boolean handle_valid;
 
     //  If true, connecter is waiting a while before trying to connect.
-    private boolean wait;
+    private boolean delayed_start;
 
+    //  True iff a timer has been started.
+    private boolean timer_started;
+    
     //  Reference to the session we belong to.
     private SessionBase session;
 
@@ -66,14 +69,15 @@ public class TcpConnecter extends Own implements IPollEvents {
     
     public TcpConnecter (IOThread io_thread_,
       SessionBase session_, final Options options_,
-      final Address addr_, boolean wait_) {
+      final Address addr_, boolean delayed_start_) {
         
         super (io_thread_, options_);
         io_object = new IOObject(io_thread_);
         addr = addr_;
         handle = null; 
         handle_valid = false;
-        wait = wait_;
+        delayed_start = delayed_start_;
+        timer_started = false;
         session = session_;
         current_reconnect_ivl = options.reconnect_ivl;
         
@@ -84,25 +88,39 @@ public class TcpConnecter extends Own implements IPollEvents {
     
     public void destroy ()
     {
-        if (wait)
-            io_object.cancel_timer (reconnect_timer_id);
-        if (handle_valid)
-            io_object.rm_fd (handle);
-
-        if (handle != null)
-            close ();
-        
+        assert (!timer_started);
+        assert (!handle_valid);
+        assert (handle == null);
     }
     
     @Override
     protected void process_plug ()
     {
         io_object.set_handler(this);
-        if (wait)
+        if (delayed_start)
             add_reconnect_timer();
         else {
             start_connecting ();
         }
+    }
+    
+    @Override
+    public void process_term (int linger_)
+    {
+        if (timer_started) {
+            io_object.cancel_timer (reconnect_timer_id);
+            timer_started = false;
+        }
+        
+        if (handle_valid) {
+            io_object.rm_fd (handle);
+            handle_valid = false;
+        }
+
+        if (handle != null)
+            close ();
+        
+        super.process_term (linger_);
     }
 
     @Override
@@ -143,7 +161,6 @@ public class TcpConnecter extends Own implements IPollEvents {
         if (err) {
             //  Handle the error condition by attempt to reconnect.
             close ();
-            wait = true;
             add_reconnect_timer();
             return;
         }
@@ -180,7 +197,7 @@ public class TcpConnecter extends Own implements IPollEvents {
     
     @Override
     public void timer_event(int id_) {
-        wait = false;
+        timer_started = false;
         start_connecting ();
     }
     
@@ -197,7 +214,6 @@ public class TcpConnecter extends Own implements IPollEvents {
                 io_object.add_fd (handle);
                 handle_valid = true;
                 io_object.connect_event();
-                return;
             }
     
             //  Connection establishment may be delayed. Poll for its completion.
@@ -206,12 +222,11 @@ public class TcpConnecter extends Own implements IPollEvents {
                 handle_valid = true;
                 io_object.set_pollconnect (handle);
                 socket.event_connect_delayed (endpoint, ZError.errno());
-                return;
             }
         } catch (IOException e) {
             //  Handle any other error condition by eventual reconnect.
-            close ();
-            wait = true;
+            if (handle != null)
+                close ();
             add_reconnect_timer();
         }
     }
@@ -222,6 +237,7 @@ public class TcpConnecter extends Own implements IPollEvents {
         int rc_ivl = get_new_reconnect_ivl();
         io_object.add_timer (rc_ivl, reconnect_timer_id);
         socket.event_connect_retried (endpoint, rc_ivl);
+        timer_started = true;
     }
     
     //  Internal function to return a reconnect backoff delay.
