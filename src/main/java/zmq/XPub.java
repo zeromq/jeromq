@@ -118,12 +118,7 @@ public class XPub extends SocketBase {
     {
         //  There are some subscriptions waiting. Let's process them.
         Msg sub = null;
-        while (true) {
-
-            sub = pipe_.read();
-            //  Grab next subscription.
-            if (sub == null)
-                return;
+        while ((sub = pipe_.read()) != null) {
 
             //  Apply the subscription to the trie.
             byte[] data = sub.data();
@@ -140,9 +135,7 @@ public class XPub extends SocketBase {
                 if (options.type == ZMQ.ZMQ_XPUB && (unique || verbose))
                     pending.add(new Blob (sub.data ()));
             }
-
         }
-
     }
     
     @Override
