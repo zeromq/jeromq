@@ -152,12 +152,15 @@ public class TcpListener extends Own implements IPollEvents {
             handle.socket().bind(address.address(), options.backlog);
         } catch (SecurityException e) {
             ZError.errno(ZError.EACCESS);
+            close ();
             return false;
         } catch (IllegalArgumentException e) {
             ZError.errno(ZError.ENOTSUP);
+            close ();
             return false;
         } catch (IOException e) {
             ZError.exc(e);
+            close ();
             return false;
         }
         
