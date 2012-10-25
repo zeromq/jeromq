@@ -23,7 +23,7 @@ package zmq;
 
 import java.nio.ByteBuffer;
 
-abstract public class EncoderBase {
+abstract public class EncoderBase implements IEncoder {
 
     //  Where to get the data to write from.
     private ByteBuffer write_buf;
@@ -44,12 +44,14 @@ abstract public class EncoderBase {
 
     //  The buffer for encoded data.
     private ByteBuffer buf;
-
-    protected SessionBase session;
     
+    private int buffersize;
+
+
     private boolean error;
     
     protected EncoderBase (int bufsize_) {
+        buffersize = bufsize_;
         buf = ByteBuffer.allocateDirect(bufsize_);
         error = false;
     }
@@ -57,19 +59,16 @@ abstract public class EncoderBase {
     //  The function returns a batch of binary data. The data
     //  are filled to a supplied buffer. If no buffer is supplied (data_
     //  points to NULL) decoder object will provide buffer of its own.
-    //  If offset is not NULL, it is filled by offset of the first message
-    //  in the batch.If there's no beginning of a message in the batch,
-    //  offset is set to -1.
-    
-    protected Transfer get_data () {
+
+    @Override
+    public Transfer get_data (ByteBuffer buffer) 
+    {
+        if (buffer == null)
+            buffer = buf;
         
-        ByteBuffer buffer = buf;
         buffer.clear();
 
-        int buffersize = buffer.remaining();
-
-        int pos = 0;
-        while (pos < buffersize) {
+        while (buffer.hasRemaining ()) {
 
             //  If there are no more data to return, run the state machine.
             //  If there are still no data, return what we already have
@@ -92,7 +91,7 @@ abstract public class EncoderBase {
             //  As a consequence, large messages being sent won't block
             //  other engines running in the same I/O thread for excessive
             //  amounts of time.
-            if (buffer.position() == 0 && to_write >= buffersize) {
+            if (buf.position() == 0 && to_write >= buffersize) {
                 Transfer t;
                 if (write_array != null) {
                     ByteBuffer b = ByteBuffer.wrap(write_array);
@@ -108,7 +107,7 @@ abstract public class EncoderBase {
             }
 
             //  Copy data to the buffer. If the buffer is full, return.
-            int to_copy = Math.min (to_write, buffersize - pos);
+            int to_copy = Math.min (to_write, buffer.remaining ());
             if (to_copy > 0) {
                 if (write_array != null) {
                     buffer.put(write_array, write_pos, to_copy);
@@ -116,7 +115,6 @@ abstract public class EncoderBase {
                     buffer.put(write_buf.array(), write_buf.arrayOffset() + write_pos, to_copy);
                     write_buf.position(write_pos + to_copy);
                 }
-                pos += to_copy;
                 write_pos += to_copy;
                 to_write -= to_copy;
             }
@@ -175,10 +173,6 @@ abstract public class EncoderBase {
         to_write = to_write_;
         next = next_;
         beginning = beginning_;
-    }
-    
-    public void set_session(SessionBase session_) {
-        session = session_;
     }
     
 }

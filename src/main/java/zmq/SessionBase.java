@@ -21,8 +21,13 @@
 */ 
 package zmq;
 
-public class SessionBase extends Own implements Pipe.IPipeEvents, IPollEvents {
+import java.util.HashSet;
+import java.util.Set;
 
+public class SessionBase extends Own implements 
+                        Pipe.IPipeEvents, IPollEvents, 
+                        IMsgSink, IMsgSource 
+{
     //  If true, this session (re)connects to the peer. Otherwise, it's
     //  a transient session created by the listener.
     private boolean connect;
@@ -30,6 +35,9 @@ public class SessionBase extends Own implements Pipe.IPipeEvents, IPollEvents {
     //  Pipe connecting the session to its socket.
     private Pipe pipe;
 
+    //  This set is added to with pipes we are disconnecting, but haven't yet completed
+    private final Set<Pipe> terminating_pipes;
+    
     //  This flag is true if the remainder of the message being processed
     //  is still in the in pipe.
     private boolean incomplete_in;
@@ -54,9 +62,9 @@ public class SessionBase extends Own implements Pipe.IPipeEvents, IPollEvents {
     //  True is linger timer is running.
     private boolean has_linger_timer;
 
-    //  If true, identity is to be sent/recvd from the network.
-    private boolean send_identity;
-    private boolean recv_identity;
+    //  If true, identity has been sent/received from the network.
+    private boolean identity_sent;
+    private boolean identity_received;
     
     //  Protocol and address to use when connecting.
     private final Address addr;
@@ -132,10 +140,11 @@ public class SessionBase extends Own implements Pipe.IPipeEvents, IPollEvents {
         socket = socket_;
         io_thread = io_thread_;
         has_linger_timer = false;
-        send_identity = options_.send_identity;
-        recv_identity = options_.recv_identity;
+        identity_sent = false;
+        identity_received = false;
         addr = addr_;
-        
+     
+        terminating_pipes = new HashSet <Pipe> ();
     }
     
     @Override
@@ -164,15 +173,16 @@ public class SessionBase extends Own implements Pipe.IPipeEvents, IPollEvents {
         pipe.set_event_sink (this);
     }
     
-    public Msg read() {
+    public Msg pull_msg () 
+    {
         
         Msg msg_ = null;
         
-        //  First message to send is identity (if required).
-        if (send_identity) {
+        //  First message to send is identity
+        if (!identity_sent) {
             msg_ = new Msg(options.identity_size);
             msg_.put(options.identity, 0, options.identity_size);
-            send_identity = false;
+            identity_sent = true;
             incomplete_in = false;
             
             return msg_;
@@ -187,27 +197,31 @@ public class SessionBase extends Own implements Pipe.IPipeEvents, IPollEvents {
 
     }
     
-    public boolean write (Msg msg_)
+    public boolean push_msg (Msg msg_)
     {
         //  First message to receive is identity (if required).
-        if (recv_identity) {
+        if (!identity_received) {
             msg_.set_flags (Msg.identity);
-            recv_identity = false;
+            identity_received = true;
+            
+            if (!options.recv_identity) {
+                return true;
+            }
         }
-        
         
         if (pipe != null && pipe.write (msg_)) {
             return true;
         }
 
+        ZError.errno (ZError.EAGAIN);
         return false;
     }
     
 
     protected void reset() {
         //  Restore identity flags.
-        send_identity = options.send_identity;
-        recv_identity = options.recv_identity;
+        identity_sent = false;
+        identity_received = false;
     }
     
 
@@ -219,7 +233,8 @@ public class SessionBase extends Own implements Pipe.IPipeEvents, IPollEvents {
 
     //  Remove any half processed messages. Flush unflushed messages.
     //  Call this function when engine disconnect to get rid of leftovers.
-    private void clean_pipes() {
+    private void clean_pipes() 
+    {
         if (pipe != null) {
 
             //  Get rid of half-processed messages in the out pipe. Flush any
@@ -229,7 +244,7 @@ public class SessionBase extends Own implements Pipe.IPipeEvents, IPollEvents {
 
             //  Remove any half-read message from the in pipe.
             while (incomplete_in) {
-                Msg msg = read();
+                Msg msg = pull_msg ();
                 if (msg == null) {
                     assert (!incomplete_in);
                     break;
@@ -240,22 +255,34 @@ public class SessionBase extends Own implements Pipe.IPipeEvents, IPollEvents {
     }
 
     @Override
-    public void terminated(Pipe pipe_) {
+    public void terminated(Pipe pipe_) 
+    {
         //  Drop the reference to the deallocated pipe.
-        assert (pipe == pipe_);
-        pipe = null;
-
+        assert (pipe == pipe_ || terminating_pipes.contains (pipe_));
+        
+        if (pipe == pipe_)
+            // If this is our current pipe, remove it
+            pipe = null;
+        else
+            // Remove the pipe from the detached pipes set
+            terminating_pipes.remove (pipe_);
+        
         //  If we are waiting for pending messages to be sent, at this point
         //  we are sure that there will be no more messages and we can proceed
         //  with termination safely.
-        if (pending)
+        if (pending && pipe == null && terminating_pipes.size () == 0)
             proceed_with_term ();
     }
 
     @Override
-    public void read_activated(Pipe pipe_) {
-        assert (pipe == pipe_);
-
+    public void read_activated(Pipe pipe_) 
+    {
+        // Skip activating if we're detaching this pipe
+        if (pipe != pipe_) {
+            assert (terminating_pipes.contains (pipe_));
+            return;
+        }
+        
         if (engine != null)
             engine.activate_out ();
         else
@@ -265,7 +292,12 @@ public class SessionBase extends Own implements Pipe.IPipeEvents, IPollEvents {
     @Override
     public void write_activated (Pipe pipe_)
     {
-        assert (pipe == pipe_);
+        // Skip activating if we're detaching this pipe
+        if (pipe != pipe_) {
+            assert (terminating_pipes.contains (pipe_));
+            return;
+        }
+
 
         if (engine != null)
             engine.activate_in ();
@@ -280,9 +312,9 @@ public class SessionBase extends Own implements Pipe.IPipeEvents, IPollEvents {
 
     }
 
-    public void monitor_event (int event_, Object ... args)
+    public SocketBase get_soket ()
     {
-        socket.monitor_event (event_, args);
+        return socket;
     }
 
     @Override
@@ -324,7 +356,8 @@ public class SessionBase extends Own implements Pipe.IPipeEvents, IPollEvents {
         engine.plug (io_thread, this);
     }
     
-    public void detach() {
+    public void detach() 
+    {
         //  Engine is dead. Let's forget about it.
         engine = null;
 
@@ -404,6 +437,16 @@ public class SessionBase extends Own implements Pipe.IPipeEvents, IPollEvents {
             return;
         }
 
+        //  For delayed connect situations, terminate the pipe
+        //  and reestablish later on
+        if (pipe != null && options.delay_attach_on_connect == 1
+            && addr.protocol () != "pgm" && addr.protocol () != "epgm") {
+            pipe.hiccup ();
+            pipe.terminate (false);
+            terminating_pipes.add (pipe);
+            pipe = null;
+        }
+        
         reset ();
 
         //  Reconnect.

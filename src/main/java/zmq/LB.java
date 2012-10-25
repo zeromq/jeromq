@@ -51,10 +51,10 @@ public class LB {
         pipes = new ArrayList<Pipe>();
     }
 
-    public void attach(Pipe pipe_) {
+    public void attach (Pipe pipe_) 
+    {
         pipes.add (pipe_);
-        Utils.swap (pipes, active, pipes.size () - 1);
-        active++;   
+        activated (pipe_);
     }
 
     public void terminated(Pipe pipe_) {

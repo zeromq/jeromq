@@ -25,7 +25,7 @@ public class spworker {
         Random rand = new Random(System.nanoTime());
         String identity = String.format("%04X-%04X", rand.nextInt (0x10000), rand.nextInt (0x10000));
         worker.setIdentity(identity); 
-        worker.connect( "tcp://localhost:5556");
+        worker.connect("tcp://localhost:5556");
 
         //  Tell broker we're ready for work
         System.out.println (String.format("I: (%s) worker ready\n", identity));

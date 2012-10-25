@@ -153,7 +153,6 @@ public class lruqueue3 {
         arg.backend = backend;
         
         
-        context.getContext().log();
         frontend.bind("ipc://frontend.ipc");
         backend.bind("ipc://backend.ipc");
 

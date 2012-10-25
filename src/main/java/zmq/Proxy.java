@@ -22,10 +22,10 @@ package zmq;
 import java.io.IOException;
 import java.nio.channels.Selector;
 
-public class Device {
+public class Proxy {
     
-    public static boolean device (SocketBase insocket_,
-            SocketBase outsocket_)
+    public static boolean proxy (SocketBase frontend_,
+            SocketBase backend_, SocketBase capture_)
     {
 
         //  The algorithm below assumes ratio of requests and replies processed
@@ -40,8 +40,8 @@ public class Device {
         Msg msg;
         PollItem items [] = new PollItem[2];
         
-        items[0] = new PollItem (insocket_, ZMQ.ZMQ_POLLIN );
-        items[1] = new PollItem (outsocket_, ZMQ.ZMQ_POLLIN );
+        items[0] = new PollItem (frontend_, ZMQ.ZMQ_POLLIN );
+        items[1] = new PollItem (backend_, ZMQ.ZMQ_POLLIN );
         
         Selector selector;
         try {
@@ -60,17 +60,26 @@ public class Device {
                 //  Process a request.
                 if (items [0].isReadable()) {
                     while (true) {
-                        msg = insocket_.recv (0);
+                        msg = frontend_.recv (0);
                         if (msg == null) {
                             return false;
                         }
     
-                        more = insocket_.getsockopt (ZMQ.ZMQ_RCVMORE);
+                        more = frontend_.getsockopt (ZMQ.ZMQ_RCVMORE);
                         
                         if (more < 0)
                             return false;
+                        
+                        //  Copy message to capture socket if any
+                        if (capture_ != null) {
+                            Msg ctrl = new Msg (msg);
+                            success = capture_.send (ctrl, more > 0 ? ZMQ.ZMQ_SNDMORE: 0);
+                            if (!success)
+                                return false;
+                        }
+
     
-                        success = outsocket_.send (msg, more > 0? ZMQ.ZMQ_SNDMORE: 0);
+                        success = backend_.send (msg, more > 0 ? ZMQ.ZMQ_SNDMORE: 0);
                         if (!success)
                             return false;
                         if (more == 0)
@@ -80,17 +89,25 @@ public class Device {
                 //  Process a reply.
                 if (items [1].isReadable()) {
                     while (true) {
-                        msg = outsocket_.recv (0);
+                        msg = backend_.recv (0);
                         if (msg == null) {
                             return false;
                         }
     
-                        more = outsocket_.getsockopt (ZMQ.ZMQ_RCVMORE);
+                        more = backend_.getsockopt (ZMQ.ZMQ_RCVMORE);
                         
                         if (more < 0)
                             return false;
+                        
+                        //  Copy message to capture socket if any
+                        if (capture_ != null) {
+                            Msg ctrl = new Msg (msg);
+                            success = capture_.send (ctrl, more > 0 ? ZMQ.ZMQ_SNDMORE: 0);
+                            if (!success)
+                                return false;
+                        }
     
-                        success = insocket_.send (msg, more > 0? ZMQ.ZMQ_SNDMORE: 0);
+                        success = frontend_.send (msg, more > 0 ? ZMQ.ZMQ_SNDMORE: 0);
                         if (!success)
                             return false;
                         if (more == 0)

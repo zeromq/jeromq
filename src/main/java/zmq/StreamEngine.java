@@ -26,20 +26,37 @@ import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 
-public class StreamEngine implements IEngine, IPollEvents {
+public class StreamEngine implements IEngine, IPollEvents, IMsgSink {
+    
+    //  Size of the greeting message:
+    //  Preamble (10 bytes) + version (1 byte) + socket type (1 byte).
+    private static final int GREETING_SIZE = 12;
     
     //final private IOObject io_object;
     private SocketChannel handle;
 
     private ByteBuffer inbuf;
     private int insize;
-    private final DecoderBase decoder;
+    private DecoderBase decoder;
     private boolean input_error;
 
     private Transfer outbuf;
     private int outsize;
-    private final EncoderBase encoder;
+    private EncoderBase encoder;
 
+    //  When true, we are still trying to determine whether
+    //  the peer is using versioned protocol, and if so, which
+    //  version.  When false, normal message flow has started.
+    private boolean handshaking;
+    
+    //  The receive buffer holding the greeting message
+    //  that we are receiving from the peer.
+    private final ByteBuffer greeting;
+
+    //  The send buffer holding the greeting message
+    //  that we are sending to the peer.
+    private final ByteBuffer greeting_output_buffer;
+    
     //  The session this engine is attached to.
     private SessionBase session;
 
@@ -51,42 +68,33 @@ public class StreamEngine implements IEngine, IPollEvents {
     // String representation of endpoint
     private String endpoint;
 
-    boolean plugged;
+    private boolean plugged;
+    
+    // Socket
+    private SocketBase socket;
     
     private IOObject io_object;
     
     
-    public StreamEngine (SocketChannel fd_, final Options options_, final String endpoint_) {
+    public StreamEngine (SocketChannel fd_, final Options options_, final String endpoint_) 
+    {
         handle = fd_;
         inbuf = null;
         insize = 0;
         input_error = false;
         outbuf = null;
         outsize = 0;
+        handshaking = true;
         session = null;
         options = options_;
         plugged = false;
         endpoint = endpoint_;
+        socket = null;
+        greeting = ByteBuffer.allocate (GREETING_SIZE);
+        greeting_output_buffer = ByteBuffer.allocate (GREETING_SIZE);
+        encoder = null;
+        decoder = null;
 
-        try {
-            Constructor<? extends DecoderBase> dcon = 
-                        options_.decoder.getConstructor(int.class, long.class);
-            Constructor<? extends EncoderBase> econ = 
-                    options_.encoder.getConstructor(int.class);
-            decoder = dcon.newInstance(Config.in_batch_size.getValue(), options_.maxmsgsize);
-            encoder = econ.newInstance(Config.in_batch_size.getValue());
-        } catch (SecurityException e) {
-            throw new ZError.InstantiationException(e);
-        } catch (NoSuchMethodException e) {
-            throw new ZError.InstantiationException(e);
-        } catch (InvocationTargetException e) {
-            throw new ZError.InstantiationException(e);
-        } catch (IllegalAccessException e) {
-            throw new ZError.InstantiationException(e);
-        } catch (InstantiationException e) {
-            throw new ZError.InstantiationException(e);
-        }
-        
         //  Put the socket into non-blocking mode.
         try {
             Utils.unblock_socket (handle);
@@ -105,7 +113,56 @@ public class StreamEngine implements IEngine, IPollEvents {
 
     }
     
-    public void destroy() {
+    private DecoderBase new_decoder (int size, long max) {
+        
+        if (options.decoder == null)
+            return new Decoder (size, max);
+        
+        try {
+            Constructor<? extends DecoderBase> dcon = 
+                        options.decoder.getConstructor(int.class, long.class);
+            decoder = dcon.newInstance(size, max);
+            return decoder;
+        } catch (SecurityException e) {
+            throw new ZError.InstantiationException(e);
+        } catch (NoSuchMethodException e) {
+            throw new ZError.InstantiationException(e);
+        } catch (InvocationTargetException e) {
+            throw new ZError.InstantiationException(e);
+        } catch (IllegalAccessException e) {
+            throw new ZError.InstantiationException(e);
+        } catch (InstantiationException e) {
+            throw new ZError.InstantiationException(e);
+        }
+    }
+    
+    private EncoderBase new_encoder (int size) {
+        
+        if (options.encoder == null)
+            return new Encoder (size);
+        
+        try {
+            Constructor<? extends EncoderBase> econ = 
+                    options.encoder.getConstructor(int.class);
+            encoder = econ.newInstance(size);
+            return encoder;
+        } catch (SecurityException e) {
+            throw new ZError.InstantiationException(e);
+        } catch (NoSuchMethodException e) {
+            throw new ZError.InstantiationException(e);
+        } catch (InvocationTargetException e) {
+            throw new ZError.InstantiationException(e);
+        } catch (IllegalAccessException e) {
+            throw new ZError.InstantiationException(e);
+        } catch (InstantiationException e) {
+            throw new ZError.InstantiationException(e);
+        }
+    }
+    
+    
+    
+    public void destroy () 
+    {
         
         assert (!plugged);
         
@@ -123,27 +180,38 @@ public class StreamEngine implements IEngine, IPollEvents {
     {
         assert (!plugged);
         plugged = true;
-
+        
         //  Connect to session object.
         assert (session == null);
         assert (session_ != null);
-        encoder.set_session (session_);
-        decoder.set_session (session_);
         session = session_;
+        socket = session.get_soket ();
 
         io_object = new IOObject(null);
         io_object.set_handler(this);
         //  Connect to I/O threads poller object.
         io_object.plug (io_thread_);
         io_object.add_fd (handle);
+        
+        //  Send the 'length' and 'flags' fields of the identity message.
+        //  The 'length' field is encoded in the long format.
+        greeting_output_buffer.put ((byte) 0xff);
+        greeting_output_buffer.putLong (options.identity_size + 1);
+        greeting_output_buffer.put ((byte) 0x7f);
+
         io_object.set_pollin (handle);
-        io_object.set_pollout (handle);
+        //  When there's a custom encoder, we don't send 10 bytes frame
+        if (options.encoder == null) {
+            outsize = greeting_output_buffer.position ();
+            outbuf = new Transfer.ByteBufferTransfer ((ByteBuffer) greeting_output_buffer.flip ());
+            io_object.set_pollout (handle);
+        }        
+        
         //  Flush all the data that may have been already received downstream.
         in_event ();
-        
     }
     
-    private void unplug() {
+    private void unplug () {
         assert (plugged);
         plugged = false;
 
@@ -155,19 +223,30 @@ public class StreamEngine implements IEngine, IPollEvents {
         io_object.unplug ();
 
         //  Disconnect from session object.
-        encoder.set_session (null);
-        decoder.set_session (null);
+        if (encoder != null)
+            encoder.set_msg_source (null);
+        if (decoder != null)
+            decoder.set_msg_sink (null);
         session = null;
     }
     
     @Override
-    public void terminate() {
+    public void terminate () 
+    {
         unplug ();
-        destroy();
+        destroy ();
     }
 
     @Override
-    public void in_event() {
+    public void in_event () 
+    {
+        
+        //  If still handshaking, receive and process the greeting message.
+        if (handshaking)
+            if (!handshake ())
+                return;
+        
+        assert (decoder != null);
         boolean disconnection = false;
 
         //  If there's no data to process in the buffer...
@@ -222,11 +301,12 @@ public class StreamEngine implements IEngine, IPollEvents {
     }
     
     @Override
-    public void out_event() {
+    public void out_event () 
+    {
         //  If write buffer is empty, try to read new data from the encoder.
         if (outsize == 0) {
 
-            outbuf = encoder.get_data ();
+            outbuf = encoder.get_data (null);
             outsize = outbuf.remaining();
             //  If there is no data to send, stop polling for output.
             if (outbuf.remaining() == 0) {
@@ -256,11 +336,16 @@ public class StreamEngine implements IEngine, IPollEvents {
             return;
         }
 
-        //outpos += nbytes;
         outsize -= nbytes;
 
+        //  If we are still handshaking and there are no data
+        //  to send, stop polling for output.
+        if (handshaking)
+            if (outsize == 0)
+                io_object.reset_pollout (handle);
+        
         // when we use custom encoder, we might want to close after sending a response
-        if (outsize == 0 && encoder.is_error()) {
+        if (outsize == 0 && encoder != null && encoder.is_error ()) {
             error();
             return;
         }
@@ -296,7 +381,6 @@ public class StreamEngine implements IEngine, IPollEvents {
         //  Thus we try to write the data to socket avoiding polling for POLLOUT.
         //  Consequently, the latency should be better in request/reply scenarios.
         out_event ();
-        
     }
 
 
@@ -320,16 +404,150 @@ public class StreamEngine implements IEngine, IPollEvents {
         //  Speculative read.
         io_object.in_event ();
     }
+    
+    private boolean handshake ()
+    {
+        assert (handshaking);
 
-    private void error() {
+        //  Receive the greeting.
+        while (greeting.position () < GREETING_SIZE) {
+            final int n = read (greeting);
+            if (n == -1) {
+                error ();
+                return false;
+            }
+
+            if (n == 0)
+                return false;
+
+            //greeting_bytes_read += n;
+
+            //  We have received at least one byte from the peer.
+            //  If the first byte is not 0xff, we know that the
+            //  peer is using unversioned protocol.
+            if (greeting.array () [0] != -1)
+                break;
+
+            if (greeting.position () < 10)
+                continue;
+            //  Inspect the right-most bit of the 10th byte (which coincides
+            //  with the 'flags' field if a regular message was sent).
+            //  Zero indicates this is a header of identity message
+            //  (i.e. the peer is using the unversioned protocol).
+            if ((greeting.array () [9] & 0x01) == 0)
+                break;
+
+            //  The peer is using versioned protocol.
+            //  Send the rest of the greeting, if necessary.
+            if (greeting_output_buffer.limit () < GREETING_SIZE) {
+                if (outsize == 0)
+                    io_object.set_pollout (handle);
+                int pos = greeting_output_buffer.position ();
+                greeting_output_buffer.position (10).limit (GREETING_SIZE);
+                greeting_output_buffer.put ((byte) 1); // Protocol version
+                greeting_output_buffer.put ((byte) options.type);  // Socket type
+                greeting_output_buffer.position (pos);
+                outsize += 2;
+            }
+        }
+
+        //  Position of the version field in the greeting.
+        final int version_pos = 10;
+
+        //  Is the peer using the unversioned protocol?
+        //  If so, we send and receive rests of identity
+        //  messages.
+        if (greeting.array () [0] != -1 || (greeting.array () [9] & 0x01) == 0) {
+            encoder = new_encoder (Config.out_batch_size.getValue ());
+            encoder.set_msg_source (session);
+
+            decoder = new_decoder (Config.in_batch_size.getValue (), options.maxmsgsize);
+            decoder.set_msg_sink (session);
+
+            //  We have already sent the message header.
+            //  Since there is no way to tell the encoder to
+            //  skip the message header, we simply throw that
+            //  header data away.
+            final int header_size = options.identity_size + 1 >= 255 ? 10 : 2;
+            ByteBuffer tmp = ByteBuffer.allocate (header_size);
+            encoder.get_data (tmp);
+            assert (tmp.remaining () == header_size);
+            
+            //  Make sure the decoder sees the data we have already received.
+            inbuf = greeting;
+            greeting.flip ();
+            insize = greeting.remaining ();
+
+            //  To allow for interoperability with peers that do not forward
+            //  their subscriptions, we inject a phony subsription
+            //  message into the incomming message stream. To put this
+            //  message right after the identity message, we temporarily
+            //  divert the message stream from session to ourselves.
+            if (options.type == ZMQ.ZMQ_PUB || options.type == ZMQ.ZMQ_XPUB)
+                decoder.set_msg_sink (this);
+        }
+        else
+        if (greeting.array () [version_pos] == 0) {
+            //  ZMTP/1.0 framing.
+            encoder = new_encoder (Config.out_batch_size.getValue ());
+            encoder.set_msg_source (session);
+
+            decoder = new_decoder (Config.in_batch_size.getValue (), options.maxmsgsize);
+            decoder.set_msg_sink (session);
+        }
+        else {
+            //  v1 framing protocol.
+            encoder = new V1Encoder (Config.out_batch_size.getValue (), session);
+
+            decoder = new V1Decoder (Config.in_batch_size.getValue (), options.maxmsgsize, session);
+        }
+        // Start polling for output if necessary.
+        if (outsize == 0)
+            io_object.set_pollout (handle);
+
+        //  Handshaking was successful.
+        //  Switch into the normal message flow.
+        handshaking = false;
+
+        return true;
+    }
+    
+    @Override
+    public boolean push_msg (Msg msg_)
+    {
+        assert (options.type == ZMQ.ZMQ_PUB || options.type == ZMQ.ZMQ_XPUB);
+
+        //  The first message is identity.
+        //  Let the session process it.
+        boolean rc = session.push_msg (msg_);
+        assert (rc);
+
+        //  Inject the subscription message so that the ZMQ 2.x peer
+        //  receives our messages.
+        msg_ = new Msg (1);
+        msg_.put ((byte) 1);
+        rc = session.push_msg (msg_);
+        session.flush ();
+
+        //  Once we have injected the subscription message, we can
+        //  Divert the message flow back to the session.
+        assert (decoder != null);
+        decoder.set_msg_sink (session);
+
+        return rc;
+    }
+
+    private void error () 
+    {
         assert (session!=null);
-        session.monitor_event (ZMQ.ZMQ_EVENT_DISCONNECTED, endpoint, handle);
+        socket.event_disconnected (endpoint, handle);
         session.detach ();
         unplug ();
         destroy();
     }
 
-    private int write (Transfer buf) {
+    private int write (Transfer buf) 
+    {
         int nbytes = 0 ;
         try {
             nbytes = buf.transferTo(handle);
@@ -342,7 +560,8 @@ public class StreamEngine implements IEngine, IPollEvents {
 
     
     
-    private int read (ByteBuffer buf) {
+    private int read (ByteBuffer buf) 
+    {
         int nbytes = 0 ;
         try {
             nbytes = handle.read(buf);
@@ -352,8 +571,4 @@ public class StreamEngine implements IEngine, IPollEvents {
         
         return nbytes;
     }
-    
-
-
-
 }

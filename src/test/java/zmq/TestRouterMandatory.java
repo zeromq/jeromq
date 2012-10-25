@@ -25,10 +25,10 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 import static org.hamcrest.CoreMatchers.*;
 
-public class TestRouterBehaviour {
+public class TestRouterMandatory {
     
     @Test
-    public void testRouterBehaviour () {
+    public void testRouterMandatory () {
         int rc;
         boolean brc;
 
@@ -41,18 +41,20 @@ public class TestRouterBehaviour {
         brc = ZMQ.zmq_bind (sa, "tcp://127.0.0.1:15560");
         assertThat (brc , is(true));
         
-        // Sending a message to an unknown peer with the default behavior.
+        // Sending a message to an unknown peer with the default setting
         rc = ZMQ.zmq_send (sa, "UNKNOWN", ZMQ.ZMQ_SNDMORE);
         assertThat (rc ,is( 7));
         rc = ZMQ.zmq_send (sa, "DATA", 0);
         assertThat (rc, is( 4));
         
-        int behavior = 1;
+        int mandatory = 1;
         
-        ZMQ.zmq_setsockopt (sa, ZMQ.ZMQ_ROUTER_BEHAVIOR, behavior);
+        // Set mandatory routing on socket
+        ZMQ.zmq_setsockopt (sa, ZMQ.ZMQ_ROUTER_MANDATORY, mandatory);
         
+        // Send a message and check that it fails
         rc = ZMQ.zmq_send (sa, "UNKNOWN", ZMQ.ZMQ_SNDMORE | ZMQ.ZMQ_DONTWAIT);
-        assertThat (rc ,is( -1));
+        assertThat (rc ,is (-1));
         
         
         //  Clean up.

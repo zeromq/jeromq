@@ -27,9 +27,9 @@ import java.util.Set;
 public class Mtrie {
     private Set<Pipe> pipes;
 
-    private byte min;
-    private short count;
-    private short live_nodes;
+    private int min;
+    private int count;
+    private int live_nodes;
     private Mtrie[] next;
     
     public static interface IMtrieHandler {
@@ -44,8 +44,6 @@ public class Mtrie {
         pipes = null;
         next = null;
     }
-    
-
     
     public boolean add (byte[] prefix_, Pipe pipe_)
     {
@@ -82,23 +80,23 @@ public class Mtrie {
                 next = null;
             }
             else if (count == 1) {
-                byte oldc = min;
+                int oldc = min;
                 Mtrie oldp = next[0];
-                count = (short) ((min < c ? c - min : min - c) + 1);
+                count = (min < c ? c - min : min - c) + 1;
                 next = new Mtrie[count];
-                min = (byte)Math.min ((byte)min, (byte)c);
+                min = Math.min (min, c);
                 next[oldc - min] = oldp;
             }
             else if (min < c) {
 
                 //  The new character is above the current character range.
-                count = (short) (c - min + 1);
+                count = c - min + 1;
                 next = realloc(next, count, true);
             }
             else {
 
                 //  The new character is below the current character range.
-                count = (short) ((min + count) - c);
+                count = (min + count) - c;
                 next = realloc(next, count, false);
                 min = c;
             }
@@ -124,7 +122,8 @@ public class Mtrie {
         }
     }
     
-    private Mtrie[] realloc(Mtrie[] table, short size, boolean ended) {
+    private Mtrie[] realloc (Mtrie[] table, int size, boolean ended) 
+    {
         return Utils.realloc(Mtrie.class, table, size, ended);
     }
     
@@ -156,7 +155,7 @@ public class Mtrie {
 
         //  If there's one subnode (optimisation).
         if (count == 1) {
-            buff_[buffsize_] = min;
+            buff_[buffsize_] = (byte) min;
             buffsize_ ++;
             next[0].rm_helper (pipe_, buff_, buffsize_, maxbuffsize_,
                 func_, arg_);
@@ -174,10 +173,10 @@ public class Mtrie {
         //  If there are multiple subnodes.
         //
         //  New min non-null character in the node table after the removal
-        byte new_min = (byte) (min + count - 1);
+        int new_min = min + count - 1;
         //  New max non-null character in the node table after the removal
-        byte new_max = min;
-        for (short c = 0; c != count; c++) {
+        int new_max = min;
+        for (int c = 0; c != count; c++) {
             buff_[buffsize_] = (byte) (min + c);
             if (next[c] != null) {
                 next[c].rm_helper (pipe_, buff_, buffsize_ + 1,
@@ -199,17 +198,22 @@ public class Mtrie {
                     //  minimum index. Conversely, the last non-redundant, non-null
                     //  node encountered is the new maximum index.
                     if (c + min < new_min)
-                        new_min = (byte) (c + min);
+                        new_min = c + min;
                     if (c + min > new_max)
-                        new_max = (byte) (c + min);
+                        new_max = c + min;
                 }
             }
         }
 
         assert (count > 1);
 
+        //  Free the node table if it's no longer used.
+        if (live_nodes == 0) {
+            next = null;
+            count = 0;
+        }
         //  Compact the node table if possible
-        if (live_nodes == 1) {
+        else if (live_nodes == 1) {
             //  If there's only one live node in the table we can
             //  switch to using the more compact single-node
             //  representation
@@ -230,7 +234,7 @@ public class Mtrie {
             assert (new_min >= min);
             assert (new_max <= min + count - 1);
             assert (new_max - new_min + 1 < count);
-            count = (short) (new_max - new_min + 1);
+            count = new_max - new_min + 1;
             next = new Mtrie[count];
 
             System.arraycopy(old_table, (new_min - min), next, 0, count);
@@ -273,7 +277,6 @@ public class Mtrie {
 
         boolean ret = next_node.rm_helper (prefix_ , start_ + 1, pipe_);
         if (next_node.is_redundant ()) {
-            //delete next_node;
             assert (count > 0);
 
             if (count == 1) {
@@ -292,52 +295,43 @@ public class Mtrie {
                     //  If there's only one live node in the table we can
                     //  switch to using the more compact single-node
                     //  representation
-                    Mtrie node = null;
-                    for (short i = 0; i < count; ++i) {
+                    int i;
+                    for (i = 0; i < count; ++i) {
                         if (next[i] != null) {
-                            node = next[i];
-                            min = (byte)(i + min);
                             break;
                         }
                     }
 
-                    assert (node != null);
-                    //free (next.table);
-                    next = null;
-                    next = new Mtrie[]{node};
+                    assert (i < count);
+                    min += i;
                     count = 1;
+                    Mtrie old = next [i];
+                    next = new Mtrie [] { old };
                 }
                 else if (c == min) {
                     //  We can compact the table "from the left"
-                    byte new_min = min;
-                    for (short i = 1; i < count; ++i) {
+                    int i;
+                    for (i = 1; i < count; ++i) {
                         if (next[i] != null) {
-                            new_min = (byte) (i + min);
                             break;
                         }
                     }
-                    assert (new_min != min);
-
-                    assert (new_min > min);
-                    assert (count > new_min - min);
-                    count = (short) (count - (new_min - min));
                     
-                    next = realloc(next, count, true);
-
-                    min = new_min;
+                    assert (i < count);
+                    min += i;
+                    count -= i;
+                    next = realloc (next, count, true);
                 }
                 else if (c == min + count - 1) {
                     //  We can compact the table "from the right"
-                    short new_count = count;
-                    for (short i = 1; i < count; ++i) {
+                    int i;
+                    for (i = 1; i < count; ++i) {
                         if (next[count - 1 - i] != null) {
-                            new_count = (short) (count - i);
                             break;
                         }
                     }
-                    assert (new_count != count);
-                    count = new_count;
-
+                    assert (i < count);
+                    count -= i;
                     next = realloc(next, count, false);
                 }
             }

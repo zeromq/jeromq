@@ -41,13 +41,15 @@ public class Utils {
         tune_tcp_socket(ch.socket());
     }
     
-    public static void tune_tcp_socket(Socket fd) throws SocketException {
+    public static void tune_tcp_socket(Socket fd) throws SocketException 
+    {
         //  Disable Nagle's algorithm. We are doing data batching on 0MQ level,
         //  so using Nagle wouldn't improve throughput in anyway, but it would
         //  hurt latency.
-        
-        fd.setTcpNoDelay(true);
-
+        try {
+            fd.setTcpNoDelay (true);
+        } catch (SocketException e) {
+        }
     }
 
     

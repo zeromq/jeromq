@@ -94,10 +94,12 @@ public class Msg {
         }
     }
     
-    public Msg(ByteBuffer src) {
-        init(type_lmsg);
-        buf = src.duplicate();
-        size = buf.remaining();
+    public Msg (ByteBuffer src) 
+    {
+        init (type_lmsg);
+        buf = src.duplicate ();
+        buf.rewind ();
+        size = buf.remaining ();
     }
     
     public final boolean is_identity ()

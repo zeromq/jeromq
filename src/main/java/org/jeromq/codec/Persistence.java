@@ -21,6 +21,7 @@ package org.jeromq.codec;
 import java.nio.ByteBuffer;
 
 import zmq.DecoderBase;
+import zmq.IMsgSink;
 import zmq.Msg;
 
 //FIXME: not fully implemented yet
@@ -33,14 +34,16 @@ public class Persistence {
         private final static int flags_ready = 2;
         private final static int message_ready = 3;
         
-        final private ByteBuffer tmpbuf;
+        private final ByteBuffer tmpbuf;
         private Msg in_progress;
-        
+        private final long maxmsgsize;
+        private IMsgSink msg_sink;
 
         public PersistDecoder (int bufsize_, long maxmsgsize_)
         {
-            super(bufsize_, maxmsgsize_);
+            super(bufsize_);
             
+            maxmsgsize = maxmsgsize_;
             tmpbuf = ByteBuffer.allocate(8);
             
         
@@ -48,6 +51,11 @@ public class Persistence {
             next_step (tmpbuf, 1, one_byte_size_ready);
         }
         
+        @Override
+        public void set_msg_sink (IMsgSink msg_sink_)
+        {
+            msg_sink = msg_sink_;
+        }
             
         @Override
         protected boolean next() {
@@ -162,7 +170,7 @@ public class Persistence {
             //  Message is completely read. Push it further and start reading
             //  new message. (in_progress is a 0-byte message after this point.)
             
-            boolean rc = session.write (in_progress);
+            boolean rc = msg_sink.push_msg (in_progress);
             if (!rc) {
                 // full
                 return false;

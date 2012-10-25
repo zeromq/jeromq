@@ -40,6 +40,10 @@ public class XPub extends SocketBase {
     //  Distributor of messages holding the list of outbound pipes.
     private final Dist dist;
 
+    // If true, send all subscription messages upstream, not just
+    // unique ones
+    boolean verbose;
+
     //  True if we are in the middle of sending a multi-part message.
     private boolean more;
 
@@ -85,6 +89,7 @@ public class XPub extends SocketBase {
         super (parent_, tid_, sid_);
         
         options.type = ZMQ.ZMQ_XPUB;
+        verbose = false;
         more = false;
         
         subscriptions = new Mtrie();
@@ -113,12 +118,7 @@ public class XPub extends SocketBase {
     {
         //  There are some subscriptions waiting. Let's process them.
         Msg sub = null;
-        while (true) {
-
-            sub = pipe_.read();
-            //  Grab next subscription.
-            if (sub == null)
-                return;
+        while ((sub = pipe_.read()) != null) {
 
             //  Apply the subscription to the trie.
             byte[] data = sub.data();
@@ -132,18 +132,27 @@ public class XPub extends SocketBase {
 
                 //  If the subscription is not a duplicate, store it so that it can be
                 //  passed to used on next recv call.
-                if (unique && options.type != ZMQ.ZMQ_PUB)
+                if (options.type == ZMQ.ZMQ_XPUB && (unique || verbose))
                     pending.add(new Blob (sub.data ()));
             }
-
         }
-
     }
     
     @Override
     protected void xwrite_activated (Pipe pipe_)
     {
         dist.activated (pipe_);
+    }
+
+    @Override
+    public boolean xsetsockopt (int option_, Object optval_)
+    {
+        if (option_ != ZMQ.ZMQ_XPUB_VERBOSE) {
+            ZError.errno(ZError.EINVAL);
+            return false;
+        }
+        verbose = (Integer) optval_ == 1;
+        return true;
     }
 
     @Override

@@ -56,8 +56,7 @@ public class TcpListener extends Own implements IPollEvents {
     
     @Override
     public void destroy () {
-        if (handle != null)
-            close();
+        assert (handle == null);
     }
     
     
@@ -91,7 +90,8 @@ public class TcpListener extends Own implements IPollEvents {
         } catch (IOException e) {
             //  If connection was reset by the peer in the meantime, just ignore it.
             //  TODO: Handle specific errors like ENFILE/EMFILE etc.
-            socket.monitor_event (ZMQ.ZMQ_EVENT_ACCEPT_FAILED, endpoint, e);
+            ZError.exc (e);
+            socket.event_accept_failed (endpoint, ZError.errno());
             return;
         }
 
@@ -102,7 +102,8 @@ public class TcpListener extends Own implements IPollEvents {
             engine = new StreamEngine (fd, options, endpoint);
         } catch (ZError.InstantiationException e) {
             LOG.error("Failed to initialize StreamEngine", e.getCause());
-            socket.monitor_event (ZMQ.ZMQ_EVENT_ACCEPT_FAILED, endpoint, e.getCause());
+            ZError.errno (ZError.EINVAL);
+            socket.event_accept_failed (endpoint, ZError.errno());
             return;
         }
         //  Choose I/O thread to run connecter in. Given that we are already
@@ -115,7 +116,7 @@ public class TcpListener extends Own implements IPollEvents {
         session.inc_seqnum ();
         launch_child (session);
         send_attach (session, engine, false);
-        socket.monitor_event (ZMQ.ZMQ_EVENT_ACCEPTED, endpoint, fd);
+        socket.event_accepted (endpoint, fd);
     }
     
 
@@ -126,9 +127,10 @@ public class TcpListener extends Own implements IPollEvents {
         
         try {
             handle.close();
-            socket.monitor_event (ZMQ.ZMQ_EVENT_CLOSED, endpoint);
+            socket.event_closed (endpoint, handle);
         } catch (IOException e) {
-            socket.monitor_event (ZMQ.ZMQ_EVENT_CLOSE_FAILED, endpoint, e);
+            ZError.exc (e);
+            socket.event_close_failed (endpoint, ZError.errno());
         }
         handle = null;
     }
@@ -149,16 +151,19 @@ public class TcpListener extends Own implements IPollEvents {
             handle.socket().bind(address.address(), options.backlog);
         } catch (SecurityException e) {
             ZError.errno(ZError.EACCESS);
+            close ();
             return false;
         } catch (IllegalArgumentException e) {
             ZError.errno(ZError.ENOTSUP);
+            close ();
             return false;
         } catch (IOException e) {
             ZError.exc(e);
+            close ();
             return false;
         }
         
-        socket.monitor_event(ZMQ.ZMQ_EVENT_LISTENING, addr_, endpoint, handle);
+        socket.event_listening(endpoint, handle);
         return true;
     }
 

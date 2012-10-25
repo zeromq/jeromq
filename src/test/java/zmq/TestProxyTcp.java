@@ -109,15 +109,14 @@ public class TestProxyTcp {
         int size = -1;
         boolean identity_sent = false;
         Msg bottom ;
+        IMsgSink msg_sink;
         
         public ProxyDecoder(int bufsize_, long maxmsgsize_) {
-            super(bufsize_, maxmsgsize_);
+            super(bufsize_);
             next_step(header, 4, read_header);
-            //send_identity();
             
             bottom = new Msg();
             bottom.set_flags (Msg.more);
-            
         }
 
         @Override
@@ -144,19 +143,19 @@ public class TestProxyTcp {
 
         private boolean read_body() {
             
-            if (session == null)
+            if (msg_sink == null)
                 return false;
             
             System.out.println("Received body " + new String(msg.data()));
             
             if (!identity_sent) {
                 Msg identity = new Msg();
-                session.write(identity);
+                msg_sink.push_msg (identity);
                 identity_sent = true;
             }
             
-            session.write(bottom);
-            session.write(msg);
+            msg_sink.push_msg (bottom);
+            msg_sink.push_msg (msg);
             
             next_step(header, 4, read_header);
             return true;
@@ -165,6 +164,12 @@ public class TestProxyTcp {
         @Override
         public boolean stalled() {
             return state() == read_body;
+        }
+
+        @Override
+        public void set_msg_sink (IMsgSink msg_sink_)
+        {
+            msg_sink = msg_sink_;
         }
         
     }
@@ -180,6 +185,7 @@ public class TestProxyTcp {
         int size = -1;
         boolean message_ready;
         boolean identity_recieved;
+        IMsgSource msg_source;
         
         public ProxyEncoder(int bufsize_) {
             super(bufsize_);
@@ -206,39 +212,44 @@ public class TestProxyTcp {
             return true;
         }
 
-        private boolean write_header() {
-            
-            if (session == null)
+        private boolean write_header () 
+        {
+            if (msg_source == null)
                 return false;
             
-            msg = session.read();
+            msg = msg_source.pull_msg ();
             
             if (msg == null) {
                 return false;
             }
             if (!identity_recieved) {
                 identity_recieved = true;
-                msg = session.read();
-                if (msg == null)
-                    return false;
+                next_step (header, msg.size () < 255 ? 2 : 10, write_body, false);
+                return true;
             }
+            else
             if (!message_ready) {
                 message_ready = true;
-                msg = session.read();
+                msg = msg_source.pull_msg ();
+                
                 if (msg == null) {
                     return false;
                 }
             }
-            
             message_ready = false;
-            System.out.println("write header " + msg.size());
+            System.out.println ("write header " + msg.size());
 
-            header.clear();
-            header.put(String.format("%04d", msg.size()).getBytes());
-            header.flip();
-            
-            next_step(header, 4, write_body, false);
+            header.clear ();
+            header.put (String.format("%04d", msg.size()).getBytes());
+            header.flip ();
+            next_step (header, 4, write_body, false);
             return true;
+        }
+
+        @Override
+        public void set_msg_source (IMsgSource msg_source_)
+        {
+            msg_source = msg_source_;
         }
 
         
@@ -269,7 +280,7 @@ public class TestProxyTcp {
             rc = ZMQ.zmq_bind (sb, "tcp://127.0.0.1:6561");
             assert (rc );
             
-            ZMQ.zmq_device (ZMQ.ZMQ_QUEUE, sa, sb);
+            ZMQ.zmq_proxy (sa, sb, null);
 
             ZMQ.zmq_close (sa);
             ZMQ.zmq_close (sb);
