@@ -505,25 +505,27 @@ public abstract class SocketBase extends Own
             options, paddr);
         assert (session != null);
 
-        //  Create a bi-directional pipe.
-        ZObject[] parents = {this, session};
-        Pipe[] pipes = {null, null};
-        int[] hwms = {options.sndhwm, options.rcvhwm};
-        boolean[] delays = {options.delay_on_disconnect, options.delay_on_close};
-        Pipe.pipepair (parents, pipes, hwms, delays);
-
         //  PGM does not support subscription forwarding; ask for all data to be
         //  sent to this pipe.
         boolean icanhasall = false;
         if (protocol.equals("pgm") || protocol.equals("epgm"))
             icanhasall = true;
 
-        //  Attach local end of the pipe to the socket object.
-        attach_pipe (pipes [0], icanhasall);
+        if (options.delay_attach_on_connect != 1 || icanhasall) {
+            //  Create a bi-directional pipe.
+            ZObject[] parents = {this, session};
+            Pipe[] pipes = {null, null};
+            int[] hwms = {options.sndhwm, options.rcvhwm};
+            boolean[] delays = {options.delay_on_disconnect, options.delay_on_close};
+            Pipe.pipepair (parents, pipes, hwms, delays);
 
-        //  Attach remote end of the pipe to the session object later on.
-        session.attach_pipe (pipes [1]);
+            //  Attach local end of the pipe to the socket object.
+            attach_pipe (pipes [0], icanhasall);
 
+            //  Attach remote end of the pipe to the session object later on.
+            session.attach_pipe (pipes [1]);
+        }
+        
         // Save last endpoint URI
         options.last_endpoint = paddr.toString ();
 
@@ -956,7 +958,8 @@ public abstract class SocketBase extends Own
     }
 
     @Override
-    public void read_activated(Pipe pipe_) {
+    public void read_activated (Pipe pipe_) 
+    {
         xread_activated (pipe_);
     }
 
@@ -967,8 +970,13 @@ public abstract class SocketBase extends Own
     }
     
     @Override
-    public void hiccuped(Pipe pipe_) {
-        xhiccuped(pipe_);
+    public void hiccuped (Pipe pipe_) 
+    {
+        if (options.delay_attach_on_connect == 1)
+            pipe_.terminate (false);
+        else
+            // Notify derived sockets of the hiccup
+            xhiccuped(pipe_);
     }
     
 

@@ -21,6 +21,9 @@
 */ 
 package zmq;
 
+import java.util.HashSet;
+import java.util.Set;
+
 public class SessionBase extends Own implements 
                         Pipe.IPipeEvents, IPollEvents, 
                         IMsgSink, IMsgSource 
@@ -32,6 +35,9 @@ public class SessionBase extends Own implements
     //  Pipe connecting the session to its socket.
     private Pipe pipe;
 
+    //  This set is added to with pipes we are disconnecting, but haven't yet completed
+    private final Set<Pipe> terminating_pipes;
+    
     //  This flag is true if the remainder of the message being processed
     //  is still in the in pipe.
     private boolean incomplete_in;
@@ -137,7 +143,8 @@ public class SessionBase extends Own implements
         identity_sent = false;
         identity_received = false;
         addr = addr_;
-        
+     
+        terminating_pipes = new HashSet <Pipe> ();
     }
     
     @Override
@@ -171,7 +178,7 @@ public class SessionBase extends Own implements
         
         Msg msg_ = null;
         
-        //  First message to send is identity (if required).
+        //  First message to send is identity
         if (!identity_sent) {
             msg_ = new Msg(options.identity_size);
             msg_.put(options.identity, 0, options.identity_size);
@@ -248,22 +255,34 @@ public class SessionBase extends Own implements
     }
 
     @Override
-    public void terminated(Pipe pipe_) {
+    public void terminated(Pipe pipe_) 
+    {
         //  Drop the reference to the deallocated pipe.
-        assert (pipe == pipe_);
-        pipe = null;
-
+        assert (pipe == pipe_ || terminating_pipes.contains (pipe_));
+        
+        if (pipe == pipe_)
+            // If this is our current pipe, remove it
+            pipe = null;
+        else
+            // Remove the pipe from the detached pipes set
+            terminating_pipes.remove (pipe_);
+        
         //  If we are waiting for pending messages to be sent, at this point
         //  we are sure that there will be no more messages and we can proceed
         //  with termination safely.
-        if (pending)
+        if (pending && pipe == null && terminating_pipes.size () == 0)
             proceed_with_term ();
     }
 
     @Override
-    public void read_activated(Pipe pipe_) {
-        assert (pipe == pipe_);
-
+    public void read_activated(Pipe pipe_) 
+    {
+        // Skip activating if we're detaching this pipe
+        if (pipe != pipe_) {
+            assert (terminating_pipes.contains (pipe_));
+            return;
+        }
+        
         if (engine != null)
             engine.activate_out ();
         else
@@ -273,7 +292,12 @@ public class SessionBase extends Own implements
     @Override
     public void write_activated (Pipe pipe_)
     {
-        assert (pipe == pipe_);
+        // Skip activating if we're detaching this pipe
+        if (pipe != pipe_) {
+            assert (terminating_pipes.contains (pipe_));
+            return;
+        }
+
 
         if (engine != null)
             engine.activate_in ();
@@ -332,7 +356,8 @@ public class SessionBase extends Own implements
         engine.plug (io_thread, this);
     }
     
-    public void detach() {
+    public void detach() 
+    {
         //  Engine is dead. Let's forget about it.
         engine = null;
 
@@ -412,6 +437,16 @@ public class SessionBase extends Own implements
             return;
         }
 
+        //  For delayed connect situations, terminate the pipe
+        //  and reestablish later on
+        if (pipe != null && options.delay_attach_on_connect == 1
+            && addr.protocol () != "pgm" && addr.protocol () != "epgm") {
+            pipe.hiccup ();
+            pipe.terminate (false);
+            terminating_pipes.add (pipe);
+            pipe = null;
+        }
+        
         reset ();
 
         //  Reconnect.

@@ -83,6 +83,10 @@ public class Options {
     //  connect to and accept connections from both IPv4 and IPv6 hosts.
     int ipv4only;
 
+    //  If 1, connecting pipes are not attached immediately, meaning a send()
+    //  on a socket with only connecting pipes would block
+    int delay_attach_on_connect;
+    
     //  If true, session reads all the pending messages from the pipe and
     //  sends them to the network when socket is closed.
     boolean delay_on_close;
@@ -132,6 +136,7 @@ public class Options {
         rcvtimeo = -1;
         sndtimeo = -1;
         ipv4only = 1;
+        delay_attach_on_connect =  0;
         delay_on_close = true;
         delay_on_disconnect = true;
         filter = false;
@@ -264,6 +269,15 @@ public class Options {
             }
             return true;
             
+        case ZMQ.ZMQ_DELAY_ATTACH_ON_CONNECT:
+            
+            delay_attach_on_connect = (Integer) optval_;
+            if (delay_attach_on_connect !=0 && delay_attach_on_connect != 1) {
+                ZError.errno(ZError.EINVAL);
+                return false;
+            }
+            return true;
+            
         case ZMQ.ZMQ_TCP_KEEPALIVE_CNT:
         case ZMQ.ZMQ_TCP_KEEPALIVE_IDLE:
         case ZMQ.ZMQ_TCP_KEEPALIVE_INTVL:
@@ -378,9 +392,11 @@ public class Options {
             return ipv4only;
             
         case ZMQ.ZMQ_TCP_KEEPALIVE:
-            
             return tcp_keepalive; 
             
+        case ZMQ.ZMQ_DELAY_ATTACH_ON_CONNECT:
+            return delay_attach_on_connect;
+                    
         case ZMQ.ZMQ_TCP_KEEPALIVE_CNT:
         case ZMQ.ZMQ_TCP_KEEPALIVE_IDLE:
         case ZMQ.ZMQ_TCP_KEEPALIVE_INTVL:
