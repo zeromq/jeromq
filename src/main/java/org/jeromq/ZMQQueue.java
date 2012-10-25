@@ -24,10 +24,11 @@ public class ZMQQueue implements Runnable {
     }
 
     @Override
-    public void run() {
-        zmq.ZMQ.zmq_device(ZMQ.QUEUE, inSocket.base(), outSocket.base());
-        if (!zmq.ZError.is(zmq.ZError.ETERM))
-            throw new ZMQException(zmq.ZError.errno());
+    public void run() 
+    {
+        zmq.ZMQ.zmq_proxy (inSocket.base(), outSocket.base(), null);
+        if (!zmq.ZError.is (zmq.ZError.ETERM))
+            throw new ZMQException (zmq.ZError.errno ());
     }
 
 }

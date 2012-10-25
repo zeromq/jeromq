@@ -37,10 +37,11 @@ public class TestEncoder {
     Helper.DummySession session;
     DummySocketChannel sock;
     @Before
-    public void setUp () {
+    public void setUp () 
+    {
         session = new DummySession();
         encoder = new Encoder(64);
-        encoder.set_session(session);
+        encoder.set_msg_source (session);
         sock = new DummySocketChannel();
     }
     // as if it read data from socket
@@ -61,11 +62,11 @@ public class TestEncoder {
     }
 
     @Test
-    public void testReader() {
-        
+    public void testReader() 
+    {
         Msg msg = read_short_message();
-        session.write(msg);
-        Transfer out = encoder.get_data ();
+        session.push_msg (msg);
+        Transfer out = encoder.get_data (null);
         int outsize = out.remaining();
         
         assertThat(outsize, is(7));
@@ -88,8 +89,8 @@ public class TestEncoder {
     @Test
     public void testReaderLong() {
         Msg msg = read_long_message1();
-        session.write(msg);
-        Transfer out = encoder.get_data ();
+        session.push_msg (msg);
+        Transfer out = encoder.get_data (null);
 
         int insize = out.remaining();
         
@@ -97,7 +98,7 @@ public class TestEncoder {
         int written = write(out);
         assertThat(written, is(64));
 
-        out = encoder.get_data ();
+        out = encoder.get_data (null);
         int remaning = out.remaining();
         assertThat(remaning, is(138));
         
@@ -130,6 +131,7 @@ public class TestEncoder {
         ByteBuffer header = ByteBuffer.allocate(10);
         Msg msg;
         int size = -1;
+        IMsgSource source;
         
         public CustomEncoder(int bufsize_) {
             super(bufsize_);
@@ -154,9 +156,9 @@ public class TestEncoder {
                 
         }
 
-        private boolean read_body() {
-            
-            msg = session.read();
+        private boolean read_body() 
+        {
+            msg = source.pull_msg ();
             
             if (msg == null) {
                 return false;
@@ -169,17 +171,23 @@ public class TestEncoder {
             return true;
         }
 
+        @Override
+        public void set_msg_source (IMsgSource msg_source_)
+        {
+            source = msg_source_;
+        }
+
         
     }
     @Test
-    public void testCustomDecoder () {
-        
+    public void testCustomDecoder () 
+    {
         CustomEncoder cencoder = new CustomEncoder(32);
-        cencoder.set_session(session);
+        cencoder.set_msg_source (session);
         Msg msg = new Msg("12345678901234567890");
-        session.write(msg);
+        session.push_msg (msg);
         
-        Transfer out = cencoder.get_data ();
+        Transfer out = cencoder.get_data (null);
         write(out);
         byte[] data = sock.data();
 

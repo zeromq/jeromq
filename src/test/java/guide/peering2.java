@@ -94,7 +94,6 @@ public class peering2 {
         Random rand = new Random(System.nanoTime());
     
         ZContext ctx = new ZContext();
-        ctx.log();
         
         //  Bind cloud frontend to endpoint
         Socket cloudfe = ctx.createSocket(ZMQ.ROUTER);

@@ -214,10 +214,6 @@ public class ZMQ {
             return new Poller (this, size);
         }
         
-        public void log() {
-            ctx.log_event();
-        }
-
     }
     
     public static class Socket {
@@ -1476,8 +1472,9 @@ public class ZMQ {
         }
     }
     
-    public static boolean device(int type_, Socket sa, Socket sb) {
-        return zmq.ZMQ.zmq_device(type_, sa.base, sb.base);
+    public static boolean device (int type_, Socket sa, Socket sb) 
+    {
+        return zmq.ZMQ.zmq_proxy (sa.base, sb.base, null);
     }
     
     public static int poll (PollItem[] items, long timeout) {

@@ -20,7 +20,6 @@
 */
 package zmq;
 
-import java.nio.channels.SocketChannel;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
@@ -112,10 +111,6 @@ public class Ctx {
     //  Synchronisation of access to context options.
     private final Lock opt_sync;
 
-    // Monitoring callback
-    //zmq_monitor_fn *monitor_fn;
-    private IZmqMonitor monitor_fn;
-    
     public static final int term_tid = 0;
     public static final int reaper_tid = 1;
     
@@ -129,7 +124,6 @@ public class Ctx {
         slots = null;
         max_sockets = ZMQ.ZMQ_MAX_SOCKETS_DFLT;
         io_thread_count = ZMQ.ZMQ_IO_THREADS_DFLT;
-        monitor_fn = null;
         
         slot_sync = new ReentrantLock();
         endpoints_sync = new ReentrantLock();
@@ -214,10 +208,6 @@ public class Ctx {
         //  Deallocate the resources.
         destroy();
         
-    }
-    
-    public void monitor(IZmqMonitor monitor_) {
-        monitor_fn = monitor_;
     }
     
     public void set (int option_, int optval_)
@@ -449,53 +439,4 @@ public class Ctx {
         }
         return endpoint;
     }
-    
-    
-    public void monitor_event (SocketBase socket_, int event_, Object ... args_)
-    {
-        
-        if (monitor_fn != null) {
-            monitor_fn.monitor (socket_, event_, args_);
-        }
-    }
-
-    public void log_event() {
-        
-        monitor_fn = new IZmqMonitor () {
-            @Override
-            public void monitor(SocketBase socket_, int event_, Object[] args_) {
-        
-                switch (event_) {
-                case ZMQ.ZMQ_EVENT_ACCEPTED:
-                    String endpoint = (String) args_[0];
-                    SocketChannel ch = (SocketChannel) args_[1];
-                    LOG.info("{} Accepted {}", new Object[] { endpoint, ch.socket().getRemoteSocketAddress()});
-                    break;
-                    
-                case ZMQ.ZMQ_EVENT_DISCONNECTED:
-                    endpoint = (String) args_[0];
-                    ch = (SocketChannel) args_[1];
-                    LOG.info("{} is Disconnected", new Object[] { ch.socket().getRemoteSocketAddress() });
-                    break;
-                    
-                case ZMQ.ZMQ_EVENT_LISTENING:
-                    String bind = (String) args_[0];
-                    endpoint = (String) args_[1];
-                    LOG.info("{} Listening", new Object[] { bind, endpoint });
-                    break;
-                    
-                case ZMQ.ZMQ_EVENT_BIND_FAILED:
-                    bind = (String) args_[0];
-                    int code = (Integer) args_[1];
-                    LOG.info("{} Bind Failed {}", new Object[] { bind, code });
-                    break;
-                    
-                default:
-                    break;
-                }
-            }
-        };
-    }
-
-
 }

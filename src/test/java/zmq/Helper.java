@@ -119,14 +119,16 @@ public class Helper {
         }
         
         @Override
-        public boolean write(Msg msg) {
+        public boolean push_msg (Msg msg) 
+        {
             System.out.println("session.write " + msg);
             out.add(msg);
             return true;
         }
         
         @Override
-        public Msg read() {
+        public Msg pull_msg () 
+        {
             System.out.println("session.read " + out);
             if (out.size() == 0) {
                 return null;
@@ -193,9 +195,15 @@ public class Helper {
         out.write(content);
         
         System.out.println("sent " + data.length() + " " + data);
-        rc = in.read(buf, 0, 4);
-        assertThat (rc, is( 4));
-        System.out.println(String.format("%02x %02x", buf[0], buf[1]));
+        int to_read = 4; // 4 + greeting_size
+        int read = 0;
+        while (to_read > 0) {
+            rc = in.read(buf, read, to_read);
+            read += rc;
+            to_read -= rc;
+            System.out.println("read " + rc + " total_read " + read + " to_read " + to_read); 
+        }
+        System.out.println(String.format("%02x %02x %02x %02x", buf[0], buf[1], buf[2], buf[3]));
         try {
             Thread.sleep(1000);
         } catch (InterruptedException e) {

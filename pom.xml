@@ -4,7 +4,7 @@
   <groupId>org.jeromq</groupId>
   <artifactId>jeromq</artifactId>
   <packaging>jar</packaging>
-  <version>0.1.0-SNAPSHOT</version>
+  <version>0.2.0-SNAPSHOT</version>
   <name>JeroMQ</name>
   <description>zeromq POJO implementation</description>
   <url>https://github.com/miniway/jeromq</url>

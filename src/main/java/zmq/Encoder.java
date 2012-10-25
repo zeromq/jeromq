@@ -31,14 +31,21 @@ public class Encoder extends EncoderBase {
 
     private Msg in_progress;
     private final byte[] tmpbuf;
+    private IMsgSource msg_source;
     
-    public Encoder(int bufsize_) {
+    public Encoder (int bufsize_) 
+    {
         super(bufsize_);
         tmpbuf = new byte[10];
         //  Write 0 bytes to the batch and go to message_ready state.
         next_step ((byte[])null, 0, message_ready, true);
     }
 
+    @Override
+    public void set_msg_source (IMsgSource msg_source_)
+    {
+        msg_source = msg_source_;
+    }
     
     @Override
     protected boolean next() {
@@ -72,10 +79,10 @@ public class Encoder extends EncoderBase {
         //  unsuccessful write will cause retry on the next state machine
         //  invocation.
         
-        if (session == null)
+        if (msg_source == null)
             return false;
         
-        in_progress = session.read ();
+        in_progress = msg_source.pull_msg ();
         if (in_progress == null) {
             return false;
         }
@@ -105,7 +112,5 @@ public class Encoder extends EncoderBase {
         
         return true;
     }
-
-
 
 }

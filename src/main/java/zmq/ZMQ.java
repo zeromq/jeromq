@@ -21,6 +21,7 @@
 package zmq;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
@@ -37,7 +38,7 @@ public class ZMQ {
     /*  Version macros for compile-time API version detection                     */
     public static final int ZMQ_VERSION_MAJOR = 3;
     public static final int ZMQ_VERSION_MINOR = 2;
-    public static final int ZMQ_VERSION_PATCH = 1;
+    public static final int ZMQ_VERSION_PATCH = 2;
     
     /*  Context options  */
     public static final int ZMQ_IO_THREADS = 1;
@@ -67,7 +68,9 @@ public class ZMQ {
     public static final int ZMQ_XSUB = 10;
     
     /*  Deprecated aliases                                                        */
+    @Deprecated
     public static final int ZMQ_XREQ = ZMQ_DEALER;
+    @Deprecated
     public static final int ZMQ_XREP = ZMQ_ROUTER;
 
     /*  Socket options.                                                           */
@@ -95,12 +98,14 @@ public class ZMQ {
     public static final int ZMQ_SNDTIMEO = 28;
     public static final int ZMQ_IPV4ONLY = 31;
     public static final int ZMQ_LAST_ENDPOINT = 32;
-    public static final int ZMQ_ROUTER_BEHAVIOR = 33;
+    public static final int ZMQ_ROUTER_MANDATORY = 33;
     public static final int ZMQ_TCP_KEEPALIVE = 34;
     public static final int ZMQ_TCP_KEEPALIVE_CNT = 35;
     public static final int ZMQ_TCP_KEEPALIVE_IDLE = 36;
     public static final int ZMQ_TCP_KEEPALIVE_INTVL = 37;
     public static final int ZMQ_TCP_ACCEPT_FILTER = 38;
+    public static final int ZMQ_DELAY_ATTACH_ON_CONNECT = 39;
+    public static final int ZMQ_XPUB_VERBOSE = 40;
     
     /* Custom options */
     public static final int ZMQ_ENCODER = 1001;
@@ -113,6 +118,12 @@ public class ZMQ {
     /*  Send/recv options.                                                        */
     public static final int ZMQ_DONTWAIT = 1;
     public static final int ZMQ_SNDMORE = 2;
+    
+    /*  Deprecated aliases                                                        */
+    public static final int ZMQ_NOBLOCK = ZMQ_DONTWAIT;
+    public static final int ZMQ_FAIL_UNROUTABLE = ZMQ_ROUTER_MANDATORY;
+    public static final int ZMQ_ROUTER_BEHAVIOR = ZMQ_ROUTER_MANDATORY;
+    
     /******************************************************************************/
     /*  0MQ socket events and monitoring                                          */
     /******************************************************************************/
@@ -132,15 +143,82 @@ public class ZMQ {
     public static final int ZMQ_EVENT_CLOSED = 128;
     public static final int ZMQ_EVENT_CLOSE_FAILED = 256;
     public static final int ZMQ_EVENT_DISCONNECTED = 512;
+
+    public static final int ZMQ_EVENT_ALL = ZMQ_EVENT_CONNECTED | ZMQ_EVENT_CONNECT_DELAYED |
+                ZMQ_EVENT_CONNECT_RETRIED | ZMQ_EVENT_LISTENING |
+                ZMQ_EVENT_BIND_FAILED | ZMQ_EVENT_ACCEPTED |
+                ZMQ_EVENT_ACCEPT_FAILED | ZMQ_EVENT_CLOSED |
+                ZMQ_EVENT_CLOSE_FAILED | ZMQ_EVENT_DISCONNECTED;
     
-    public static final int  ZMQ_POLLIN = 1;
-    public static final int  ZMQ_POLLOUT = 2;
-    public static final int  ZMQ_POLLERR = 4;
+    public static final int ZMQ_POLLIN = 1;
+    public static final int ZMQ_POLLOUT = 2;
+    public static final int ZMQ_POLLERR = 4;
     
     public static final int ZMQ_STREAMER = 1;
     public static final int ZMQ_FORWARDER = 2;
     public static final int ZMQ_QUEUE = 3;
     
+    public static class Event 
+    {
+        private static final int VALUE_INTEGER = 1;
+        private static final int VALUE_CHANNEL = 2;
+        
+        public final int event;
+        public final String addr;
+        private final Object arg;
+        private final int flag;
+
+        public Event (int event, String addr, Object arg) 
+        {
+            this.event = event;
+            this.addr = addr;
+            this.arg = arg;
+            if (arg instanceof Integer)
+                flag = VALUE_INTEGER;
+            else if (arg instanceof SelectableChannel)
+                flag = VALUE_CHANNEL;
+            else
+                flag = 0;
+        }
+        
+        public boolean write (SocketBase s) 
+        {
+            int size = 4 + 1 + addr.length () + 1; // event + len(addr) + addr + flag
+            if (flag == VALUE_INTEGER)
+                size += 4;
+            
+            ByteBuffer buffer = ByteBuffer.allocate (size);
+            buffer.putInt (event);
+            buffer.put ((byte) addr.length());
+            buffer.put ((byte) flag);
+            if (flag == VALUE_INTEGER)
+                buffer.putInt ((Integer)arg);
+
+            Msg msg = new Msg (buffer);
+            return s.send (msg, 0);
+        }
+        
+        public static Event read (SocketBase s) 
+        {
+            Msg msg = s.recv (0);
+            if (msg == null)
+                return null;
+            
+            ByteBuffer buffer = msg.buf ();
+            
+            int event = buffer.getInt ();
+            int len = buffer.get ();
+            byte [] addr = new byte [len];
+            buffer.get (addr);
+            int flag = buffer.get ();
+            Object arg = null;
+            
+            if (flag == VALUE_INTEGER)
+                arg = buffer.getInt ();
+            
+            return new Event (event, new String (addr), arg);
+        }
+    }
     //  New context API
     public static Ctx zmq_ctx_new() {
         //  Create 0MQ context.
@@ -173,10 +251,6 @@ public class ZMQ {
         return ctx_.get (option_);
     }
     
-
-    public static void zmq_ctx_set_monitor(Ctx ctx, IZmqMonitor monitor_) {
-        ctx.monitor (monitor_);
-    }
 
     //  Stable/legacy context API
     public static Ctx zmq_init(int io_threads_) {
@@ -230,6 +304,15 @@ public class ZMQ {
     public static int zmq_getsockopt(SocketBase s_, int opt) {
         
         return s_.getsockopt(opt);
+    }
+
+    public static boolean zmq_socket_monitor(SocketBase s_, final String addr_, int events_) {
+
+        if (s_ == null || !s_.check_tag ()) {
+            throw new IllegalStateException();
+        }
+        
+        return s_.monitor (addr_, events_);
     }
 
 
@@ -452,23 +535,24 @@ public class ZMQ {
         
     }
 
-    
+    //  The proxy functionality
+    public static boolean zmq_proxy (SocketBase frontend_, SocketBase backend_, SocketBase control_)
+    {
+        if (frontend_ == null || backend_ == null) {
+            ZError.errno (ZError.EFAULT);
+            throw new IllegalArgumentException();
+        }
+        return Proxy.proxy (
+            frontend_,
+            backend_,
+            control_);
+    }
+
+    @Deprecated
     public static boolean zmq_device (int device_, SocketBase insocket_,
             SocketBase outsocket_)
     {
-
-        if (insocket_ == null || outsocket_ == null) {
-            throw new IllegalArgumentException();
-        }
-
-        if (device_ != ZMQ_FORWARDER && device_ != ZMQ_QUEUE &&
-              device_ != ZMQ_STREAMER) {
-            throw new IllegalArgumentException();
-        }
-        
-        return Device.device(insocket_, outsocket_);
-
-        
+        return Proxy.proxy(insocket_, outsocket_, null);
     }
 
     // Polling.
@@ -617,8 +701,6 @@ public class ZMQ {
         return nevents;
     }
     
-
-
     public static long zmq_stopwatch_start() {
         return System.nanoTime();
     }
@@ -634,7 +716,4 @@ public class ZMQ {
     public static String zmq_strerror(int errno) {
         return "Errno = " + errno;
     }
-
-    
-
 }

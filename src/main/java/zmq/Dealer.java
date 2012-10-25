@@ -55,9 +55,7 @@ public class Dealer extends SocketBase {
         //  be noone to receive the replies anyway.
         //  options.delay_on_close = false;
             
-        options.send_identity = true;
         options.recv_identity = true;
-
     }
 
 

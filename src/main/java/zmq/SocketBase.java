@@ -71,6 +71,12 @@ public abstract class SocketBase extends Own
     //  True if the last message received had MORE flag set.
     private boolean rcvmore;
 
+    // Monitor socket
+    private SocketBase monitor_socket;
+
+    // Bitmask of events being monitored
+    private int monitor_events;
+
     protected SocketBase (Ctx parent_, int tid_, int sid_) 
     {
         super (parent_, tid_);
@@ -80,6 +86,8 @@ public abstract class SocketBase extends Own
         last_tsc = 0;
         ticks = 0;
         rcvmore = false;
+        monitor_socket = null;
+        monitor_events = 0;
         
         options.socket_id = sid_;
         
@@ -146,18 +154,18 @@ public abstract class SocketBase extends Own
             break;
         
         default:
-            throw new IllegalArgumentException("type=" + type_);
+            throw new IllegalArgumentException ("type=" + type_);
         }
         return s;
     }
     
-    public void destroy() {
+    public void destroy () {
+        stop_monitor ();
         assert (destroyed);
-        
     }
 
     //  Returns the mailbox associated with this socket.
-    public Mailbox get_mailbox() {
+    public Mailbox get_mailbox () {
         return mailbox;
     }
     
@@ -179,7 +187,8 @@ public abstract class SocketBase extends Own
         //  First check out whether the protcol is something we are aware of.
         if (!protocol_.equals("inproc") && !protocol_.equals("ipc") && !protocol_.equals("tcp") /*&&
               !protocol_.equals("pgm") && !protocol_.equals("epgm")*/) {
-            throw new IllegalArgumentException(protocol_);
+            ZError.errno (ZError.EPROTONOSUPPORT);
+            throw new UnsupportedOperationException (protocol_);
         }
 
         //  Check whether socket type and transport protocol match.
@@ -188,7 +197,8 @@ public abstract class SocketBase extends Own
         if ((protocol_.equals("pgm") || protocol_.equals("epgm")) &&
               options.type != ZMQ.ZMQ_PUB && options.type != ZMQ.ZMQ_SUB &&
               options.type != ZMQ.ZMQ_XPUB && options.type != ZMQ.ZMQ_XSUB) {
-            throw new IllegalArgumentException(protocol_ + ",type=" + options.type);
+            ZError.errno (ZError.EPROTONOSUPPORT);
+            throw new UnsupportedOperationException (protocol_ + ",type=" + options.type);
         }
 
         //  Protocol is available.
@@ -294,7 +304,7 @@ public abstract class SocketBase extends Own
 
     }
     
-    public boolean bind(final String addr_) {
+    public boolean bind (final String addr_) {
         if (ctx_terminated) {
             ZError.errno(ZError.ETERM);
             return false;
@@ -349,7 +359,7 @@ public abstract class SocketBase extends Own
             boolean rc = listener.set_address (address);
             if (!rc) {
                 listener.destroy();
-                monitor_event (ZMQ.ZMQ_EVENT_BIND_FAILED, addr_, ZError.errno());
+                event_bind_failed (addr_, ZError.errno());
                 LOG.error("Failed to Bind", ZError.exc());
                 return false;
             }
@@ -367,7 +377,7 @@ public abstract class SocketBase extends Own
             boolean rc = listener.set_address (address);
             if (!rc) {
                 listener.destroy();
-                monitor_event (ZMQ.ZMQ_EVENT_BIND_FAILED, addr_, ZError.errno());
+                event_bind_failed (addr_, ZError.errno());
                 return false;
             }
 
@@ -443,20 +453,20 @@ public abstract class SocketBase extends Own
             //  Attach local end of the pipe to this socket object.
             attach_pipe (pipes [0]);
 
-            //  If required, send the identity of the local socket to the peer.
-            if (options.send_identity) {
-                Msg id = new Msg(options.identity_size);
-                id.put(options.identity, 0 , options.identity_size);
+            //  If required, send the identity of the peer to the local socket.
+            if (peer.options.recv_identity) {
+                Msg id = new Msg(peer.options.identity_size);
+                id.put(peer.options.identity, 0 , peer.options.identity_size);
                 id.set_flags (Msg.identity);
                 boolean written = pipes [0].write (id);
                 assert (written);
                 pipes [0].flush ();
             }
-
-            //  If required, send the identity of the peer to the local socket.
-            if (peer.options.send_identity) {
-                Msg id = new Msg(peer.options.identity_size);
-                id.put(peer.options.identity, 0 , peer.options.identity_size);
+            
+            //  If required, send the identity of the local socket to the peer.
+            if (options.recv_identity) {
+                Msg id = new Msg(options.identity_size);
+                id.put(options.identity, 0 , options.identity_size);
                 id.set_flags (Msg.identity);
                 boolean written = pipes [1].write (id);
                 assert (written);
@@ -495,25 +505,27 @@ public abstract class SocketBase extends Own
             options, paddr);
         assert (session != null);
 
-        //  Create a bi-directional pipe.
-        ZObject[] parents = {this, session};
-        Pipe[] pipes = {null, null};
-        int[] hwms = {options.sndhwm, options.rcvhwm};
-        boolean[] delays = {options.delay_on_disconnect, options.delay_on_close};
-        Pipe.pipepair (parents, pipes, hwms, delays);
-
         //  PGM does not support subscription forwarding; ask for all data to be
         //  sent to this pipe.
         boolean icanhasall = false;
         if (protocol.equals("pgm") || protocol.equals("epgm"))
             icanhasall = true;
 
-        //  Attach local end of the pipe to the socket object.
-        attach_pipe (pipes [0], icanhasall);
+        if (options.delay_attach_on_connect != 1 || icanhasall) {
+            //  Create a bi-directional pipe.
+            ZObject[] parents = {this, session};
+            Pipe[] pipes = {null, null};
+            int[] hwms = {options.sndhwm, options.rcvhwm};
+            boolean[] delays = {options.delay_on_disconnect, options.delay_on_close};
+            Pipe.pipepair (parents, pipes, hwms, delays);
 
-        //  Attach remote end of the pipe to the session object later on.
-        session.attach_pipe (pipes [1]);
+            //  Attach local end of the pipe to the socket object.
+            attach_pipe (pipes [0], icanhasall);
 
+            //  Attach remote end of the pipe to the session object later on.
+            session.attach_pipe (pipes [1]);
+        }
+        
         // Save last endpoint URI
         options.last_endpoint = paddr.toString ();
 
@@ -819,6 +831,7 @@ public abstract class SocketBase extends Own
         //  We'll remember the fact so that any blocking call is interrupted and any
         //  further attempt to use the socket will return ETERM. The user is still
         //  responsible for calling zmq_close on the socket though!
+        stop_monitor ();
         ctx_terminated = true;
         
     }
@@ -945,7 +958,8 @@ public abstract class SocketBase extends Own
     }
 
     @Override
-    public void read_activated(Pipe pipe_) {
+    public void read_activated (Pipe pipe_) 
+    {
         xread_activated (pipe_);
     }
 
@@ -956,8 +970,13 @@ public abstract class SocketBase extends Own
     }
     
     @Override
-    public void hiccuped(Pipe pipe_) {
-        xhiccuped(pipe_);
+    public void hiccuped (Pipe pipe_) 
+    {
+        if (options.delay_attach_on_connect == 1)
+            pipe_.terminate (false);
+        else
+            // Notify derived sockets of the hiccup
+            xhiccuped(pipe_);
     }
     
 
@@ -988,19 +1007,164 @@ public abstract class SocketBase extends Own
     }
 
 
-    public void monitor_event(int event, Object ... args) {
-        get_ctx().monitor_event(this, event, args);
-    }
+    public boolean monitor (final String addr_, int events_) {
+        boolean rc;
+        if (ctx_terminated) {
+            ZError.errno(ZError.ETERM);
+            return false;
+        }
 
+        // Support deregistering monitoring endpoints as well
+        if (addr_ == null) {
+            stop_monitor ();
+            return true;
+        }
+
+        //  Parse addr_ string.
+        URI uri;
+        try {
+            uri = new URI(addr_);
+        } catch (URISyntaxException e) {
+            ZError.errno (ZError.EINVAL);
+            throw new IllegalArgumentException (e);
+        }
+        String protocol = uri.getScheme();
+        String address = uri.getAuthority();
+        String path = uri.getPath();
+        if (address == null)
+            address = path;
+
+        check_protocol (protocol);
+
+        // Event notification only supported over inproc://
+        if (!protocol.equals ("inproc")) {
+            ZError.errno (ZError.EPROTONOSUPPORT);
+            return false;
+        }
+
+        // Register events to monitor
+        monitor_events = events_;
+
+        monitor_socket = get_ctx ().create_socket(ZMQ.ZMQ_PAIR);
+        if (monitor_socket == null)
+            return false;
+
+        // Never block context termination on pending event messages
+        int linger = 0;
+        rc = monitor_socket.setsockopt (ZMQ.ZMQ_LINGER, linger);
+        if (!rc)
+             stop_monitor ();
+
+        // Spawn the monitor socket endpoint
+        rc = monitor_socket.bind (addr_);
+        if (!rc)
+             stop_monitor ();
+        return rc;
+    }
     
+    public void event_connected (String addr, SelectableChannel ch) 
+    {
+        if ((monitor_events & ZMQ.ZMQ_EVENT_CONNECTED) == 0) 
+            return;
+        
+        monitor_event (new ZMQ.Event (ZMQ.ZMQ_EVENT_CONNECTED, addr, ch));
+    }
+    
+    public void event_connect_delayed (String addr, int errno) 
+    {
+        if ((monitor_events & ZMQ.ZMQ_EVENT_CONNECT_DELAYED) == 0) 
+            return;
+        
+        monitor_event (new ZMQ.Event (ZMQ.ZMQ_EVENT_CONNECT_DELAYED, addr, errno));
+    }
+    
+    public void event_connect_retried (String addr, int interval) 
+    {
+        if ((monitor_events & ZMQ.ZMQ_EVENT_CONNECT_RETRIED) == 0) 
+            return;
+        
+        monitor_event (new ZMQ.Event (ZMQ.ZMQ_EVENT_CONNECT_RETRIED, addr, interval));
+    }
+        
+    public void event_listening (String addr, SelectableChannel ch) 
+    {
+        if ((monitor_events & ZMQ.ZMQ_EVENT_LISTENING) == 0) 
+            return;
+        
+        monitor_event (new ZMQ.Event (ZMQ.ZMQ_EVENT_LISTENING, addr, ch));
+    }
+    
+    public void event_bind_failed (String addr, int errno) 
+    {
+        if ((monitor_events & ZMQ.ZMQ_EVENT_BIND_FAILED) == 0) 
+            return;
+        
+        monitor_event (new ZMQ.Event (ZMQ.ZMQ_EVENT_BIND_FAILED, addr, errno));
+    }
+    
+    public void event_accepted (String addr, SelectableChannel ch) 
+    {
+        if ((monitor_events & ZMQ.ZMQ_EVENT_ACCEPTED) == 0) 
+            return;
+        
+        monitor_event (new ZMQ.Event (ZMQ.ZMQ_EVENT_ACCEPTED, addr, ch));
+    }
+    
+    public void event_accept_failed (String addr, int errno) 
+    {
+        if ((monitor_events & ZMQ.ZMQ_EVENT_ACCEPT_FAILED) == 0) 
+            return;
+        
+        monitor_event (new ZMQ.Event (ZMQ.ZMQ_EVENT_ACCEPT_FAILED, addr, errno));
+    }
+    
+    public void event_closed (String addr, SelectableChannel ch) 
+    {
+        if ((monitor_events & ZMQ.ZMQ_EVENT_CLOSED) == 0) 
+            return;
+        
+        monitor_event (new ZMQ.Event (ZMQ.ZMQ_EVENT_CLOSED, addr, ch));
+    }
+    
+    public void event_close_failed (String addr, int errno) 
+    {
+        if ((monitor_events & ZMQ.ZMQ_EVENT_CLOSE_FAILED) == 0) 
+            return;
+        
+        monitor_event (new ZMQ.Event (ZMQ.ZMQ_EVENT_CLOSE_FAILED, addr, errno));
+    }
+    
+    public void event_disconnected (String addr, SelectableChannel ch) 
+    {
+        if ((monitor_events & ZMQ.ZMQ_EVENT_DISCONNECTED) == 0) 
+            return;
+        
+        monitor_event (new ZMQ.Event (ZMQ.ZMQ_EVENT_DISCONNECTED, addr, ch));
+    }
+    
+    protected void monitor_event (ZMQ.Event event) 
+    {
+        
+        if (monitor_socket == null)
+            return;
+        
+        event.write (monitor_socket);
+    }
+    
+    protected void stop_monitor () 
+    {
+
+        if (monitor_socket != null) {
+            monitor_socket.close();
+            monitor_socket = null;
+            monitor_events = 0;
+        }
+    }
     
     @Override
     public String toString() {
         return super.toString() + "[" + options.socket_id + "]";
     }
-
-    
-
 
     public SelectableChannel get_fd() {
         return mailbox.get_fd();

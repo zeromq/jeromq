@@ -35,10 +35,11 @@ public class TestDecoder {
     Helper.DummySession session;
     
     @Before
-    public void setUp () {
+    public void setUp () 
+    {
         session = new DummySession();
         decoder = new Decoder(64, 256);
-        decoder.set_session(session);
+        decoder.set_msg_sink (session);
     }
     // as if it read data from socket
     private int read_short_message (ByteBuffer buf) {
@@ -128,9 +129,10 @@ public class TestDecoder {
         ByteBuffer header = ByteBuffer.allocate(10);
         Msg msg;
         int size = -1;
+        IMsgSink sink;
         
         public CustomDecoder(int bufsize_, long maxmsgsize_) {
-            super(bufsize_, maxmsgsize_);
+            super(bufsize_);
             next_step(header, 10, read_header);
         }
 
@@ -158,9 +160,9 @@ public class TestDecoder {
             return true;
         }
 
-        private boolean read_body() {
-            
-            session.write(msg);
+        private boolean read_body() 
+        {
+            sink.push_msg (msg);
             header.clear();
             next_step(header, 10, read_header);
             return true;
@@ -170,13 +172,19 @@ public class TestDecoder {
         public boolean stalled() {
             return state() == read_body;
         }
+
+        @Override
+        public void set_msg_sink (IMsgSink msg_sink)
+        {
+            sink = msg_sink;
+        }
         
     }
     @Test
-    public void testCustomDecoder () {
-        
+    public void testCustomDecoder () 
+    {
         CustomDecoder cdecoder = new CustomDecoder(32, 64);
-        cdecoder.set_session(session);
+        cdecoder.set_msg_sink (session);
         
         ByteBuffer in = cdecoder.get_buffer ();
         int insize = read_header (in);
