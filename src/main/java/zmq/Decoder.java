@@ -162,7 +162,7 @@ public class Decoder extends DecoderBase {
         
         int first = tmpbuf[0];
         
-        in_progress.set_flags (first);
+        in_progress.set_flags (first & Msg.more);
 
         next_step (in_progress,
             message_ready);
