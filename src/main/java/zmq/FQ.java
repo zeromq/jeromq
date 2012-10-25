@@ -98,10 +98,6 @@ public class FQ {
             msg_ = pipes.get(current).read ();
 
             boolean fetched = msg_ != null;
-            //  Check the atomicity of the message. If we've already received the
-            //  first part of the message we should get the remaining parts
-            //  without blocking.
-            assert (!more || fetched);
 
             //  Note that when message is not fetched, current pipe is deactivated
             //  and replaced by another active pipe. Thus we don't have to increase
@@ -114,6 +110,12 @@ public class FQ {
                     current = (current + 1) % active;
                 return msg_;
             }
+            
+            //  Check the atomicity of the message.
+            //  If we've already received the first part of the message
+            //  we should get the remaining parts without blocking.
+            assert (!more);
+            
             active--;
             Utils.swap (pipes, current, active);
             if (current == active)

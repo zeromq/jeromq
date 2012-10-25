@@ -56,8 +56,7 @@ public class TcpListener extends Own implements IPollEvents {
     
     @Override
     public void destroy () {
-        if (handle != null)
-            close();
+        assert (handle == null);
     }
     
     
