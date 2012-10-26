@@ -293,6 +293,9 @@ public class ZLoop {
                         timer.when = timer.delay + System.currentTimeMillis();
                 }
             }
+            if (rc == -1)
+                break; // Some timer signalled break from the reactor loop
+
             //  Handle any pollers that are ready
             for (int item_nbr = 0; item_nbr < poll_size; item_nbr++) {
                 SPoller poller = pollact [item_nbr];

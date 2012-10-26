@@ -72,12 +72,73 @@ public class TestZLoop {
         assert (rc == 0);
         loop.start ();
 
+        loop.pollerEnd(poll_input);
+        ctx.destroy();
+        //  @end
+        printf ("OK\n");
+    }
+    
+    @Test(timeout = 1000)
+    public void testZLoopEndReactorFromTimer() {
+        printf (" * zloop end reactor from timer: ");
+        int rc = 0;
+        //  @selftest
+        ZContext ctx = new ZContext ();
+        assert (ctx != null);
+        
+        Socket output = ctx.createSocket(ZMQ.PAIR);
+        assert (output != null);
+        output.bind("inproc://zloop.test");
+        Socket input = ctx.createSocket(ZMQ.PAIR);
+        assert (input != null);
+        input.connect( "inproc://zloop.test");
+
+        ZLoop loop = ZLoop.instance();
+        assert (loop != null);
+        loop.verbose (true);
+        
+        ZLoop.IZLoopHandler s_timer_event = new ZLoop.IZLoopHandler() {
+
+            @Override
+            public int handle(ZLoop loop, PollItem item, Object arg) {
+                ((Socket)arg).send("PING", 0);
+                return 0;
+            }
+        };
+        
+        ZLoop.IZLoopHandler s_socket_event = new ZLoop.IZLoopHandler() {
+
+            @Override
+            public int handle(ZLoop loop, PollItem item, Object arg) {
+                //  After 10 msecs, fire an event that ends the reactor
+            	ZLoop.IZLoopHandler s_shutdown_event = new ZLoop.IZLoopHandler() {
+                    @Override
+                    public int handle(ZLoop loop, PollItem item, Object arg) {
+                    	//  Just end the reactor
+                        return -1;
+                    }
+                };
+                loop.timer(10, 1, s_shutdown_event, s_shutdown_event);
+                return 0;
+            }
+        };
+
+        //  Fire event that sends a ping message to output
+        loop.timer (0, 1, s_timer_event, output);
+        
+        //  When we get the ping message, end the reactor
+        PollItem poll_input = new PollItem( input, ZMQ.POLLIN );
+        rc = loop.poller (poll_input, s_socket_event, null);
+        assert (rc == 0);
+        loop.start ();
+
+        loop.pollerEnd(poll_input);
         ctx.destroy();
         //  @end
         printf ("OK\n");
     }
 
     private static void printf(String s) {
-        System.out.println(s);
+        System.out.print(s);
     }
 }
