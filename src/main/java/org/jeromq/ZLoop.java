@@ -73,6 +73,7 @@ public class ZLoop {
             this.times = times;
             this.handler = handler;
             this.arg = arg;
+            this.when = -1;
         }
 
     }
@@ -85,11 +86,13 @@ public class ZLoop {
     private boolean dirty;                      //  True if pollset needs rebuilding
     private boolean verbose;                    //  True if verbose tracing wanted
     private final List<Object> zombies;         //  List of timers to kill
+    private final List<STimer> newTimers;       //  List of timers to add
     
     private ZLoop() {
         pollers = new ArrayList<SPoller>();
         timers = new ArrayList<STimer>();
         zombies = new ArrayList<Object>();
+        newTimers = new ArrayList<STimer>();
     }
     
     public static ZLoop instance() {
@@ -206,7 +209,10 @@ public class ZLoop {
     {
         STimer timer = new STimer(delay, times, handler, arg);
         
-        timers.add(timer);
+        //  We cannot touch self->timers because we may be executing that
+        //  from inside the poll loop. So, we hold the new timer on the newTimers
+        //  list, and process that list when we're done executing timers.
+        newTimers.add(timer);
         if (verbose)
             LOG.info ("I: zloop: register timer delay={} times={}", delay, times);
         
@@ -248,6 +254,10 @@ public class ZLoop {
     public int start ()
     {
         int rc = 0;
+        
+        timers.addAll(newTimers);
+        newTimers.clear();
+
         //  Recalculate all timers now
         for (STimer timer: timers) {
             timer.when = timer.delay + System.currentTimeMillis();
@@ -334,6 +344,10 @@ public class ZLoop {
                     }
                 }
             }
+            //  Now handle any new timers added inside the loop
+            timers.addAll(newTimers);
+            newTimers.clear();
+
             if (rc == -1)
                 break;
         }
