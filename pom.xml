@@ -15,16 +15,12 @@
     </license>
   </licenses>
   <scm>
-    <url>git@github.com:miniway/jeromq.git</url>
-    <connection>scm:git:git@github.com:miniway/jeromq.git</connection>
-    <developerConnection>scm:git:git@github.com:miniway/jeromq.git</developerConnection>
+    <url>git@github.com:zeromq/jeromq.git</url>
+    <connection>scm:git:git@github.com:zeromq/jeromq.git</connection>
+    <developerConnection>scm:git:git@github.com:zeromq/jeromq.git</developerConnection>
   </scm>
   <developers>
-    <developer>
-      <id>mini</id>
-      <name>Dongmin Yu</name>
-      <email>miniway@gmail.com</email>
-    </developer>
+    <developer />
   </developers>
   <dependencies>
     <dependency>
