@@ -439,9 +439,9 @@ public class ZMQ {
          * @param hwm
          *            the number of messages to queue.
          */
-        @Deprecated
         public final void setHWM(long hwm) {
-            // not support at zeromq 3
+            setSndHWM (hwm);
+            setRcvHWM (hwm);
         }
         
         /**
