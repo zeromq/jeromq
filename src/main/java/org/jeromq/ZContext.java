@@ -59,6 +59,11 @@ public class ZContext {
     private int linger;
     
     /**
+     * HWM timeout, default 1
+     */
+    private int hwm;
+    
+    /**
      * Indicates if context object is owned by main thread
      * (useful for multi-threaded applications)
      */
@@ -172,6 +177,22 @@ public class ZContext {
     }
 
     /**
+     * @return the HWM
+     */
+    public int getHWM ()
+    {
+        return hwm;
+    }
+
+    /**
+     * @param hwm the HWM to set
+     */
+    public void setHWM (int hwm) {
+        this.hwm = hwm;
+    }
+
+
+    /**
      * @return the main
      */
     public boolean isMain() {
@@ -195,8 +216,9 @@ public class ZContext {
     /**
      * @param ctx   sets the underlying org.zeromq.Context associated with this ZContext wrapper object
      */
-    public void setContext(Context ctx) {
+    public void setContext (Context ctx) {
         this.context = ctx;
+        setMain (false);
     }
     
     /**
@@ -205,5 +227,6 @@ public class ZContext {
     public List<Socket> getSockets() {
         return sockets;
     }
+
     
 }
