@@ -134,7 +134,7 @@ public class V1Decoder extends DecoderBase
         
         boolean rc = msg_sink.push_msg (in_progress);
         if (!rc) {
-            if (ZError.is (ZError.EAGAIN))
+            if (!ZError.is (ZError.EAGAIN))
                 decoding_error ();
             
             return false;
