@@ -25,12 +25,11 @@ public class tripping {
             frontend.bind("tcp://*:5555");
             backend.bind("tcp://*:5556");
 
-            ZMQ.Poller items = ctx.getContext().poller();
-            items.setAutoClose (false);
-            items.register(frontend, ZMQ.Poller.POLLIN);
-            items.register(backend, ZMQ.Poller.POLLIN);
-
             while (!Thread.currentThread().isInterrupted()) {
+                ZMQ.Poller items = ctx.getContext().poller();
+                items.register(frontend, ZMQ.Poller.POLLIN);
+                items.register(backend, ZMQ.Poller.POLLIN);
+                
                 if (items.poll() == -1)
                     break; // Interrupted
                 if (items.pollin(0)) {
@@ -43,6 +42,7 @@ public class tripping {
                     msg.send(backend);
                 }
                 if (items.pollin(1)) {
+
                     ZMsg msg = ZMsg.recvMsg(backend);
                     if (msg == null)
                         break; // Interrupted
@@ -52,7 +52,6 @@ public class tripping {
                     msg.send(frontend);
                 }
             }
-            items.close ();
             ctx.destroy();
         }
 

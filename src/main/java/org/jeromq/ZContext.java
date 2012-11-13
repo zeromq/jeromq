@@ -145,6 +145,8 @@ public class ZContext {
     public static ZContext shadow(ZContext ctx) {
         ZContext shadow = new ZContext();
         shadow.setContext(ctx.getContext());
+        shadow.setMain (false);
+
         return shadow;
     }
     
@@ -218,7 +220,6 @@ public class ZContext {
      */
     public void setContext (Context ctx) {
         this.context = ctx;
-        setMain (false);
     }
     
     /**
