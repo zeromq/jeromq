@@ -593,25 +593,26 @@ public class ZMQ {
         long now = 0;
         long end = 0;
         
-        HashMap<PollItem, SelectionKey> saved = new HashMap<PollItem,SelectionKey>();
+        HashMap<SelectableChannel, SelectionKey> saved = new HashMap<SelectableChannel, SelectionKey>();
         for (SelectionKey key: selector.keys()) {
-            saved.put((PollItem)key.attachment(), key);
+            saved.put(key.channel (), key);
         }
 
         for (PollItem item: items_) {
             if (item == null) 
-                continue;
+                break;
 
             SelectableChannel ch = item.getChannel(); // mailbox channel if ZMQ socket
-            SelectionKey key = saved.remove(item);
+            SelectionKey key = saved.remove(ch);
             
             if (key != null) {
-                if (item.interestOps() != item.interestOps()) {
+                if (key.interestOps() != item.interestOps()) {
                     key.interestOps(item.interestOps());
                 }
+                key.attach (item);
             } else {
                 try {
-                    key = ch.register(selector, item.interestOps(),item);
+                    key = ch.register(selector, item.interestOps(), item);
                 } catch (ClosedChannelException e) {
                     throw new ZError.IOException(e);
                 }
