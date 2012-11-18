@@ -21,6 +21,7 @@ package org.jeromq;
 import java.util.ArrayList;
 
 import org.junit.Test;
+import static org.junit.Assert.*;
 
 import org.jeromq.ZMQ;
 import org.jeromq.ZMQ.Context;
@@ -118,18 +119,18 @@ public class TestZDevice {
         
         @Override
         public void run() {
-            boolean rc ;
+            int port;
             Socket sa = ctx.socket(ZMQ.ROUTER);
             
             assert (sa != null);
-            rc = sa.bind ("tcp://127.0.0.1:6660");
-            assert (rc );
+            port = sa.bind ("tcp://127.0.0.1:6660");
+            assertEquals (port, 6660);
 
             
             Socket sb = ctx.socket(ZMQ.ROUTER);
             assert (sb != null);
-            rc = sb.bind ("tcp://127.0.0.1:6661");
-            assert (rc );
+            port = sb.bind ("tcp://127.0.0.1:6661");
+            assertEquals (port, 6661);
             
             ArrayList<byte[]> ids = new ArrayList<byte[]>();
             ids.add(new byte[]{'A','A'});
