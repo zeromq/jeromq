@@ -74,7 +74,6 @@ public class ZThread
         Socket pipe = ctx.createSocket (ZMQ.PAIR);
         
         if (pipe != null) {
-            pipe.setHWM (ctx.getHWM ());
             pipe.bind (String.format ("inproc://zctx-pipe-%d", pipe.hashCode ()));
         } else {
             return null;
@@ -85,7 +84,6 @@ public class ZThread
         Socket cpipe = ccontext.createSocket (ZMQ.PAIR);
         if (cpipe == null)
             return null;
-        cpipe.setHWM (1);
         cpipe.connect (String.format ("inproc://zctx-pipe-%d", pipe.hashCode ()));
 
         //  Prepare child thread

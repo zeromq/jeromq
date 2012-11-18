@@ -7,7 +7,7 @@
   <version>0.2.0-SNAPSHOT</version>
   <name>JeroMQ</name>
   <description>zeromq POJO implementation</description>
-  <url>https://github.com/miniway/jeromq</url>
+  <url>https://github.com/zeromq/jeromq</url>
   <licenses>
     <license>
       <name>GNU General Lesser Public License (LGPL) version 3.0</name>

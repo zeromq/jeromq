@@ -217,6 +217,11 @@ public class ZMQ {
     
     public static class Socket {
 
+        //  This port range is defined by IANA for dynamic or private ports
+        //  We use this when choosing a port for dynamic binding.
+        private static final int DYNFROM = 0xc000;
+        private static final int DYNTO = 0xffff;
+        
         private final Ctx ctx;
         private final SocketBase base;
 
@@ -830,8 +835,42 @@ public class ZMQ {
          * @param addr
          *            the endpoint to bind to.
          */
-        public final boolean bind(String addr) {
-            return base.bind(addr);
+        public final int bind(String addr) {
+            if (addr.endsWith (":*")) {
+                int port = DYNFROM;
+                String prefix = addr.substring (0, addr.lastIndexOf (':') + 1);
+                while (port <= DYNTO) {
+                    addr = prefix + port;
+                    //  Try to bind on the next plausible port
+                    if (base.bind (addr))
+                        return port;
+                    port++;
+                }
+                return -1;
+            } else {
+                if (base.bind(addr)) {
+                    int port = 0;
+                    try {
+                        port = Integer.parseInt (
+                            addr.substring (addr.lastIndexOf (':') + 1));
+                    } catch (NumberFormatException e) {
+                    }
+                    return port;
+                } else {
+                    return -1;
+                }
+            }
+        }
+        
+        /**
+         * Bind to network interface to a random port. Start listening for new
+         * connections.
+         *
+         * @param addr
+         *            the endpoint to bind to.
+         */
+        public int bindToRandomPort(String addr) {
+            return bind(addr + ":*");
         }
 
         /**
