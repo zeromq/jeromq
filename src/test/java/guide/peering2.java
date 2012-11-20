@@ -86,11 +86,11 @@ public class peering2 {
         //  Other arguments are our peers' names
         //
         if (argv.length < 1) {
-            System.out.println ("syntax: peering2 me {you}É\n");
+            System.out.println ("syntax: peering2 me {you}\n");
             System.exit(-1);
         }
         self = argv [0];
-        System.out.println (String.format("I: preparing broker at %sÉ\n", self));
+        System.out.println (String.format("I: preparing broker at %s\n", self));
         Random rand = new Random(System.nanoTime());
     
         ZContext ctx = new ZContext();
@@ -116,7 +116,7 @@ public class peering2 {
         Socket localbe = ctx.createSocket(ZMQ.ROUTER);
         localbe.bind( String.format("ipc://%s-localbe.ipc", self));
         
-        //  Get user to tell us when we can startÉ
+        //  Get user to tell us when we can start
         System.out.println ("Press Enter when all brokers are started: ");
         try {
             System.in.read ();

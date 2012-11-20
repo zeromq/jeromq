@@ -25,7 +25,7 @@ public class taskvent {
 
         System.out.println("Press Enter when the workers are ready: ");
         System.in.read();
-        System.out.println("Sending tasks to workersÉ\n");
+        System.out.println("Sending tasks to workers\n");
 
         //  The first message is "0" and signals start of batch
         sink.send("0".getBytes(), 0);

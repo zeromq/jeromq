@@ -100,7 +100,7 @@ public class mdwrkapi {
         worker = ctx.createSocket(ZMQ.DEALER);
         worker.connect(broker);
         if (verbose)
-            log.format("I: connecting to broker at %s…\n", broker);
+            log.format("I: connecting to broker at %s\n", broker);
 
         // Register service with broker
         sendToBroker(MDP.W_READY, service, null);
@@ -157,7 +157,7 @@ public class mdwrkapi {
                 ZFrame command = msg.pop();
                 if (MDP.W_REQUEST.frameEquals(command)) {
                     // We should pop and save as many addresses as there are
-                    // up to a null part, but for now, just save one…
+                    // up to a null part, but for now, just save one
                     replyTo = msg.unwrap();
                     command.destroy();
                     return msg; // We have a request to process
@@ -173,7 +173,7 @@ public class mdwrkapi {
                 msg.destroy();
             } else if (--liveness == 0) {
                 if (verbose)
-                    log.format("W: disconnected from broker - retrying…\n");
+                    log.format("W: disconnected from broker - retrying\n");
                 try {
                     Thread.sleep(reconnect);
                 } catch (InterruptedException e) {
@@ -192,7 +192,7 @@ public class mdwrkapi {
 
         }
         if (Thread.currentThread().isInterrupted())
-            log.format("W: interrupt received, killing worker…\n");
+            log.format("W: interrupt received, killing worker\n");
         return null;
     }
 

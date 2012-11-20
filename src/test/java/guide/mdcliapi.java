@@ -74,7 +74,7 @@ public class mdcliapi {
         client = ctx.createSocket(ZMQ.REQ);
         client.connect(broker);
         if (verbose)
-            log.format("I: connecting to broker at %s…\n", broker);
+            log.format("I: connecting to broker at %s\n", broker);
     }
 
     /**
@@ -132,7 +132,7 @@ public class mdcliapi {
                     log.format("W: permanent error, abandoning\n");
                     break;
                 }
-                log.format("W: no reply, reconnecting…\n");
+                log.format("W: no reply, reconnecting\n");
                 reconnectToBroker();
             }
         }
