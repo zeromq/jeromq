@@ -20,7 +20,7 @@ public class lpclient {
     public static void main (String[] argv)
     {
         ZContext ctx = new ZContext ();
-        System.out.println ("I: connecting to server…\n");
+        System.out.println ("I: connecting to server\n");
         Socket client = ctx.createSocket(ZMQ.REQ);
         assert (client != null);
         client.connect(SERVER_ENDPOINT);
@@ -66,10 +66,10 @@ public class lpclient {
                     break;
                 }
                 else {
-                    System.out.println ("W: no response from server, retrying…\n");
+                    System.out.println ("W: no response from server, retrying\n");
                     //  Old socket is confused; close it and open a new one
                     ctx.destroySocket(client);
-                    System.out.println ("I: reconnecting to server…\n");
+                    System.out.println ("I: reconnecting to server\n");
                     client = ctx.createSocket(ZMQ.REQ);
                     client.connect(SERVER_ENDPOINT);
                     //  Send request again, on new socket

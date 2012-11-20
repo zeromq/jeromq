@@ -8,7 +8,7 @@ import org.jeromq.ZMQ;
 * Collects results from workers via that socket and
 * publishes a kill signal to tcp://localhost:5559 when the results have been processed.
 *
-* @author Olof Åkesson <oloake@gmail.com>
+* @author Olof kesson <oloake@gmail.com>
 *
 */
 public class tasksink2 {

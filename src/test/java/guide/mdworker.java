@@ -22,7 +22,7 @@ public class mdworker {
             ZMsg request = workerSession.receive(reply);
             if (request == null)
                 break; //Interrupted
-            reply = request; //  Echo is complex… :-)
+            reply = request; //  Echo is complex :-)
         }
         workerSession.destroy();
     }
