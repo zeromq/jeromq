@@ -126,7 +126,7 @@ public class ppworker {
             //  discarding any messages we might have sent in the meantime://
             if (--liveness == 0) {
                 System.out.println ("W: heartbeat failure, can't reach queue\n");
-                System.out.println (String.format("W: reconnecting in %zd msec…\n", interval));
+                System.out.println (String.format("W: reconnecting in %zd msec\n", interval));
                 try {
                     Thread.sleep(interval);
                 } catch (InterruptedException e) {

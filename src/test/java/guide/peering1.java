@@ -21,11 +21,11 @@ public class peering1 {
         //  Other arguments are our peers' names
         //
         if (argv.length < 1) {
-            System.out.println ("syntax: peering1 me {you}É\n");
+            System.out.println ("syntax: peering1 me {you}\n");
             System.exit(-1);
         }
         String self = argv [0];
-        System.out.println (String.format("I: preparing broker at %sÉ\n", self));
+        System.out.println (String.format("I: preparing broker at %s\n", self));
         Random rand = new Random(System.nanoTime());
     
         ZContext ctx = new ZContext();

@@ -11,7 +11,7 @@ import org.jeromq.ZMQ.Socket;
 public class rtpapa {
 
     //  We will do this all in one thread to emphasize the sequence
-    //  of events…
+    //  of events
     public static void main(String[] args) {
         Context context = ZMQ.context(1);
 
@@ -23,7 +23,7 @@ public class rtpapa {
         worker.connect("ipc://routing.ipc");
 
         //  Wait for the worker to connect so that when we send a message
-        //  with routing envelope, it will actually match the worker…
+        //  with routing envelope, it will actually match the worker
         try {
             Thread.sleep(1000);
         } catch (InterruptedException e) {
@@ -44,7 +44,7 @@ public class rtpapa {
         //  We don't play with envelopes in the worker
         worker.send("This is the reply",0);
 
-        //  Now dump what we got off the ROUTER socket…
+        //  Now dump what we got off the ROUTER socket
         client.dump();
         
         client.close();
