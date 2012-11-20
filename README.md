@@ -51,4 +51,9 @@ Add it to your Maven project's `pom.xml`:
       <version>0.2.0-SNAPSHOT</version>
     </dependency>
 
+If your are using the Ant 
+
+    ant [target]
+
+
 Also please refer the [Wiki](https://github.com/zeromq/jeromq/wiki)
