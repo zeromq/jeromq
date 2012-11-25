@@ -115,49 +115,65 @@ public class StreamEngine implements IEngine, IPollEvents, IMsgSink {
 
     }
     
-    private DecoderBase new_decoder (int size, long max) {
+    private DecoderBase new_decoder (int size, long max, SessionBase session, int version) {
         
-        if (options.decoder == null)
+        if (options.decoder == null) {
+            if (version == V1Protocol.VERSION)
+                return new V1Decoder (size, max, session);
             return new Decoder (size, max);
+        }
         
         try {
-            Constructor<? extends DecoderBase> dcon = 
-                        options.decoder.getConstructor(int.class, long.class);
-            decoder = dcon.newInstance(size, max);
-            return decoder;
+            Constructor<? extends DecoderBase> dcon;
+            
+            if (version == 0)  {
+                dcon = options.decoder.getConstructor (int.class, long.class);
+                return dcon.newInstance (size, max);
+            } else {
+                dcon = options.decoder.getConstructor (int.class, long.class, int.class);
+                return dcon.newInstance (size, max, session, version);
+            }
         } catch (SecurityException e) {
-            throw new ZError.InstantiationException(e);
+            throw new ZError.InstantiationException (e);
         } catch (NoSuchMethodException e) {
-            throw new ZError.InstantiationException(e);
+            throw new ZError.InstantiationException (e);
         } catch (InvocationTargetException e) {
-            throw new ZError.InstantiationException(e);
+            throw new ZError.InstantiationException (e);
         } catch (IllegalAccessException e) {
-            throw new ZError.InstantiationException(e);
+            throw new ZError.InstantiationException (e);
         } catch (InstantiationException e) {
-            throw new ZError.InstantiationException(e);
+            throw new ZError.InstantiationException (e);
         }
     }
     
-    private EncoderBase new_encoder (int size) {
+    private EncoderBase new_encoder (int size, SessionBase session, int version) {
         
-        if (options.encoder == null)
+        if (options.encoder == null) {
+            if (version == V1Protocol.VERSION)
+                return new V1Encoder (size, session);
             return new Encoder (size);
+        }
         
         try {
-            Constructor<? extends EncoderBase> econ = 
-                    options.encoder.getConstructor(int.class);
-            encoder = econ.newInstance(size);
-            return encoder;
+            Constructor<? extends EncoderBase> econ;
+            
+            if (version == 0) {
+                econ = options.encoder.getConstructor (int.class);
+                return econ.newInstance (size);
+            } else {
+                econ = options.encoder.getConstructor (int.class, IMsgSource.class, int.class);
+                return econ.newInstance (size, session, version);
+            }
         } catch (SecurityException e) {
-            throw new ZError.InstantiationException(e);
+            throw new ZError.InstantiationException (e);
         } catch (NoSuchMethodException e) {
-            throw new ZError.InstantiationException(e);
+            throw new ZError.InstantiationException (e);
         } catch (InvocationTargetException e) {
-            throw new ZError.InstantiationException(e);
+            throw new ZError.InstantiationException (e);
         } catch (IllegalAccessException e) {
-            throw new ZError.InstantiationException(e);
+            throw new ZError.InstantiationException (e);
         } catch (InstantiationException e) {
-            throw new ZError.InstantiationException(e);
+            throw new ZError.InstantiationException (e);
         }
     }
     
@@ -203,8 +219,15 @@ public class StreamEngine implements IEngine, IPollEvents, IMsgSink {
         greeting_output_buffer.put ((byte) 0x7f);
 
         io_object.set_pollin (handle);
-        //  When there's a custom encoder, we don't send 10 bytes frame
-        if (options.encoder == null) {
+        //  When there's a raw custom encoder, we don't send 10 bytes frame
+        boolean custom = false;
+        try {
+            custom = options.encoder != null && options.encoder.getDeclaredField ("RAW_ENCODER") != null;
+        } catch (SecurityException e) {
+        } catch (NoSuchFieldException e) {
+        }
+        
+        if (!custom) {
             outsize = greeting_output_buffer.position ();
             outbuf = new Transfer.ByteBufferTransfer ((ByteBuffer) greeting_output_buffer.flip ());
             io_object.set_pollout (handle);
@@ -433,8 +456,6 @@ public class StreamEngine implements IEngine, IPollEvents, IMsgSink {
             if (n == 0)
                 return false;
 
-            //greeting_bytes_read += n;
-
             //  We have received at least one byte from the peer.
             //  If the first byte is not 0xff, we know that the
             //  peer is using unversioned protocol.
@@ -471,10 +492,10 @@ public class StreamEngine implements IEngine, IPollEvents, IMsgSink {
         //  If so, we send and receive rests of identity
         //  messages.
         if (greeting.array () [0] != -1 || (greeting.array () [9] & 0x01) == 0) {
-            encoder = new_encoder (Config.out_batch_size.getValue ());
+            encoder = new_encoder (Config.out_batch_size.getValue (), null, 0);
             encoder.set_msg_source (session);
 
-            decoder = new_decoder (Config.in_batch_size.getValue (), options.maxmsgsize);
+            decoder = new_decoder (Config.in_batch_size.getValue (), options.maxmsgsize, null, 0);
             decoder.set_msg_sink (session);
 
             //  We have already sent the message header.
@@ -502,17 +523,17 @@ public class StreamEngine implements IEngine, IPollEvents, IMsgSink {
         else
         if (greeting.array () [version_pos] == 0) {
             //  ZMTP/1.0 framing.
-            encoder = new_encoder (Config.out_batch_size.getValue ());
+            encoder = new_encoder (Config.out_batch_size.getValue (), null, 0);
             encoder.set_msg_source (session);
 
-            decoder = new_decoder (Config.in_batch_size.getValue (), options.maxmsgsize);
+            decoder = new_decoder (Config.in_batch_size.getValue (), options.maxmsgsize, null, 0);
             decoder.set_msg_sink (session);
         }
         else {
             //  v1 framing protocol.
-            encoder = new V1Encoder (Config.out_batch_size.getValue (), session);
+            encoder = new_encoder (Config.out_batch_size.getValue (), session, V1Protocol.VERSION);
 
-            decoder = new V1Decoder (Config.in_batch_size.getValue (), options.maxmsgsize, session);
+            decoder = new_decoder (Config.in_batch_size.getValue (), options.maxmsgsize, session, V1Protocol.VERSION);
         }
         // Start polling for output if necessary.
         if (outsize == 0)
@@ -552,11 +573,11 @@ public class StreamEngine implements IEngine, IPollEvents, IMsgSink {
 
     private void error () 
     {
-        assert (session!=null);
+        assert (session != null);
         socket.event_disconnected (endpoint, handle);
         session.detach ();
         unplug ();
-        destroy();
+        destroy ();
     }
 
     private int write (Transfer buf) 
@@ -577,7 +598,7 @@ public class StreamEngine implements IEngine, IPollEvents, IMsgSink {
     {
         int nbytes = 0 ;
         try {
-            nbytes = handle.read(buf);
+            nbytes = handle.read (buf);
         } catch (IOException e) {
             return -1;
         }

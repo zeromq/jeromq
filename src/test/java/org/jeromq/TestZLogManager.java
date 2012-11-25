@@ -84,26 +84,27 @@ public class TestZLogManager {
     
     @SuppressWarnings("resource")
     @Test
-    public void testRecover() throws Exception {
-        ZLogManager m = ZLogManager.instance();
-        m.shutdown();
+    public void testRecover() throws Exception 
+    {
+        ZLogManager m = ZLogManager.instance ();
+        m.shutdown ();
 
         String path = datadir + "/new_topic/00000000000000000000.dat";
-        FileChannel ch = new RandomAccessFile(path, "rw").getChannel();
-        MappedByteBuffer buf = ch.map(MapMode.READ_WRITE, 0, m.config().segment_size);
-        buf.put((byte)5);
-        buf.put((byte)0);
-        buf.put("12345".getBytes());
-        buf.put((byte)11);
-        buf.put((byte)0);
-        buf.put("67890abcdef".getBytes());
-        ch.close();
+        FileChannel ch = new RandomAccessFile(path, "rw").getChannel ();
+        MappedByteBuffer buf = ch.map (MapMode.READ_WRITE, 0, m.config ().segment_size);
+        buf.put ((byte)0);
+        buf.put ((byte)5);
+        buf.put ("12345".getBytes());
+        buf.put ((byte)0);
+        buf.put ((byte)11);
+        buf.put ("67890abcdef".getBytes());
+        ch.close ();
         
-        ZLog log = m.get("new_topic");
+        ZLog log = m.get ("new_topic");
         assertThat(log.offset(), is(20L));
         
-        log.append(new Msg("hello"));
-        assertThat(log.offset(), is(27L));
+        log.append (new Msg("hello"));
+        assertThat (log.offset(), is(27L));
 
     }
     

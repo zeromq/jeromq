@@ -242,7 +242,7 @@ public class ZLog {
         pendingMessages = pendingMessages + 1L;
         
         tryFlush();
-        
+        assert (current != null);
         return current.offset();
     }
 
@@ -267,24 +267,27 @@ public class ZLog {
         return buf;
     }
     
-    public List<Msg> readMsg(long start, int max) throws InvalidOffsetException, IOException {
+    public List<Msg> readMsg (long start, int max) 
+            throws InvalidOffsetException, IOException {
         
-        Map.Entry<Long, Segment> entry = segments.floorEntry(start);
-        List<Msg> results = new ArrayList<Msg>();
+        Map.Entry <Long, Segment> entry = segments.floorEntry (start);
+        List <Msg> results = new ArrayList <Msg> ();
         MappedByteBuffer buf;
         Msg msg;
         
         if (entry == null) {
             return results;
         }
-        buf = entry.getValue().getBuffer(false);
-        buf.position((int) (start - entry.getKey()));
+        buf = entry.getValue ().getBuffer (false);
+        buf.position ((int) (start - entry.getKey ()));
 
-        while ((msg = readMsg(buf)) != null) {
-            max = max - msg.size();
+        while ((msg = readMsg (buf)) != null) {
+            if (msg.size () < 0)
+                break;
+            max = max - msg.size ();
             if (max <= 0)
                 break;
-            results.add(msg);
+            results.add (msg);
         }
         
         return results;
@@ -313,6 +316,17 @@ public class ZLog {
         ch.position(start - entry.getKey());
         
         return ch;
+    }
+    
+    /**
+     * @param start absolute file offset
+     * @return SegmentInfo
+     */
+    public SegmentInfo segmentInfo (long offset) {
+        Map.Entry<Long, Segment> entry = segments.floorEntry (offset);
+        if (entry == null)
+            return null;
+        return new SegmentInfo (entry.getKey (), entry.getValue ());
     }
 
     /**
@@ -379,6 +393,33 @@ public class ZLog {
             return super.toString() + "[" + topic + "]";
         } else {
             return super.toString() + "[" + topic + "," + current.toString() +"]";
+        }
+    }
+    
+    public static class SegmentInfo {
+        
+        private long start;
+        private Segment segment;
+        
+        protected SegmentInfo (long start, Segment segment)
+        {
+            this.start = start;
+            this.segment = segment;
+        }
+
+        public String path ()
+        {
+            return segment.path.getAbsolutePath ();
+        }
+
+        public long start ()
+        {
+            return start;
+        }
+        
+        public long offset ()
+        {
+            return segment.offset ();
         }
     }
     
@@ -464,8 +505,8 @@ public class ZLog {
         }
 
         @SuppressWarnings("resource")
-        protected void recover() throws IOException {
-            FileChannel ch =  new RandomAccessFile(path, "rw").getChannel();
+        protected void recover () throws IOException {
+            FileChannel ch =  new RandomAccessFile (path, "rw").getChannel ();
             FileLock lock = null;
             
             while (true) {
@@ -481,26 +522,33 @@ public class ZLog {
                 }
             }
             try {
-                int pos = 0;
-                MappedByteBuffer buf = ch.map(MapMode.READ_ONLY, 0, ch.size());
+                int truncate = -1;
+                MappedByteBuffer buf = ch.map (MapMode.READ_ONLY, 0, ch.size ());
                 while (true) {
-                    pos = buf.position();
+                    int pos = buf.position ();
                     try {
-                        Msg msg = readMsg(buf);
+                        Msg msg = readMsg (buf);
                         if (msg == null)
                             break;
+                        if (msg.size () == 0 && (msg.getFlags () & Msg.MORE) == 0)
+                            truncate = (truncate < 0) ? pos : truncate;
+                        else
+                            truncate = -1;
+                        
                     } catch (InvalidOffsetException e) {
                         // block corrupted
+                        truncate = pos;
                         break;
                     }
                 }
-                if (pos < ch.size()) {
-                    ch.truncate(pos);
-                    size = pos;
+
+                if (truncate >= 0 && truncate < ch.size ()) {
+                    ch.truncate (truncate);
+                    size = truncate;
                 }
             } finally {
-                lock.release();
-                ch.close();
+                lock.release ();
+                ch.close ();
             }
         }
 
@@ -546,44 +594,42 @@ public class ZLog {
         
     }
 
-    private static Msg readMsg(ByteBuffer buf) throws InvalidOffsetException {
+    private static Msg readMsg (ByteBuffer buf) throws InvalidOffsetException {
         
-        if (!buf.hasRemaining())
+        if (buf.remaining() < 2)
             return null;
         
         int length;
-        int shortLength;
         long longLength;
         byte flag;
         Msg msg = null;
         
         try {
-            shortLength = buf.get();
-
-            if (shortLength == 0) { 
-                // not used
-                return null;
-            } else if (shortLength == -1) { // 0xff
-                longLength = buf.getLong();
-                length = (int)longLength;
-                if (length < 255)
-                    throw new InvalidOffsetException();
-            } else {
-                length = shortLength;
+            flag = buf.get();
+            if (flag > 3)
+                throw new InvalidOffsetException();
+            
+            if ((flag & 0x02) == 0) {   //  Short length  
+                length = buf.get ();
                 if (length < 0)
                     length = (0xFF) & length;
+            } else {                    //  Long length
+                longLength = buf.getLong();
+                if (longLength < 255 || longLength > Integer.MAX_VALUE)
+                    throw new InvalidOffsetException();
+                length = (int) longLength;
             }
+            
             if (length > buf.remaining())
                 throw new InvalidOffsetException();
 
-            flag = buf.get();  // flag
-            if (flag != 0 && flag != Msg.MORE)
-                throw new InvalidOffsetException();
+            msg = new Msg (length);
+            if ((flag & Msg.MORE) > 0)
+                msg.setFlags (Msg.MORE);
 
-            msg = new Msg(length);
-            if (flag == Msg.MORE)
-                msg.setFlags(Msg.MORE);
-            buf.get(msg.data());
+            if (length > 0)
+                buf.get (msg.data ());
+            
         } catch (BufferUnderflowException e) {
             // block corrupted
             throw new InvalidOffsetException(e);

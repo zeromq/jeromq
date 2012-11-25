@@ -104,7 +104,7 @@ public class TestProxyTcp {
         private final static int read_header = 0;
         private final static int read_body = 1;
         
-        ByteBuffer header = ByteBuffer.allocate(4);
+        byte [] header = new byte [4];
         Msg msg;
         int size = -1;
         boolean identity_sent = false;
@@ -131,9 +131,7 @@ public class TestProxyTcp {
         }
 
         private boolean read_header() {
-            byte[] h = new byte[4];
-            header.get(h, 0, 4);
-            size = Integer.parseInt(new String(h));
+            size = Integer.parseInt(new String(header));
             System.out.println("Received " + size);
             msg = new Msg(size);
             next_step(msg, read_body);
@@ -176,7 +174,7 @@ public class TestProxyTcp {
 
     static class ProxyEncoder extends EncoderBase
     {
-
+        public final static boolean RAW_ENCODER = true;
         private final static int write_header = 0;
         private final static int write_body = 1;
         
@@ -224,7 +222,7 @@ public class TestProxyTcp {
             }
             if (!identity_recieved) {
                 identity_recieved = true;
-                next_step (header, msg.size () < 255 ? 2 : 10, write_body, false);
+                next_step (header.array (), msg.size () < 255 ? 2 : 10, write_body, false);
                 return true;
             }
             else
@@ -242,7 +240,7 @@ public class TestProxyTcp {
             header.clear ();
             header.put (String.format("%04d", msg.size()).getBytes());
             header.flip ();
-            next_step (header, 4, write_body, false);
+            next_step (header.array (), 4, write_body, false);
             return true;
         }
 

@@ -145,6 +145,26 @@ public class ZMQ {
     public static final int POLLERR = zmq.ZMQ.ZMQ_POLLERR;
     
     /**
+     * ZMQ Events
+     */
+    public static final int EVENT_CONNECTED = zmq.ZMQ.ZMQ_EVENT_CONNECTED;
+    public static final int EVENT_DELAYED = zmq.ZMQ.ZMQ_EVENT_CONNECT_DELAYED;
+    public static final int EVENT_RETRIED = zmq.ZMQ.ZMQ_EVENT_CONNECT_RETRIED;
+    public static final int EVENT_CONNECT_FAILED = zmq.ZMQ.ZMQ_EVENT_CONNECT_FAILED;
+
+    public static final int EVENT_LISTENING = zmq.ZMQ.ZMQ_EVENT_LISTENING;
+    public static final int EVENT_BIND_FAILED = zmq.ZMQ.ZMQ_EVENT_BIND_FAILED;
+
+    public static final int EVENT_ACCEPTED = zmq.ZMQ.ZMQ_EVENT_ACCEPTED;
+    public static final int EVENT_ACCEPT_FAILED = zmq.ZMQ.ZMQ_EVENT_ACCEPT_FAILED;
+
+    public static final int EVENT_CLOSED = zmq.ZMQ.ZMQ_EVENT_CLOSED;
+    public static final int EVENT_CLOSE_FAILED = zmq.ZMQ.ZMQ_EVENT_CLOSE_FAILED;
+    public static final int EVENT_DISCONNECTED = zmq.ZMQ.ZMQ_EVENT_DISCONNECTED;
+    
+    public static final int EVENT_ALL = zmq.ZMQ.ZMQ_EVENT_ALL;
+
+    /**
      * Create a new Context.
      * 
      * @param ioThreads
@@ -312,14 +332,14 @@ public class ZMQ {
          * @since 3.0.0
          */
         public final long getReconnectIVL() {
-            return base.getsockopt(zmq.ZMQ.ZMQ_RECONNECT_IVL_MAX);
+            return base.getsockopt(zmq.ZMQ.ZMQ_RECONNECT_IVL);
         }
         
         /**
          * @since 3.0.0
          */
         public final void setReconnectIVL(long value) {
-            base.setsockopt(zmq.ZMQ.ZMQ_RECONNECT_IVL_MAX, (int)value);
+            base.setsockopt(zmq.ZMQ.ZMQ_RECONNECT_IVL, (int)value);
             mayRaise();
         }
         
@@ -1123,6 +1143,10 @@ public class ZMQ {
             return null;
         }
         
+        public boolean monitor (String addr, int events) 
+        {
+            return base.monitor (addr, events);
+        }
 
         public void dump() {
             System.out.println("----------------------------------------");
@@ -1144,64 +1168,69 @@ public class ZMQ {
         public final static int MORE = zmq.Msg.more;
         private final zmq.Msg base;
         
-        public Msg() {
-            base = new zmq.Msg(); //empty message for bottom
+        public Msg () {
+            base = new zmq.Msg (); //empty message for bottom
         }
         
-        public Msg(zmq.Msg msg) {
+        public Msg (zmq.Msg msg) {
             base = msg;
         }
         
-        public Msg(int size) {
-            base = new zmq.Msg(size);
+        public Msg (int size) {
+            base = new zmq.Msg (size);
         }
 
-        public Msg(String data) {
-            base = new zmq.Msg(data);
+        public Msg (String data) {
+            base = new zmq.Msg (data);
         }
         
-        public Msg(ByteBuffer data) {
-            base = new zmq.Msg(data);
+        public Msg (ByteBuffer data) {
+            base = new zmq.Msg (data);
         }
 
-        public int headerSize() {
-            return base.header_size();
+        public int headerSize () {
+            return base.header_size ();
         }
 
-        public int size() {
-            return base.size();
+        public int size () {
+            return base.size ();
         }
 
-        public ByteBuffer headerBuf() {
-            return base.header_buf();
+        public ByteBuffer headerBuf () {
+            return base.header_buf ();
         }
 
-        public byte[] header() {
-            return base.header();
+        public byte [] header () {
+            return base.header ();
         }
         
-        public ByteBuffer buf() {
-            return base.buf();
+        public ByteBuffer buf () {
+            return base.buf ();
         }
         
-        public byte[] data() {
-            return base.data();
+        public byte [] data () {
+            return base.data ();
         }
 
-        public void put(String data, int idx) {
-            base.put(data, idx);
+        public void put (String data, int idx) {
+            base.put (data, idx);
         }
 
-        public void put(byte[] data, int idx) {
-            base.put(data, idx);
+        public void put (byte [] data, int idx) {
+            base.put (data, idx);
         }
         
-        public void put(Msg data, int idx) {
-            base.put(data.base, idx);
+        public void put (Msg data, int idx) {
+            base.put (data.base, idx);
         }
         
-        public void setFlags(int flags) {
-            base.set_flags(flags);
+        public void setFlags (int flags) {
+            base.set_flags (flags);
+        }
+
+        public int getFlags ()
+        {
+            return base.flags ();
         }
     }
     

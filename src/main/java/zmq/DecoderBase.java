@@ -37,8 +37,7 @@ import java.nio.ByteBuffer;
 abstract public class DecoderBase implements IDecoder {
     
     //  Where to store the read data.
-    private ByteBuffer read_buf;
-    private byte[] read_array;
+    private byte[] read_buf;
     private int read_pos;
 
     //  How much data to read before taking next step.
@@ -57,14 +56,15 @@ abstract public class DecoderBase implements IDecoder {
         state = -1;
         to_read = 0;
         bufsize = bufsize_;
-        buf = ByteBuffer.allocateDirect(bufsize_);
-        read_array = null;
+        buf = ByteBuffer.allocateDirect (bufsize_);
+        read_buf = null;
         zero_copy = false;
     }
     
     
     //  Returns a buffer to be filled with binary data.
-    public ByteBuffer get_buffer() {
+    public ByteBuffer get_buffer () 
+    {
         //  If we are expected to read large message, we'll opt for zero-
         //  copy, i.e. we'll ask caller to fill the data directly to the
         //  message. Note that subsequent read(s) are non-blocking, thus
@@ -77,11 +77,8 @@ abstract public class DecoderBase implements IDecoder {
         ByteBuffer b;
         if (to_read >= bufsize) {
             zero_copy = true;
-            if (read_array != null) {
-                b = ByteBuffer.wrap(read_array);
-                b.position(read_pos);
-            } else
-                b = read_buf;
+            b = ByteBuffer.wrap (read_buf);
+            b.position (read_pos);
         } else {
             zero_copy = false;
             b = buf;
@@ -123,8 +120,6 @@ abstract public class DecoderBase implements IDecoder {
             //  Try to get more space in the message to fill in.
             //  If none is available, return.
             while (to_read == 0) {
-                if (read_buf != null)
-                    read_buf.flip();
                 if (!next ()) {
                     if (state() < 0) {
                         return -1;
@@ -140,12 +135,7 @@ abstract public class DecoderBase implements IDecoder {
             
             //  Copy the data from buffer to the message.
             int to_copy = Math.min (to_read, size_ - pos);
-            if (read_array != null) {
-                buf_.get(read_array, read_pos, to_copy);
-            } else {
-                buf_.get(read_buf.array(), read_buf.arrayOffset() + read_pos, to_copy);
-                read_buf.position(read_pos + to_copy);
-            }
+            buf_.get(read_buf, read_pos, to_copy);
             read_pos += to_copy;
             pos += to_copy;
             to_read -= to_copy;
@@ -157,19 +147,9 @@ abstract public class DecoderBase implements IDecoder {
         next_step(msg_.data(), msg_.size(), state_);
     }
     
-    protected void next_step (ByteBuffer buf_, int to_read_, int state_)
-    {
-        read_buf = buf_;
-        read_array = null;
-        read_pos = 0;
-        to_read = to_read_;
-        state = state_;
-    }
-    
     protected void next_step (byte[] buf_, int to_read_, int state_)
     {
-        read_buf = null;
-        read_array = buf_;
+        read_buf = buf_;
         read_pos = 0;
         to_read = to_read_;
         state = state_;

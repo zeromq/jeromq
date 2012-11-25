@@ -22,12 +22,13 @@
 package zmq;
 
 import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 
 abstract public class EncoderBase implements IEncoder {
 
     //  Where to get the data to write from.
-    private ByteBuffer write_buf;
-    private byte[] write_array;
+    private byte[] write_buf;
+    private FileChannel write_channel;
     private int write_pos;
 
     //  Next step. If set to -1, it means that associated data stream
@@ -81,6 +82,18 @@ abstract public class EncoderBase implements IEncoder {
                     break;
             }
             
+            //  If there is file channel to send, 
+            //  send current buffer and the channel together
+            
+            if (write_channel != null) {
+                buffer.flip ();
+                Transfer t = new Transfer.FileChannelTransfer (buffer, write_channel,
+                                                    (long) write_pos, (long) to_write);
+                write_pos = 0;
+                to_write = 0;
+
+                return t;
+            }
             //  If there are no data in the buffer yet and we are able to
             //  fill whole buffer in a single go, let's use zero-copy.
             //  There's no disadvantage to it as we cannot stuck multiple
@@ -91,15 +104,11 @@ abstract public class EncoderBase implements IEncoder {
             //  As a consequence, large messages being sent won't block
             //  other engines running in the same I/O thread for excessive
             //  amounts of time.
-            if (buf.position() == 0 && to_write >= buffersize) {
+            if (buf.position () == 0 && to_write >= buffersize) {
                 Transfer t;
-                if (write_array != null) {
-                    ByteBuffer b = ByteBuffer.wrap(write_array);
-                    b.position(write_pos);
-                    t = new Transfer.ByteBufferTransfer(b);
-                } else { 
-                    t = new Transfer.ByteBufferTransfer(write_buf) ;
-                }
+                ByteBuffer b = ByteBuffer.wrap (write_buf);
+                b.position (write_pos);
+                t = new Transfer.ByteBufferTransfer (b);
                 write_pos = 0;
                 to_write = 0;
 
@@ -109,19 +118,14 @@ abstract public class EncoderBase implements IEncoder {
             //  Copy data to the buffer. If the buffer is full, return.
             int to_copy = Math.min (to_write, buffer.remaining ());
             if (to_copy > 0) {
-                if (write_array != null) {
-                    buffer.put(write_array, write_pos, to_copy);
-                } else {
-                    buffer.put(write_buf.array(), write_buf.arrayOffset() + write_pos, to_copy);
-                    write_buf.position(write_pos + to_copy);
-                }
+                buffer.put (write_buf, write_pos, to_copy);
                 write_pos += to_copy;
                 to_write -= to_copy;
             }
         }
 
-        buffer.flip();
-        return new Transfer.ByteBufferTransfer(buffer);
+        buffer.flip ();
+        return new Transfer.ByteBufferTransfer (buffer);
 
     }
     
@@ -147,30 +151,29 @@ abstract public class EncoderBase implements IEncoder {
 
     protected void next_step (Msg msg_, int state_, boolean beginning_) {
         if (msg_ == null)
-            next_step((ByteBuffer) null, 0, state_, beginning_);
+            next_step(null, 0, state_, beginning_);
         else
             next_step(msg_.data(), msg_.size(), state_, beginning_);
     }
     
-    protected void next_step (ByteBuffer buf_, int to_write_,
+    protected void next_step (byte[] buf_, int to_write_,
             int next_, boolean beginning_)
     {
-        
         write_buf = buf_;
-        write_array = null;
+        write_channel = null;
         write_pos = 0;
         to_write = to_write_;
         next = next_;
         beginning = beginning_;
     }
     
-    protected void next_step (byte[] buf_, int to_write_,
+    protected void next_step (FileChannel ch, long pos_, long to_write_,
             int next_, boolean beginning_)
     {
         write_buf = null;
-        write_array = buf_;
-        write_pos = 0;
-        to_write = to_write_;
+        write_channel = ch;
+        write_pos = (int) pos_;
+        to_write = (int) to_write_;
         next = next_;
         beginning = beginning_;
     }

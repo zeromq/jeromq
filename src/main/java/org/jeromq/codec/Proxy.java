@@ -30,6 +30,7 @@ import zmq.Msg;
  * Proxy is mostly used when a client can't use zmq socket at any reason.
  * 
  * By extending the ProxyDecoder and ProxyEncoder you can translate non-zmq data into zmq.MSG and vice versa.
+ * This will be deprecated by ZMQ_RAW_SOCKET
  */
 public class Proxy {
 
@@ -142,7 +143,8 @@ public class Proxy {
 
     public static abstract class ProxyEncoder extends EncoderBase
     {
-
+        public final static boolean RAW_ENCODER = true;
+        
         private final static int write_header = 0;
         private final static int write_body = 1;
         
@@ -220,7 +222,7 @@ public class Proxy {
                 header.clear();
                 header.put(hbuf);
                 header.flip();
-                next_step(header, header.remaining(), write_body, false);
+                next_step(header.array (), header.remaining(), write_body, false);
             } else {
                 next_step(hbuf, 0, write_body, false);
             }

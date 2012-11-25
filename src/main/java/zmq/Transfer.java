@@ -25,8 +25,8 @@ import java.nio.channels.WritableByteChannel;
 
 public interface Transfer {
 
-    public int transferTo(WritableByteChannel s) throws IOException;
-    public int remaining();
+    public int transferTo (WritableByteChannel s) throws IOException;
+    public int remaining ();
     
     public static class ByteBufferTransfer implements Transfer {
 
@@ -37,33 +37,56 @@ public interface Transfer {
         }
         
         @Override
-        public final int transferTo(WritableByteChannel s) throws IOException {
-            return s.write(buf);
+        public final int transferTo (WritableByteChannel s) throws IOException {
+            return s.write (buf);
         }
 
         @Override
-        public final int remaining() {
-            return buf.remaining();
+        public final int remaining () {
+            return buf.remaining ();
         }
         
     }
     
     public static class FileChannelTransfer implements Transfer {
-        //TODO
+        private Transfer parent;
         private FileChannel ch;
+        private long position;
+        private long count;
+        private int remaining;
         
-        public FileChannelTransfer (FileChannel ch_) {
+        public FileChannelTransfer (ByteBuffer buf_, FileChannel ch_, long position_, long count_) {
+            parent = new ByteBufferTransfer (buf_);
             ch = ch_;
+            position = position_;
+            count = count_;
+            remaining = parent.remaining () + (int) count;
         }
         
         @Override
         public final int transferTo(WritableByteChannel s) throws IOException {
-            return (int) ch.transferTo(0L, 0L, s);
+            int sent = 0;
+            if (parent.remaining () > 0)
+                sent = parent.transferTo (s);
+            
+            if (parent.remaining () == 0) {
+                long fileSent = ch.transferTo (position, count, s);
+                position += fileSent;
+                count -= fileSent;
+                sent += fileSent;
+            }
+            
+            remaining -= sent;
+            
+            if (remaining == 0)
+                ch.close ();
+            
+            return sent;
         }
 
         @Override
-        public final int remaining() {
-            return 0;
+        public final int remaining () {
+            return remaining;
         }
     }
 

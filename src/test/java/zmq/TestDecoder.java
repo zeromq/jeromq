@@ -126,33 +126,33 @@ public class TestDecoder {
         private final static int read_header = 0;
         private final static int read_body = 1;
         
-        ByteBuffer header = ByteBuffer.allocate(10);
+        byte [] header = new byte [10];
         Msg msg;
         int size = -1;
         IMsgSink sink;
         
-        public CustomDecoder(int bufsize_, long maxmsgsize_) {
+        public CustomDecoder (int bufsize_, long maxmsgsize_) 
+        {
             super(bufsize_);
             next_step(header, 10, read_header);
         }
 
         @Override
-        protected boolean next() {
+        protected boolean next () {
             switch (state()) {
             case read_header:
-                return read_header();
+                return read_header ();
             case read_body:
-                return read_body();
+                return read_body ();
             }
             return false;
         }
 
-        private boolean read_header() {
-            byte[] h = new byte[6];
-            header.get(h, 0, 6);
+        private boolean read_header () {
             
-            assertThat(new String(h), is("HEADER"));
-            size = header.getInt();
+            assertThat (new String (header, 0, 6), is ("HEADER"));
+            ByteBuffer b = ByteBuffer.wrap (header, 6, 4);
+            size = b.getInt();
             
             msg = new Msg(size);
             next_step(msg, read_body);
@@ -163,7 +163,6 @@ public class TestDecoder {
         private boolean read_body() 
         {
             sink.push_msg (msg);
-            header.clear();
             next_step(header, 10, read_header);
             return true;
         }

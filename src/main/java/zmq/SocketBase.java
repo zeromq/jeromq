@@ -50,7 +50,6 @@ public abstract class SocketBase extends Own
     private final Mailbox mailbox;
 
     //  List of attached pipes.
-    //typedef array_t <pipe_t, 3> pipes_t;
     private final List<Pipe> pipes;
 
     //  Reaper's poller and handle of this socket within it.

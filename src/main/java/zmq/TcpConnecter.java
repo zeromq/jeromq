@@ -178,7 +178,6 @@ public class TcpConnecter extends Own implements IPollEvents {
             socket.event_connect_delayed (endpoint, ZError.errno());
             return;
         }
-            //alloc_assert (engine);
 
         //  Attach the engine to the corresponding session object.
         send_attach (session, engine);

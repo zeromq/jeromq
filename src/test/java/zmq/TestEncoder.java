@@ -124,7 +124,7 @@ public class TestEncoder {
 
     static class CustomEncoder extends EncoderBase
     {
-
+        public final static boolean RAW_ENCODER = true;
         private final static int read_header = 0;
         private final static int read_body = 1;
         
@@ -167,7 +167,7 @@ public class TestEncoder {
             header.put("HEADER".getBytes());
             header.putInt(msg.size());
             header.flip();
-            next_step(header, 10, read_header, !msg.has_more());
+            next_step(header.array (), 10, read_header, !msg.has_more());
             return true;
         }
 
