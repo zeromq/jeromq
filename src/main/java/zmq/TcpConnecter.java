@@ -25,15 +25,10 @@ import java.net.ConnectException;
 import java.net.SocketException;
 import java.nio.channels.SocketChannel;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 //  If 'delay' is true connecter first waits for a while, then starts
 //  connection process.
 public class TcpConnecter extends Own implements IPollEvents {
 
-    private static Logger LOG = LoggerFactory.getLogger(TcpConnecter.class);
-    
     //  ID of the timer used to delay the reconnection.
     private final static int reconnect_timer_id = 1;
     
@@ -180,7 +175,6 @@ public class TcpConnecter extends Own implements IPollEvents {
         try {
             engine = new StreamEngine (fd, options, endpoint);
         } catch (ZError.InstantiationException e) {
-            LOG.error("Failed to initialize StreamEngine", e.getCause());
             socket.event_connect_delayed (endpoint, ZError.errno());
             return;
         }

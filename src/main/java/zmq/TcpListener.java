@@ -25,12 +25,8 @@ import java.net.Socket;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 public class TcpListener extends Own implements IPollEvents {
 
-    private static Logger LOG = LoggerFactory.getLogger(TcpListener.class);
     //  Address to listen on.
     private final TcpAddress address;
 
@@ -101,7 +97,6 @@ public class TcpListener extends Own implements IPollEvents {
         try {
             engine = new StreamEngine (fd, options, endpoint);
         } catch (ZError.InstantiationException e) {
-            LOG.error("Failed to initialize StreamEngine", e.getCause());
             ZError.errno (ZError.EINVAL);
             socket.event_accept_failed (endpoint, ZError.errno());
             return;
