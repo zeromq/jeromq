@@ -30,13 +30,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 public abstract class SocketBase extends Own 
     implements IPollEvents, Pipe.IPipeEvents {
-    
-    private static Logger LOG = LoggerFactory.getLogger(SocketBase.class);
     
     private final Map<String, Own> endpoints;
 
@@ -360,7 +355,6 @@ public abstract class SocketBase extends Own
             if (!rc) {
                 listener.destroy();
                 event_bind_failed (addr_, ZError.errno());
-                LOG.error("Failed to Bind", ZError.exc());
                 return false;
             }
 

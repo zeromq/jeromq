@@ -32,16 +32,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 //Context object encapsulates all the global state associated with
 //  the library.
 
 public class Ctx {
     
-    private static Logger LOG = LoggerFactory.getLogger(Ctx.class);
-
     //  Information associated with inproc endpoint. Note that endpoint options
     //  are registered as well so that the peer can access them without a need
     //  for synchronisation, handshaking or similar.
@@ -314,7 +309,6 @@ public class Ctx {
             sockets.add (s);
             slots [slot] = s.get_mailbox ();
             
-            LOG.debug("NEW Slot [" + slot + "] " + s);
         } finally {
             slot_sync.unlock ();
         }
@@ -344,7 +338,6 @@ public class Ctx {
         } finally {
             slot_sync.unlock ();
         }
-        LOG.debug("Released Slot [" + socket_ + "] ");
     }
     
     //  Returns reaper thread object.

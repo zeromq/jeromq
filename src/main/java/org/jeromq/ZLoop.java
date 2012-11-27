@@ -26,8 +26,6 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.jeromq.ZMQ.PollItem;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
     The ZLoop class provides an event-driven reactor pattern. The reactor
@@ -38,8 +36,6 @@ import org.slf4j.LoggerFactory;
 
 public class ZLoop {
 
-    private static Logger LOG = LoggerFactory.getLogger(ZLoop.class);
-    
     private static ThreadLocal<Boolean> initialized = new ThreadLocal<Boolean>(); 
     private static ZLoop instance = null;
     
@@ -147,7 +143,7 @@ public class ZLoop {
         if (timeout < 0)
             timeout = 0;
         if (verbose)
-            LOG.info("I: zloop: polling for {} msec", timeout);
+            System.out.printf("I: zloop: polling for %d msec\n", timeout);
         return timeout;
     }
     //  --------------------------------------------------------------------------
@@ -168,9 +164,9 @@ public class ZLoop {
 
         dirty = true;
         if (verbose)
-            LOG.info("I: zloop: register {} poller ({}, {})", new Object[] {
+            System.out.printf("I: zloop: register %s poller (%s, %s)\n",
                 item.getSocket() != null? item.getSocket().typeString(): "FD",
-                item.getSocket(), item.getChannel()});
+                item.getSocket(), item.getChannel());
         return 0;
     }
         
@@ -193,9 +189,9 @@ public class ZLoop {
             }
         }
         if (verbose)
-            LOG.info ("I: zloop: cancel {} poller ({}, {})", new Object[] {
+            System.out.printf ("I: zloop: cancel %s poller (%s, %s)",
                     item.getSocket() != null? item.getSocket().typeString(): "FD",
-                    item.getSocket(), item.getChannel()});
+                    item.getSocket(), item.getChannel());
 
     }
     
@@ -214,7 +210,7 @@ public class ZLoop {
         //  list, and process that list when we're done executing timers.
         newTimers.add(timer);
         if (verbose)
-            LOG.info ("I: zloop: register timer delay={} times={}", delay, times);
+            System.out.printf ("I: zloop: register timer delay=%d times=%d\n", delay, times);
         
         return 0;
     }
@@ -232,7 +228,7 @@ public class ZLoop {
         //  list, and process that list when we're done executing timers.
         zombies.add(arg);
         if (verbose)
-            LOG.info ("I: zloop: cancel timer");
+            System.out.printf ("I: zloop: cancel timer\n");
         
         return 0;
     }
@@ -267,7 +263,7 @@ public class ZLoop {
         try {
             selector = Selector.open();
         } catch (IOException e) {
-            LOG.error(e.getMessage(), e);
+            System.err.println (e.getMessage());
             return -1;
         }
         
@@ -282,7 +278,7 @@ public class ZLoop {
             rc = zmq.ZMQ.zmq_poll (selector, pollset, wait);
             if (rc == -1) {
                 if (verbose)
-                    LOG.info ("I: zloop: interrupted ({}) - {}", rc, zmq.ZError.errno());
+                    System.out.printf ("I: zloop: interrupted (%d - %d)\n", rc, zmq.ZError.errno());
                 rc = 0;
                 break;              //  Context has been shut down
             }
@@ -292,7 +288,7 @@ public class ZLoop {
                 STimer timer = it.next();
                 if (System.currentTimeMillis() >= timer.when && timer.when != -1) {
                     if (verbose)
-                        LOG.info ("I: zloop: call timer handler");
+                        System.out.println ("I: zloop: call timer handler");
                     rc = timer.handler.handle(this, null, timer.arg);
                     if (rc == -1)
                         break;      //  Timer handler signalled break
@@ -312,10 +308,10 @@ public class ZLoop {
                 assert (pollset [item_nbr].getSocket() == poller.item.getSocket());
                 if (pollset [item_nbr].isError()) {
                     if (verbose)
-                        LOG.info("I: zloop: can't poll {} socket ({}, {}): {}", new Object[]{
+                        System.out.printf ("I: zloop: can't poll %s socket (%s, %s): %d",
                             poller.item.getSocket() != null? poller.item.getSocket().typeString(): "FD",
                             poller.item.getSocket(), poller.item.getChannel(),
-                            zmq.ZError.errno()});
+                            zmq.ZError.errno());
                     //  Give handler one chance to handle error, then kill
                     //  poller because it'll disrupt the reactor otherwise.
                     if (poller.errors++ > 0) {
@@ -327,9 +323,9 @@ public class ZLoop {
     
                 if (pollset [item_nbr].readyOps() > 0) {
                     if (verbose)
-                        LOG.info ("I: zloop: call {} socket handler ({}, {})", new Object[]{
+                        System.out.printf ("I: zloop: call %s socket handler (%s, %s)\n",
                               poller.item.getSocket() != null? poller.item.getSocket().typeString(): "FD",
-                              poller.item.getSocket(), poller.item.getChannel()});
+                              poller.item.getSocket(), poller.item.getChannel());
                     rc = poller.handler.handle (this, poller.item, poller.arg);
                     if (rc == -1)
                         break;      //  Poller handler signalled break
