@@ -138,19 +138,25 @@ public class ZFrame {
      *          0MQ socket to send on
      * @param flags
      *          Valid send() method flags, defined in org.zeromq.ZMQ class
+     * @return
+     *          True if success, else False
      */
-    public void send(Socket socket, int flags) {
+    public boolean send (Socket socket, int flags) 
+    {
         if (socket == null) {
-            throw new IllegalArgumentException("socket parameter must be set");
+            throw new IllegalArgumentException ("socket parameter must be set");
         }
-        if (!hasData()) {
-            throw new IllegalAccessError("Cannot send frame without data");
+        if (!hasData ()) {
+            throw new IllegalAccessError ("Cannot send frame without data");
         }
         
         int snd_flags = (flags & MORE) > 0? ZMQ.SNDMORE: 0;
         snd_flags |= (flags & DONTWAIT) > 0? ZMQ.DONTWAIT: 0;
+
+        // jzmq compatible
+        snd_flags |= flags == ZMQ.SNDMORE ? ZMQ.SNDMORE: 0;
         
-        socket.send(data, snd_flags);
+        return socket.send (data, snd_flags);
     }
     
     /**
@@ -160,9 +166,12 @@ public class ZFrame {
      *          0MQ socket to send frame
      * @param flags
      *          Valid send() method flags, defined in org.zeromq.ZMQ class  
+     * @return
+     *          True if success, else False
      */
-    public void sendAndKeep(Socket socket, int flags) {
-        send(socket, flags);
+    public boolean sendAndKeep (Socket socket, int flags) 
+    {
+        return send (socket, flags);
     }
     
     /**
@@ -171,9 +180,12 @@ public class ZFrame {
      * Uses default behaviour of Socket.send() method, with no flags set
      * @param socket    
      *          0MQ socket to send frame
+     * @return
+     *          True if success, else False
      */
-    public void sendAndKeep(Socket socket) {
-        sendAndKeep(socket, 0);     
+    public boolean sendAndKeep (Socket socket) 
+    {
+        return sendAndKeep (socket, 0);     
     }
 
     /**
@@ -183,10 +195,15 @@ public class ZFrame {
      *          0MQ socket to send frame
      * @param flags
      *          Valid send() method flags, defined in org.zeromq.ZMQ class  
+     * @return
+     *          True if success, else False
      */
-    public void sendAndDestroy(Socket socket, int flags) {
-        send(socket, flags);
-        destroy();
+    public boolean sendAndDestroy (Socket socket, int flags) 
+    {
+        boolean ret = send (socket, flags);
+        if (ret)
+            destroy ();
+        return ret;
     }
 
     /**
@@ -195,9 +212,12 @@ public class ZFrame {
      * Uses default behaviour of Socket.send() method, with no flags set
      * @param socket
      *          0MQ socket to send frame
+     * @return
+     *          True if success, else False
      */
-    public void sendAndDestroy(Socket socket) {
-        sendAndDestroy(socket, 0);
+    public boolean sendAndDestroy (Socket socket) 
+    {
+        return sendAndDestroy (socket, 0);
     }
     
     /**

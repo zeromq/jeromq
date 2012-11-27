@@ -300,9 +300,9 @@ public class ZMQ {
          *            the linger period.
          * @since 2.1.0
          */
-        public final void setLinger(long value) {
-            base.setsockopt(zmq.ZMQ.ZMQ_LINGER, (int)value);
-            mayRaise();
+        public final void setLinger (long value) 
+        {
+            base.setsockopt (zmq.ZMQ.ZMQ_LINGER, (int) value);
         }
         
         /**
@@ -737,7 +737,8 @@ public class ZMQ {
          * 
          * @return true if there are more messages to receive.
          */
-        public final boolean hasReceiveMore() {
+        public final boolean hasReceiveMore () 
+        {
             return base.getsockopt (zmq.ZMQ.ZMQ_RCVMORE) == 1;
         }
         
@@ -835,11 +836,27 @@ public class ZMQ {
          * @param addr
          *            the endpoint to bind to.
          */
-        public final int bind(String addr) {
+        public final int bind (String addr) 
+        {
+            return bind (addr, DYNFROM, DYNTO);
+        }
+
+        /**
+         * Bind to network interface. Start listening for new connections.
+         * 
+         * @param addr
+         *            the endpoint to bind to.
+         * @param min
+         *            The minimum port in the range of ports to try.
+         * @param max
+         *            The maximum port in the range of ports to try.
+         */
+        private final int bind (String addr, int min, int max) 
+        {
             if (addr.endsWith (":*")) {
-                int port = DYNFROM;
+                int port = min;
                 String prefix = addr.substring (0, addr.lastIndexOf (':') + 1);
-                while (port <= DYNTO) {
+                while (port <= max) {
                     addr = prefix + port;
                     //  Try to bind on the next plausible port
                     if (base.bind (addr))
@@ -869,8 +886,25 @@ public class ZMQ {
          * @param addr
          *            the endpoint to bind to.
          */
-        public int bindToRandomPort(String addr) {
-            return bind(addr + ":*");
+        public int bindToRandomPort (String addr) 
+        {
+            return bind (addr + ":*", DYNFROM, DYNTO);
+        }
+
+        /**
+         * Bind to network interface to a random port. Start listening for new
+         * connections.
+         *
+         * @param addr
+         *            the endpoint to bind to.
+         * @param min
+         *            The minimum port in the range of ports to try.
+         * @param max
+         *            The maximum port in the range of ports to try.
+         */
+        public int bindToRandomPort (String addr, int min, int max) 
+        {
+            return bind (addr + ":*", min, max);
         }
 
         /**
@@ -1200,6 +1234,10 @@ public class ZMQ {
                 selector.close ();
             } catch (IOException e) {
             }
+            try {
+                super.finalize ();
+            } catch (Throwable e) {
+            }
         }
         
     }
@@ -1218,7 +1256,7 @@ public class ZMQ {
         
         private static final ThreadLocal <ReuseableSelector> holder = new ThreadLocal <ReuseableSelector> ();
         private Selector selector;
-        private zmq.PollItem items[];
+        private zmq.PollItem [] items;
         private long timeout;
         private int next;
 

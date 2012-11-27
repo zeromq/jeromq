@@ -299,7 +299,8 @@ public abstract class SocketBase extends Own
 
     }
     
-    public boolean bind (final String addr_) {
+    public boolean bind (final String addr_) 
+    {
         if (ctx_terminated) {
             ZError.errno(ZError.ETERM);
             return false;
@@ -331,6 +332,7 @@ public abstract class SocketBase extends Own
             if (rc) {
                 // Save last endpoint URI
                 options.last_endpoint = addr_;
+                ZError.clear ();
             }
             return rc;
         }
@@ -344,7 +346,7 @@ public abstract class SocketBase extends Own
         //  point we'll choose one.
         IOThread io_thread = choose_io_thread (options.affinity);
         if (io_thread == null) {
-            ZError.errno(ZError.EMTHREAD);
+            ZError.errno (ZError.EMTHREAD);
             return false;
         }
 
@@ -354,7 +356,7 @@ public abstract class SocketBase extends Own
             boolean rc = listener.set_address (address);
             if (!rc) {
                 listener.destroy();
-                event_bind_failed (addr_, ZError.errno());
+                event_bind_failed (addr_, ZError.errno ());
                 return false;
             }
 
@@ -362,6 +364,7 @@ public abstract class SocketBase extends Own
             options.last_endpoint = listener.get_address ();
 
             add_endpoint (addr_, listener);
+            ZError.clear ();
             return true;
         }
 
@@ -371,7 +374,7 @@ public abstract class SocketBase extends Own
             boolean rc = listener.set_address (address);
             if (!rc) {
                 listener.destroy();
-                event_bind_failed (addr_, ZError.errno());
+                event_bind_failed (addr_, ZError.errno ());
                 return false;
             }
 
@@ -379,6 +382,7 @@ public abstract class SocketBase extends Own
             options.last_endpoint = listener.get_address ();
 
             add_endpoint (addr_, listener);
+            ZError.clear ();
             return true;
         }
 
