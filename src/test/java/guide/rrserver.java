@@ -6,7 +6,7 @@ import org.jeromq.ZMQ.Socket;
 
 /**
 * Hello World server
-* Connects REP socket to tcp://*:5560
+* Connects REP socket to tcp://*:5559
 * Expects "Hello" from client, replies with "World"
 *
 * Christophe Huntzinger <chuntzin_at_wanadoo.fr>
@@ -17,7 +17,7 @@ public class rrserver{
 
         //  Socket to talk to clients
         Socket responder  = context.socket(ZMQ.REP);
-        responder.connect("tcp://localhost:5560");
+        responder.bind("tcp://localhost:5559");
         
         System.out.println("launch and connect server.");
 
