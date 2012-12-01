@@ -32,13 +32,15 @@ public class StreamEngine implements IEngine, IPollEvents, IMsgSink {
     //  Preamble (10 bytes) + version (1 byte) + socket type (1 byte).
     private static final int GREETING_SIZE = 12;
     
+    //  True iff we are registered with an I/O poller.
+    private boolean io_enabled;
+    
     //final private IOObject io_object;
     private SocketChannel handle;
 
     private ByteBuffer inbuf;
     private int insize;
     private DecoderBase decoder;
-    private boolean input_error;
 
     private Transfer outbuf;
     private int outsize;
@@ -81,7 +83,7 @@ public class StreamEngine implements IEngine, IPollEvents, IMsgSink {
         handle = fd_;
         inbuf = null;
         insize = 0;
-        input_error = false;
+        io_enabled = false;
         outbuf = null;
         outsize = 0;
         handshaking = true;
@@ -192,6 +194,7 @@ public class StreamEngine implements IEngine, IPollEvents, IMsgSink {
         //  Connect to I/O threads poller object.
         io_object.plug (io_thread_);
         io_object.add_fd (handle);
+        io_enabled = true;
         
         //  Send the 'length' and 'flags' fields of the identity message.
         //  The 'length' field is encoded in the long format.
@@ -216,8 +219,10 @@ public class StreamEngine implements IEngine, IPollEvents, IMsgSink {
         plugged = false;
 
         //  Cancel all fd subscriptions.
-        if (!input_error)
+        if (io_enabled) {
             io_object.rm_fd (handle);
+            io_enabled = false;
+        }
 
         //  Disconnect from I/O threads poller object.
         io_object.unplug ();
@@ -293,7 +298,7 @@ public class StreamEngine implements IEngine, IPollEvents, IMsgSink {
         if (disconnection) {
             if (decoder.stalled ()) {
                 io_object.rm_fd (handle);
-                input_error = true;
+                io_enabled = false;
             } else
                 error ();
         }
@@ -388,7 +393,7 @@ public class StreamEngine implements IEngine, IPollEvents, IMsgSink {
     @Override
     public void activate_in ()
     {
-        if (input_error) {
+        if (!io_enabled) {
             //  There was an input error but the engine could not
             //  be terminated (due to the stalled decoder).
             //  Flush the pending message and terminate the engine now.
