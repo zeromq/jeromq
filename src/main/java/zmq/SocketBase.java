@@ -644,11 +644,6 @@ public abstract class SocketBase extends Own
             return null;
         }
         
-        //  Get the message.
-        Msg msg_ = xrecv (flags_);
-        if (msg_ == null && !ZError.is(ZError.EAGAIN))
-            return null;
-
         //  Once every inbound_poll_rate messages check for signals and process
         //  incoming commands. This happens only if we are not polling altogether
         //  because there are messages available all the time. If poll occurs,
@@ -662,6 +657,11 @@ public abstract class SocketBase extends Own
                 return null;
             ticks = 0;
         }
+        
+        //  Get the message.
+        Msg msg_ = xrecv (flags_);
+        if (msg_ == null && !ZError.is(ZError.EAGAIN))
+            return null;
 
         //  If we have the message, return immediately.
         if (msg_ != null) {

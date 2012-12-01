@@ -189,13 +189,4 @@ public class Decoder extends DecoderBase {
     }
 
 
-    //  Returns true if there is a decoded message
-    //  waiting to be delivered to the session.
-    @Override
-    public boolean stalled ()
-    {
-        return to_read == message_ready;
-    }
-
-
 }

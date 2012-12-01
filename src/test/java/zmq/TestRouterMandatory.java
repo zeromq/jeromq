@@ -55,6 +55,7 @@ public class TestRouterMandatory {
         // Send a message and check that it fails
         rc = ZMQ.zmq_send (sa, "UNKNOWN", ZMQ.ZMQ_SNDMORE | ZMQ.ZMQ_DONTWAIT);
         assertThat (rc ,is (-1));
+        assertTrue (ZError.is (ZError.EHOSTUNREACH));
         
         
         //  Clean up.
