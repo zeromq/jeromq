@@ -94,11 +94,11 @@ public class PollItem {
         return interest;
     }
 
-    public final int readyOps(SelectionKey key) {
+    public final int readyOps (SelectionKey key, int nevents) {
         ready = 0;
         
         if (s != null) {
-            int events = s.getsockopt(ZMQ.ZMQ_EVENTS);
+            int events = s.getsockopt (ZMQ.ZMQ_EVENTS);
             if (events < 0)
                 return -1;
             
@@ -108,14 +108,14 @@ public class PollItem {
             if ( (zinterest & ZMQ.ZMQ_POLLIN) > 0 && (events & ZMQ.ZMQ_POLLIN) > 0 ) {
                 ready |= ZMQ.ZMQ_POLLIN;
             }
-        } else {
-            if (key.isReadable()) {
+        } else if (nevents > 0) {
+            if (key.isReadable ()) {
                 ready |= ZMQ.ZMQ_POLLIN;
             }
-            if (key.isWritable()) {
+            if (key.isWritable ()) {
                 ready |= ZMQ.ZMQ_POLLOUT;
             }
-            if (!key.isValid() || key.isAcceptable() || key.isConnectable()) {
+            if (!key.isValid () || key.isAcceptable () || key.isConnectable ()) {
                 ready |= ZMQ.ZMQ_POLLERR;
             }
         }

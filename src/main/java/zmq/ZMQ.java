@@ -575,17 +575,17 @@ public class ZMQ {
         return ret;
         
     }
-    public static int zmq_poll(Selector selector, PollItem[] items_, long timeout_ ) {
-
+    public static int zmq_poll (Selector selector, PollItem[] items_, long timeout_ ) 
+    {
         if (items_ == null) {
-            ZError.errno(ZError.EFAULT);
-            throw new IllegalArgumentException();
+            ZError.errno (ZError.EFAULT);
+            throw new IllegalArgumentException ();
         }
         if (items_.length == 0) {
             if (timeout_ == 0)
                 return 0;
             try {
-                Thread.sleep(timeout_);
+                Thread.sleep (timeout_);
             } catch (InterruptedException e) {
             }
             return 0;
@@ -593,8 +593,8 @@ public class ZMQ {
         long now = 0;
         long end = 0;
         
-        HashMap<SelectableChannel, SelectionKey> saved = new HashMap<SelectableChannel, SelectionKey>();
-        for (SelectionKey key: selector.keys()) {
+        HashMap<SelectableChannel, SelectionKey> saved = new HashMap<SelectableChannel, SelectionKey> ();
+        for (SelectionKey key: selector.keys ()) {
             saved.put(key.channel (), key);
         }
 
@@ -602,8 +602,8 @@ public class ZMQ {
             if (item == null) 
                 break;
 
-            SelectableChannel ch = item.getChannel(); // mailbox channel if ZMQ socket
-            SelectionKey key = saved.remove(ch);
+            SelectableChannel ch = item.getChannel (); // mailbox channel if ZMQ socket
+            SelectionKey key = saved.remove (ch);
             
             if (key != null) {
                 if (key.interestOps() != item.interestOps()) {
@@ -619,9 +619,9 @@ public class ZMQ {
             } 
         }
 
-        if (!saved.isEmpty()) {
-            for (SelectionKey deprecated: saved.values()) {
-                deprecated.cancel();
+        if (!saved.isEmpty ()) {
+            for (SelectionKey deprecated: saved.values ()) {
+                deprecated.cancel ();
             }
         }
         
@@ -642,16 +642,17 @@ public class ZMQ {
             
             //  Wait for events.
             try {
+                int rc = 0;
                 if (timeout < 0)
-                    selector.select(0);
+                    rc = selector.select (0);
                 else if (timeout == 0)
-                    selector.selectNow();
+                    rc = selector.selectNow ();
                 else
-                    selector.select(timeout);
+                    rc = selector.select (timeout);
 
                 for (SelectionKey key: selector.keys()) {
-                    PollItem item = (PollItem)key.attachment();
-                    ready = item.readyOps(key);
+                    PollItem item = (PollItem) key.attachment ();
+                    ready = item.readyOps (key, rc);
                     if (ready < 0)
                         return -1;
                     
@@ -659,10 +660,10 @@ public class ZMQ {
                         nevents++;
                     }
                 }
+                selector.selectedKeys ().clear ();
                 
-                selector.selectedKeys().clear();
             } catch (IOException e) {
-                throw new ZError.IOException(e);
+                throw new ZError.IOException (e);
             }            
             //  If timout is zero, exit immediately whether there are events or not.
             if (timeout_ == 0)
