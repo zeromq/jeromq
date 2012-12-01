@@ -356,7 +356,7 @@ public abstract class SocketBase extends Own
             boolean rc = listener.set_address (address);
             if (!rc) {
                 listener.destroy();
-                event_bind_failed (addr_, ZError.errno ());
+                event_bind_failed (address, ZError.errno ());
                 return false;
             }
 
@@ -374,7 +374,7 @@ public abstract class SocketBase extends Own
             boolean rc = listener.set_address (address);
             if (!rc) {
                 listener.destroy();
-                event_bind_failed (addr_, ZError.errno ());
+                event_bind_failed (address, ZError.errno ());
                 return false;
             }
 
@@ -430,15 +430,11 @@ public abstract class SocketBase extends Own
                 return false;
             // The total HWM for an inproc connection should be the sum of
             // the binder's HWM and the connector's HWM.
-            int  sndhwm;
-            int  rcvhwm;
-            if (options.sndhwm == 0 || peer.options.rcvhwm == 0)
-                sndhwm = 0;
-            else
+            int  sndhwm = 0;
+            if (options.sndhwm != 0 && peer.options.rcvhwm != 0)
                 sndhwm = options.sndhwm + peer.options.rcvhwm;
-            if (options.rcvhwm == 0 || peer.options.sndhwm == 0)
-                rcvhwm = 0;
-            else
+            int  rcvhwm = 0;
+            if (options.rcvhwm != 0 && peer.options.sndhwm != 0)
                 rcvhwm = options.rcvhwm + peer.options.sndhwm;
 
             //  Create a bi-directional pipe to connect the peers.

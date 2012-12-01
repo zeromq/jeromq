@@ -311,6 +311,14 @@ public class StreamEngine implements IEngine, IPollEvents, IMsgSink {
         //  If write buffer is empty, try to read new data from the encoder.
         if (outsize == 0) {
 
+            //  Even when we stop polling as soon as there is no
+            //  data to send, the poller may invoke out_event one
+            //  more time due to 'speculative write' optimisation.
+            if (encoder == null) {
+                 assert (handshaking);
+                 return;
+            }
+            
             outbuf = encoder.get_data (null);
             outsize = outbuf.remaining();
             //  If there is no data to send, stop polling for output.
