@@ -146,9 +146,6 @@ public class ZFrame {
         if (socket == null) {
             throw new IllegalArgumentException ("socket parameter must be set");
         }
-        if (!hasData ()) {
-            throw new IllegalAccessError ("Cannot send frame without data");
-        }
         
         int snd_flags = (flags & MORE) > 0? ZMQ.SNDMORE: 0;
         snd_flags |= (flags & DONTWAIT) > 0? ZMQ.DONTWAIT: 0;
