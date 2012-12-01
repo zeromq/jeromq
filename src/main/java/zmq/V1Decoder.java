@@ -54,11 +54,15 @@ public class V1Decoder extends DecoderBase
 
 
 
-    private boolean one_byte_size_ready() {
+    private boolean one_byte_size_ready () {
         
+        int size = tmpbuf [0];
+        if (size < 0)
+            size = (0xff) & size;
+
         //  Message size must not exceed the maximum allowed size.
         if (maxmsgsize >= 0)
-            if (tmpbuf [0] > maxmsgsize) {
+            if (size > maxmsgsize) {
                 decoding_error ();
                 return false;
             }
@@ -66,7 +70,7 @@ public class V1Decoder extends DecoderBase
         //  in_progress is initialised at this point so in theory we should
         //  close it before calling zmq_msg_init_size, however, it's a 0-byte
         //  message and thus we can treat it as uninitialised...
-        in_progress = new Msg(tmpbuf [0]);
+        in_progress = new Msg (size);
 
         in_progress.set_flags (msg_flags);
         next_step (in_progress.data (), in_progress.size (),
