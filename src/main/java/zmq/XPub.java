@@ -131,9 +131,9 @@ public class XPub extends SocketBase {
                     unique = subscriptions.add (data , 1, pipe_);
 
                 //  If the subscription is not a duplicate, store it so that it can be
-                //  passed to used on next recv call.
-                if (options.type == ZMQ.ZMQ_XPUB && (unique || verbose))
-                    pending.add(new Blob (sub.data ()));
+                //  passed to used on next recv call. (Unsubscribe is not verbose.)
+                if (options.type == ZMQ.ZMQ_XPUB && (unique || (data[0] == 1 && verbose)))
+                    pending.add (new Blob (sub.data ()));
             }
         }
     }
