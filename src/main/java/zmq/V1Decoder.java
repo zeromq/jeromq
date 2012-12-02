@@ -149,13 +149,4 @@ public class V1Decoder extends DecoderBase
         return true;
     }
 
-
-    //  Returns true if there is a decoded message
-    //  waiting to be delivered to the session.
-    @Override
-    public boolean stalled ()
-    {
-        return to_read == message_ready;
-    }
-
 }
