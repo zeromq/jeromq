@@ -189,6 +189,28 @@ abstract public class DecoderBase implements IDecoder {
         state(-1);
     }
 
+    //  Returns true if the decoder has been fed all required data
+    //  but cannot proceed with the next decoding step.
+    //  False is returned if the decoder has encountered an error.
+    @Override
+    public boolean stalled ()
+    {
+        //  Check whether there was decoding error.
+        if (!next ())
+            return false;
+        
+        while (to_read == 0) {
+            if (!next ()) {
+                if (!next ())
+                    return false;
+                return true;
+            }
+        }
+        return false;
+    }
+
+
+
     abstract protected boolean next();
     
 }

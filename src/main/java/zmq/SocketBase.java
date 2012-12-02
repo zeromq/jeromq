@@ -356,7 +356,7 @@ public abstract class SocketBase extends Own
             boolean rc = listener.set_address (address);
             if (!rc) {
                 listener.destroy();
-                event_bind_failed (addr_, ZError.errno ());
+                event_bind_failed (address, ZError.errno ());
                 return false;
             }
 
@@ -374,7 +374,7 @@ public abstract class SocketBase extends Own
             boolean rc = listener.set_address (address);
             if (!rc) {
                 listener.destroy();
-                event_bind_failed (addr_, ZError.errno ());
+                event_bind_failed (address, ZError.errno ());
                 return false;
             }
 
@@ -430,15 +430,11 @@ public abstract class SocketBase extends Own
                 return false;
             // The total HWM for an inproc connection should be the sum of
             // the binder's HWM and the connector's HWM.
-            int  sndhwm;
-            int  rcvhwm;
-            if (options.sndhwm == 0 || peer.options.rcvhwm == 0)
-                sndhwm = 0;
-            else
+            int  sndhwm = 0;
+            if (options.sndhwm != 0 && peer.options.rcvhwm != 0)
                 sndhwm = options.sndhwm + peer.options.rcvhwm;
-            if (options.rcvhwm == 0 || peer.options.sndhwm == 0)
-                rcvhwm = 0;
-            else
+            int  rcvhwm = 0;
+            if (options.rcvhwm != 0 && peer.options.sndhwm != 0)
                 rcvhwm = options.rcvhwm + peer.options.sndhwm;
 
             //  Create a bi-directional pipe to connect the peers.
@@ -648,11 +644,6 @@ public abstract class SocketBase extends Own
             return null;
         }
         
-        //  Get the message.
-        Msg msg_ = xrecv (flags_);
-        if (msg_ == null && !ZError.is(ZError.EAGAIN))
-            return null;
-
         //  Once every inbound_poll_rate messages check for signals and process
         //  incoming commands. This happens only if we are not polling altogether
         //  because there are messages available all the time. If poll occurs,
@@ -666,6 +657,11 @@ public abstract class SocketBase extends Own
                 return null;
             ticks = 0;
         }
+        
+        //  Get the message.
+        Msg msg_ = xrecv (flags_);
+        if (msg_ == null && !ZError.is(ZError.EAGAIN))
+            return null;
 
         //  If we have the message, return immediately.
         if (msg_ != null) {
