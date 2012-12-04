@@ -42,7 +42,6 @@ public class Msg {
     private byte type;
     private int flags;
     private int size;
-    private byte[] header;
     private byte[] data;
     private ByteBuffer buf;
     
@@ -124,7 +123,6 @@ public class Msg {
         size = 0;
         data = null;
         buf = null;
-        header = null;
     }
 
     public final void size (int size_)
@@ -189,43 +187,6 @@ public class Msg {
     public final int size ()
     {
         return size;
-    }
-    
-
-    public final int header_size ()
-    {
-        if (header == null) {
-            if (size < 255)
-                return 2;
-            else
-                return 9;
-        }
-        else if ((header[0] & 0x02) > 0)
-            return 9;
-        else
-            return 2;
-    }
-    
-    public final byte [] header () {
-        if (header == null) {
-            if (size < 255) {
-                header = new byte [2];
-                header [0] = (byte) ((flags & more) > 0 ? 0x01 : 0x00)  ;
-                header [1] = (byte) size;
-            } else {
-                header = new byte [10];
-                ByteBuffer hbuf = ByteBuffer.wrap (header);
-
-                hbuf.put ((byte) ((flags & more) > 0 ? 0x03 : 0x02));
-                hbuf.putLong ((long) size);
-            }
-        } 
-        return header;
-        
-    }
-    public final ByteBuffer header_buf ()
-    {
-        return ByteBuffer.wrap (header ());
     }
 
     public final void close ()

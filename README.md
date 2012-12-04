@@ -23,10 +23,6 @@ Pure Java implementation of libzmq (http://zeromq.org)
 * build your own StreamEngine's Decoder/Encoder
  * [TestProxyTcp](https://github.com/zeromq/jeromq/blob/master/src/test/java/zmq/TestProxyTcp.java)
  * [Proxy](https://github.com/zeromq/jeromq/blob/master/src/main/java/org/jeromq/codec/Proxy.java)
-* ZLog - ZMQ persistence (Under Construction)
- * Inspired by Apache [Kafka](http://incubator.apache.org/kafka/)
- * Store your ZMQ message as-is
- * Consume the stored message through zero copy
 
 ## Contribution Process
 

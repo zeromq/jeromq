@@ -12,6 +12,8 @@ package guide;
 import org.jeromq.ZMQ;
 import org.jeromq.ZMQException;
 
+import zmq.ZError;
+
 public class interrupt {
    public static void main(String[] args) {
       //  Prepare our context and socket
@@ -24,14 +26,12 @@ public class interrupt {
             socket.bind("tcp://*:5555");
 
             while (!Thread.currentThread().isInterrupted()) {
-               try {
-                  socket.recv(0);
-               } catch (ZMQException e) {
+               if (socket.recv (0) == null) {
                   // context destroyed, exit
-                  if (ZMQ.Error.ETERM.getCode() == e.getErrorCode()) {
+                  if (ZError.errno () == ZError.ETERM) {
                      break;
                   }
-                  throw e;
+                  new RuntimeException ("Must not happen");
                }
             }
 

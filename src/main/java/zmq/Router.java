@@ -210,6 +210,9 @@ public class Router extends SocketBase {
                     if (!current_out.check_write ()) {
                         op.active = false;
                         current_out = null;
+                        more_out = false;
+                        ZError.errno(ZError.EAGAIN);
+                        return false;
                     }
                 } else if (mandatory) {
                     more_out = false;
@@ -233,8 +236,6 @@ public class Router extends SocketBase {
                 current_out.flush ();
                 current_out = null;
             }
-        }
-        else {
         }
 
         //  Detach the message from the data buffer.

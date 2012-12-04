@@ -268,12 +268,13 @@ public class ZMQ {
             return base;
         }
         
-        private final static void mayRaise() {
-            if (zmq.ZError.is(0) || zmq.ZError.is(zmq.ZError.EAGAIN) ) ;
-            else if (zmq.ZError.is(zmq.ZError.ETERM) ) 
-                throw new ZMQException.CtxTerminated();
+        private final static void mayRaise () 
+        {
+            if (zmq.ZError.is (0) || zmq.ZError.is (zmq.ZError.EAGAIN) ) ;
+            else if (zmq.ZError.is (zmq.ZError.ETERM) ) 
+                throw new ZMQException.CtxTerminated ();
             else
-                throw new ZMQException(zmq.ZError.errno());
+                throw new ZMQException (zmq.ZError.errno ());
 
         }
         
@@ -851,6 +852,24 @@ public class ZMQ {
 
 
         /**
+         * @see #setRouterMandatory (boolean)
+         * 
+         * @return the Router Manadatory.
+         */
+        public final boolean getRouterMandatory () {
+            return false;
+        }
+        
+        
+        /**
+         * Set Router Mandatory
+         * @param mandadatory
+         */
+        public final void setRouterMandatory (boolean mandatory) {
+            base.setsockopt (zmq.ZMQ.ZMQ_ROUTER_MANDATORY, mandatory ? 1 : 0);
+        }
+        
+        /**
          * Bind to network interface. Start listening for new connections.
          * 
          * @param addr
@@ -1009,17 +1028,9 @@ public class ZMQ {
          * 
          * @return the message received, as an array of bytes; null on error.
          */
-        public final byte[] recv() {
-            zmq.Msg msg = base.recv(0);
-            
-            
-            if (msg != null) {
-                return msg.data();
-            }
-            
-            mayRaise();
-            
-            return null;
+        public final byte [] recv () 
+        {
+            return recv (0);
         }
         
         /**
@@ -1029,15 +1040,13 @@ public class ZMQ {
          *            the flags to apply to the receive operation.
          * @return the message received, as an array of bytes; null on error.
          */
-        public final byte[] recv(int flags) {
+        public final byte [] recv (int flags) 
+        {
             zmq.Msg msg = base.recv(flags);
-            
             
             if (msg != null) {
                 return msg.data();
             }
-            
-            mayRaise();
             
             return null;
         }
@@ -1059,15 +1068,14 @@ public class ZMQ {
          *            the flags to apply to the receive operation.
          * @return the number of bytes read, -1 on error
          */
-        public final int recv (byte[] buffer, int offset, int len, int flags) {
+        public final int recv (byte [] buffer, int offset, int len, int flags) 
+        {
             zmq.Msg msg = base.recv(flags);
             
             if (msg != null) {
                 System.arraycopy(msg.data(), 0, buffer, offset, len);
                 return msg.size();
             }
-            
-            mayRaise();
             
             return -1;
         }
@@ -1077,16 +1085,9 @@ public class ZMQ {
          * 
          * @return the message received, as a Msg object; null on no message.
          */
-        public final Msg recvMsg() {
-            zmq.Msg msg = base.recv(0);
-            
-            if (msg != null) {
-                return new Msg(msg);
-            }
-            
-            mayRaise();
-            
-            return null;
+        public final Msg recvMsg () 
+        {
+            return recvMsg (0);
         }
         
         /**
@@ -1096,14 +1097,13 @@ public class ZMQ {
          *            the flags to apply to the receive operation.
          * @return the message received, as a Msg object; null on no message.
          */
-        public final Msg recvMsg(int flags) {
+        public final Msg recvMsg (int flags) 
+        {
             zmq.Msg msg = base.recv(flags);
             
             if (msg != null) {
-                return new Msg(msg);
+                return new Msg (msg);
             }
-            
-            mayRaise();
             
             return null;
         }
@@ -1112,17 +1112,8 @@ public class ZMQ {
          * 
          * @return the message received, as a String object; null on no message.
          */
-        public final String recvStr() {
-            
-            zmq.Msg msg = base.recv(0);
-            
-            if (msg != null) {
-                return new String(msg.data());
-            }
-            
-            mayRaise();
-            
-            return null;
+        public final String recvStr () {
+            return recvStr (0);
         }
         
         /**
@@ -1130,15 +1121,13 @@ public class ZMQ {
          * @param flags the flags to apply to the receive operation.
          * @return the message received, as a String object; null on no message.
          */
-        public final String recvStr(int flags) {
-            
+        public final String recvStr (int flags) 
+        {
             zmq.Msg msg = base.recv(flags);
             
             if (msg != null) {
-                return new String(msg.data());
+                return new String (msg.data());
             }
-            
-            mayRaise();
             
             return null;
         }
@@ -1188,22 +1177,10 @@ public class ZMQ {
             base = new zmq.Msg (data);
         }
 
-        public int headerSize () {
-            return base.header_size ();
-        }
-
         public int size () {
             return base.size ();
         }
 
-        public ByteBuffer headerBuf () {
-            return base.header_buf ();
-        }
-
-        public byte [] header () {
-            return base.header ();
-        }
-        
         public ByteBuffer buf () {
             return base.buf ();
         }

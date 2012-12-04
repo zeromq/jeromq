@@ -130,7 +130,7 @@ public class StreamEngine implements IEngine, IPollEvents, IMsgSink {
                 dcon = options.decoder.getConstructor (int.class, long.class);
                 return dcon.newInstance (size, max);
             } else {
-                dcon = options.decoder.getConstructor (int.class, long.class, int.class);
+                dcon = options.decoder.getConstructor (int.class, long.class, IMsgSink.class, int.class);
                 return dcon.newInstance (size, max, session, version);
             }
         } catch (SecurityException e) {
