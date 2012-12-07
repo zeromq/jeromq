@@ -56,7 +56,8 @@ abstract public class DecoderBase implements IDecoder {
         state = -1;
         to_read = 0;
         bufsize = bufsize_;
-        buf = ByteBuffer.allocateDirect (bufsize_);
+        if (bufsize_ > 0)
+            buf = ByteBuffer.allocateDirect (bufsize_);
         read_buf = null;
         zero_copy = false;
     }

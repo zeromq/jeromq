@@ -1209,6 +1209,17 @@ public class ZMQ {
         {
             return base.flags ();
         }
+
+        public boolean hasMore ()
+        {
+            return base.has_more ();
+        }
+        
+        public void close ()
+        {
+            base.close ();
+        }
+
     }
     
     // GC closes selector handle
