@@ -37,14 +37,14 @@ Add it to your Maven project's `pom.xml`:
     <dependency>
       <groupId>org.jeromq</groupId>
       <artifactId>jeromq</artifactId>
-      <version>0.1.0</version>
+      <version>0.2.0</version>
     </dependency>
 
     <!-- for the latest SNAPSHOT -->
     <dependency>
       <groupId>org.jeromq</groupId>
       <artifactId>jeromq</artifactId>
-      <version>0.2.0-SNAPSHOT</version>
+      <version>0.3.0-SNAPSHOT</version>
     </dependency>
 
 If your are using the Ant 

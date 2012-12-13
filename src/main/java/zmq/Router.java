@@ -210,9 +210,11 @@ public class Router extends SocketBase {
                     if (!current_out.check_write ()) {
                         op.active = false;
                         current_out = null;
-                        more_out = false;
-                        ZError.errno(ZError.EAGAIN);
-                        return false;
+                        if (mandatory) {
+                            more_out = false;
+                            ZError.errno(ZError.EAGAIN);
+                            return false;
+                        }
                     }
                 } else if (mandatory) {
                     more_out = false;
