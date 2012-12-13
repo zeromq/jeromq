@@ -28,7 +28,7 @@ import static org.hamcrest.CoreMatchers.*;
 public class TestRouterMandatory {
     
     @Test
-    public void testRouterMandatory () {
+    public void testRouterMandatory () throws Exception {
         int rc;
         boolean brc;
 
@@ -36,6 +36,7 @@ public class TestRouterMandatory {
         assertThat (ctx, notNullValue());
         
         SocketBase sa = ZMQ.zmq_socket (ctx, ZMQ.ZMQ_ROUTER);
+        ZMQ.zmq_setsockopt (sa, ZMQ.ZMQ_SNDHWM, 1);
         assertThat (sa, notNullValue());
         
         brc = ZMQ.zmq_bind (sa, "tcp://127.0.0.1:15560");
@@ -57,9 +58,40 @@ public class TestRouterMandatory {
         assertThat (rc ,is (-1));
         assertTrue (ZError.is (ZError.EHOSTUNREACH));
         
+        // Create a valid socket
+        SocketBase sb = ZMQ.zmq_socket (ctx, ZMQ.ZMQ_DEALER);
+        assertThat (sb, notNullValue());
+        
+        ZMQ.zmq_setsockopt (sb, ZMQ.ZMQ_RCVHWM, 1);
+        ZMQ.zmq_setsockopt (sb, ZMQ.ZMQ_IDENTITY, "X");
+        
+        brc = ZMQ.zmq_connect (sb, "tcp://127.0.0.1:15560");
+        
+        // wait until connect
+        Thread.sleep (1000);
+        
+        // make it full and check that it fails
+        rc = ZMQ.zmq_send (sa, "X", ZMQ.ZMQ_SNDMORE);
+        assert (rc == 1);
+        rc = ZMQ.zmq_send (sa, "DATA1", 0);
+        assert (rc == 5);
+
+
+        rc = ZMQ.zmq_send (sa, "X", ZMQ.ZMQ_SNDMORE | ZMQ.ZMQ_DONTWAIT);
+        if (rc == 1) {
+            // the first frame has been sent
+            rc = ZMQ.zmq_send (sa, "DATA2", 0);
+            assert (rc == 5);
+
+            // send more
+            rc = ZMQ.zmq_send (sa, "X", ZMQ.ZMQ_SNDMORE | ZMQ.ZMQ_DONTWAIT);
+        }
+        assertThat (rc ,is (-1));
+        assertThat (ZError.errno (), is(ZError.EAGAIN));
         
         //  Clean up.
         ZMQ.zmq_close (sa);
+        ZMQ.zmq_close (sb);
         ZMQ.zmq_term (ctx);
     }
 }

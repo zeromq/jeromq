@@ -171,8 +171,14 @@ public class Msg {
     
     public final byte[] data ()
     {
-        if (data == null && type == type_lmsg) 
-            data = buf.array();
+        if (data == null && type == type_lmsg) {
+            if (buf.arrayOffset () == 0)
+                data = buf.array();
+            else {
+                data = new byte [size];
+                System.arraycopy (buf.array (), buf.arrayOffset (), data, 0, size);
+            }
+        }
         return data;
     }
     

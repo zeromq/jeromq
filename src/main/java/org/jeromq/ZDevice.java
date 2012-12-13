@@ -44,7 +44,7 @@ public class ZDevice {
         boolean sentAddress = false;
         boolean recvAddress = false;
         int rc;
-        long more;
+        boolean more;
         Msg msg;
         byte [] target;
         int size = identities.size ();
@@ -88,17 +88,23 @@ public class ZDevice {
                         target = identities.get (hint % size);
                         // routing address
                         success = backend_.send (new Msg (target), ZMQ.ZMQ_SNDMORE);
-                        if (!success)
+                        if (!success) {
+                            System.out.println ("send 0 failed");
+
                             break;
+                        }
                         sentAddress = true;
                     }
                     
-                    more = front_.getsockopt (ZMQ.ZMQ_RCVMORE);
+                    more = msg.has_more ();
 
-                    success = backend_.send (msg, more > 0? ZMQ.ZMQ_SNDMORE: 0);
-                    if (!success)
+                    success = backend_.send (msg, more ? ZMQ.ZMQ_SNDMORE: 0);
+                    if (!success) {
+                        System.out.println ("send failed");
                         break;
-                    if (more == 0) {
+                    }
+                    
+                    if (!more) {
                         sentAddress = false;
                         break;
                     }
@@ -109,6 +115,8 @@ public class ZDevice {
                 while (true) {
                     msg = backend_.recv (0);
                     if (msg == null) {
+                        System.out.println ("recv failed");
+
                         success = false;
                         break;
                     }
@@ -119,12 +127,15 @@ public class ZDevice {
                         continue;
                     }
 
-                    more = backend_.getsockopt (ZMQ.ZMQ_RCVMORE);
+                    more = msg.has_more ();
 
-                    success = front_.send (msg, more > 0? ZMQ.ZMQ_SNDMORE: 0);
-                    if (!success)
+                    success = front_.send (msg, more ? ZMQ.ZMQ_SNDMORE: 0);
+                    if (!success) {
+                        System.out.println ("send 2 failed");
+
                         break;
-                    if (more == 0) {
+                    }
+                    if (!more) {
                         recvAddress = false;
                         break;
                     }
@@ -153,7 +164,7 @@ public class ZDevice {
         boolean sentAddress = false;
         boolean recvAddress = false;
         int rc;
-        long more;
+        boolean more;
         Msg msg;
         byte [] target;
         int size = identities.size ();
@@ -208,12 +219,12 @@ public class ZDevice {
                         sentAddress = true;
                     }
                     
-                    more = front_.getsockopt (ZMQ.ZMQ_RCVMORE);
+                    more = msg.has_more ();
 
-                    success = backend_.send (msg, more > 0? ZMQ.ZMQ_SNDMORE: 0);
+                    success = backend_.send (msg, more ? ZMQ.ZMQ_SNDMORE: 0);
                     if (!success)
                         break;
-                    if (more == 0) {
+                    if (!more) {
                         sentAddress = false;
                         break;
                     }
@@ -234,13 +245,13 @@ public class ZDevice {
                         continue;
                     }
 
-                    more = backend_.getsockopt (ZMQ.ZMQ_RCVMORE);
+                    more = msg.has_more ();
 
-                    success = backend_.send (msg, more > 0? ZMQ.ZMQ_SNDMORE: 0);
+                    success = front_.send (msg, more ? ZMQ.ZMQ_SNDMORE: 0);
                     
                     if (!success)
                         break;
-                    if (more == 0) {
+                    if (!more) {
                         recvAddress = false;
                         break;
                     }
