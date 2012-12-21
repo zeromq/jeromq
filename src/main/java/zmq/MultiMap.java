@@ -233,8 +233,16 @@ public class MultiMap<K extends Comparable<? super K>, V> implements Map<K, V> {
     }
 
     @Override
-    public V remove(Object arg0) {
-        throw new UnsupportedOperationException();
+    public V remove (Object key) 
+    {
+        ArrayList <Long> l = keys.get (key);
+        if (l == null)
+            return null;
+        V old = values.remove (l.remove(0));
+        if (l.isEmpty ())
+            keys.remove (key);
+
+        return old;
     }
 
     @Override
