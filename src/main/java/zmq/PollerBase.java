@@ -121,6 +121,6 @@ abstract public class PollerBase {
         for (long key : removes)
             timers.remove (key);
         //  There are no more timers.
-        return 0L;
+        return ret;
     }
 }
