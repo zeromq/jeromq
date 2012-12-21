@@ -19,6 +19,7 @@
 */
 package zmq;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -98,31 +99,28 @@ abstract public class PollerBase {
         //  Get the current time.
         long current = Clock.now_ms ();
 
+        ArrayList <Long> removes = new ArrayList <Long> ();
         //   Execute the timers that are already due.
-        Iterator<Entry<Long, TimerInfo>> it = timers.entrySet().iterator();
-        while (it.hasNext()) {
+        long ret = 0L;
+        for (Entry <Long, TimerInfo> o : timers.entrySet ()) {
 
             //  If we have to wait to execute the item, same will be true about
             //  all the following items (multimap is sorted). Thus we can stop
             //  checking the subsequent timers and return the time to wait for
             //  the next timer (at least 1ms).
-            Entry<Long, TimerInfo> o = it.next();
-            if (o.getKey() > current)
-                return o.getKey() - current;
+            if (o.getKey() > current) {
+                ret = o.getKey() - current;
+                break;
+            }
 
             //  Trigger the timer.
             o.getValue().sink.timer_event (o.getValue().id);
-
             //  Remove it from the list of active timers.
-            //timers_t::iterator o = it;
-            //++it;
-            //timers.erase (o);
-            it.remove();
+            removes.add (o.getKey ());
         }
-
+        for (long key : removes)
+            timers.remove (key);
         //  There are no more timers.
         return 0L;
     }
-    
-
 }

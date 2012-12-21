@@ -23,6 +23,7 @@ package zmq;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.nio.channels.SocketChannel;
 
 //  If 'delay' is true connecter first waits for a while, then starts
@@ -145,6 +146,8 @@ public class TcpConnecter extends Own implements IPollEvents {
         } catch (ConnectException e) {
             err = true;
         } catch (SocketException e) {
+            err = true;
+        } catch (SocketTimeoutException e) {
             err = true;
         } catch (IOException e) {
             throw new ZError.IOException(e);
@@ -293,11 +296,10 @@ public class TcpConnecter extends Own implements IPollEvents {
         try {
             handle.close();
             socket.event_closed (endpoint, handle);
-            handle = null;
         } catch (IOException e) {
             ZError.exc (e);
             socket.event_close_failed (endpoint, ZError.errno());
         }
-        
+        handle = null;
     }
 }
