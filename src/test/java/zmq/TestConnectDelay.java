@@ -44,7 +44,7 @@ public class TestConnectDelay {
             assert (rc);
 
             Msg msg = ZMQ.zmq_recv (socket, 0);
-
+            assertNotNull (msg);
             // Intentionally bail out
             ZMQ.zmq_close (socket);
 
