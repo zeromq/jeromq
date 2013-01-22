@@ -245,7 +245,7 @@ public class ZFrame {
 
     /**
      * Sets new contents for frame
-     * @param string
+     * @param data
      *          New byte array contents for frame
      */
     public void reset(String data) {

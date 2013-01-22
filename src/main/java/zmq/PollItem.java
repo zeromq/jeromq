@@ -56,7 +56,10 @@ public class PollItem {
             interest_ |= SelectionKey.OP_READ ;
         }
         if ((ops & ZMQ.ZMQ_POLLOUT) > 0) {
-            interest_ |= SelectionKey.OP_WRITE;
+            if (s != null)  //  ZMQ Socket get readiness from the mailbox
+                interest_ |= SelectionKey.OP_READ ;
+            else
+                interest_ |= SelectionKey.OP_WRITE;
         }
         interest = interest_;
         ready = 0;

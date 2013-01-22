@@ -555,7 +555,15 @@ public class ZMQ {
         return Proxy.proxy(insocket_, outsocket_, null);
     }
 
-    // Polling.
+    /**
+     * Polling on items. This has very poor performance.
+     * Try to use zmq_poll with selector
+     * CAUTION: This could be affected by jdk epoll bug
+     *
+     * @param items_
+     * @param timeout_
+     * @return number of events
+     */
     public static int zmq_poll(PollItem[] items_, long timeout_) {
         Selector selector = null;
         try {
@@ -575,6 +583,16 @@ public class ZMQ {
         return ret;
         
     }
+
+    /**
+     * Polling on items with given selector
+     * CAUTION: This could be affected by jdk epoll bug
+     *
+     * @param selector Open and reuse this selector and do not forget to close when it is not used.
+     * @param items_
+     * @param timeout_
+     * @return number of events
+     */
     public static int zmq_poll (Selector selector, PollItem[] items_, long timeout_ ) 
     {
         if (items_ == null) {
@@ -612,7 +630,7 @@ public class ZMQ {
                 key.attach (item);
             } else {
                 try {
-                    key = ch.register(selector, item.interestOps(), item);
+                    ch.register(selector, item.interestOps(), item);
                 } catch (ClosedChannelException e) {
                     throw new ZError.IOException(e);
                 }
@@ -665,7 +683,7 @@ public class ZMQ {
             } catch (IOException e) {
                 throw new ZError.IOException (e);
             }            
-            //  If timout is zero, exit immediately whether there are events or not.
+            //  If timeout is zero, exit immediately whether there are events or not.
             if (timeout_ == 0)
                 break;
 
