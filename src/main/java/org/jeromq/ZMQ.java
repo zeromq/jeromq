@@ -952,8 +952,10 @@ public class ZMQ {
          * @param addr
          *            the endpoint to connect to.
          */
-        public final boolean connect(String addr_) {
-            return base.connect(addr_);
+        public final boolean connect (String addr_) {
+            boolean ret = base.connect (addr_);
+            mayRaise ();
+            return ret;
         }
 
         public final boolean send (String data) {

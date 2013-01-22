@@ -56,7 +56,7 @@ public class Poller extends PollerBase implements Runnable {
     volatile private boolean stopped;
     
     private Thread worker;
-    final private Selector selector;
+    private Selector selector;
     final private String name;
     
     public Poller() {
@@ -163,12 +163,10 @@ public class Poller extends PollerBase implements Runnable {
         selector.wakeup();
     }
     
-    
-
-
     @Override
-    public void run() {
-        
+    public void run () {
+        int returnsImmediately = 0;
+
         while (!stopping) {
 
             //  Execute any due timers.
@@ -176,11 +174,11 @@ public class Poller extends PollerBase implements Runnable {
             
             if (retired) {
                 
-                Iterator<Map.Entry<SelectableChannel,PollSet>> it = fd_table.entrySet().iterator();
-                while (it.hasNext()) {
-                    Map.Entry<SelectableChannel,PollSet> entry = it.next();
-                    SelectableChannel ch = entry.getKey();
-                    PollSet pollset = entry.getValue();
+                Iterator <Map.Entry <SelectableChannel,PollSet>> it = fd_table.entrySet ().iterator ();
+                while (it.hasNext ()) {
+                    Map.Entry <SelectableChannel,PollSet> entry = it.next ();
+                    SelectableChannel ch = entry.getKey ();
+                    PollSet pollset = entry.getValue ();
                     if (pollset.key == null) {
                         try {
                             pollset.key = ch.register(selector, pollset.ops, pollset.handler);
@@ -188,8 +186,8 @@ public class Poller extends PollerBase implements Runnable {
                             continue;
                         }
                     } else if (pollset.cancelled) {
-                        pollset.key.cancel();
-                        it.remove();
+                        pollset.key.cancel ();
+                        it.remove ();
                     }
                 }
                 retired = false;
@@ -198,14 +196,27 @@ public class Poller extends PollerBase implements Runnable {
 
             //  Wait for events.
             int rc;
+            long start = System.currentTimeMillis ();
             try {
-                rc = selector.select(timeout);
+                rc = selector.select (timeout);
             } catch (IOException e) {
-                throw new ZError.IOException(e);
+                throw new ZError.IOException (e);
             }
             
-            if (rc == 0) 
+            if (rc == 0) {
+                //  Guess JDK epoll bug
+                if (timeout == 0 ||
+                        System.currentTimeMillis () - start < timeout / 2)
+                    returnsImmediately ++;
+                else
+                    returnsImmediately = 0;
+
+                if (returnsImmediately > 10) {
+                    rebuildSelector ();
+                    returnsImmediately = 0;
+                }
                 continue;
+            }
 
 
             Iterator<SelectionKey> it = selector.selectedKeys().iterator();
@@ -238,5 +249,29 @@ public class Poller extends PollerBase implements Runnable {
         
     }
 
-    
+    private void rebuildSelector ()
+    {
+        Selector newSelector;
+
+        try {
+            newSelector = Selector.open();
+        } catch (IOException e) {
+            throw new ZError.IOException(e);
+        }
+
+        try {
+            selector.close ();
+        } catch (IOException e) {
+        }
+
+        selector = newSelector;
+
+        for (PollSet pollSet : fd_table.values ()) {
+            pollSet.key = null;
+        }
+
+        retired = true;
+    }
+
+
 }
