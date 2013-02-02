@@ -204,13 +204,25 @@ public class ZMQ {
 
         /**
          * Create a new Socket within this context.
-         * 
+         * <p/>
+         * In general, prefer the version that takes the ZSocketType enum, rather than the int.
+         * @see #socket(ZSocketType)
          * @param type
          *            the socket type.
          * @return the newly created Socket.
          */
         public Socket socket(int type) {
             return new Socket(this, type);
+        }
+
+        /**
+         * Create a new Socket within this context.
+         *
+         * @param type the socket type.
+         * @return the newly created Socket.
+         */
+        public Socket socket(ZSocketType type) {
+            return socket(type.getCValue());
         }
 
         /**
@@ -248,7 +260,7 @@ public class ZMQ {
         /**
          * Class constructor.
          * 
-         * @param context
+         * @param context_
          *            a 0MQ context previously created.
          * @param type
          *            the socket type.
@@ -317,7 +329,7 @@ public class ZMQ {
          * when socket is closed. Positive value means number of milliseconds to keep
          * trying to send the pending messages before discarding them.
          *
-         * @param linger
+         * @param value
          *            the linger period.
          * @since 2.1.0
          */
@@ -487,7 +499,7 @@ public class ZMQ {
          * high water mark; in this case outstanding messages shall be offloaded to storage on disk
          * rather than held in memory.
          * 
-         * @param swap
+         * @param value
          *            The value of 'ZMQ_SWAP' defines the maximum size of the swap space in bytes.
          */
         @Deprecated
@@ -519,7 +531,7 @@ public class ZMQ {
          * See also  in the man page of zmq_init[3] for details on allocating the number of I/O threads for a
          * specific _context_.
          * 
-         * @param affinity
+         * @param value
          *            the affinity.
          */
         public final void setAffinity(long value) {
@@ -575,7 +587,7 @@ public class ZMQ {
          * The 'ZMQ_RATE' option shall set the maximum send or receive data rate for multicast
          * transports such as  in the man page of zmq_pgm[7] using the specified 'socket'.
          * 
-         * @param rate
+         * @param value
          */
         public final void setRate(long value) {
             base.setsockopt(zmq.ZMQ.ZMQ_RATE, (int)value);
@@ -603,7 +615,7 @@ public class ZMQ {
          * recovery will be held in memory. For example, a 1 minute recovery interval at a data rate
          * of 1Gbps requires a 7GB in-memory buffer. {Purpose of this Method}
          * 
-         * @param recovery_ivl
+         * @param value
          */
         public final void setRecoveryInterval (long value) {
             base.setsockopt(zmq.ZMQ.ZMQ_RECOVERY_IVL, (int)value);
@@ -650,7 +662,7 @@ public class ZMQ {
          * The default is 1 which means that the multicast packets don't leave the local
          * network.
          * 
-         * @param mcast_hops
+         * @param value
          */
         public final void setMulticastHops (long value) {
             base.setsockopt(zmq.ZMQ.ZMQ_MULTICAST_HOPS, (int)value);
@@ -658,7 +670,7 @@ public class ZMQ {
         }
 
         /**
-         * @see #setReceiveTimeOut(long)
+         * @see #setReceiveTimeOut(int)
          * 
          * @return the Receive Timeout
          */
@@ -673,7 +685,7 @@ public class ZMQ {
          * values, it will wait for a message for that amount of time before returning with
          * an null.
          * 
-         * @param timeout
+         * @param value
          */
         public final void setReceiveTimeOut(int value) {
             base.setsockopt(zmq.ZMQ.ZMQ_RCVTIMEO, value);
@@ -682,7 +694,7 @@ public class ZMQ {
         
 
         /**
-         * @see #setSendTimeOut(long)
+         * @see #setSendTimeOut(int)
          * 
          * @return the Send Timeout.
          */
@@ -697,7 +709,7 @@ public class ZMQ {
          * values, it will try to send the message for that amount of time before
          * returning with a false.
          * 
-         * @param timeout
+         * @param value
          */
         public final void setSendTimeOut(int value) {
             base.setsockopt(zmq.ZMQ.ZMQ_SNDTIMEO, value);
@@ -720,7 +732,7 @@ public class ZMQ {
          * unchanged. For details please refer to your operating system documentation for the
          * 'SO_SNDBUF' socket option.
          * 
-         * @param sndbuf
+         * @param value
          */
         public final void setSendBufferSize(long value) {
             base.setsockopt(zmq.ZMQ.ZMQ_SNDBUF, (int)value);
@@ -742,7 +754,7 @@ public class ZMQ {
          * unchanged. For details refer to your operating system documentation for the 'SO_RCVBUF'
          * socket option.
          * 
-         * @param rcvbuf
+         * @param value
          */
         public final void setReceiveBufferSize(long value) {
             base.setsockopt(zmq.ZMQ.ZMQ_RCVBUF, (int)value);
@@ -863,7 +875,7 @@ public class ZMQ {
         
         /**
          * Set Router Mandatory
-         * @param mandadatory
+         * @param mandatory
          */
         public final void setRouterMandatory (boolean mandatory) {
             base.setsockopt (zmq.ZMQ.ZMQ_ROUTER_MANDATORY, mandatory ? 1 : 0);
@@ -949,7 +961,7 @@ public class ZMQ {
         /**
          * Connect to remote application.
          * 
-         * @param addr
+         * @param addr_
          *            the endpoint to connect to.
          */
         public final boolean connect (String addr_) {
@@ -1499,7 +1511,7 @@ public class ZMQ {
          *            otherwise, it will wait for at most that many
          *            milliseconds/microseconds (see above).
          *            
-         * @see http://api.zeromq.org/3-0:zmq-poll
+         * @see <a href="http://api.zeromq.org/3-0:zmq-poll">http://api.zeromq.org/3-0:zmq-poll</a>
          *
          * @return how many objects where signaled by poll ()
          */
