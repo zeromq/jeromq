@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
-import org.jeromq.ZMQ;
 import org.jeromq.ZMQ.Context;
 import org.jeromq.ZMQ.Socket;
 import org.jeromq.ZMQ.Msg;
@@ -31,16 +30,16 @@ import org.jeromq.ZMQ.Msg;
 public class TestZDevice {
 
     static class Client extends Thread {
-        
+
         private Socket s = null;
         private String name = null;
         public Client (Context ctx, String name_) {
-            s = ctx.socket(ZMQ.REQ);
+            s = ctx.socket(ZSocketType.REQ);
             name = name_;
-            
+
             s.setIdentity(name);
         }
-        
+
         @Override
         public void run () {
             System.out.println("Start client thread " + name);
@@ -56,23 +55,23 @@ public class TestZDevice {
             System.out.println("Stop client thread " + name);
         }
     }
-    
+
     static class Dealer extends Thread {
-        
+
         private Socket s = null;
         private String name = null;
         public Dealer(Context ctx, String name_) {
-            s = ctx.socket(ZMQ.DEALER);
+            s = ctx.socket(ZSocketType.DEALER);
             name = name_;
-            
+
             s.setIdentity(name);
         }
-        
+
         @Override
         public void run () {
-            
+
             System.out.println("Start dealer " + name);
-            
+
             s.connect( "tcp://127.0.0.1:6661");
             int count = 0;
             while (count<2) {
@@ -81,28 +80,27 @@ public class TestZDevice {
                     throw new RuntimeException();
                 }
                 String identity = new String(msg.data(), 0 , msg.size());
-                System.out.println(name + " recieved cleint identity " + identity);
+                System.out.println(name + " recieved client identity " + identity);
                 msg = s.recvMsg(0);
                 if (msg == null) {
                     throw new RuntimeException();
                 }
-                System.out.println(name + " recieved bottom " + msg);
-                
+                System.out.println(name + " received bottom " + msg);
+
                 msg = s.recvMsg(0);
                 if (msg == null) {
                     throw new RuntimeException();
                 }
                 String data = new String(msg.data(), 0 , msg.size());
 
-                System.out.println(name + " recieved data " + msg + " " + data);
+                System.out.println(name + " received data " + msg + " " + data);
                 s.send(identity, ZMQ.SNDMORE);
                 s.send((byte[])null, ZMQ.SNDMORE);
-                
-                Msg response = null;
-                response = new Msg(msg.size() + 3);
+
+                Msg response = new Msg(msg.size() + 3);
                 response.put("OK ", 0);
                 response.put(msg.data(), 3);
-                
+
                 s.send(response, 0);
                 count++;
             }
@@ -111,27 +109,27 @@ public class TestZDevice {
         }
     }
     static class Main extends Thread {
-        
+
         Context ctx;
         Main(Context ctx_) {
             ctx = ctx_;
         }
-        
+
         @Override
         public void run() {
             int port;
             Socket sa = ctx.socket(ZMQ.ROUTER);
-            
+
             assert (sa != null);
             port = sa.bind ("tcp://127.0.0.1:6660");
             assertEquals (port, 6660);
 
-            
+
             Socket sb = ctx.socket(ZMQ.ROUTER);
             assert (sb != null);
             port = sb.bind ("tcp://127.0.0.1:6661");
             assertEquals (port, 6661);
-            
+
             ArrayList<byte[]> ids = new ArrayList<byte[]>();
             ids.add(new byte[]{'A','A'});
             ids.add(new byte[]{'B','B'});
@@ -141,7 +139,7 @@ public class TestZDevice {
             sb.close();
 
         }
-        
+
     }
 
     @Test
@@ -153,17 +151,17 @@ public class TestZDevice {
         mt.start();
         new Dealer(ctx, "AA").start();
         new Dealer(ctx, "BB").start();
-        
+
         Thread.sleep(1000);
         Thread c1 = new Client(ctx, "X");
         c1.start();
 
         Thread c2 = new Client(ctx, "Y");
         c2.start();
-        
+
         c1.join();
         c2.join();
-        
+
         ctx.term();
     }
 
