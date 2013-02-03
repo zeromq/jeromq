@@ -1,6 +1,6 @@
 package org.jeromq.api;
 
-import org.jeromq.ZMQ;
+import org.zeromq.ZMQ;
 import zmq.DecoderBase;
 import zmq.EncoderBase;
 
@@ -9,7 +9,11 @@ import java.nio.channels.SelectableChannel;
 public class Socket {
     private final ZMQ.Socket socket;
 
-    public Socket(ZMQ.Socket socket) {
+    ZMQ.Socket getDelegate() {
+        return socket;
+    }
+
+    Socket(ZMQ.Socket socket) {
         this.socket = socket;
     }
 
@@ -23,10 +27,6 @@ public class Socket {
 
     public void setMaxMsgSize(long value) {
         socket.setMaxMsgSize(value);
-    }
-
-    public boolean sendMore(ZMQ.Msg msg) {
-        return socket.sendMore(msg);
     }
 
     public void setLinger(long value) {
@@ -87,10 +87,6 @@ public class Socket {
 
     public void setHighWaterMark(long highWaterMark) {
         socket.setHWM(highWaterMark);
-    }
-
-    public boolean send(ZMQ.Msg msg, int flags) {
-        return socket.send(msg, flags);
     }
 
     public void setReconnectIntervalMax(long value) {
@@ -157,10 +153,6 @@ public class Socket {
         socket.subscribe(topic);
     }
 
-    public boolean send(ZMQ.Msg msg) {
-        return socket.send(msg);
-    }
-
     public long getMaxMsgSize() {
         return socket.getMaxMsgSize();
     }
@@ -203,10 +195,6 @@ public class Socket {
 
     public byte[] getIdentity() {
         return socket.getIdentity();
-    }
-
-    public ZMQ.Msg receiveMessage(int flags) {
-        return socket.recvMsg(flags);
     }
 
     public void setRouterMandatory(boolean mandatory) {
@@ -257,10 +245,6 @@ public class Socket {
         return socket.bind(address);
     }
 
-    public ZMQ.Msg receiveMessage() {
-        return socket.recvMsg();
-    }
-
     public void dump() {
         socket.dump();
     }
@@ -285,7 +269,7 @@ public class Socket {
         return socket.getMulticastHops();
     }
 
-    public SelectableChannel getFD() {
-        return socket.getFileDescriptor();
+    public SelectableChannel getFileDescriptor() {
+        return socket.getFD();
     }
 }

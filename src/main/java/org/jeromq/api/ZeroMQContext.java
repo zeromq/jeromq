@@ -1,6 +1,6 @@
 package org.jeromq.api;
 
-import org.jeromq.ZContext;
+import org.zeromq.ZContext;
 
 public class ZeroMQContext {
     private final ZContext zContext;

@@ -1,8 +1,8 @@
 package org.jeromq.api;
 
-import org.jeromq.ZFrame;
-import org.jeromq.ZMQ;
-import org.jeromq.ZMsg;
+import org.zeromq.ZFrame;
+import org.zeromq.ZMQ;
+import org.zeromq.ZMsg;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -21,8 +21,12 @@ public class Message implements Iterable<ZFrame>, Deque<ZFrame> {
         zMsg.destroy();
     }
 
-    public static ZMsg recvMsg(ZMQ.Socket socket) {
-        return ZMsg.recvMsg(socket);
+    public static Message recvMsg(Socket socket) {
+        return new Message(ZMsg.recvMsg(socket.getDelegate()));
+    }
+
+    public static Message receiveMessage(ZMQ.Socket socket, SendReceiveOption flag) {
+        return new Message(ZMsg.recvMsg(socket, flag.getCValue()));
     }
 
     public ZFrame first() {
@@ -82,8 +86,8 @@ public class Message implements Iterable<ZFrame>, Deque<ZFrame> {
         return zMsg.last();
     }
 
-    public ZMsg duplicate() {
-        return zMsg.duplicate();
+    public Message duplicate() {
+        return new Message(zMsg.duplicate());
     }
 
     @Override
@@ -137,13 +141,13 @@ public class Message implements Iterable<ZFrame>, Deque<ZFrame> {
     }
 
     @Override
-    public boolean removeAll(Collection<?> arg0) {
-        return zMsg.removeAll(arg0);
+    public boolean removeAll(Collection<?> values) {
+        return zMsg.removeAll(values);
     }
 
     @Override
-    public void addFirst(ZFrame e) {
-        zMsg.addFirst(e);
+    public void addFirst(ZFrame frame) {
+        zMsg.addFirst(frame);
     }
 
     @Override
@@ -152,8 +156,8 @@ public class Message implements Iterable<ZFrame>, Deque<ZFrame> {
     }
 
     @Override
-    public <T> T[] toArray(T[] arg0) {
-        return zMsg.toArray(arg0);
+    public <T> T[] toArray(T[] base) {
+        return zMsg.toArray(base);
     }
 
     @Override
@@ -162,8 +166,8 @@ public class Message implements Iterable<ZFrame>, Deque<ZFrame> {
     }
 
     @Override
-    public boolean add(ZFrame e) {
-        return zMsg.add(e);
+    public boolean add(ZFrame frame) {
+        return zMsg.add(frame);
     }
 
     @Override
@@ -180,16 +184,12 @@ public class Message implements Iterable<ZFrame>, Deque<ZFrame> {
         return zMsg.popString();
     }
 
-    public boolean send(ZMQ.Socket socket) {
-        return zMsg.send(socket);
+    public boolean send(Socket socket) {
+        return zMsg.send(socket.getDelegate());
     }
 
     public void dump() {
         zMsg.dump();
-    }
-
-    public static ZMsg recvMsg(ZMQ.Socket socket, int flag) {
-        return ZMsg.recvMsg(socket, flag);
     }
 
     @Override
@@ -213,8 +213,8 @@ public class Message implements Iterable<ZFrame>, Deque<ZFrame> {
     }
 
     @Override
-    public boolean containsAll(Collection<?> arg0) {
-        return zMsg.containsAll(arg0);
+    public boolean containsAll(Collection<?> values) {
+        return zMsg.containsAll(values);
     }
 
     @Override
@@ -222,8 +222,8 @@ public class Message implements Iterable<ZFrame>, Deque<ZFrame> {
         return zMsg.remove();
     }
 
-    public void push(String str) {
-        zMsg.push(str);
+    public void push(String string) {
+        zMsg.push(string);
     }
 
     public ZFrame unwrap() {
@@ -231,8 +231,8 @@ public class Message implements Iterable<ZFrame>, Deque<ZFrame> {
     }
 
     @Override
-    public boolean retainAll(Collection<?> arg0) {
-        return zMsg.retainAll(arg0);
+    public boolean retainAll(Collection<?> values) {
+        return zMsg.retainAll(values);
     }
 
     @Override
@@ -241,8 +241,8 @@ public class Message implements Iterable<ZFrame>, Deque<ZFrame> {
     }
 
     @Override
-    public boolean addAll(Collection<? extends ZFrame> arg0) {
-        return zMsg.addAll(arg0);
+    public boolean addAll(Collection<? extends ZFrame> values) {
+        return zMsg.addAll(values);
     }
 
     @Override
@@ -284,16 +284,22 @@ public class Message implements Iterable<ZFrame>, Deque<ZFrame> {
         return zMsg.poll();
     }
 
-    public static ZMsg newStringMsg(String... strings) {
-        return ZMsg.newStringMsg(strings);
+    public static Message newStringMsg(String... strings) {
+        return new Message(ZMsg.newStringMsg(strings));
     }
 
     public void push(byte[] data) {
         zMsg.push(data);
     }
 
-    public boolean send(ZMQ.Socket socket, boolean destroy) {
-        return zMsg.send(socket, destroy);
+    /**
+     * Send message to 0MQ socket, destroys contents after sending if destroy param is set to true.
+     * If the message has no frames, sends nothing but still destroy()s the ZMsg object
+     * @param socket 0MQ socket to send on.
+     * @return true if send is success, false otherwise
+     */
+    public boolean send(Socket socket, boolean destroy) {
+        return zMsg.send(socket.getDelegate(), destroy);
     }
 }
 
