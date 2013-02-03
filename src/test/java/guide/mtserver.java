@@ -1,55 +1,65 @@
 package guide;
 
-import org.jeromq.ZMQ;
-import org.jeromq.ZMQQueue;
+import org.zeromq.ZMQ;
+import org.zeromq.ZMQ.Context;
+import org.zeromq.ZMQ.Socket;
 
+/**
+ * Multi threaded Hello World server
+ */
 public class mtserver {
-   public static void main(String[] args) {
 
-      final ZMQ.Context context = ZMQ.context(1);
+    private static class Worker extends Thread
+    {
+        private Context context;
 
-      ZMQ.Socket clients = context.socket(ZMQ.ROUTER);
-      clients.bind ("tcp://*:5555");
+        private Worker (Context context)
+        {
+            this.context = context;
+        }
+        @Override
+        public void run() {
+            ZMQ.Socket socket = context.socket(ZMQ.REP);
+            socket.connect ("inproc://workers");
 
-      ZMQ.Socket workers = context.socket(ZMQ.DEALER);
-      workers.bind ("inproc://workers");
+            while (true) {
 
-      for(int thread_nbr = 0; thread_nbr < 5; thread_nbr++) {
-         Thread worker_routine = new Thread() {
+                //  Wait for next request from client (C string)
+                String request = socket.recvStr (0);
+                System.out.println ( Thread.currentThread().getName() + " Received request: [" + request + "]");
 
-            @Override
-            public void run() {
-               ZMQ.Socket socket = context.socket(ZMQ.REP);
-               socket.connect ("inproc://workers");
+                //  Do some 'work'
+                try {
+                    Thread.sleep (1000);
+                } catch (InterruptedException e) {
+                }
 
-               while (true) {
-
-                  //  Wait for next request from client (C string)
-                  byte[] request = socket.recv (0);
-                  System.out.println ( Thread.currentThread().getName() + " Received request: ["+new String(request)+"]");
-
-                  //  Do some 'work'
-                  try {
-                     Thread.sleep (1000);
-                  } catch(InterruptedException e) {
-                     e.printStackTrace();
-                  }
-
-                  //  Send reply back to client (C string)
-                  byte[] reply = "World ".getBytes();
-                  socket.send(reply, 0);
-               }
+                //  Send reply back to client (C string)
+                socket.send("world", 0);
             }
-         };
-         worker_routine.start();
-      }
-      //  Connect work threads to client threads via a queue
-      ZMQQueue zMQQueue = new ZMQQueue(context,clients, workers);
-      zMQQueue.run();
+        }
+    }
 
-      //  We never get here but clean up anyhow
-      clients.close();
-      workers.close();
-      context.term();
-   }
+    public static void main (String[] args) {
+
+        Context context = ZMQ.context(1);
+
+        Socket clients = context.socket(ZMQ.ROUTER);
+        clients.bind ("tcp://*:5555");
+
+        Socket workers = context.socket(ZMQ.DEALER);
+        workers.bind ("inproc://workers");
+
+        for(int thread_nbr = 0; thread_nbr < 5; thread_nbr++) {
+            Thread worker = new Worker (context);
+            worker.start();
+        }
+        //  Connect work threads to client threads via a queue
+        ZMQ.proxy (clients, workers, null);
+
+        //  We never get here but clean up anyhow
+        clients.close();
+        workers.close();
+        context.term();
+    }
 }

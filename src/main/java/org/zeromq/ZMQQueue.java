@@ -1,19 +1,16 @@
-package org.jeromq;
+package org.zeromq;
 
-import org.jeromq.ZMQ.Context;
-import org.jeromq.ZMQ.Socket;
+import org.zeromq.ZMQ.Context;
+import org.zeromq.ZMQ.Socket;
 
-/**
- * @deprecated use org.zeromq namespace
- */
 public class ZMQQueue implements Runnable {
 
-    private final ZMQ.Socket inSocket;
-    private final ZMQ.Socket outSocket;
+    private final Socket inSocket;
+    private final Socket outSocket;
 
     /**
      * Class constructor.
-     * 
+     *
      * @param context
      *            a 0MQ context previously created.
      * @param inSocket
@@ -27,7 +24,7 @@ public class ZMQQueue implements Runnable {
     }
 
     @Override
-    public void run() 
+    public void run()
     {
         zmq.ZMQ.zmq_proxy (inSocket.base(), outSocket.base(), null);
         if (!zmq.ZError.is (zmq.ZError.ETERM))
