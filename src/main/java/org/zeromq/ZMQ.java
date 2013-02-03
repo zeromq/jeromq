@@ -270,12 +270,21 @@ public class ZMQ {
 
         private final static void mayRaise ()
         {
-            if (ZError.is (0) || ZError.is (ZError.EAGAIN) ) ;
+            if (ZError.is (0) || ZError.is (ZError.EAGAIN)) ;
             else
                 throw new ZMQException (ZError.errno ());
 
         }
-        
+
+        private final static void mayRaiseNot (int code)
+        {
+            if (ZError.is (0) || ZError.is (code) || ZError.is (ZError.EAGAIN)) ;
+            else
+                throw new ZMQException (ZError.errno ());
+
+        }
+
+
         /**
          * This is an explicit "destructor". It can be called to ensure the corresponding 0MQ Socket
          * has been disposed of.
@@ -319,6 +328,7 @@ public class ZMQ {
         public final void setLinger (long value) 
         {
             base.setsockopt (zmq.ZMQ.ZMQ_LINGER, (int) value);
+            mayRaiseNot (ZError.ETERM);
         }
         
         /**
@@ -334,7 +344,7 @@ public class ZMQ {
          */
         public final void setReconnectIVL(long value) {
             base.setsockopt(zmq.ZMQ.ZMQ_RECONNECT_IVL, (int)value);
-            mayRaise();
+            mayRaiseNot (ZError.ETERM);
         }
         
 
@@ -352,7 +362,7 @@ public class ZMQ {
          */
         public final void setBacklog(long value) {
             base.setsockopt(zmq.ZMQ.ZMQ_BACKLOG, (int)value);
-            mayRaise();
+            mayRaiseNot (ZError.ETERM);
         }
         
 
@@ -369,7 +379,7 @@ public class ZMQ {
          */
         public final void setReconnectIVLMax (long value) {
             base.setsockopt(zmq.ZMQ.ZMQ_RECONNECT_IVL_MAX, (int)value);
-            mayRaise();
+            mayRaiseNot (ZError.ETERM);
         }
         
 
@@ -386,7 +396,7 @@ public class ZMQ {
          */
         public final void setMaxMsgSize(long value) {
             base.setsockopt(zmq.ZMQ.ZMQ_MAXMSGSIZE, value);
-            mayRaise();
+            mayRaiseNot (ZError.ETERM);
         }
         
 
@@ -403,7 +413,7 @@ public class ZMQ {
          */
         public final void setSndHWM(long value) {
             base.setsockopt(zmq.ZMQ.ZMQ_SNDHWM, (int)value);
-            mayRaise();
+            mayRaiseNot (ZError.ETERM);
         }
         
 
@@ -420,7 +430,7 @@ public class ZMQ {
          */
         public final void setRcvHWM(long value) {
             base.setsockopt(zmq.ZMQ.ZMQ_RCVHWM, (int)value);
-            mayRaise();
+            mayRaiseNot (ZError.ETERM);
         }
         
         
@@ -507,7 +517,7 @@ public class ZMQ {
          */
         public final void setAffinity(long value) {
             base.setsockopt(zmq.ZMQ.ZMQ_AFFINITY, value);
-            mayRaise();
+            mayRaiseNot (ZError.ETERM);
         }
         
         /**
@@ -538,12 +548,9 @@ public class ZMQ {
          */
         public final void setIdentity(byte[] identity) {
             base.setsockopt(zmq.ZMQ.ZMQ_IDENTITY, identity);
-            mayRaise();
+            mayRaiseNot (ZError.ETERM);
         }
         
-        public final void setIdentity(String identity) {
-            setIdentity(identity.getBytes());
-        }
         /**
          * @see #setRate(long)
          * 
@@ -562,7 +569,7 @@ public class ZMQ {
          */
         public final void setRate(long value) {
             base.setsockopt(zmq.ZMQ.ZMQ_RATE, (int)value);
-            mayRaise();
+            mayRaiseNot (ZError.ETERM);
         }
 
 
@@ -590,7 +597,7 @@ public class ZMQ {
          */
         public final void setRecoveryInterval (long value) {
             base.setsockopt(zmq.ZMQ.ZMQ_RECOVERY_IVL, (int)value);
-            mayRaise();
+            mayRaiseNot (ZError.ETERM);
         }
 
         /**
@@ -637,7 +644,7 @@ public class ZMQ {
          */
         public final void setMulticastHops (long value) {
             base.setsockopt(zmq.ZMQ.ZMQ_MULTICAST_HOPS, (int)value);
-            mayRaise();
+            mayRaiseNot (ZError.ETERM);
         }
 
         /**
@@ -660,7 +667,7 @@ public class ZMQ {
          */
         public final void setReceiveTimeOut(int value) {
             base.setsockopt(zmq.ZMQ.ZMQ_RCVTIMEO, value);
-            mayRaise();
+            mayRaiseNot (ZError.ETERM);
         }
         
 
@@ -684,7 +691,7 @@ public class ZMQ {
          */
         public final void setSendTimeOut(int value) {
             base.setsockopt(zmq.ZMQ.ZMQ_SNDTIMEO, value);
-            mayRaise();
+            mayRaiseNot (ZError.ETERM);
         }
         
 
@@ -707,7 +714,7 @@ public class ZMQ {
          */
         public final void setSendBufferSize(long value) {
             base.setsockopt(zmq.ZMQ.ZMQ_SNDBUF, (int)value);
-            mayRaise();
+            mayRaiseNot (ZError.ETERM);
         }
         
         /**
@@ -729,7 +736,7 @@ public class ZMQ {
          */
         public final void setReceiveBufferSize(long value) {
             base.setsockopt(zmq.ZMQ.ZMQ_RCVBUF, (int)value);
-            mayRaise();
+            mayRaiseNot (ZError.ETERM);
         }
         
         /**
@@ -788,11 +795,7 @@ public class ZMQ {
          */
         public final void subscribe(byte[] topic) {
             base.setsockopt(zmq.ZMQ.ZMQ_SUBSCRIBE, topic);
-            mayRaise();
-        }
-        
-        public final void subscribe(String topic) {
-            subscribe(topic.getBytes());
+            mayRaiseNot (ZError.ETERM);
         }
         
 
@@ -807,13 +810,8 @@ public class ZMQ {
          */        
         public final void unsubscribe(byte[] topic) {
             base.setsockopt(zmq.ZMQ.ZMQ_UNSUBSCRIBE, topic);
-            mayRaise();
+            mayRaiseNot (ZError.ETERM);
         }
-        
-        public final void unsubscribe(String topic) {
-            unsubscribe(topic.getBytes());
-        }
-
         
         /**
          * Set custom Encoder
@@ -831,17 +829,6 @@ public class ZMQ {
             base.setsockopt(zmq.ZMQ.ZMQ_DECODER, cls);
         }
 
-
-        /**
-         * @see #setRouterMandatory (boolean)
-         * 
-         * @return the Router Manadatory.
-         */
-        public final boolean getRouterMandatory () {
-            return false;
-        }
-        
-        
         /**
          * Sets the ROUTER socket behavior when an unroutable message is encountered.
          *
@@ -850,8 +837,29 @@ public class ZMQ {
          */
         public final void setRouterMandatory (boolean mandatory) {
             base.setsockopt (zmq.ZMQ.ZMQ_ROUTER_MANDATORY, mandatory ? 1 : 0);
+            mayRaiseNot (ZError.ETERM);
         }
-        
+
+        /**
+         * @see #setIPv4Only (boolean)
+         *
+         * @return the IPV4ONLY
+         */
+        public final boolean getIPv4Only () {
+            return base.getsockopt (zmq.ZMQ.ZMQ_IPV4ONLY) == 1;
+        }
+
+        /**
+         * The 'ZMQ_IPV4ONLY' option shall set the underlying native socket type.
+         * An IPv6 socket lets applications connect to and accept connections from both IPv4 and IPv6 hosts.
+         *
+         * @param v4only A value of true will use IPv4 sockets, while the value of false will use IPv6 sockets
+         */
+        public void setIPv4Only (boolean v4only) {
+            base.setsockopt (zmq.ZMQ.ZMQ_IPV4ONLY, v4only ? 1 : 0);
+            mayRaiseNot (ZError.ETERM);
+        }
+
         /**
          * Bind to network interface. Start listening for new connections.
          * 

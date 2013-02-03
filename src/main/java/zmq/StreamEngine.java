@@ -71,6 +71,7 @@ public class StreamEngine implements IEngine, IPollEvents, IMsgSink {
     private String endpoint;
 
     private boolean plugged;
+    private boolean terminating;
     
     // Socket
     private SocketBase socket;
@@ -90,6 +91,7 @@ public class StreamEngine implements IEngine, IPollEvents, IMsgSink {
         session = null;
         options = options_;
         plugged = false;
+        terminating = false;
         endpoint = endpoint_;
         socket = null;
         greeting = ByteBuffer.allocate (GREETING_SIZE);
@@ -261,6 +263,11 @@ public class StreamEngine implements IEngine, IPollEvents, IMsgSink {
     @Override
     public void terminate () 
     {
+        if (!terminating && encoder != null && encoder.has_data ())
+        {
+            terminating = true;
+            return;
+        }
         unplug ();
         destroy ();
     }
@@ -369,6 +376,10 @@ public class StreamEngine implements IEngine, IPollEvents, IMsgSink {
         //  this is necessary to prevent losing incomming messages.
         if (nbytes == -1) {
             io_object.reset_pollout (handle);
+
+            if (terminating)
+                terminate ();
+
             return;
         }
 
@@ -381,9 +392,13 @@ public class StreamEngine implements IEngine, IPollEvents, IMsgSink {
                 io_object.reset_pollout (handle);
         
         // when we use custom encoder, we might want to close after sending a response
-        if (outsize == 0 && encoder != null && encoder.is_error ()) {
-            error();
-            return;
+        if (outsize == 0) {
+            if (encoder != null && encoder.is_error ()) {
+                error();
+                return;
+            }
+            if (terminating)
+                terminate ();
         }
 
     }
