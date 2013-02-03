@@ -11,7 +11,7 @@ import java.util.Random;
  * Binds PUB socket to tcp://*:5556
  * Publishes random weather updates
  */
-public class WeatherUpdateServer {
+public class wuserver {
 
     public static void main(String[] args) throws Exception {
         //  Prepare our context and publisher

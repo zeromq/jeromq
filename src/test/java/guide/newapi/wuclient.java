@@ -9,7 +9,7 @@ import org.jeromq.api.ZeroMQContext;
  * Connects SUB socket to tcp://localhost:5556.
  * Collects weather updates and finds average temp in zip code.
  */
-public class WeatherUpdateClient {
+public class wuclient {
 
     public static void main(String[] args) {
         ZeroMQContext context = new ZeroMQContext();

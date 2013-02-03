@@ -9,7 +9,7 @@ import org.jeromq.api.ZeroMQContext;
  * Connects REQ socket to tcp://localhost:5559
  * Sends "Hello" to server, expects "World" back
  */
-public class RequestReplyClient {
+public class rrclient {
 
     public static void main(String[] args) {
         ZeroMQContext context = new ZeroMQContext();

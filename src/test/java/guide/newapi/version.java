@@ -5,7 +5,7 @@ import org.jeromq.api.ZeroMQContext;
 /**
  * Report 0MQ version
  */
-public class VersionExample {
+public class version {
 
     public static void main(String[] args) {
         ZeroMQContext context = new ZeroMQContext();

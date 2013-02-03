@@ -8,7 +8,7 @@ import org.jeromq.api.ZeroMQContext;
  * Connects REP socket to tcp://*:5560
  * Expects "Hello" from client, replies with "World"
  */
-public class RequestReplyWorker {
+public class rrworker {
     public static void main(String[] args) throws Exception {
         ZeroMQContext context = new ZeroMQContext();
 

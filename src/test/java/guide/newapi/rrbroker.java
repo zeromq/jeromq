@@ -5,7 +5,7 @@ import org.jeromq.api.*;
 /**
  * Simple request-reply broker
  */
-public class RequestReplyBroker {
+public class rrbroker {
 
     public static void main(String[] args) {
         //  Prepare our context and sockets

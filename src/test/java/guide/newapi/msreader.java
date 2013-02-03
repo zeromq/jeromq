@@ -9,7 +9,7 @@ import org.jeromq.api.ZeroMQContext;
  * Reading from multiple sockets in Java
  * This version uses a simple receive loop (not the recommended approach).
  */
-public class MultiSocketReader {
+public class msreader {
 
     public static void main(String[] args) throws Exception {
         //  Prepare our context and sockets

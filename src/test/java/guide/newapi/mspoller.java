@@ -6,7 +6,7 @@ import org.jeromq.api.*;
  * Reading from multiple sockets in Java
  * This version uses a Poller.
  */
-public class MultiSocketPoller {
+public class mspoller {
 
     public static void main(String[] args) {
         ZeroMQContext context = new ZeroMQContext();

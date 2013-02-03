@@ -11,7 +11,7 @@ import org.jeromq.api.ZeroMQContext;
  * Connects PUSH socket to tcp://localhost:5558
  * Sends results to sink via that socket
  */
-public class TaskWorker {
+public class taskwork {
 
     public static void main(String[] args) throws Exception {
         ZeroMQContext context = new ZeroMQContext();

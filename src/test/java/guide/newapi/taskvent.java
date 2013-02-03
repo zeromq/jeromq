@@ -11,7 +11,7 @@ import java.util.Random;
  * Binds PUSH socket to tcp://localhost:5557
  * Sends batch of tasks to workers via that socket
  */
-public class TaskVentilator {
+public class taskvent {
 
     public static void main(String[] args) throws Exception {
         ZeroMQContext context = new ZeroMQContext();

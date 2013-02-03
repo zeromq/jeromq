@@ -5,11 +5,11 @@ import org.jeromq.api.SocketType;
 import org.jeromq.api.ZeroMQContext;
 
 /**
- *  Hello World client in Java
- *  Connects REQ socket to tcp://localhost:5555
- *  Sends "Hello" to server, prints the reply ("World")
+ * Hello World client in Java
+ * Connects REQ socket to tcp://localhost:5555
+ * Sends "Hello" to server, prints the reply ("World")
  */
-public class HelloWorldClient {
+public class hwclient {
 
     public static void main(String[] args) {
         ZeroMQContext context = new ZeroMQContext();
