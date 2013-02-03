@@ -47,4 +47,11 @@ public class ZeroMQContext {
     public int getFullVersion() {
         return ZMQ.getFullVersion();
     }
+
+    /**
+     * Create a new Poller.
+     */
+    public Poller createPoller() {
+        return new Poller();
+    }
 }
