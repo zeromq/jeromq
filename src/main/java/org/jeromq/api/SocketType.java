@@ -67,4 +67,13 @@ public enum SocketType {
     public int getCValue() {
         return cValue;
     }
+
+    public static SocketType typeOf(int cValue) {
+        for (SocketType type : values()) {
+            if (cValue == type.getCValue()) {
+                return type;
+            }
+        }
+        throw new IllegalArgumentException("Unknown SocketType cValue: " + cValue);
+    }
 }

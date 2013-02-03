@@ -5,6 +5,7 @@ import zmq.DecoderBase;
 import zmq.EncoderBase;
 
 import java.nio.channels.SelectableChannel;
+import java.util.EnumSet;
 
 public class Socket {
     private final ZMQ.Socket socket;
@@ -17,16 +18,136 @@ public class Socket {
         this.socket = socket;
     }
 
+    public boolean connect(String address) {
+        return socket.connect(address);
+    }
+
+    public int bind(String address) {
+        return socket.bind(address);
+    }
+
+    public int bindToRandomPort(String address, int min, int max) {
+        return socket.bindToRandomPort(address, min, max);
+    }
+
+    public int bindToRandomPort(String addr) {
+        return socket.bindToRandomPort(addr);
+    }
+
+    public void close() {
+        socket.close();
+    }
+
+    public byte[] receive() {
+        return socket.recv();
+    }
+
+    public byte[] receive(SendReceiveOption option) {
+        return socket.recv(option.getCValue());
+    }
+
+    public int receive(byte[] buffer, int offset, int len, SendReceiveOption option) {
+        return socket.recv(buffer, offset, len, option.getCValue());
+    }
+
+    public String receiveString() {
+        return socket.recvStr();
+    }
+
+    public String receiveString(SendReceiveOption option) {
+        return socket.recvStr(option.getCValue());
+    }
+
+    public boolean hasMoreToReceive() {
+        return socket.hasReceiveMore();
+    }
+
+    public void subscribe(byte[] topic) {
+        socket.subscribe(topic);
+    }
+
+    public void subscribe(String topic) {
+        socket.subscribe(topic);
+    }
+
+    public void unsubscribe(byte[] topic) {
+        socket.unsubscribe(topic);
+    }
+
+    public void unsubscribe(String topic) {
+        socket.unsubscribe(topic);
+    }
+
+    public boolean send(byte[] data) {
+        return socket.send(data);
+    }
+
+    public boolean send(String data) {
+        return socket.send(data);
+    }
+
+    public boolean send(byte[] data, SendReceiveOption option) {
+        return socket.send(data, option.getCValue());
+    }
+
+    public boolean send(String data, SendReceiveOption option) {
+        return socket.send(data, option.getCValue());
+    }
+
+    public boolean sendMore(byte[] data) {
+        return socket.sendMore(data);
+    }
+
+    public boolean sendMore(String data) {
+        return socket.sendMore(data);
+    }
+
+    public boolean monitor(String addr, EnumSet<TransportEvent> events) {
+        return socket.monitor(addr, TransportEvent.getCValue(events));
+    }
+
+    public EnumSet<TransportEvent> getEvents() {
+        return TransportEvent.decode(socket.getEvents());
+    }
+
+    public void dumpToConsole() {
+        socket.dump();
+    }
+
+    public SocketType getType() {
+        return SocketType.typeOf(socket.getType());
+    }
+
     public void setRecoveryInterval(long value) {
         socket.setRecoveryInterval(value);
+    }
+
+    public long getRecoveryInterval() {
+        return socket.getRecoveryInterval();
+    }
+
+    public void setReconnectInterval(long value) {
+        socket.setReconnectIVL(value);
     }
 
     public long getReconnectInterval() {
         return socket.getReconnectIVL();
     }
 
-    public void setMaxMsgSize(long value) {
+    public void setMaxReconnectInterval(long value) {
+        socket.setReconnectIVLMax(value);
+    }
+
+    public void setMaxMessageSize(long value) {
         socket.setMaxMsgSize(value);
+    }
+
+    public long getMaxMessageSize() {
+        return socket.getMaxMsgSize();
+    }
+
+    public long getLinger() {
+        return socket.getLinger();
     }
 
     public void setLinger(long value) {
@@ -37,68 +158,40 @@ public class Socket {
         socket.setRate(value);
     }
 
-    public long getLinger() {
-        return socket.getLinger();
+    public long getRate() {
+        return socket.getRate();
     }
 
-    public boolean hasReceiveMore() {
-        return socket.hasReceiveMore();
-    }
-
-    public void setReconnectInterval(long value) {
-        socket.setReconnectIVL(value);
-    }
-
-    public void unsubscribe(String topic) {
-        socket.unsubscribe(topic);
-    }
-
-    public void setIdentity(String identity) {
-        socket.setIdentity(identity);
-    }
-
-    public byte[] receive() {
-        return socket.recv();
-    }
-
-    public byte[] receive(int flags) {
-        return socket.recv(flags);
-    }
-
-    public boolean connect(String address) {
-        return socket.connect(address);
-    }
-
-    public String receiveString() {
-        return socket.recvStr();
+    public void setReceiveHighWaterMark(long value) {
+        socket.setRcvHWM(value);
     }
 
     public long getReceiveHighWaterMark() {
         return socket.getRcvHWM();
     }
 
-    public void getSendHighWaterMark(long value) {
+    public void setSendHighWaterMark(long value) {
         socket.setSndHWM(value);
     }
 
-    public boolean send(String data) {
-        return socket.send(data);
+    public long getSendHighWaterMark() {
+        return socket.getSndHWM();
     }
 
-    public void setHighWaterMark(long highWaterMark) {
+    public void setHighWaterMarks(long highWaterMark) {
         socket.setHWM(highWaterMark);
     }
 
-    public void setReconnectIntervalMax(long value) {
-        socket.setReconnectIVLMax(value);
-    }
-
-    public void subscribe(String topic) {
-        socket.subscribe(topic);
+    public void setAffinity(long value) {
+        socket.setAffinity(value);
     }
 
     public long getAffinity() {
         return socket.getAffinity();
+    }
+
+    public void setReceiveTimeOut(int milliseconds) {
+        socket.setReceiveTimeOut(milliseconds);
     }
 
     public int getReceiveTimeOut() {
@@ -109,12 +202,8 @@ public class Socket {
         socket.setSendTimeOut(value);
     }
 
-    public boolean sendMore(String data) {
-        return socket.sendMore(data);
-    }
-
-    public boolean send(String data, int flags) {
-        return socket.send(data, flags);
+    public int getSendTimeOut() {
+        return socket.getSendTimeOut();
     }
 
     public long getReconnectIntervalMax() {
@@ -125,74 +214,59 @@ public class Socket {
         socket.setSendBufferSize(value);
     }
 
-    public boolean send(byte[] data, int flags) {
-        return socket.send(data, flags);
-    }
-
-    public int bindToRandomPort(String addr, int min, int max) {
-        return socket.bindToRandomPort(addr, min, max);
-    }
-
-    public void setIdentity(byte[] identity) {
-        socket.setIdentity(identity);
-    }
-
-    public long getRecoveryInterval() {
-        return socket.getRecoveryInterval();
-    }
-
-    public int getType() {
-        return socket.getType();
-    }
-
-    public long getRate() {
-        return socket.getRate();
-    }
-
-    public void subscribe(byte[] topic) {
-        socket.subscribe(topic);
-    }
-
-    public long getMaxMsgSize() {
-        return socket.getMaxMsgSize();
-    }
-
-    public void close() {
-        socket.close();
-    }
-
-    public int getEvents() {
-        return socket.getEvents();
-    }
-
-    public boolean getRouterMandatory() {
-        return socket.getRouterMandatory();
-    }
-
-    public void setDecoder(Class<? extends DecoderBase> cls) {
-        socket.setDecoder(cls);
-    }
-
-    public void setEncoder(Class<? extends EncoderBase> cls) {
-        socket.setEncoder(cls);
-    }
-
     public long getSendBufferSize() {
         return socket.getSendBufferSize();
     }
 
-    public void setReceiveTimeOut(int value) {
-        socket.setReceiveTimeOut(value);
+    public void setReceiveBufferSize(long value) {
+        socket.setReceiveBufferSize(value);
     }
 
-    public long getBacklog() {
-        return socket.getBacklog();
+    public long getReceiveBufferSize() {
+        return socket.getReceiveBufferSize();
     }
 
-    public void setAffinity(long value) {
-        socket.setAffinity(value);
+    /**
+     * Sets the identity of the specified 'socket'. Socket
+     * identity determines if existing 0MQ infrastructure (_message queues_, _forwarding
+     * devices_) shall be identified with a specific application and persist across multiple
+     * runs of the application.
+     *
+     * If the socket has no identity, each run of an application is completely separate from
+     * other runs. However, with identity set the socket shall re-use any existing 0MQ
+     * infrastructure configured by the previous run(s). Thus the application may receive
+     * messages that were sent in the meantime, _message queue_ limits shall be shared with
+     * previous run(s) and so on.
+     *
+     * Identity should be at least one byte and at most 255 bytes long. Identities starting with
+     * binary zero are reserved for use by 0MQ infrastructure.
+     */
+    public void setIdentity(String identity) {
+        socket.setIdentity(identity);
     }
 
+    /**
+     * Sets the identity of the specified 'socket'. Socket
+     * identity determines if existing 0MQ infrastructure (_message queues_, _forwarding
+     * devices_) shall be identified with a specific application and persist across multiple
+     * runs of the application.
+     *
+     * If the socket has no identity, each run of an application is completely separate from
+     * other runs. However, with identity set the socket shall re-use any existing 0MQ
+     * infrastructure configured by the previous run(s). Thus the application may receive
+     * messages that were sent in the meantime, _message queue_ limits shall be shared with
+     * previous run(s) and so on.
+     *
+     * Identity should be at least one byte and at most 255 bytes long. Identities starting with
+     * binary zero are reserved for use by 0MQ infrastructure.
+     */
+    public void setIdentity(byte[] identity) {
+        socket.setIdentity(identity);
+    }
+
+    /**
+     * @see #setIdentity(byte[])
+     */
     public byte[] getIdentity() {
         return socket.getIdentity();
     }
@@ -201,72 +275,32 @@ public class Socket {
         socket.setRouterMandatory(mandatory);
     }
 
-    public boolean sendMore(byte[] data) {
-        return socket.sendMore(data);
-    }
-
-    public String receivString(int flags) {
-        return socket.recvStr(flags);
-    }
-
-    public long getSendHighWaterMark() {
-        return socket.getSndHWM();
-    }
-
-    public void setMulticastHops(long value) {
-        socket.setMulticastHops(value);
-    }
-
-    public void unsubscribe(byte[] topic) {
-        socket.unsubscribe(topic);
-    }
-
-    public long getReceiveBufferSize() {
-        return socket.getReceiveBufferSize();
+    public boolean isRouterMandatory() {
+        return socket.getRouterMandatory();
     }
 
     public void setBacklog(long value) {
         socket.setBacklog(value);
     }
 
-    public void setRceiveHighWaterMark(long value) {
-        socket.setRcvHWM(value);
+    public long getBacklog() {
+        return socket.getBacklog();
     }
 
-    public int bindToRandomPort(String addr) {
-        return socket.bindToRandomPort(addr);
-    }
-
-    public int receive(byte[] buffer, int offset, int len, int flags) {
-        return socket.recv(buffer, offset, len, flags);
-    }
-
-    public int bind(String address) {
-        return socket.bind(address);
-    }
-
-    public void dump() {
-        socket.dump();
-    }
-
-    public boolean send(byte[] data) {
-        return socket.send(data);
-    }
-
-    public boolean monitor(String addr, int events) {
-        return socket.monitor(addr, events);
-    }
-
-    public int getSendTimeOut() {
-        return socket.getSendTimeOut();
-    }
-
-    public void setReceiveBufferSize(long value) {
-        socket.setReceiveBufferSize(value);
+    public void setMulticastHops(long value) {
+        socket.setMulticastHops(value);
     }
 
     public long getMulticastHops() {
         return socket.getMulticastHops();
+    }
+
+    public void setDecoder(Class<? extends DecoderBase> cls) {
+        socket.setDecoder(cls);
+    }
+
+    public void setEncoder(Class<? extends EncoderBase> cls) {
+        socket.setEncoder(cls);
     }
 
     public SelectableChannel getFileDescriptor() {
