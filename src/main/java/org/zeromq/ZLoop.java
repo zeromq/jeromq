@@ -17,7 +17,9 @@
     You should have received a copy of the GNU Lesser General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package org.jeromq;
+package org.zeromq;
+
+import org.zeromq.ZMQ.PollItem;
 
 import java.io.IOException;
 import java.nio.channels.Selector;
@@ -25,15 +27,11 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import org.jeromq.ZMQ.PollItem;
-
 /**
     The ZLoop class provides an event-driven reactor pattern. The reactor
     handles zmq.PollItem items (pollers or writers, sockets or fds), and
     once-off or repeated timers. Its resolution is 1 msec. It uses a tickless
     timer to reduce CPU interrupts in inactive processes.
-
- * @deprecated use org.zeromq namespace
  */
 
 public class ZLoop {
@@ -97,7 +95,7 @@ public class ZLoop {
         if (initialized.get() == null) {
             synchronized(initialized) {
                 if (instance == null)
-                    instance = new ZLoop(); 
+                    instance = new ZLoop ();
                 initialized.set(Boolean.TRUE);
             }
         }

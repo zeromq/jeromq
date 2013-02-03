@@ -1,32 +1,31 @@
 package guide;
 
-import org.jeromq.ZMQ;
+//
+//  Hello World client in Java
+//  Connects REQ socket to tcp://localhost:5555
+//  Sends "Hello" to server, expects "World" back
+//
+
+import org.zeromq.ZMQ;
 
 public class hwclient{
-    public static void main(String[] args){
-        //  Prepare our context and socket
+
+    public static void main (String[] args){
         ZMQ.Context context = ZMQ.context(1);
+
+        //  Socket to talk to server
+        System.out.println("Connecting to hello world server");
+
         ZMQ.Socket socket = context.socket(ZMQ.REQ);
         socket.connect ("tcp://localhost:5555");
 
-        System.out.println("Connecting to hello world server");
+        for(int requestNbr = 0; requestNbr != 10; requestNbr++) {
+            String request = "Hello" ;
+            System.out.println("Sending Hello " + requestNbr );
+            socket.send(request.getBytes (), 0);
 
-        //  Do 10 requests, waiting each time for a response
-        for(int request_nbr = 0; request_nbr != 10; request_nbr++) {
-            //  Create a "Hello" message.
-            //  Ensure that the last byte of our "Hello" message is 0 because
-            //  our "Hello World" server is expecting a 0-terminated string:
-            String requestString = "Hello" ;
-            byte[] request = requestString.getBytes();
-            // Send the message
-            System.out.println("Sending request " + request_nbr );
-            socket.send(request, 0);
-
-            //  Get the reply.
             byte[] reply = socket.recv(0);
-            //  When displaying reply as a String, omit the last byte because
-            //  our "Hello World" server has sent us a 0-terminated string:
-            System.out.println("Received reply " + request_nbr + ": [" + new String(reply) + "]");
+            System.out.println("Received " + new String (reply) + " " + requestNbr);
         }
         
         socket.close();

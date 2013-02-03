@@ -1,16 +1,14 @@
 package guide;
 
-import org.jeromq.ZMQ;
+import org.zeromq.ZMQ;
 
 //
 //  Reading from multiple sockets in Java
 //  This version uses ZMQ.Poller
 //
-//  Nicola Peduzzi <thenikso@gmail.com>
-//
 public class mspoller {
 
-    public static void main(String[] args) {
+    public static void main (String[] args) {
         ZMQ.Context context = ZMQ.context(1);
 
         // Connect to task ventilator
@@ -28,7 +26,7 @@ public class mspoller {
         items.register(subscriber, ZMQ.Poller.POLLIN);
 
         //  Process messages from both sockets
-        while (true) {
+        while (!Thread.currentThread ().isInterrupted ()) {
             byte[] message;
             items.poll();
             if (items.pollin(0)) {
@@ -40,5 +38,7 @@ public class mspoller {
                 System.out.println("Process weather update");
             }
         }
+        receiver.close ();
+        context.term ();
     }
 }

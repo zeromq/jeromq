@@ -1,19 +1,14 @@
 package guide;
 
-import org.jeromq.ZMQ;
+import org.zeromq.ZMQ;
 
 /**
-* Task sink in Java.
-* Binds PULL socket to tcp://localhost:5558
-* Collects results from workers via that socket and
-* publishes a kill signal to tcp://localhost:5559 when the results have been processed.
-*
-* @author Olof kesson <oloake@gmail.com>
-*
-*/
+ * Task sink - design 2
+ * Adds pub-sub flow to send kill signal to workers
+ */
 public class tasksink2 {
 
-    public static void main(String[] args) throws Exception {
+    public static void main (String[] args) throws Exception {
 
         //  Prepare our context and socket
         ZMQ.Context context = ZMQ.context(1);
@@ -46,10 +41,10 @@ public class tasksink2 {
 
         System.out.println("Total elapsed time: " + (tend - tstart) + " msec");
         
-        //Send the kill signal to the workers
-        controller.send("KILL".getBytes(), 0);
+        //  Send the kill signal to the workers
+        controller.send("KILL", 0);
         
-        ////Give it some time to deliver //
+        //  Give it some time to deliver
         Thread.sleep(1);
         
         receiver.close();

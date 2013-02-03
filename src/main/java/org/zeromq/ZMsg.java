@@ -17,20 +17,12 @@
     You should have received a copy of the GNU Lesser General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package org.jeromq;
+package org.zeromq;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.ArrayDeque;
-import java.util.Collection;
-import java.util.Deque;
-import java.util.Iterator;
-import java.util.NoSuchElementException;
+import org.zeromq.ZMQ.Socket;
 
-import org.jeromq.ZMQ.Socket;
+import java.io.*;
+import java.util.*;
 
 /**
  * The ZMsg class provides methods to send and receive multipart messages
@@ -58,7 +50,6 @@ import org.jeromq.ZMQ.Socket;
  *
  * Based on <a href="http://github.com/zeromq/czmq/blob/master/src/zmsg.c">zmsg.c</a> in czmq
  *
- * @deprecated use org.zeromq namespace
  */
 
 public class ZMsg implements Iterable<ZFrame>, Deque<ZFrame> {
@@ -66,14 +57,14 @@ public class ZMsg implements Iterable<ZFrame>, Deque<ZFrame> {
      * Hold internal list of ZFrame objects
      */
     private ArrayDeque<ZFrame> frames;
-    
+
     /**
      * Class Constructor
      */
     public ZMsg() {
         frames = new ArrayDeque<ZFrame>();
     }
-    
+
     /**
      * Destructor.
      * Explicitly destroys all ZFrames contains in the ZMsg
@@ -87,11 +78,10 @@ public class ZMsg implements Iterable<ZFrame>, Deque<ZFrame> {
         frames.clear();
         frames = null;
     }
-    
-    
+
+
     /**
-     * Return total number of bytes contained in all ZFrames in this ZMsg
-     * @return
+     * @return total number of bytes contained in all ZFrames in this ZMsg
      */
     public long contentSize() {
         long size = 0;
@@ -109,9 +99,9 @@ public class ZMsg implements Iterable<ZFrame>, Deque<ZFrame> {
     public void addString(String str) {
         if (frames == null)
             frames = new ArrayDeque<ZFrame>();
-        frames.add(new ZFrame(str));
+        frames.add(new ZFrame (str));
     }
-    
+
     /**
      * Creates copy of this ZMsg.
      * Also duplicates all frame content.
@@ -120,14 +110,14 @@ public class ZMsg implements Iterable<ZFrame>, Deque<ZFrame> {
      */
     public ZMsg duplicate() {
         if (frames != null) {
-            ZMsg msg = new ZMsg();
+            ZMsg msg = new ZMsg ();
             for (ZFrame f : frames)
                 msg.add(f.duplicate());
             return msg;
         } else
             return null;
     }
-    
+
     /**
      * Push frame plus empty frame to front of message, before 1st frame.
      * Message takes ownership of frame, will destroy it when message is sent.
@@ -135,11 +125,11 @@ public class ZMsg implements Iterable<ZFrame>, Deque<ZFrame> {
      */
     public void wrap(ZFrame frame) {
         if (frame != null) {
-            push(new ZFrame(""));
+            push(new ZFrame (""));
             push(frame);
         }
     }
-    
+
     /**
      * Pop frame off front of message, caller now owns frame.
      * If next frame is empty, pops and destroys that empty frame
@@ -164,9 +154,9 @@ public class ZMsg implements Iterable<ZFrame>, Deque<ZFrame> {
      *
      * @param socket
      *              0MQ socket to send ZMsg on.
-     * @return 
+     * @return true if send is success, false otherwise
      */
-    public boolean send (Socket socket) 
+    public boolean send (Socket socket)
     {
         return send (socket, true);
     }
@@ -176,13 +166,13 @@ public class ZMsg implements Iterable<ZFrame>, Deque<ZFrame> {
      * If the message has no frames, sends nothing but still destroy()s the ZMsg object
      * @param socket
      *              0MQ socket to send ZMsg on.
-     * @return 
+     * @return true if send is success, false otherwise
      */
-    public boolean send (Socket socket, boolean destroy) 
+    public boolean send (Socket socket, boolean destroy)
     {
         if (socket == null)
             throw new IllegalArgumentException("socket is null");
-        
+
         if (frames == null)
             throw new IllegalArgumentException("destroyed message");
 
@@ -200,15 +190,15 @@ public class ZMsg implements Iterable<ZFrame>, Deque<ZFrame> {
         }
         return ret;
     }
-    
-    
-    
+
+
+
     /**
      * Receives message from socket, returns ZMsg object or null if the
      * recv was interrupted. Does a blocking recv, if you want not to block then use
      * the ZLoop class or ZMQ.Poller to check for socket input before receiving or recvMsg with flag ZMQ.DONTWAIT.
      * @param   socket
-     * @return
+     * @return true if send is success, false otherwise
      */
     public static ZMsg recvMsg(Socket socket) {
         return recvMsg(socket, 0);
@@ -220,16 +210,16 @@ public class ZMsg implements Iterable<ZFrame>, Deque<ZFrame> {
      * the ZLoop class or ZMQ.Poller to check for socket input before receiving.
      * @param   socket
      * @param   flag see ZMQ constants
-     * @return
+     * @return true if receive is success, false otherwise
      */
     public static ZMsg recvMsg(Socket socket, int flag) {
         if (socket == null)
             throw new IllegalArgumentException("socket is null");
 
-        ZMsg msg = new ZMsg();
-        
+        ZMsg msg = new ZMsg ();
+
         while (true) {
-            ZFrame f = ZFrame.recvFrame(socket, flag);
+            ZFrame f = ZFrame.recvFrame (socket, flag);
             if (f == null) {
                 // If receive failed or was interrupted
                 msg.destroy();
@@ -245,13 +235,13 @@ public class ZMsg implements Iterable<ZFrame>, Deque<ZFrame> {
 
     /**
      * Save message to an open data output stream.
-     * 
+     *
      * Data saved as:
      *      4 bytes: number of frames
      *  For every frame:
      *      4 bytes: byte size of frame data
      *      + n bytes: frame byte data
-     * 
+     *
      * @param msg
      *          ZMsg to save
      * @param file
@@ -279,10 +269,10 @@ public class ZMsg implements Iterable<ZFrame>, Deque<ZFrame> {
             return false;
         }
     }
-    
+
     /**
      * Load / append a ZMsg from an open DataInputStream
-     * 
+     *
      * @param file
      *          DataInputStream connected to file
      * @return
@@ -291,8 +281,8 @@ public class ZMsg implements Iterable<ZFrame>, Deque<ZFrame> {
     public static ZMsg load(DataInputStream file) {
         if (file == null)
             return null;
-        ZMsg rcvMsg = new ZMsg();
-        
+        ZMsg rcvMsg = new ZMsg ();
+
         try {
             int msgSize = file.readInt();
             if (msgSize > 0) {
@@ -301,7 +291,7 @@ public class ZMsg implements Iterable<ZFrame>, Deque<ZFrame> {
                     int frameSize = file.readInt();
                     byte[] data = new byte[frameSize];
                     file.read(data);
-                    rcvMsg.add(new ZFrame(data));
+                    rcvMsg.add(new ZFrame (data));
                 }
             }
             return rcvMsg;
@@ -319,7 +309,7 @@ public class ZMsg implements Iterable<ZFrame>, Deque<ZFrame> {
      *      ZMsg object
      */
     public static ZMsg newStringMsg(String... strings) {
-        ZMsg msg = new ZMsg();
+        ZMsg msg = new ZMsg ();
         for (String data : strings) {
             msg.addString(data);
         }
@@ -360,7 +350,7 @@ public class ZMsg implements Iterable<ZFrame>, Deque<ZFrame> {
 
         /**
          * Dump the message in human readable format. This should only be used
-         * for debugging and tracing, inefficient in handling large messages. 
+         * for debugging and tracing, inefficient in handling large messages.
          **/
         public void dump(Appendable out) {
             try {
@@ -368,57 +358,57 @@ public class ZMsg implements Iterable<ZFrame>, Deque<ZFrame> {
                 PrintWriter pw = new PrintWriter(sw);
                 pw.printf("--------------------------------------\n");
                 for (ZFrame frame : frames) {
-                    pw.printf("[%03d] %s\n", frame.getData().length, 
+                    pw.printf("[%03d] %s\n", frame.getData().length,
                             frame.toString());
                 }
                 out.append(sw.getBuffer());
                 sw.close();
             } catch (IOException e) {
-                throw new RuntimeException( "Message dump exception " 
+                throw new RuntimeException( "Message dump exception "
                         + super.toString(), e);
-            } 
+            }
         }
-        
+
         public void dump() {
             dump(System.out);
         }
 
     // ********* Convenience Deque methods for common data types *** //
-        
+
         public void addFirst (String stringValue) {
-            addFirst(new ZFrame(stringValue));
+            addFirst(new ZFrame (stringValue));
         }
 
         public void addFirst (byte[] data) {
-            addFirst(new ZFrame(data));
+            addFirst(new ZFrame (data));
         }
-        
+
         public void addLast (String stringValue) {
-            addLast(new ZFrame(stringValue));
+            addLast(new ZFrame (stringValue));
         }
 
         public void addLast (byte[] data) {
-            addLast(new ZFrame(data));
+            addLast(new ZFrame (data));
         }
-          
+
     // ********* Convenience Queue methods for common data types *** //
 
     public void push(String str) {
-        push(new ZFrame(str));
+        push(new ZFrame (str));
     }
 
     public void push(byte[] data) {
-        push(new ZFrame(data));
+        push(new ZFrame (data));
     }
 
     public boolean add (String stringValue) {
-        return add(new ZFrame(stringValue));
+        return add(new ZFrame (stringValue));
     }
 
     public boolean add (byte[] data) {
-        return add(new ZFrame(data));
+        return add(new ZFrame (data));
     }
-        
+
     // ********* Implement Iterable Interface *************** //
     @Override
     public Iterator<ZFrame> iterator() {
@@ -435,7 +425,7 @@ public class ZMsg implements Iterable<ZFrame>, Deque<ZFrame> {
     @Override
     public void clear() {
         frames.clear();
-        
+
     }
 
     @Override
@@ -487,7 +477,7 @@ public class ZMsg implements Iterable<ZFrame>, Deque<ZFrame> {
         if (frames == null)
             frames = new ArrayDeque<ZFrame>();
         frames.addLast(e);
-        
+
     }
 
     @Override
@@ -513,7 +503,7 @@ public class ZMsg implements Iterable<ZFrame>, Deque<ZFrame> {
             return null;
         }
     }
-    
+
     public ZFrame first() {
         return getFirst();
     }
@@ -526,7 +516,7 @@ public class ZMsg implements Iterable<ZFrame>, Deque<ZFrame> {
             return null;
         }
     }
-    
+
     public ZFrame last() {
         return getLast();
     }

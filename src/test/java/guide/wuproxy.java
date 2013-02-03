@@ -1,13 +1,11 @@
 package guide;
 
-import org.jeromq.ZMQ;
-import org.jeromq.ZMQ.Context;
-import org.jeromq.ZMQ.Socket;
+import org.zeromq.ZMQ;
+import org.zeromq.ZMQ.Context;
+import org.zeromq.ZMQ.Socket;
 
 /**
 * Weather proxy device.
-*
-* Christophe Huntzinger <chuntz@laposte.net>
 */
 public class wuproxy{
 
@@ -26,23 +24,9 @@ public class wuproxy{
         //  Subscribe on everything
         frontend.subscribe("".getBytes());
 
-        boolean more = false;
-        byte[] message;
+        //  Run the proxy until the user interrupts us
+        ZMQ.proxy (frontend, backend, null);
 
-        //  Shunt messages out to our own subscribers
-        while (!Thread.currentThread().isInterrupted()) {
-            while (true) {
-                // receive message
-                message = frontend.recv(0);
-                more = frontend.hasReceiveMore();
-
-                // proxy it
-                backend.send(message, more ? ZMQ.SNDMORE : 0);
-                if(!more){
-                    break;
-                }
-            }
-        }
         frontend.close();
         backend.close();
         context.term();

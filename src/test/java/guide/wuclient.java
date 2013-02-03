@@ -1,18 +1,16 @@
 package guide;
 
 import java.util.StringTokenizer;
-import org.jeromq.ZMQ;
+import org.zeromq.ZMQ;
 
 //
 //  Weather update client in Java
 //  Connects SUB socket to tcp://localhost:5556
 //  Collects weather updates and finds avg temp in zipcode
 //
-//  Nicola Peduzzi <thenikso@gmail.com>
-//
 public class wuclient {
 
-    public static void main(String[] args) {
+    public static void main (String[] args) {
         ZMQ.Context context = ZMQ.context(1);
 
         //  Socket to talk to server
@@ -29,18 +27,12 @@ public class wuclient {
         long total_temp = 0;
         for (update_nbr = 0; update_nbr < 100; update_nbr++) {
             //  Use trim to remove the tailing '0' character
-            String string = new String(subscriber.recv(0)).trim();
-            int zipcode, temperature, relhumidity;
+            String string = subscriber.recvStr(0).trim();
 
             StringTokenizer sscanf = new StringTokenizer(string, " ");
-            String t = sscanf.nextToken();
-            zipcode = Integer.valueOf(t);
-
-            t = sscanf.nextToken();
-            temperature = Integer.valueOf(t);
-
-            t = sscanf.nextToken();
-            relhumidity = Integer.valueOf(t);
+            int zipcode = Integer.valueOf(sscanf.nextToken());
+            int temperature = Integer.valueOf(sscanf.nextToken());
+            int relhumidity = Integer.valueOf(sscanf.nextToken());
 
             total_temp += temperature;
 
