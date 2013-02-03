@@ -1,17 +1,16 @@
 package guide;
 
-import org.jeromq.ZMQ;
-import org.jeromq.ZMQ.Context;
-import org.jeromq.ZMQ.Socket;
+import org.zeromq.ZMQ;
+import org.zeromq.ZMQ.Context;
+import org.zeromq.ZMQ.Socket;
 
 /**
 * Hello World client
 * Connects REQ socket to tcp://localhost:5559
 * Sends "Hello" to server, expects "World" back
-*
-* Christophe Huntzinger <chuntzin_at_wanadoo.fr>
 */
 public class rrclient{
+
     public static void main (String[] args) {
         Context context = ZMQ.context(1);
 
@@ -22,10 +21,9 @@ public class rrclient{
         System.out.println("launch and connect client.");
 
         for (int request_nbr = 0; request_nbr < 10; request_nbr++) {
-            requester.send("Hello".getBytes(), 0);
-            byte[] reply = requester.recv(0);
-            String replyValue = new String(reply);
-            System.out.println("Received reply "+request_nbr+" ["+replyValue+"]");
+            requester.send("Hello", 0);
+            String reply = requester.recvStr (0);
+            System.out.println("Received reply " + request_nbr + " [" + reply + "]");
         }
         
         //  We never get here but clean up anyhow

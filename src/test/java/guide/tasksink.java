@@ -1,17 +1,15 @@
 package guide;
 
-import org.jeromq.ZMQ;
+import org.zeromq.ZMQ;
 
 //
 //  Task sink in Java
 //  Binds PULL socket to tcp://localhost:5558
 //  Collects results from workers via that socket
 //
-//  Nicola Peduzzi <thenikso@gmail.com>
-//
 public class tasksink {
 
-    public static void main(String[] args) throws Exception {
+    public static void main (String[] args) throws Exception {
 
         //  Prepare our context and socket
         ZMQ.Context context = ZMQ.context(1);
@@ -34,12 +32,11 @@ public class tasksink {
             } else {
                 System.out.print(".");
             }
-            System.out.flush();
         }
         //  Calculate and report duration of batch
         long tend = System.currentTimeMillis();
 
-        System.out.println("Total elapsed time: " + (tend - tstart) + " msec");
+        System.out.println("\nTotal elapsed time: " + (tend - tstart) + " msec");
         receiver.close();
         context.term();
     }

@@ -1,5 +1,4 @@
 /*
-    Copyright (c) 1991-2011 iMatix Corporation <www.imatix.com>
     Copyright other contributors as noted in the AUTHORS file.
                 
     This file is part of 0MQ.
@@ -17,25 +16,22 @@
     You should have received a copy of the GNU Lesser General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package org.jeromq;
+package org.zeromq;
+
+import org.zeromq.ZMQ.Context;
+import org.zeromq.ZMQ.Socket;
 
 import java.util.List;
 import java.util.ListIterator;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import org.jeromq.ZMQ.Context;
-import org.jeromq.ZMQ.Socket;
-
 /**
  * ZContext provides a high-level ZeroMQ context management class
  * 
- *  @author rsmith (at) rsbatechnology (dot) co (dot) uk
- *  
- * It manages open sockets in the context and automatically closes these before terminating the context. 
+ * It manages open sockets in the context and automatically closes these before terminating the context.
  * It provides a simple way to set the linger timeout on sockets, and configure contexts for number of I/O threads. 
- * Sets-up signal (interrrupt) handling for the process.
- *
- * @deprecated use org.zeromq namespace
+ * Sets-up signal (interrupt) handling for the process.
+ * 
  */
 
 public class ZContext {
@@ -111,7 +107,7 @@ public class ZContext {
      */
     public Socket createSocket(int type) {
         if (context == null)
-            context = ZMQ.context(ioThreads);
+            context = ZMQ.context (ioThreads);
 
         // Create and register socket
         Socket socket = context.socket(type);
@@ -144,7 +140,7 @@ public class ZContext {
      * @return  New ZContext
      */
     public static ZContext shadow(ZContext ctx) {
-        ZContext shadow = new ZContext();
+        ZContext shadow = new ZContext ();
         shadow.setContext(ctx.getContext());
         shadow.setMain (false);
 

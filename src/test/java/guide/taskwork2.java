@@ -1,14 +1,14 @@
 package guide;
 
-import org.jeromq.ZMQ;
+import org.zeromq.ZMQ;
 
 /**
-*
-* @author Marcus McCurdy <marcus.mccurdy@gmail.com>
-*/
+ *  Task worker - design 2
+ *  Adds pub-sub flow to receive and respond to kill signal
+ */
 public class taskwork2 {
 
-    public static void main(String[] args) throws InterruptedException {
+    public static void main (String[] args) throws InterruptedException {
         ZMQ.Context context = ZMQ.context(1);
 
         ZMQ.Socket receiver = context.socket(ZMQ.PULL);
@@ -30,24 +30,21 @@ public class taskwork2 {
             items.poll();
             
             if (items.pollin(0)) {
-                byte[] message = receiver.recv(0);
-                
-                String string = new String(message).trim();
-                long nsec = Long.parseLong(string);
+
+                String message = receiver.recvStr (0);
+                long nsec = Long.parseLong(message);
                 
                 //  Simple progress indicator for the viewer
+                System.out.print(message + '.');
                 System.out.flush();
-                System.out.print(string + '.');
 
                 //  Do the work
                 Thread.sleep(nsec);
 
                 //  Send results to sink
-                sender.send("".getBytes(), 0);
-
-                // Simple progres indicator for the viewer
-                System.out.println(".");
+                sender.send("", 0);
             }
+            //  Any waiting controller command acts as 'KILL'
             if (items.pollin(1)) {
                 break; // Exit loop
             }
@@ -59,6 +56,5 @@ public class taskwork2 {
         sender.close();
         controller.close();
         context.term();
-        System.exit(0);
     }
 }

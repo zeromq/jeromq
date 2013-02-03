@@ -18,11 +18,8 @@
     You should have received a copy of the GNU Lesser General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package org.jeromq;
+package org.zeromq;
 
-/**
- * @deprecated use org.zeromq namespace
- */
 public class ZMQException extends RuntimeException {
 
     public static class IOException extends RuntimeException {
@@ -34,28 +31,22 @@ public class ZMQException extends RuntimeException {
         }
     }
 
-    public static class CtxTerminated extends ZMQException {
-
-        private static final long serialVersionUID = 7604861505419474892L;
-
-        public CtxTerminated() {
-            super(zmq.ZError.ETERM);
-        }
-
-    }
-
     private static final long serialVersionUID = 5957233088499712341L;
 
-    private final long code;
+    private final int code;
     
     public ZMQException(int errno) {
         super("Errno " + errno);
         code = errno;
     }
 
-    public long getErrorCode() {
+    public int getErrorCode() {
         return code;
     }
-    
+
+    @Override
+    public String toString() {
+        return super.toString() + "(0x" + Integer.toHexString(code) + ")";
+    }
 
 }

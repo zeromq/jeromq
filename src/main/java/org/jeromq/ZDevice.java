@@ -30,6 +30,7 @@ import zmq.SocketBase;
 import zmq.ZError;
 import zmq.ZMQ;
 
+@Deprecated
 public class ZDevice {
 
     // router-router device

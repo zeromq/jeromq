@@ -17,19 +17,17 @@
     You should have received a copy of the GNU Lesser General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package org.jeromq;
+package org.zeromq;
+
+import org.zeromq.ZMQ.Socket;
 
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Arrays;
 
-import org.jeromq.ZMQ.Socket;
-
 /**
  * ZFrame
- * 
- * @author rsmith (at) rsbatechnology (dot) co (dot) uk
  * 
  * The ZFrame class provides methods to send and receive single message
  * frames across 0MQ sockets. A 'frame' corresponds to one underlying zmq_msg_t in the libzmq code.
@@ -37,9 +35,6 @@ import org.jeromq.ZMQ.Socket;
  * unfinished multipart message.  The send() method normally destroys the frame, but with the ZFRAME_REUSE flag, you can send
  * the same frame many times. Frames are binary, and this class has no special support for text data.
  * 
- * Based on <a href="http://github.com/zeromq/czmq/blob/master/src/zframe.c">zframe.c</a> in czmq
- *
- * @deprecated use org.zeromq namespace
  */
 
 public class ZFrame {
@@ -224,7 +219,7 @@ public class ZFrame {
      *          Duplicate of frame; message contents copied into new byte array
      */
     public ZFrame duplicate() {
-        return new ZFrame(this.data);
+        return new ZFrame (this.data);
     }
     
     /**
@@ -355,7 +350,7 @@ public class ZFrame {
      *              received frame, else null
      */
     public static ZFrame recvFrame(Socket socket) {
-        ZFrame f = new ZFrame();
+        ZFrame f = new ZFrame ();
         f.recv(socket, 0);
         return f;
     }
@@ -371,7 +366,7 @@ public class ZFrame {
      *              received frame, else null
      */ 
     public static ZFrame recvFrame(Socket socket, int flags) {
-        ZFrame f = new ZFrame();
+        ZFrame f = new ZFrame ();
         f.recv(socket, flags);
         return f;
     }
