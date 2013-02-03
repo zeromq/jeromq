@@ -54,4 +54,33 @@ public class ZeroMQContext {
     public Poller createPoller() {
         return new Poller();
     }
+
+    /**
+     * Starts the built-in ØMQ proxy in the current application thread.
+     * The proxy connects a frontend socket to a backend socket. Conceptually, data flows from frontend to backend.
+     * Depending on the socket types, replies may flow in the opposite direction. The direction is conceptual only;
+     * the proxy is fully symmetric and there is no technical difference between frontend and backend.
+     * <p/>
+     * Before calling startProxy() you must set any socket options, and connect or bind both frontend and backend sockets.
+     * <p/>
+     * startProxy() runs in the current thread and returns only if/when the current context is closed.
+     *
+     * @param capture If the capture socket is not NULL, the proxy shall send all messages, received on both
+     *                frontend and backend, to the capture socket. The capture socket should be a
+     *                ZMQ_PUB, ZMQ_DEALER, ZMQ_PUSH, or ZMQ_PAIR socket.
+     * @return If the proxy is successfully started.
+     */
+    public boolean startProxy(Socket frontend, Socket backend, Socket capture) {
+        return ZMQ.proxy(frontend.getDelegate(), backend.getDelegate(), capture == null ? null : capture.getDelegate());
+    }
+
+    /**
+     * Start a proxy with no capture socket.
+     *
+     * @return If the proxy is successfully started.
+     * @see #startProxy(Socket, Socket, Socket)
+     */
+    public boolean startProxy(Socket frontend, Socket backend) {
+        return startProxy(frontend, backend, null);
+    }
 }
