@@ -2,8 +2,10 @@ package org.jeromq.api;
 
 import zmq.ZMQ;
 
+//todo: javadocs!
 public enum SendReceiveOption {
-    DONTWAIT(ZMQ.ZMQ_DONTWAIT), NOBLOCK(ZMQ.ZMQ_NOBLOCK);
+    DONT_WAIT(ZMQ.ZMQ_DONTWAIT),
+    NO_BLOCK(ZMQ.ZMQ_NOBLOCK);
     private final int cValue;
 
     SendReceiveOption(int cValue) {
