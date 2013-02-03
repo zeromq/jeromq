@@ -9,7 +9,7 @@ import org.jeromq.api.ZeroMQContext;
  * Binds PULL socket to tcp://localhost:5558
  * Collects results from workers via that socket
  */
-public class tasksinker {
+public class tasksink {
 
     public static void main(String[] args) throws Exception {
         //  Prepare our context and socket
