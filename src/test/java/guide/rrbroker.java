@@ -1,17 +1,16 @@
 package guide;
 
-import org.jeromq.ZMQ;
-import org.jeromq.ZMQ.Context;
-import org.jeromq.ZMQ.Poller;
-import org.jeromq.ZMQ.Socket;
+import org.zeromq.ZMQ;
+import org.zeromq.ZMQ.Context;
+import org.zeromq.ZMQ.Poller;
+import org.zeromq.ZMQ.Socket;
 
 /**
 * Simple request-reply broker
 *
-* Christophe Huntzinger <chuntz@laposte.net>
-*
 */
 public class rrbroker{
+
     public static void main (String[] args) {
         //  Prepare our context and sockets
         Context context = ZMQ.context(1);

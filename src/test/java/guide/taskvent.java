@@ -1,18 +1,16 @@
 package guide;
 
 import java.util.Random;
-import org.jeromq.ZMQ;
+import org.zeromq.ZMQ;
 
 //
 //  Task ventilator in Java
 //  Binds PUSH socket to tcp://localhost:5557
 //  Sends batch of tasks to workers via that socket
 //
-//  Nicola Peduzzi <thenikso@gmail.com>
-//
 public class taskvent {
 
-    public static void main(String[] args) throws Exception {
+    public static void main (String[] args) throws Exception {
         ZMQ.Context context = ZMQ.context(1);
 
         //  Socket to send messages on
@@ -28,7 +26,7 @@ public class taskvent {
         System.out.println("Sending tasks to workers\n");
 
         //  The first message is "0" and signals start of batch
-        sink.send("0".getBytes(), 0);
+        sink.send("0", 0);
 
         //  Initialize random number generator
         Random srandom = new Random(System.currentTimeMillis());
@@ -43,14 +41,13 @@ public class taskvent {
             total_msec += workload;
             System.out.print(workload + ".");
             String string = String.format("%d", workload);
-            sender.send(string.getBytes(), 0);
+            sender.send(string, 0);
         }
-        System.out.println();
         System.out.println("Total expected cost: " + total_msec + " msec");
+        Thread.sleep(1000);              //  Give 0MQ time to deliver
 
         sink.close();
         sender.close();
         context.term();
-        Thread.sleep(1000);              //  Give 0MQ time to deliver
     }
 }

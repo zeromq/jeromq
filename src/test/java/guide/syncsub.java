@@ -1,16 +1,14 @@
 package guide;
 
-import org.jeromq.ZMQ;
-import org.jeromq.ZMQ.Context;
-import org.jeromq.ZMQ.Socket;
+import org.zeromq.ZMQ;
+import org.zeromq.ZMQ.Context;
+import org.zeromq.ZMQ.Socket;
 
 /**
 * Synchronized subscriber.
-*
-* Christophe Huntzinger <chuntzin_at_wanadoo.fr>
-*
 */
 public class syncsub{
+
     public static void main (String[] args) {
         Context context = ZMQ.context(1);
 
@@ -27,19 +25,18 @@ public class syncsub{
         syncclient.send("".getBytes(), 0);
 
         //  - wait for synchronization reply
-        byte[] value = syncclient.recv(0);
+        syncclient.recv(0);
 
         //  Third, get our updates and report how many we got
         int update_nbr = 0;
         while (true) {
-            byte[] stringValue = subscriber.recv(0);
-            String string  = new String(stringValue);
+            String string = subscriber.recvStr(0);
             if (string.equals("END")) {
                 break;
             }
             update_nbr++;
         }
-        System.out.println("Received "+update_nbr+" updates.");
+        System.out.println("Received " + update_nbr + " updates.");
 
         subscriber.close();
         syncclient.close();

@@ -1,20 +1,17 @@
-package org.jeromq;
+package org.zeromq;
 
-import org.jeromq.ZMQ.Socket;
+import org.zeromq.ZMQ.Socket;
 
-/**
- * @deprecated use org.zeromq namespace
- */
 public class ZThread
 {
     public static interface IAttachedRunnable
     {
-        public void run (Object [] args, ZContext ctx, Socket pipe);
+        public void run (Object[] args, ZContext ctx, Socket pipe);
     }
 
     public static interface IDetachedRunnable
     {
-        public void run (Object [] args);
+        public void run (Object[] args);
     }
 
     private static class ShimThread extends Thread 
@@ -25,7 +22,7 @@ public class ZThread
         private Object[] args;
         private Socket pipe;
 
-        protected ShimThread (ZContext ctx, IAttachedRunnable runnable, Object [] args, Socket pipe) 
+        protected ShimThread (ZContext ctx, IAttachedRunnable runnable, Object [] args, Socket pipe)
         {
             assert (ctx != null);
             assert (pipe != null);
@@ -72,7 +69,7 @@ public class ZThread
     //  pipe back to its parent. It must monitor its pipe, and exit if the
     //  pipe becomes unreadable. Returns pipe, or null if there was an error.
     
-    public static Socket fork (ZContext ctx, IAttachedRunnable runnable, Object ... args) 
+    public static Socket fork (ZContext ctx, IAttachedRunnable runnable, Object ... args)
     {
         Socket pipe = ctx.createSocket (ZMQ.PAIR);
         
