@@ -9,7 +9,7 @@ import org.jeromq.api.ZeroMQContext;
  * Binds PULL socket to tcp://localhost:5558
  * Collects results from workers via that socket
  */
-public class tasksink {
+public class tasksinker {
 
     public static void main(String[] args) throws Exception {
         //  Prepare our context and socket
@@ -24,9 +24,9 @@ public class tasksink {
         long startTime = System.currentTimeMillis();
 
         //  Process 100 confirmations
-        for (int task_nbr = 0; task_nbr < 100; task_nbr++) {
+        for (int taskNumber = 0; taskNumber < 100; taskNumber++) {
             String task = receiver.receiveString();
-            if ((task_nbr % 10) == 0) {
+            if ((taskNumber % 10) == 0) {
                 System.out.print(":");
             } else {
                 System.out.print(".");
