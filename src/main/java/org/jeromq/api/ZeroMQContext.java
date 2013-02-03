@@ -1,6 +1,7 @@
 package org.jeromq.api;
 
 import org.zeromq.ZContext;
+import org.zeromq.ZMQ;
 
 public class ZeroMQContext {
     private final ZContext zContext;
@@ -31,5 +32,19 @@ public class ZeroMQContext {
      */
     public void terminate() {
         zContext.destroy();
+    }
+
+    /**
+     * @return the ZeroMQ version as a nicely formatted String (major.minor.patch).
+     */
+    public String getVersionString() {
+        return ZMQ.getVersionString();
+    }
+
+    /**
+     * @return the ZeroMQ version as an int.
+     */
+    public int getFullVersion() {
+        return ZMQ.getFullVersion();
     }
 }
