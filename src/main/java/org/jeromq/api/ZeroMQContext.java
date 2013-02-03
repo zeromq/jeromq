@@ -13,5 +13,8 @@ public class ZeroMQContext {
         this(1);
     }
 
+    public Socket createSocket(SocketType type) {
+        return new Socket(zContext.createSocket(type.getCValue()));
+    }
 
 }
