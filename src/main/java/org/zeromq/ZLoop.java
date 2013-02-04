@@ -36,9 +36,6 @@ import java.util.List;
 
 public class ZLoop {
 
-    private static ThreadLocal<Boolean> initialized = new ThreadLocal<Boolean>(); 
-    private static ZLoop instance = null;
-    
     public static interface IZLoopHandler {
         public int handle(ZLoop loop, PollItem item, Object arg);
     }
@@ -84,22 +81,11 @@ public class ZLoop {
     private final List<Object> zombies;         //  List of timers to kill
     private final List<STimer> newTimers;       //  List of timers to add
     
-    private ZLoop() {
+    public ZLoop() {
         pollers = new ArrayList<SPoller>();
         timers = new ArrayList<STimer>();
         zombies = new ArrayList<Object>();
         newTimers = new ArrayList<STimer>();
-    }
-    
-    public static ZLoop instance() {
-        if (initialized.get() == null) {
-            synchronized(initialized) {
-                if (instance == null)
-                    instance = new ZLoop ();
-                initialized.set(Boolean.TRUE);
-            }
-        }
-        return instance;
     }
     
     public void destory() {
@@ -358,6 +344,5 @@ public class ZLoop {
         
         return rc;
     }
-
 
 }

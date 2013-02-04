@@ -140,10 +140,6 @@ public class ZMQ {
     @Deprecated
     public static final int DOWNSTREAM = PUSH;
 
-    public static final int POLLIN = zmq.ZMQ.ZMQ_POLLIN;
-    public static final int POLLOUT = zmq.ZMQ.ZMQ_POLLOUT;
-    public static final int POLLERR = zmq.ZMQ.ZMQ_POLLERR;
-
     /**
      * ZMQ Events
      */
@@ -217,6 +213,7 @@ public class ZMQ {
          * Create a new Poller within this context, with a default size.
          *
          * @return the newly created Poller.
+         * @deprecated Use poller constructor
          */
         public Poller poller () {
             return new Poller (this);
@@ -228,6 +225,7 @@ public class ZMQ {
          * @param size
          *            the poller initial size.
          * @return the newly created Poller.
+         * @deprecated Use poller constructor
          */
         public Poller poller (int size) {
             return new Poller (this, size);
@@ -253,8 +251,8 @@ public class ZMQ {
          * @param type
          *            the socket type.
          */
-        protected Socket(Context context_, int type) {
-            ctx = context_.ctx;
+        protected Socket(Context context, int type) {
+            ctx = context.ctx;
             base = ctx.create_socket(type);
             mayRaise();
         }
@@ -322,8 +320,8 @@ public class ZMQ {
          * when socket is closed. Positive value means number of milliseconds to keep
          * trying to send the pending messages before discarding them.
          *
-         * @param linger
-         *            the linger period.
+         * @param value
+         *            the linger period in milliseconds.
          */
         public final void setLinger (long value) 
         {
@@ -480,12 +478,12 @@ public class ZMQ {
          * high water mark; in this case outstanding messages shall be offloaded to storage on disk
          * rather than held in memory.
          * 
-         * @param swap
+         * @param value
          *            The value of 'ZMQ_SWAP' defines the maximum size of the swap space in bytes.
          */
         @Deprecated
         public final void setSwap(long value) {
-            // not support at zeromq 3
+            throw new UnsupportedOperationException ();
         }
 
 
@@ -512,10 +510,10 @@ public class ZMQ {
          * See also  in the man page of zmq_init[3] for details on allocating the number of I/O threads for a
          * specific _context_.
          * 
-         * @param affinity
-         *            the affinity.
+         * @param value
+         *            the io_thread affinity.
          */
-        public final void setAffinity(long value) {
+        public final void setAffinity (long value) {
             base.setsockopt(zmq.ZMQ.ZMQ_AFFINITY, value);
             mayRaiseNot (ZError.ETERM);
         }
@@ -563,13 +561,12 @@ public class ZMQ {
 
         /**
          * The 'ZMQ_RATE' option shall set the maximum send or receive data rate for multicast
-         * transports such as  in the man page of zmq_pgm[7] using the specified 'socket'.
-         * 
-         * @param rate
+         * transports such as in the man page of zmq_pgm[7] using the specified 'socket'.
+         *
+         * @param value maximum send or receive data rate for multicast, default 100
          */
-        public final void setRate(long value) {
-            base.setsockopt(zmq.ZMQ.ZMQ_RATE, (int)value);
-            mayRaiseNot (ZError.ETERM);
+        public final void setRate (long value) {
+            throw new UnsupportedOperationException ();
         }
 
 
@@ -593,11 +590,10 @@ public class ZMQ {
          * recovery will be held in memory. For example, a 1 minute recovery interval at a data rate
          * of 1Gbps requires a 7GB in-memory buffer. {Purpose of this Method}
          * 
-         * @param recovery_ivl
+         * @param value recovery interval for multicast in milliseconds, default 10000
          */
         public final void setRecoveryInterval (long value) {
-            base.setsockopt(zmq.ZMQ.ZMQ_RECOVERY_IVL, (int)value);
-            mayRaiseNot (ZError.ETERM);
+            throw new UnsupportedOperationException ();
         }
 
         /**
@@ -623,6 +619,7 @@ public class ZMQ {
          */
         @Deprecated
         public final void setMulticastLoop (boolean mcast_loop) {
+            throw new UnsupportedOperationException ();
         }
         
         /**
@@ -640,11 +637,10 @@ public class ZMQ {
          * The default is 1 which means that the multicast packets don't leave the local
          * network.
          * 
-         * @param mcast_hops
+         * @param value time-to-live field in every multicast packet, default 1
          */
         public final void setMulticastHops (long value) {
-            base.setsockopt(zmq.ZMQ.ZMQ_MULTICAST_HOPS, (int)value);
-            mayRaiseNot (ZError.ETERM);
+            throw new UnsupportedOperationException ();
         }
 
         /**
@@ -663,9 +659,9 @@ public class ZMQ {
          * values, it will wait for a message for that amount of time before returning with
          * a null and an EAGAIN error.
          * 
-         * @param timeout Timeout for receive operation in milliseconds. Default -1 (infinite)
+         * @param value Timeout for receive operation in milliseconds. Default -1 (infinite)
          */
-        public final void setReceiveTimeOut(int value) {
+        public final void setReceiveTimeOut (int value) {
             base.setsockopt(zmq.ZMQ.ZMQ_RCVTIMEO, value);
             mayRaiseNot (ZError.ETERM);
         }
@@ -687,7 +683,7 @@ public class ZMQ {
          * values, it will try to send the message for that amount of time before
          * returning with false and an EAGAIN error.
          * 
-         * @param timeout Timeout for send operation in milliseconds. Default -1 (infinite)
+         * @param value Timeout for send operation in milliseconds. Default -1 (infinite)
          */
         public final void setSendTimeOut(int value) {
             base.setsockopt(zmq.ZMQ.ZMQ_SNDTIMEO, value);
@@ -710,7 +706,8 @@ public class ZMQ {
          * unchanged. For details please refer to your operating system documentation for the
          * 'SO_SNDBUF' socket option.
          * 
-         * @param sndbuf
+         * @param value underlying kernel transmit buffer size for the 'socket' in bytes
+         *              A value of zero means leave the OS default unchanged.
          */
         public final void setSendBufferSize(long value) {
             base.setsockopt(zmq.ZMQ.ZMQ_SNDBUF, (int)value);
@@ -728,11 +725,12 @@ public class ZMQ {
         
         /**
          * The 'ZMQ_RCVBUF' option shall set the underlying kernel receive buffer size for the
-         * 'socket' to the specified size in bytes. A value of zero means leave the OS default
-         * unchanged. For details refer to your operating system documentation for the 'SO_RCVBUF'
+         * 'socket' to the specified size in bytes.
+         * For details refer to your operating system documentation for the 'SO_RCVBUF'
          * socket option.
          * 
-         * @param rcvbuf
+         * @param value Underlying kernel receive buffer size for the 'socket' in bytes.
+         *              A value of zero means leave the OS default unchanged.
          */
         public final void setReceiveBufferSize(long value) {
             base.setsockopt(zmq.ZMQ.ZMQ_RCVBUF, (int)value);
@@ -942,8 +940,8 @@ public class ZMQ {
          * @param addr
          *            the endpoint to connect to.
          */
-        public final boolean connect (String addr_) {
-            boolean ret = base.connect (addr_);
+        public final boolean connect (String addr) {
+            boolean ret = base.connect (addr);
             mayRaise ();
             return ret;
         }
@@ -996,7 +994,7 @@ public class ZMQ {
          * 
          * @return the message received, as an array of bytes; null on error.
          */
-        public final byte [] recv () 
+        public final byte[] recv ()
         {
             return recv (0);
         }
@@ -1008,7 +1006,7 @@ public class ZMQ {
          *            the flags to apply to the receive operation.
          * @return the message received, as an array of bytes; null on error.
          */
-        public final byte [] recv (int flags) 
+        public final byte[] recv (int flags)
         {
             zmq.Msg msg = base.recv(flags);
             
@@ -1020,8 +1018,6 @@ public class ZMQ {
             return null;
         }
         
-
-
         /**
          * Receive a message in to a specified buffer.
          * 
@@ -1037,13 +1033,14 @@ public class ZMQ {
          *            the flags to apply to the receive operation.
          * @return the number of bytes read, -1 on error
          */
-        public final int recv (byte [] buffer, int offset, int len, int flags) 
+        public final int recv (byte[] buffer, int offset, int len, int flags)
         {
-            zmq.Msg msg = base.recv(flags);
+            zmq.Msg msg = base.recv (flags);
             
             if (msg != null) {
-                System.arraycopy(msg.data(), 0, buffer, offset, len);
-                return msg.size();
+                int size = Math.min (msg.size (), len);
+                System.arraycopy (msg.data (), 0, buffer, offset, size);
+                return size;
             }
 
             mayRaise ();
@@ -1079,19 +1076,6 @@ public class ZMQ {
         {
             return base.monitor (addr, events);
         }
-
-        public void dump () {
-            System.out.println("----------------------------------------");
-            while(true) {
-                byte [] msg = recv (0);
-                System.out.println (String.format ("[%03d] %s", msg.length,
-                        msg.length > 0 ? new String(msg) : ""));
-                if (!hasReceiveMore()) {
-                    break;
-                }
-            }
-        }
-
 
     }
 
@@ -1149,6 +1133,10 @@ public class ZMQ {
         private zmq.PollItem [] items;
         private long timeout;
         private int next;
+
+        public Poller (int size) {
+            this (null, size);
+        }
 
         /**
          * Class constructor.

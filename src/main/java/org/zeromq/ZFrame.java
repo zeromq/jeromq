@@ -96,10 +96,6 @@ public class ZFrame {
         return data;
     }
 
-    public byte[] data() {
-        return data;
-    }
-
     /**
      * @return More flag, true if last read had MORE message parts to come
      */
