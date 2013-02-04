@@ -88,7 +88,7 @@ public class ZLoop {
         newTimers = new ArrayList<STimer>();
     }
     
-    public void destory() {
+    public void destroy() {
         // do nothing
     }
 
