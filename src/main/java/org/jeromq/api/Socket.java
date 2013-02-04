@@ -65,7 +65,7 @@ public class Socket {
      * This is an explicit "destructor". It can be called to ensure the corresponding 0MQ Socket
      * has been disposed of.
      */
-    public void close() {
+    public void destroy() {
         zContext.destroySocket(socket);
     }
 

@@ -22,7 +22,7 @@ public class mtrelay {
 
         //  Wait for signal
         receiver.receive();
-        receiver.close();
+        receiver.destroy();
 
         System.out.println("Step 3 says: Test successful!");
         context.terminate();
@@ -43,7 +43,7 @@ public class mtrelay {
             transmitter.connect("inproc://step2");
             System.out.println("Step 1 ready, signaling step 2");
             transmitter.send("READY");
-            transmitter.close();
+            transmitter.destroy();
         }
 
     }
@@ -67,7 +67,7 @@ public class mtrelay {
 
             //  Wait for signal
             receiver.receive();
-            receiver.close();
+            receiver.destroy();
             System.out.println("Step 2 complete, signalling Step 3");
 
             //  Connect to step3 and tell it we're ready
@@ -75,7 +75,7 @@ public class mtrelay {
             transmitter.connect("inproc://step3");
             transmitter.send("READY");
 
-            transmitter.close();
+            transmitter.destroy();
         }
 
     }
