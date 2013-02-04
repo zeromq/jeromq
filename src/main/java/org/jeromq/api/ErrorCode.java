@@ -15,6 +15,7 @@ public enum ErrorCode {
     MISSING_THREAD(ZError.EMTHREAD),
     INAPPROPRIATE_STATE(ZError.EFSM),
     NO_COMPATIBLE_PROTOCOL(ZError.ENOCOMPATPROTO),
+    HOST_UNREACHABLE(ZError.EHOSTUNREACH),
     TERMINATE(ZError.ETERM);
 
     private final long code;
