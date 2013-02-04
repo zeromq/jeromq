@@ -504,10 +504,6 @@ public class ZMsg implements Iterable<ZFrame>, Deque<ZFrame> {
         }
     }
 
-    public ZFrame first() {
-        return getFirst();
-    }
-
     @Override
     public ZFrame getLast() {
         try {
@@ -515,10 +511,6 @@ public class ZMsg implements Iterable<ZFrame>, Deque<ZFrame> {
         } catch (NoSuchElementException e) {
             return null;
         }
-    }
-
-    public ZFrame last() {
-        return getLast();
     }
 
     @Override

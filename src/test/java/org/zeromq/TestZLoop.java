@@ -18,6 +18,7 @@
 */
 package org.zeromq;
 
+import org.zeromq.ZMQ.Poller;
 import org.zeromq.ZMQ.Socket;
 import org.zeromq.ZMQ.PollItem;
 import org.junit.Test;
@@ -40,7 +41,7 @@ public class TestZLoop {
         assert (input != null);
         input.connect( "inproc://zloop.test");
 
-        ZLoop loop = ZLoop.instance();
+        ZLoop loop = new ZLoop ();
         assert (loop != null);
         loop.verbose (true);
         
@@ -66,7 +67,7 @@ public class TestZLoop {
         loop.timer ( 10, 1, s_timer_event, output);
         
         //  When we get the ping message, end the reactor
-        PollItem poll_input = new PollItem( input, ZMQ.POLLIN );
+        PollItem poll_input = new PollItem( input, Poller.POLLIN );
         rc = loop.poller (poll_input, s_socket_event, null);
         assert (rc == 0);
         loop.start ();
@@ -92,7 +93,7 @@ public class TestZLoop {
         assert (input != null);
         input.connect( "inproc://zloop.test");
 
-        ZLoop loop = ZLoop.instance();
+        ZLoop loop = new ZLoop ();
         assert (loop != null);
         loop.verbose (true);
         
@@ -130,7 +131,7 @@ public class TestZLoop {
         loop.timer ( 10, 1, s_timer_event, output);
         
         //  When we get the ping message, end the reactor
-        PollItem poll_input = new PollItem( input, ZMQ.POLLIN );
+        PollItem poll_input = new PollItem( input, Poller.POLLIN );
         rc = loop.poller (poll_input, s_socket_event, null);
         assert (rc == 0);
         
@@ -157,7 +158,7 @@ public class TestZLoop {
         assert (input != null);
         input.connect( "inproc://zloop.test");
 
-        ZLoop loop = ZLoop.instance();
+        ZLoop loop = new ZLoop ();
         assert (loop != null);
         loop.verbose (true);
         
@@ -194,7 +195,7 @@ public class TestZLoop {
         loop.timer(0, 1, s_timer_event, output);
         
         //  When we get the ping message, end the reactor
-        PollItem poll_input = new PollItem( input, ZMQ.POLLIN );
+        PollItem poll_input = new PollItem( input, Poller.POLLIN );
         rc = loop.poller (poll_input, s_socket_event, null);
         assert (rc == 0);
         
@@ -221,7 +222,7 @@ public class TestZLoop {
         assert (input != null);
         input.connect( "inproc://zloop.test");
 
-        ZLoop loop = ZLoop.instance();
+        ZLoop loop = new ZLoop ();
         assert (loop != null);
         loop.verbose (true);
         
@@ -255,7 +256,7 @@ public class TestZLoop {
         loop.timer (0, 1, s_timer_event, output);
         
         //  When we get the ping message, end the reactor
-        PollItem poll_input = new PollItem( input, ZMQ.POLLIN );
+        PollItem poll_input = new PollItem( input, Poller.POLLIN );
         rc = loop.poller (poll_input, s_socket_event, null);
         assert (rc == 0);
         loop.start ();

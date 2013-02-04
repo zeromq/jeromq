@@ -128,6 +128,12 @@ abstract public class EncoderBase implements IEncoder {
         return new Transfer.ByteBufferTransfer (buffer);
 
     }
+
+    @Override
+    public boolean has_data ()
+    {
+        return to_write > 0;
+    }
     
     protected int state () {
         return next;

@@ -613,7 +613,8 @@ public class ZMQ {
         
         HashMap<SelectableChannel, SelectionKey> saved = new HashMap<SelectableChannel, SelectionKey> ();
         for (SelectionKey key: selector.keys ()) {
-            saved.put(key.channel (), key);
+            if (key.isValid ())
+                saved.put(key.channel (), key);
         }
 
         for (PollItem item: items_) {

@@ -45,8 +45,9 @@ public class Msg {
     private byte[] data;
     private ByteBuffer buf;
     
-    public Msg() {
-        init(type_vsm);
+    public Msg () {
+        init (type_vsm);
+        size (0);
     }
 
     public Msg(boolean buffered) {
@@ -120,12 +121,12 @@ public class Msg {
     private final void init(byte type_) {
         type = type_;
         flags = 0;
-        size = 0;
+        size = -1;
         data = null;
         buf = null;
     }
 
-    public final void size (int size_)
+    private final void size (int size_)
     {
         size = size_;
         if (type == type_lmsg) {
