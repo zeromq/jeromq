@@ -1,5 +1,6 @@
 package org.jeromq.api;
 
+import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 import zmq.DecoderBase;
 import zmq.EncoderBase;
@@ -9,9 +10,11 @@ import java.util.EnumSet;
 
 public class Socket {
     private final ZMQ.Socket socket;
+    private final ZContext zContext;
 
-    Socket(ZMQ.Socket socket) {
+    Socket(ZMQ.Socket socket, ZContext zContext) {
         this.socket = socket;
+        this.zContext = zContext;
     }
 
     ZMQ.Socket getDelegate() {
@@ -41,8 +44,8 @@ public class Socket {
      * connections.
      *
      * @param address the endpoint to bind to.
-     * @param min The minimum port in the range of ports to try.
-     * @param max The maximum port in the range of ports to try.
+     * @param min     The minimum port in the range of ports to try.
+     * @param max     The maximum port in the range of ports to try.
      */
     public int bindToRandomPort(String address, int min, int max) {
         return socket.bindToRandomPort(address, min, max);
@@ -63,14 +66,14 @@ public class Socket {
      * has been disposed of.
      */
     public void close() {
-        socket.close();
+        zContext.destroySocket(socket);
     }
 
     /**
      * Receive a message.
      *
      * @return the message received, as an array of bytes; null on error.
-     * todo: do we really return null on error, or is an exception thrown?
+     *         todo: do we really return null on error, or is an exception thrown?
      */
     public byte[] receive() {
         return socket.recv();
@@ -81,7 +84,7 @@ public class Socket {
      *
      * @param option option to apply to the receive operation.
      * @return the message received, as an array of bytes; null on error.
-     * todo: do we really return null on error, or is an exception thrown?
+     *         todo: do we really return null on error, or is an exception thrown?
      */
     public byte[] receive(SendReceiveOption option) {
         return socket.recv(option.getCValue());
@@ -92,12 +95,11 @@ public class Socket {
      *
      * @param buffer byte[] to copy zmq message payload in to.
      * @param offset offset in buffer to write data
-     * @param len
-     *            Maximum bytes to write to the buffer.
-     *            If len is smaller than the incoming message size,
-     *            the message will be truncated.
+     * @param len    Maximum bytes to write to the buffer.
+     *               If len is smaller than the incoming message size,
+     *               the message will be truncated.
      * @param option the flags to apply to the receive operation.
-     * todo: do we really return -1 on error, or is an exception thrown?
+     *               todo: do we really return -1 on error, or is an exception thrown?
      * @return the number of bytes read, -1 on error
      */
     public int receive(byte[] buffer, int offset, int len, SendReceiveOption option) {
@@ -106,6 +108,7 @@ public class Socket {
 
     /**
      * <b>WARNING: this method uses the default encoding to turn the byte[] into a String.</b>
+     *
      * @return the message received, as a String object; null on no message.
      */
     public String receiveString() {
@@ -114,6 +117,7 @@ public class Socket {
 
     /**
      * <b>WARNING: this method uses the default encoding to turn the byte[] into a String.</b>
+     *
      * @param option option to apply to the receive operation.
      * @return the message received, as a String object; null on no message.
      */
@@ -138,7 +142,7 @@ public class Socket {
      * The 'ZMQ_SUBSCRIBE' option shall establish a new message filter on a 'ZMQ_SUB' socket.
      * Newly created 'ZMQ_SUB' sockets shall filter out all incoming messages, therefore you
      * should call this option to establish an initial message filter.
-     *
+     * <p/>
      * An empty topic of length zero shall subscribe to all incoming messages. A
      * non-empty topic shall subscribe to all messages beginning with the specified
      * prefix. Mutiple filters may be attached to a single 'ZMQ_SUB' socket, in which case a
@@ -150,6 +154,7 @@ public class Socket {
 
     /**
      * <b>WARNING: this method uses the default encoding to turn the String into byte[].</b>
+     *
      * @see #subscribe(byte[])
      */
     public void subscribe(String topic) {
@@ -169,6 +174,7 @@ public class Socket {
 
     /**
      * <b>WARNING: this method uses the default encoding to turn the String into byte[].</b>
+     *
      * @see #unsubscribe(byte[])
      */
     public void unsubscribe(String topic) {
@@ -250,7 +256,7 @@ public class Socket {
      * using the specified 'socket'. The recovery interval determines the maximum time in
      * seconds that a receiver can be absent from a multicast group before unrecoverable data
      * loss will occur.
-     *
+     * <p/>
      * CAUTION: Exercise care when setting large recovery intervals as the data needed for
      * recovery will be held in memory. For example, a 1 minute recovery interval at a data rate
      * of 1 Gbps requires a 7GB in-memory buffer. {Purpose of this Method}
@@ -352,14 +358,14 @@ public class Socket {
     /**
      * The 'ZMQ_AFFINITY' option shall set the I/O thread affinity for newly
      * created connections on the specified 'socket'.
-     *
+     * <p/>
      * Affinity determines which threads from the 0MQ I/O thread pool associated with the
      * socket's _context_ shall handle newly created connections. A value of zero specifies no
      * affinity, meaning that work shall be distributed fairly among all 0MQ I/O threads in the
      * thread pool. For non-zero values, the lowest bit corresponds to thread 1, second lowest
      * bit to thread 2 and so on. For example, a value of 3 specifies that subsequent
      * connections on 'socket' shall be handled exclusively by I/O threads 1 and 2.
-     *
+     * <p/>
      * See also  in the man page of zmq_init[3] for details on allocating the number of I/O threads for a
      * specific _context_.
      */
@@ -453,16 +459,16 @@ public class Socket {
      * identity determines if existing 0MQ infrastructure (_message queues_, _forwarding
      * devices_) shall be identified with a specific application and persist across multiple
      * runs of the application.
-     *
+     * <p/>
      * If the socket has no identity, each run of an application is completely separate from
      * other runs. However, with identity set the socket shall re-use any existing 0MQ
      * infrastructure configured by the previous run(s). Thus the application may receive
      * messages that were sent in the meantime, _message queue_ limits shall be shared with
      * previous run(s) and so on.
-     *
+     * <p/>
      * Identity should be at least one byte and at most 255 bytes long. Identities starting with
      * binary zero are reserved for use by 0MQ infrastructure.
-     *
+     * <p/>
      * <b>WARNING: Default encoding is used to convert the String into byte[]</b>
      */
     public void setIdentity(String identity) {
@@ -474,13 +480,13 @@ public class Socket {
      * identity determines if existing 0MQ infrastructure (_message queues_, _forwarding
      * devices_) shall be identified with a specific application and persist across multiple
      * runs of the application.
-     *
+     * <p/>
      * If the socket has no identity, each run of an application is completely separate from
      * other runs. However, with identity set the socket shall re-use any existing 0MQ
      * infrastructure configured by the previous run(s). Thus the application may receive
      * messages that were sent in the meantime, _message queue_ limits shall be shared with
      * previous run(s) and so on.
-     *
+     * <p/>
      * Identity should be at least one byte and at most 255 bytes long. Identities starting with
      * binary zero are reserved for use by 0MQ infrastructure.
      */

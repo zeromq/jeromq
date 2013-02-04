@@ -24,7 +24,7 @@ public class ZeroMQContext {
      * Create a new socket of the specified type.
      */
     public Socket createSocket(SocketType type) {
-        return new Socket(zContext.createSocket(type.getCValue()));
+        return new Socket(zContext.createSocket(type.getCValue()), zContext);
     }
 
     /**
