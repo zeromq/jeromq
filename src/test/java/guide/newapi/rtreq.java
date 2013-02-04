@@ -19,7 +19,7 @@ public class rtreq {
             Random random = new Random(System.currentTimeMillis());
             ZeroMQContext context = new ZeroMQContext();
             Socket worker = context.createSocket(SocketType.REQ);
-            // worker.setIdentity(); will set a random id automatically
+            GuideHelper.setPrintableIdentifier(worker);
             worker.connect("ipc://routing.ipc");
 
             int total = 0;
@@ -58,17 +58,18 @@ public class rtreq {
         while (true) {
             //  LRU worker is next waiting in queue
             byte[] address = client.receive();
-            byte[] empty = client.receive();
-            byte[] ready = client.receive();
+            client.receive();  //envelope delimiter
+            client.receive();  //response from worker
+
             client.sendWithMoreExpected(address);
             client.sendWithMoreExpected("");
-            if (System.currentTimeMillis() > endTime) {
+            if (System.currentTimeMillis() < endTime) {
+                client.send("Work Harder!");
+            } else {
                 client.send("Fired!");
                 if (++workersFired == NUMBER_OF_WORKERS) {
                     break;
                 }
-            } else {
-                client.send("Work Harder!");
             }
         }
 

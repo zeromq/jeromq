@@ -17,14 +17,14 @@ public class identity {
 
         anonymous.connect("inproc://example");
         anonymous.send("ROUTER uses a generated UUID");
-        sink.dumpToConsole();
+        GuideHelper.dump(sink);
 
         //  Then set the identity ourself
         Socket identified = context.createSocket(SocketType.REQ);
         identified.setIdentity("Hello");
         identified.connect("inproc://example");
         identified.send("ROUTER socket uses REQ's socket identity");
-        sink.dumpToConsole();
+        GuideHelper.dump(sink);
 
         context.terminate();
     }

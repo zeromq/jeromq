@@ -236,7 +236,7 @@ public class Socket {
      * @return if ZMQ_POLLOUT is set on the socket.
      */
     public boolean canWriteWithoutBlocking() {
-        return (socket.getEvents() & ZMQ.POLLOUT) > 0;
+        return (socket.getEvents() & zmq.ZMQ.ZMQ_POLLOUT) > 0;
     }
 
     /**
@@ -247,24 +247,7 @@ public class Socket {
      * @return if ZMQ_POLLIN is set on the socket.
      */
     public boolean canReadWithoutBlocking() {
-        return (socket.getEvents() & ZMQ.POLLIN) > 0;
-    }
-
-    /**
-     * Dumps everything on the socket to System.out.
-     */
-    public void dumpToConsole() {
-        System.out.println("----------------------------------------");
-        while (true) {
-            byte[] msg = socket.recv();
-            if (msg == null) {
-                msg = new byte[0];
-            }
-            System.out.println(String.format("[%03d] %s", msg.length, msg.length > 0 ? new String(msg) : ""));
-            if (!socket.hasReceiveMore()) {
-                break;
-            }
-        }
+        return (socket.getEvents() & zmq.ZMQ.ZMQ_POLLIN) > 0;
     }
 
     public SocketType getType() {
@@ -492,7 +475,7 @@ public class Socket {
      * <b>WARNING: Default encoding is used to convert the String into byte[]</b>
      */
     public void setIdentity(String identity) {
-        socket.setIdentity(identity);
+        socket.setIdentity(identity.getBytes());
     }
 
     /**
@@ -529,13 +512,6 @@ public class Socket {
      */
     public void setRouterMandatory(boolean mandatory) {
         socket.setRouterMandatory(mandatory);
-    }
-
-    /**
-     * @see #setRouterMandatory(boolean)
-     */
-    public boolean isRouterMandatory() {
-        return socket.getRouterMandatory();
     }
 
     public void setBacklog(long value) {

@@ -29,10 +29,6 @@ public class Message implements Iterable<ZFrame>, Deque<ZFrame> {
         return new Message(ZMsg.recvMsg(socket, flag.getCValue()));
     }
 
-    public ZFrame first() {
-        return zMsg.first();
-    }
-
     public boolean add(String stringValue) {
         return zMsg.add(stringValue);
     }
@@ -80,10 +76,6 @@ public class Message implements Iterable<ZFrame>, Deque<ZFrame> {
     @Override
     public boolean offerLast(ZFrame e) {
         return zMsg.offerLast(e);
-    }
-
-    public ZFrame last() {
-        return zMsg.last();
     }
 
     public Message duplicate() {
@@ -295,6 +287,7 @@ public class Message implements Iterable<ZFrame>, Deque<ZFrame> {
     /**
      * Send message to 0MQ socket, destroys contents after sending if destroy param is set to true.
      * If the message has no frames, sends nothing but still destroy()s the ZMsg object
+     *
      * @param socket 0MQ socket to send on.
      * @return true if send is success, false otherwise
      */
