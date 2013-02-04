@@ -71,7 +71,7 @@ public class ZeroMQContext {
      * @return If the proxy is successfully started.
      */
     public boolean startProxy(Socket frontend, Socket backend, Socket capture) {
-        return ZMQ.proxy(frontend.getDelegate(), backend.getDelegate(), capture == null ? null : capture.getDelegate());
+        return zmq.ZMQ.zmq_proxy(frontend.getDelegate().base(), backend.getDelegate().base(), capture != null ? capture.getDelegate().base() : null);
     }
 
     /**

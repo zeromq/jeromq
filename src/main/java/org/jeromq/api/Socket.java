@@ -254,7 +254,17 @@ public class Socket {
      * Dumps everything on the socket to System.out.
      */
     public void dumpToConsole() {
-        socket.dump();
+        System.out.println("----------------------------------------");
+        while (true) {
+            byte[] msg = socket.recv();
+            if (msg == null) {
+                msg = new byte[0];
+            }
+            System.out.println(String.format("[%03d] %s", msg.length, msg.length > 0 ? new String(msg) : ""));
+            if (!socket.hasReceiveMore()) {
+                break;
+            }
+        }
     }
 
     public SocketType getType() {
