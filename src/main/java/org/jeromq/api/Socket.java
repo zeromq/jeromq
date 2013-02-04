@@ -203,14 +203,24 @@ public class Socket {
         return socket.send(data, option.getCValue());
     }
 
-    public boolean sendMore(byte[] data) {
+    /**
+     * Send data, but mark that additional frames will be sent subsequently.
+     * <br/>todo: can we ever return false without an exception?
+     *
+     * @return true if successful, false otherwise.
+     */
+    public boolean sendWithMoreExpected(byte[] data) {
         return socket.sendMore(data);
     }
 
     /**
-     * <b>WARNING: this method uses the default encoding to turn the String into byte[].</b>
+     * Send data, but mark that additional frames will be sent subsequently.
+     * <br/><b>WARNING: this method uses the default encoding to turn the String into byte[].</b>
+     * <br/>todo: can we ever return false without an exception?
+     *
+     * @return true if successful, false otherwise.
      */
-    public boolean sendMore(String data) {
+    public boolean sendWithMoreExpected(String data) {
         return socket.sendMore(data);
     }
 
