@@ -268,18 +268,14 @@ public class ZMQ {
 
         private final static void mayRaise ()
         {
-            if (ZError.is (0) || ZError.is (ZError.EAGAIN)) ;
-            else
+            if (!ZError.is (0) && !ZError.is (ZError.EAGAIN))
                 throw new ZMQException (ZError.errno ());
-
         }
 
-        private final static void mayRaiseNot (int code)
+        private final static void mayRaiseNot (int codeToIgnore)
         {
-            if (ZError.is (0) || ZError.is (code) || ZError.is (ZError.EAGAIN)) ;
-            else
-                throw new ZMQException (ZError.errno ());
-
+            if (!ZError.is (codeToIgnore))
+                mayRaise ();
         }
 
 
@@ -289,7 +285,6 @@ public class ZMQ {
          */
         public final void close() {
             base.close();
-            
         }
         
         /**
