@@ -159,10 +159,18 @@ public class Options {
         
         case ZMQ.ZMQ_SNDHWM:
             sndhwm = (Integer)optval_;
+            if (sndhwm < 0) {
+                ZError.errno(ZError.EINVAL);
+                return false;
+            }
             return true;
             
         case ZMQ.ZMQ_RCVHWM:
             rcvhwm = (Integer)optval_;
+            if (rcvhwm < 0) {
+                ZError.errno(ZError.EINVAL);
+                return false;
+            }
             return true;
             
 
