@@ -17,7 +17,7 @@ public class TestProxy
             s = ctx.socket(ZMQ.REQ);
             name = name_;
 
-            s.setIdentity(name);
+            s.setIdentity(name.getBytes ());
         }
 
         @Override
@@ -40,7 +40,7 @@ public class TestProxy
             s = ctx.socket(ZMQ.DEALER);
             name = name_;
 
-            s.setIdentity(name);
+            s.setIdentity(name.getBytes ());
         }
 
         @Override

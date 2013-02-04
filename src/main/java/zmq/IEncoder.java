@@ -11,4 +11,6 @@ public interface IEncoder
     //  are filled to a supplied buffer. If no buffer is supplied (data_
     //  is nullL) encoder will provide buffer of its own.
     public Transfer get_data (ByteBuffer data_) ;
+
+    public boolean has_data ();
 }
