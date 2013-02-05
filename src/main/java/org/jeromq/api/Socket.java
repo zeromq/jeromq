@@ -2,6 +2,7 @@ package org.jeromq.api;
 
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
+import org.zeromq.ZMQException;
 import zmq.DecoderBase;
 import zmq.EncoderBase;
 
@@ -36,7 +37,11 @@ public class Socket {
      * @param address the endpoint to bind to.
      */
     public int bind(String address) {
-        return socket.bind(address);
+        try {
+            return socket.bind(address);
+        } catch (ZMQException e) {
+            throw new ZeroMQException("Unable to bind to address : " + address, e);
+        }
     }
 
     /**

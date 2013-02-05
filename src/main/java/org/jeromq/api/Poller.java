@@ -111,7 +111,11 @@ public class Poller {
      * Check whether the specified element in the poll set was signaled for input.
      */
     public boolean signaledForInput(Socket socket) {
-        return items.get(socket).isReadable();
+        PollItem pollItem = items.get(socket);
+        if (pollItem != null) {
+            return pollItem.isReadable();
+        }
+        return false;
     }
 
     /**

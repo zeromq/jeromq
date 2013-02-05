@@ -16,7 +16,11 @@ public enum ErrorCode {
     INAPPROPRIATE_STATE(ZError.EFSM),
     NO_COMPATIBLE_PROTOCOL(ZError.ENOCOMPATPROTO),
     HOST_UNREACHABLE(ZError.EHOSTUNREACH),
-    TERMINATE(ZError.ETERM);
+    TERMINATE(ZError.ETERM),
+    IO_EXCEPTION(ZError.EIOEXC),
+    SOCKET_EXCEPTION(ZError.ESOCKET),
+    MISSING_FILE(ZError.EMFILE),  //todo this name doesn't look correct, by what generates it.
+    UNKNOWN(Long.MIN_VALUE);
 
     private final long code;
 
@@ -34,6 +38,6 @@ public enum ErrorCode {
                 return e;
             }
         }
-        throw new IllegalArgumentException("Unknown " + ErrorCode.class.getName() + " enum code:" + code);
+        return UNKNOWN;
     }
 }
