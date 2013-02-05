@@ -33,7 +33,7 @@ public class GuideHelper {
         }
     }
 
-    public static void setPrintableIdentifier(Socket socket) {
+    public static void assignPrintableIdentity(Socket socket) {
         String identity = String.format("%04X-%04X", rand.nextInt(), rand.nextInt());
 
         socket.setIdentity(identity.getBytes());

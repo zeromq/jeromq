@@ -19,7 +19,7 @@ public class rtreq {
             Random random = new Random(System.currentTimeMillis());
             ZeroMQContext context = new ZeroMQContext();
             Socket worker = context.createSocket(SocketType.REQ);
-            GuideHelper.setPrintableIdentifier(worker);
+            GuideHelper.assignPrintableIdentity(worker);
             worker.connect("ipc://routing.ipc");
 
             int total = 0;
