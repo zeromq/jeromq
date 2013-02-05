@@ -60,12 +60,9 @@ public class lbbroker {
             worker.send("READY");
 
             while (!Thread.currentThread().isInterrupted()) {
+                // client response is [client identity][empty][request]
                 String address = worker.receiveString();
-                String empty = worker.receiveString();
-                //note this doesn't do anything without -ea specified.
-                assert (empty.length() == 0);
-
-                //  Get request, send reply
+                worker.receiveString();  //empty
                 String request = worker.receiveString();
                 System.out.println("Worker: " + request);
 
@@ -134,22 +131,18 @@ public class lbbroker {
 
             //  Handle worker activity on backend
             if (poller.signaledForInput(backend)) {
+                //  Worker request is [worker address][empty][client address][empty][worker reply]
                 //  Queue worker address for LRU routing
-                workerQueue.add(backend.receiveString());
-
+                String workerAddress = backend.receiveString();
+                workerQueue.add(workerAddress);
                 //  Second frame is empty
-                String empty = backend.receiveString();
-                //note this doesn't do anything without -ea specified.
-                assert (empty.isEmpty());
-
+                backend.receiveString(); //empty
                 //  Third frame is READY or else a client reply address
                 String clientAddress = backend.receiveString();
 
                 //  If client reply, send rest back to frontend
                 if (!clientAddress.equals("READY")) {
-                    empty = backend.receiveString();
-                    //note this doesn't do anything without -ea specified.
-                    assert (empty.isEmpty());
+                    backend.receiveString(); //empty
 
                     String reply = backend.receiveString();
                     frontend.sendWithMoreExpected(clientAddress);
@@ -167,10 +160,7 @@ public class lbbroker {
                 //  Now get next client request, route to LRU worker
                 //  Client request is [address][empty][request]
                 String clientAddress = frontend.receiveString();
-
-                String empty = frontend.receiveString();
-                assert (empty.isEmpty());
-
+                frontend.receiveString(); //empty
                 String request = frontend.receiveString();
 
                 String workerAddress = workerQueue.poll();

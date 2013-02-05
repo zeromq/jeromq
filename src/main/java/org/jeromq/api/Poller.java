@@ -102,6 +102,8 @@ public class Poller {
      *                      milliseconds/microseconds (see above).
      * @return how many objects where signaled by poll ()
      * @see "http://api.zeromq.org/3-0:zmq-poll"
+     *      <p/>
+     *      //todo -1 is sometimes returned from the underlying zmq_poll call. Figure out why, and if it is more appropriate in java-land to throw an exception.
      */
     public int poll(long timeoutMillis) {
         return zmq.ZMQ.zmq_poll(selector, items.values().toArray(new PollItem[items.size()]), timeoutMillis);
