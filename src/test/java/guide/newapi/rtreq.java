@@ -43,6 +43,11 @@ public class rtreq {
         }
     }
 
+    /**
+     * While this example runs in a single process, that is just to make
+     * it easier to start and stop the example. Each thread has its own
+     * context and conceptually acts as a separate process.
+     */
     public static void main(String[] args) {
         ZeroMQContext context = new ZeroMQContext();
         Socket client = context.createSocket(SocketType.ROUTER);

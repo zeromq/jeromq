@@ -8,6 +8,7 @@ import zmq.EncoderBase;
 
 import java.nio.channels.SelectableChannel;
 import java.util.EnumSet;
+import java.util.List;
 
 public class Socket {
     private final ZMQ.Socket socket;
@@ -206,6 +207,40 @@ public class Socket {
      */
     public boolean send(String data, SendReceiveOption option) {
         return socket.send(data, option.getCValue());
+    }
+
+    public void send(Message message) {
+        List<Message.Frame> frames = message.getFrames();
+
+        int frameNumber = 0;
+        for (Message.Frame frame : frames) {
+            if (++frameNumber < frames.size()) {
+                sendWithMoreExpected(frame.getData());
+            } else {
+                send(frame.getData());
+            }
+        }
+    }
+
+    public Message receiveMessage() {
+        Message result = new Message();
+        result.addFrame(receive());
+        while (hasMoreFramesToReceive()) {
+            byte[] data = receive();
+            result.addFrame(data);
+        }
+        return result;
+    }
+
+    //todo clean up, replace with delegation to above with copy?
+    public RouterMessage receiveRouterMessage() {
+        RouterMessage result = new RouterMessage();
+        result.addFrame(receive());
+        while (hasMoreFramesToReceive()) {
+            byte[] data = receive();
+            result.addFrame(data);
+        }
+        return result;
     }
 
     /**

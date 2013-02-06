@@ -1,299 +1,135 @@
 package org.jeromq.api;
 
-import org.zeromq.ZFrame;
-import org.zeromq.ZMQ;
-import org.zeromq.ZMsg;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.util.Collection;
-import java.util.Deque;
-import java.util.Iterator;
+public class Message {
 
-public class Message implements Iterable<ZFrame>, Deque<ZFrame> {
-    private final ZMsg zMsg;
+    private final List<Frame> frames = new ArrayList<Frame>();
 
-    public Message(ZMsg zMsg) {
-        this.zMsg = zMsg;
+    public Message() {
     }
 
-    public void destroy() {
-        zMsg.destroy();
+    public Message(byte[] firstFrame) {
+        frames.add(new Frame(firstFrame));
     }
 
-    public static Message recvMsg(Socket socket) {
-        return new Message(ZMsg.recvMsg(socket.getDelegate()));
+    public Message(List<Frame> frames) {
+        this.frames.addAll(frames);
     }
 
-    public static Message receiveMessage(ZMQ.Socket socket, SendReceiveOption flag) {
-        return new Message(ZMsg.recvMsg(socket, flag.getCValue()));
+    public Message(Message workMessage) {
+        frames.addAll(workMessage.getFrames());
     }
 
-    public boolean add(String stringValue) {
-        return zMsg.add(stringValue);
+    public Message(String firstFrame) {
+        frames.add(new Frame(firstFrame));
     }
 
-    @Override
-    public void clear() {
-        zMsg.clear();
+    public Message(String firstFrame, Charset encoding) {
+        frames.add(new Frame(firstFrame, encoding));
     }
 
-    public boolean save(DataOutputStream file) {
-        return ZMsg.save(zMsg, file);
+    public List<Frame> getFrames() {
+        return Collections.unmodifiableList(frames);
     }
 
-    public static Message load(DataInputStream file) {
-        return new Message(ZMsg.load(file));
-    }
-
-    @Override
-    public ZFrame getFirst() {
-        return zMsg.getFirst();
-    }
-
-    @Override
-    public ZFrame pollLast() {
-        return zMsg.pollLast();
-    }
-
-    public void addLast(String stringValue) {
-        zMsg.addLast(stringValue);
-    }
-
-    @Override
-    public ZFrame getLast() {
-        return zMsg.getLast();
-    }
-
-    public long contentSize() {
-        return zMsg.contentSize();
-    }
-
-    public void wrap(ZFrame frame) {
-        zMsg.wrap(frame);
-    }
-
-    @Override
-    public boolean offerLast(ZFrame e) {
-        return zMsg.offerLast(e);
-    }
-
-    public Message duplicate() {
-        return new Message(zMsg.duplicate());
-    }
-
-    @Override
-    public void addLast(ZFrame e) {
-        zMsg.addLast(e);
-    }
-
-    public boolean add(byte[] data) {
-        return zMsg.add(data);
-    }
-
-    public void dump(Appendable out) {
-        zMsg.dump(out);
-    }
-
-    public void addLast(byte[] data) {
-        zMsg.addLast(data);
-    }
-
-    @Override
-    public ZFrame peekLast() {
-        return zMsg.peekLast();
-    }
-
-    public void addString(String str) {
-        zMsg.addString(str);
-    }
-
-    @Override
-    public void push(ZFrame e) {
-        zMsg.push(e);
-    }
-
-    @Override
-    public boolean offerFirst(ZFrame e) {
-        return zMsg.offerFirst(e);
-    }
-
-    @Override
-    public boolean offer(ZFrame e) {
-        return zMsg.offer(e);
-    }
-
-    @Override
-    public int size() {
-        return zMsg.size();
-    }
-
-    public void addFirst(byte[] data) {
-        zMsg.addFirst(data);
-    }
-
-    @Override
-    public boolean removeAll(Collection<?> values) {
-        return zMsg.removeAll(values);
-    }
-
-    @Override
-    public void addFirst(ZFrame frame) {
-        zMsg.addFirst(frame);
-    }
-
-    @Override
-    public ZFrame pop() {
-        return zMsg.pop();
-    }
-
-    @Override
-    public <T> T[] toArray(T[] base) {
-        return zMsg.toArray(base);
-    }
-
-    @Override
-    public ZFrame removeFirst() {
-        return zMsg.removeFirst();
-    }
-
-    @Override
-    public boolean add(ZFrame frame) {
-        return zMsg.add(frame);
-    }
-
-    @Override
-    public Iterator<ZFrame> iterator() {
-        return zMsg.iterator();
-    }
-
-    @Override
-    public boolean remove(Object o) {
-        return zMsg.remove(o);
-    }
-
-    public String popString() {
-        return zMsg.popString();
-    }
-
-    public boolean send(Socket socket) {
-        return zMsg.send(socket.getDelegate());
-    }
-
-    public void dump() {
-        zMsg.dump();
-    }
-
-    @Override
-    public ZFrame element() {
-        return zMsg.element();
-    }
-
-    @Override
-    public boolean removeLastOccurrence(Object o) {
-        return zMsg.removeLastOccurrence(o);
-    }
-
-    @Override
-    public boolean isEmpty() {
-        return zMsg.isEmpty();
-    }
-
-    @Override
-    public Object[] toArray() {
-        return zMsg.toArray();
-    }
-
-    @Override
-    public boolean containsAll(Collection<?> values) {
-        return zMsg.containsAll(values);
-    }
-
-    @Override
-    public ZFrame remove() {
-        return zMsg.remove();
-    }
-
-    public void push(String string) {
-        zMsg.push(string);
-    }
-
-    public ZFrame unwrap() {
-        return zMsg.unwrap();
-    }
-
-    @Override
-    public boolean retainAll(Collection<?> values) {
-        return zMsg.retainAll(values);
-    }
-
-    @Override
-    public ZFrame pollFirst() {
-        return zMsg.pollFirst();
-    }
-
-    @Override
-    public boolean addAll(Collection<? extends ZFrame> values) {
-        return zMsg.addAll(values);
-    }
-
-    @Override
-    public boolean contains(Object o) {
-        return zMsg.contains(o);
-    }
-
-    @Override
-    public Iterator<ZFrame> descendingIterator() {
-        return zMsg.descendingIterator();
-    }
-
-    @Override
-    public ZFrame removeLast() {
-        return zMsg.removeLast();
-    }
-
-    @Override
-    public ZFrame peek() {
-        return zMsg.peek();
-    }
-
-    @Override
-    public boolean removeFirstOccurrence(Object o) {
-        return zMsg.removeFirstOccurrence(o);
-    }
-
-    @Override
-    public ZFrame peekFirst() {
-        return zMsg.peekFirst();
-    }
-
-    public void addFirst(String stringValue) {
-        zMsg.addFirst(stringValue);
-    }
-
-    @Override
-    public ZFrame poll() {
-        return zMsg.poll();
-    }
-
-    public static Message newStringMsg(String... strings) {
-        return new Message(ZMsg.newStringMsg(strings));
-    }
-
-    public void push(byte[] data) {
-        zMsg.push(data);
+    public void addFrame(byte[] data) {
+        frames.add(new Frame(data));
     }
 
     /**
-     * Send message to 0MQ socket, destroys contents after sending if destroy param is set to true.
-     * If the message has no frames, sends nothing but still destroy()s the ZMsg object
-     *
-     * @param socket 0MQ socket to send on.
-     * @return true if send is success, false otherwise
+     * Add a frame with default charset encoding.
      */
-    public boolean send(Socket socket, boolean destroy) {
-        return zMsg.send(socket.getDelegate(), destroy);
+    public void addFrame(String data) {
+        frames.add(new Frame(data.getBytes()));
     }
+
+    public void addFrame(String data, Charset encoding) {
+        frames.add(new Frame(data.getBytes(encoding)));
+    }
+
+    public void addEmptyFrame() {
+        frames.add(new Frame(new byte[0]));
+    }
+
+    public void replaceLast(String replacement) {
+        frames.set(frames.size() - 1, new Frame(replacement));
+    }
+
+    public void replaceLast(String replacement, Charset encoding) {
+        frames.set(frames.size() - 1, new Frame(replacement, encoding));
+    }
+
+    public void replaceLast(byte[] replacement) {
+        frames.set(frames.size() - 1, new Frame(replacement));
+    }
+
+    public byte[] getFirstFrame() {
+        return frames.get(0).data;
+    }
+
+    public String getFirstFrameAsString() {
+        return new String(frames.get(0).data);
+    }
+
+    public String getFirstFrameAsString(Charset encoding) {
+        return new String(frames.get(0).data, encoding);
+    }
+
+    static class Frame {
+        private final byte[] data;
+
+        Frame(byte[] data) {
+            this.data = data;
+        }
+
+        Frame(String data) {
+            this(data.getBytes());
+        }
+
+        Frame(String data, Charset encoding) {
+            this(data.getBytes(encoding));
+        }
+
+        public byte[] getData() {
+            return data;
+        }
+
+        public String getString(Charset encoding) {
+            return new String(data, encoding);
+        }
+
+        public String getString() {
+            return new String(data);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            Frame frame = (Frame) o;
+
+            if (!Arrays.equals(data, frame.data)) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return data != null ? Arrays.hashCode(data) : 0;
+        }
+
+        @Override
+        public String toString() {
+            return "Frame{data=" + new String(data) + '}';
+        }
+    }
+
 }
 
 
