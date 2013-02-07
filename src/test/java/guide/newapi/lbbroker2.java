@@ -27,7 +27,7 @@ public class lbbroker2 {
             ZeroMQContext context = new ZeroMQContext();
 
             //  Prepare our context and sockets
-            org.jeromq.api.Socket client = context.createSocket(SocketType.REQ);
+            Socket client = context.createSocket(SocketType.REQ);
             GuideHelper.assignPrintableIdentity(client);
 
             client.connect("ipc://frontend.ipc");
@@ -50,7 +50,7 @@ public class lbbroker2 {
             ZeroMQContext context = new ZeroMQContext();
 
             //  Prepare our context and sockets
-            org.jeromq.api.Socket worker = context.createSocket(SocketType.REQ);
+            Socket worker = context.createSocket(SocketType.REQ);
             GuideHelper.assignPrintableIdentity(worker);
             worker.setReceiveTimeOut(1000);
 
@@ -83,8 +83,8 @@ public class lbbroker2 {
         ZeroMQContext context = new ZeroMQContext();
 
         //  Prepare our context and sockets
-        org.jeromq.api.Socket frontend = context.createSocket(ROUTER);
-        org.jeromq.api.Socket backend = context.createSocket(ROUTER);
+        Socket frontend = context.createSocket(ROUTER);
+        Socket backend = context.createSocket(ROUTER);
         frontend.bind("ipc://frontend.ipc");
         backend.bind("ipc://backend.ipc");
 
