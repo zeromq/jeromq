@@ -14,7 +14,9 @@ public class Message {
     }
 
     public Message(byte[] firstFrame) {
-        frames.add(new Frame(firstFrame));
+        if (firstFrame != null) {
+            frames.add(new Frame(firstFrame));
+        }
     }
 
     public Message(List<Frame> frames) {
@@ -38,6 +40,9 @@ public class Message {
     }
 
     public void addFrame(byte[] data) {
+        if (data == null) {
+            return;
+        }
         frames.add(new Frame(data));
     }
 
@@ -56,18 +61,7 @@ public class Message {
         frames.add(new Frame(new byte[0]));
     }
 
-    public void replaceLast(String replacement) {
-        frames.set(frames.size() - 1, new Frame(replacement));
-    }
-
-    public void replaceLast(String replacement, Charset encoding) {
-        frames.set(frames.size() - 1, new Frame(replacement, encoding));
-    }
-
-    public void replaceLast(byte[] replacement) {
-        frames.set(frames.size() - 1, new Frame(replacement));
-    }
-
+    //todo: these getFirstFrame methods are really for debugging.  Perhaps provide a general method to pretty-print a message, rather than this very limited-use method.
     public byte[] getFirstFrame() {
         return frames.get(0).data;
     }
@@ -76,11 +70,15 @@ public class Message {
         return new String(frames.get(0).data);
     }
 
-    public String getFirstFrameAsString(Charset encoding) {
-        return new String(frames.get(0).data, encoding);
+    public void addFrames(Message payload) {
+        frames.addAll(payload.getFrames());
     }
 
-    static class Frame {
+    public boolean isMissing() {
+        return frames.size() == 0;
+    }
+
+    public static class Frame {
         private final byte[] data;
 
         Frame(byte[] data) {
@@ -126,7 +124,14 @@ public class Message {
 
         @Override
         public String toString() {
+            if (data == null) {
+                return "Frame{data=null}";
+            }
             return "Frame{data=" + new String(data) + '}';
+        }
+
+        public boolean isBlank() {
+            return data.length == 0;
         }
     }
 

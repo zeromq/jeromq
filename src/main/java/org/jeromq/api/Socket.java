@@ -222,19 +222,16 @@ public class Socket {
         }
     }
 
+    //todo add timeout exceptions
     public Message receiveMessage() {
-        Message result = new Message();
-        result.addFrame(receive());
-        while (hasMoreFramesToReceive()) {
-            byte[] data = receive();
-            result.addFrame(data);
-        }
-        return result;
+        return fillInFrames(new Message());
     }
 
-    //todo clean up, replace with delegation to above with copy?
-    public RouterMessage receiveRouterMessage() {
-        RouterMessage result = new RouterMessage();
+    public RoutedMessage receiveRoutedMessage() {
+        return fillInFrames(new RoutedMessage());
+    }
+
+    private <T extends Message> T fillInFrames(T result) {
         result.addFrame(receive());
         while (hasMoreFramesToReceive()) {
             byte[] data = receive();

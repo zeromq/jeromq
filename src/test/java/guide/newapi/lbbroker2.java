@@ -4,6 +4,7 @@ import org.jeromq.api.*;
 
 import java.util.Arrays;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Queue;
 
 import static org.jeromq.api.SocketType.ROUTER;
@@ -13,8 +14,8 @@ import static org.jeromq.api.SocketType.ROUTER;
  * Demonstrates use of the high level API
  */
 public class lbbroker2 {
-    private static final int NBR_CLIENTS = 10;
-    private static final int NBR_WORKERS = 3;
+    private static final int NUMBER_OF_CLIENTS = 10;
+    private static final int NUMBER_OF_WORKERS = 3;
     private static byte[] WORKER_READY = {'\001'};  //  Signals worker is ready
 
     /**
@@ -51,6 +52,7 @@ public class lbbroker2 {
             //  Prepare our context and sockets
             org.jeromq.api.Socket worker = context.createSocket(SocketType.REQ);
             GuideHelper.assignPrintableIdentity(worker);
+            worker.setReceiveTimeOut(1000);
 
             worker.connect("ipc://backend.ipc");
 
@@ -58,9 +60,14 @@ public class lbbroker2 {
             worker.send(new Message(WORKER_READY));
 
             while (!Thread.currentThread().isInterrupted()) {
-                Message workMessage = worker.receiveMessage();
-                Message response = new Message(workMessage);
-                response.replaceLast("OK");
+                RoutedMessage workMessage = worker.receiveRoutedMessage();
+                //if we've timed-out, we get a missing message (todo: replace with timeout exception)
+                if (workMessage.isMissing()) {
+                    continue;
+                }
+                List<RoutedMessage.Route> route = workMessage.getRoutes();
+                RoutedMessage response = new RoutedMessage(route);
+                response.addFrame("OK");
                 worker.send(response);
             }
             context.terminate();
@@ -82,21 +89,20 @@ public class lbbroker2 {
         backend.bind("ipc://backend.ipc");
 
         int clientNumber;
-        for (clientNumber = 0; clientNumber < NBR_CLIENTS; clientNumber++) {
+        for (clientNumber = 0; clientNumber < NUMBER_OF_CLIENTS; clientNumber++) {
             new Thread(new ClientTask()).start();
         }
 
-        for (int workerNbr = 0; workerNbr < NBR_WORKERS; workerNbr++) {
+        for (int workerNbr = 0; workerNbr < NUMBER_OF_WORKERS; workerNbr++) {
             new Thread(new WorkerTask()).start();
         }
 
         //  Queue of available workers
-        Queue<String> workerAddressQueue = new LinkedList<String>();
+        Queue<RoutedMessage.Route> workerAddressQueue = new LinkedList<RoutedMessage.Route>();
 
         //  Here is the main loop for the load-balancer. It works the same way
-        //  as the previous example, but is a lot shorter because ZMsg class gives
+        //  as the previous example, but is a lot easier to read because the RoutedMessage & Message classes give
         //  us an API that does more with fewer calls:
-
         while (!Thread.currentThread().isInterrupted()) {
             //  Initialize poll set
             Poller items = context.createPoller();
@@ -116,24 +122,30 @@ public class lbbroker2 {
 
             //  Handle worker activity on backend
             if (items.signaledForInput(backend)) {
-                RouterMessage message = backend.receiveRouterMessage();
+                RoutedMessage message = backend.receiveRoutedMessage();
 
-                String identity = message.getIdentityAsString();
+                List<RoutedMessage.Route> routes = message.getRoutes();
+                RoutedMessage.Route workerAddress = routes.get(0);
                 //  Queue worker address for LRU routing
-                workerAddressQueue.add(identity);
+                workerAddressQueue.add(workerAddress);
 
                 //  Forward message to client if it's not a READY
                 Message payload = message.getPayload();
                 if (!Arrays.equals(payload.getFirstFrame(), WORKER_READY)) {
-                    frontend.send(payload);
+                    //strip off the top route...this needs a better API.
+                    List<RoutedMessage.Route> clientRoute = routes.subList(1, routes.size());
+                    frontend.send(new RoutedMessage(clientRoute, payload));
                 }
             }
 
             if (items.signaledForInput(frontend)) {
                 //  Get client request, route to first available worker
-                Message message = frontend.receiveMessage();
+                RoutedMessage message = frontend.receiveRoutedMessage();
 
-                Message response = RouterMessage.build().copy(message).withAddress(workerAddressQueue.poll()).create();
+                RoutedMessage.Route workerRoute = workerAddressQueue.poll();
+                //route the message to the worker.
+                Message response = new RoutedMessage(workerRoute, message);
+
                 backend.send(response);
             }
         }

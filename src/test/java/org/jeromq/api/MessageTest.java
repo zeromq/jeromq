@@ -49,21 +49,4 @@ public class MessageTest {
         assertEquals(initial.getFrames(), newMessage.getFrames());
     }
 
-    @Test
-    public void testReplaceLast() throws Exception {
-        Message expected = new Message();
-        expected.addFrame("hello");
-        expected.addEmptyFrame();
-        expected.addFrame("lemons");
-
-        Message testClass = new Message();
-        testClass.addFrame("hello");
-        testClass.addEmptyFrame();
-        testClass.addFrame("goodbye");
-
-        testClass.replaceLast("lemons");
-
-        assertEquals(expected.getFrames(), testClass.getFrames());
-
-    }
 }
