@@ -71,22 +71,24 @@ public class asyncsrv {
 
             //  Backend socket talks to workers over inproc
             Socket backend = context.createSocket(SocketType.DEALER);
-            backend.bind("ipc://backend");
+            backend.bind("inproc://backend");
 
             //  Launch pool of worker threads, precise number is not critical
-            for (int threadNumber = 0; threadNumber < 5; threadNumber++) {
-                new Thread(new ServerWorker(context)).start();
+            for (int threadNumber = 0; threadNumber < 150; threadNumber++) {
+                new Thread(new ServerWorker(context), "serverWorker-" + threadNumber).start();
             }
 
             //  Connect backend to frontend via a proxy
-            context.startProxy(frontend, backend);
+            boolean result = context.startProxy(frontend, backend);
+            System.out.println("result = " + result);
 //            context.terminate();
         }
     }
 
-    //Each worker task works on one request at a time and sends a random number
-    //of replies back, with random delays between replies:
-
+    /**
+     * Each worker task works on one request at a time and sends a random number
+     * of replies back, with random delays between replies:
+     */
     private static class ServerWorker implements Runnable {
         private ZeroMQContext context;
 
@@ -96,14 +98,13 @@ public class asyncsrv {
 
         public void run() {
             Socket worker = context.createSocket(SocketType.DEALER);
-            worker.connect("ipc://backend");
+            worker.connect("inproc://backend");
 
             while (true) {
                 //  The DEALER socket gives us the address envelope and message
                 Message message = worker.receiveMessage();
                 //  Send 0..4 replies back
                 int replies = rand.nextInt(5);
-//                int replies = 1;
                 for (int reply = 0; reply < replies; reply++) {
                     //  Sleep for some fraction of a second
                     try {
@@ -118,13 +119,14 @@ public class asyncsrv {
         }
     }
 
-    //The main thread simply starts several clients, and a server, and then
-    //waits for the server to finish.
-
+    /**
+     * The main thread simply starts several clients, and a server, and then
+     * waits for the server to finish.
+     */
     public static void main(String[] args) throws Exception {
-        new Thread(new ClientTask()).start();
-        new Thread(new ClientTask()).start();
-        new Thread(new ClientTask()).start();
-        new Thread(new ServerTask()).start();
+        new Thread(new ClientTask(), "clientThread-1").start();
+        new Thread(new ClientTask(), "clientThread-2").start();
+        new Thread(new ClientTask(), "clientThread-3").start();
+        new Thread(new ServerTask(), "serverThread").start();
     }
 }
