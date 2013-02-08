@@ -2,7 +2,6 @@ package guide.newapi;
 
 import org.jeromq.api.*;
 
-import java.util.List;
 import java.util.Random;
 
 /**
@@ -47,9 +46,7 @@ public class asyncsrv {
                         GuideHelper.print(identity, message.getPayload());
                     }
                 }
-                System.out.println("client sending");
                 client.send(String.format("request #%d", ++request_nbr));
-                System.out.println("send complete");
             }
             //context.destroy();
         }
@@ -74,7 +71,7 @@ public class asyncsrv {
 
             //  Backend socket talks to workers over inproc
             Socket backend = context.createSocket(SocketType.DEALER);
-            backend.bind("inproc://backend");
+            backend.bind("ipc://backend");
 
             //  Launch pool of worker threads, precise number is not critical
             for (int threadNumber = 0; threadNumber < 5; threadNumber++) {
@@ -82,26 +79,7 @@ public class asyncsrv {
             }
 
             //  Connect backend to frontend via a proxy
-//            context.startProxy(frontend, backend);
-
-            Poller poller = context.createPoller();
-            poller.register(frontend, PollOption.POLL_IN);
-            poller.register(backend, PollOption.POLL_IN);
-            while (true) {
-                poller.poll();
-                if (poller.signaledForInput(frontend)) {
-                    System.out.println("front end sending through proxy");
-                    Message message = frontend.receiveMessage();
-                    System.out.println("got message to forward");
-                    backend.send(message);
-                    System.out.println("sent!");
-                }
-                if (poller.signaledForInput(backend)) {
-                    Message message = backend.receiveMessage();
-                    frontend.send(message);
-                }
-            }
-
+            context.startProxy(frontend, backend);
 //            context.terminate();
         }
     }
@@ -118,22 +96,14 @@ public class asyncsrv {
 
         public void run() {
             Socket worker = context.createSocket(SocketType.DEALER);
-            worker.connect("inproc://backend");
+            worker.connect("ipc://backend");
 
             while (true) {
                 //  The DEALER socket gives us the address envelope and message
-//                System.out.println("about to receive");
                 Message message = worker.receiveMessage();
-//                System.out.println("received");
-//                GuideHelper.print(message);
-                List<Message.Frame> frames = message.getFrames();
-                String address = message.getFirstFrameAsString();
-                String payload = frames.get(frames.size() - 1).getString();
-//                System.out.println("payload = " + payload);
-
                 //  Send 0..4 replies back
-//                int replies = rand.nextInt(5) + 1;
-                int replies = 1;
+                int replies = rand.nextInt(5);
+//                int replies = 1;
                 for (int reply = 0; reply < replies; reply++) {
                     //  Sleep for some fraction of a second
                     try {
@@ -152,12 +122,9 @@ public class asyncsrv {
     //waits for the server to finish.
 
     public static void main(String[] args) throws Exception {
-//        new Thread(new ClientTask()).start();
-//        new Thread(new ClientTask()).start();
+        new Thread(new ClientTask()).start();
+        new Thread(new ClientTask()).start();
         new Thread(new ClientTask()).start();
         new Thread(new ServerTask()).start();
-
-        //  Run for 5 seconds then quit
-        Thread.sleep(5 * 1000);
     }
 }
