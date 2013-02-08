@@ -597,4 +597,11 @@ public class Socket {
     public SelectableChannel getFileDescriptor() {
         return socket.getFD();
     }
+
+    @Override
+    public String toString() {
+        return "Socket{" +
+                "socket=" + socket +
+                '}';
+    }
 }

@@ -18,7 +18,12 @@ public class Poller {
     /**
      * Poller with default initial size.
      */
-    protected Poller() {
+    public Poller() {
+        open();
+    }
+
+    public Poller(Selector selector) {
+        this.selector = selector;
         open();
     }
 
@@ -53,6 +58,8 @@ public class Poller {
                         Reusable s = new Reusable();
                         selector = s.open();
                         holder.set(s);
+                    } else {
+                        holder.set(new Reusable(selector));
                     }
                 } catch (IOException e) {
                     throw new ZError.IOException(e);
@@ -145,6 +152,10 @@ public class Poller {
 
         protected Reusable() {
             selector = null;
+        }
+
+        protected Reusable(Selector selector) {
+            this.selector = selector;
         }
 
         public Selector open() throws IOException {
