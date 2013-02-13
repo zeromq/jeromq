@@ -1,14 +1,13 @@
 package guide;
 
-import java.util.Random;
+import org.zeromq.ZContext;
+import org.zeromq.ZFrame;
+import org.zeromq.ZMQ;
+import org.zeromq.ZMQ.PollItem;
+import org.zeromq.ZMQ.Socket;
+import org.zeromq.ZMsg;
 
-import org.jeromq.ZContext;
-import org.jeromq.ZFrame;
-import org.jeromq.ZMQ;
-import org.jeromq.ZMsg;
-import org.jeromq.ZMQ.Msg;
-import org.jeromq.ZMQ.PollItem;
-import org.jeromq.ZMQ.Socket;
+import java.util.Random;
 
 //
 //Asynchronous client-to-server (DEALER to ROUTER)
@@ -26,26 +25,26 @@ public class asyncsrv {
     //run several client tasks in parallel, each with a different random ID.
 
     private static Random rand = new Random(System.nanoTime());
-    private static class client_task implements Runnable 
-    {
-        
-        public void run () {
-            ZContext ctx = new ZContext ();
+
+    private static class client_task implements Runnable {
+
+        public void run() {
+            ZContext ctx = new ZContext();
             Socket client = ctx.createSocket(ZMQ.DEALER);
-            
+
             //  Set random identity to make tracing easier
             String identity = String.format("%04X-%04X", rand.nextInt(), rand.nextInt());
-            client.setIdentity(identity);
-            client.connect ("tcp://localhost:5570");
-            
-            PollItem items [] = new PollItem[]{ new PollItem(client, ZMQ.POLLIN) };
-            
+            client.setIdentity(identity.getBytes());
+            client.connect("tcp://localhost:5570");
+
+            PollItem items[] = new PollItem[]{new PollItem(client, zmq.ZMQ.ZMQ_POLLIN)};
+
             int request_nbr = 0;
             while (true) {
                 //  Tick once per second, pulling in arriving messages
                 int centitick;
                 for (centitick = 0; centitick < 100; centitick++) {
-                    ZMQ.poll (items, 10 );
+                    ZMQ.poll(items, 10);
                     if (items[0].isReadable()) {
                         ZMsg msg = ZMsg.recvMsg(client);
                         msg.getLast().print(identity);
@@ -64,27 +63,26 @@ public class asyncsrv {
     //one request at a time but one client can talk to multiple workers at
     //once.
 
-    private static class server_task implements Runnable 
-    {
+    private static class server_task implements Runnable {
         public void run() {
-            ZContext ctx = new ZContext ();
-            
+            ZContext ctx = new ZContext();
+
             //  Frontend socket talks to clients over TCP
             Socket frontend = ctx.createSocket(ZMQ.ROUTER);
             frontend.bind("tcp://*:5570");
-            
+
             //  Backend socket talks to workers over inproc
             Socket backend = ctx.createSocket(ZMQ.DEALER);
             backend.bind("inproc://backend");
-            
+
             //  Launch pool of worker threads, precise number is not critical
             int thread_nbr;
             for (thread_nbr = 0; thread_nbr < 5; thread_nbr++)
                 new Thread(new server_worker(ctx)).start();
-            
+
             //  Connect backend to frontend via a proxy
-            ZMQ.device (ZMQ.QUEUE, frontend, backend);
-            
+            ZMQ.proxy(frontend, backend, null);
+
             ctx.destroy();
         }
     }
@@ -92,16 +90,17 @@ public class asyncsrv {
     //Each worker task works on one request at a time and sends a random number
     //of replies back, with random delays between replies:
 
-    private static class server_worker implements Runnable
-    {
-        private ZContext ctx ;
+    private static class server_worker implements Runnable {
+        private ZContext ctx;
+
         public server_worker(ZContext ctx) {
             this.ctx = ctx;
         }
+
         public void run() {
             Socket worker = ctx.createSocket(ZMQ.DEALER);
             worker.connect("inproc://backend");
-            
+
             while (true) {
                 //  The DEALER socket gives us the address envelope and message
                 ZMsg msg = ZMsg.recvMsg(worker);
@@ -109,7 +108,7 @@ public class asyncsrv {
                 ZFrame content = msg.pop();
                 assert (content != null);
                 msg.destroy();
-            
+
                 //  Send 0..4 replies back
                 int reply, replies = rand.nextInt(5);
                 for (reply = 0; reply < replies; reply++) {
@@ -130,14 +129,13 @@ public class asyncsrv {
     //The main thread simply starts several clients, and a server, and then
     //waits for the server to finish.
 
-    public static void main (String[] args) throws Exception
-    {
-        ZContext ctx = new ZContext ();
+    public static void main(String[] args) throws Exception {
+        ZContext ctx = new ZContext();
         new Thread(new client_task()).start();
         new Thread(new client_task()).start();
         new Thread(new client_task()).start();
         new Thread(new server_task()).start();
-        
+
         //  Run for 5 seconds then quit
         Thread.sleep(5 * 1000);
         ctx.destroy();
