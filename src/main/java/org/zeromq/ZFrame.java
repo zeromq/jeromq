@@ -38,10 +38,10 @@ import java.util.Arrays;
  */
 
 public class ZFrame {
-    
-    public static final int MORE  =   1;
-    public static final int REUSE =   2;     // no effect at java
-    public static final int DONTWAIT = 4;
+
+    public static final int MORE  =   ZMQ.SNDMORE;
+    public static final int REUSE =   128;     // no effect at java
+    public static final int DONTWAIT = ZMQ.DONTWAIT;
     
     private boolean more;
     
@@ -138,14 +138,8 @@ public class ZFrame {
         if (socket == null) {
             throw new IllegalArgumentException ("socket parameter must be set");
         }
-        
-        int snd_flags = (flags & MORE) > 0? ZMQ.SNDMORE: 0;
-        snd_flags |= (flags & DONTWAIT) > 0? ZMQ.DONTWAIT: 0;
 
-        // jzmq compatible
-        snd_flags |= flags == ZMQ.SNDMORE ? ZMQ.SNDMORE: 0;
-        
-        return socket.send (data, snd_flags);
+        return socket.send (data, flags);
     }
     
     /**
