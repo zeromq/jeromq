@@ -69,7 +69,7 @@ public class PollItem {
         return (ready & ZMQ.ZMQ_POLLIN) > 0;
     }
 
-    public final boolean isWriteable() {
+    public final boolean isWritable () {
         return (ready & ZMQ.ZMQ_POLLOUT) > 0;
     }
     
@@ -80,8 +80,12 @@ public class PollItem {
     public final SocketBase getSocket() {
         return s;
     }
-    
-    public final SelectableChannel getChannel() {
+
+    public final SelectableChannel getRawSocket() {
+        return c;
+    }
+
+    protected final SelectableChannel getChannel() {
         if (s != null)
             return s.get_fd();
         else 
@@ -130,10 +134,5 @@ public class PollItem {
     public final int readyOps() {
         return ready;
     }
-
-    public final SocketBase socket() {
-        return s;
-    }
-
 
 }

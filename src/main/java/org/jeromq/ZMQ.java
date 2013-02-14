@@ -1400,7 +1400,7 @@ public class ZMQ {
         public void unregister (Socket socket) {
             for (int pos = 0; pos < items.length ;pos++) {
                 zmq.PollItem item = items[pos];
-                if (item.socket () == socket.base) {
+                if (item.getSocket () == socket.base) {
                     remove (pos);
                     break;
                 }
@@ -1416,7 +1416,7 @@ public class ZMQ {
         public void unregister (SelectableChannel channel) {
             for (int pos = 0; pos < items.length ;pos++) {
                 zmq.PollItem item = items[pos];
-                if (item.getChannel () == channel) {
+                if (item.getRawSocket () == channel) {
                     remove (pos);
                     break;
                 }
@@ -1441,7 +1441,7 @@ public class ZMQ {
         public Socket getSocket (int index) {
             if (index < 0 || index >= this.next)
                 return null;
-            return new Socket(items [index].socket());
+            return new Socket(items [index].getSocket ());
         }
         
         /**
@@ -1548,7 +1548,7 @@ public class ZMQ {
             if (index < 0 || index >= this.next)
                 return false;
             
-            return items [index].isWriteable(); 
+            return items [index].isWritable ();
         }
 
         /**
@@ -1587,7 +1587,7 @@ public class ZMQ {
         }
 
         public final SelectableChannel getChannel() {
-            return base.getChannel();
+            return base.getRawSocket ();
         }
 
         public final SocketBase getSocket() {
@@ -1599,7 +1599,7 @@ public class ZMQ {
         }
         
         public final boolean isWritable() {
-            return base.isWriteable();
+            return base.isWritable ();
         }
 
         public final int interestOps(int ops) {
@@ -1717,7 +1717,5 @@ public class ZMQ {
                 zmq.ZMQ.ZMQ_VERSION_MINOR + "." +
                 zmq.ZMQ.ZMQ_VERSION_PATCH;
     }
-
-
 
 }
