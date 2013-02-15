@@ -157,8 +157,8 @@ public class ZMQ {
     public static final int ZMQ_STREAMER = 1;
     public static final int ZMQ_FORWARDER = 2;
     public static final int ZMQ_QUEUE = 3;
-    
-    public static class Event 
+
+    public static class Event
     {
         private static final int VALUE_INTEGER = 1;
         private static final int VALUE_CHANNEL = 2;
@@ -565,23 +565,31 @@ public class ZMQ {
      * @return number of events
      */
     public static int zmq_poll(PollItem[] items_, long timeout_) {
+        return zmq_poll(items_, items_.length, timeout_);
+    }
+
+    /**
+     * Polling on items. This has very poor performance.
+     * Try to use zmq_poll with selector
+     * CAUTION: This could be affected by jdk epoll bug
+     *
+     * @param items_
+     * @param timeout_
+     * @return number of events
+     */
+    public static int zmq_poll(PollItem[] items_, int count, long timeout_) {
         Selector selector = null;
         try {
-            selector = Selector.open();
+            selector = PollSelector.open();
         } catch (IOException e) {
             throw new ZError.IOException(e);
         }
-        
 
-        int ret = zmq_poll (selector, items_, timeout_);
-        
-        try {
-            selector.close();
-        } catch (IOException e) {
-        }
+        int ret = zmq_poll (selector, items_, count, timeout_);
+
+        //  Do not close selector
         
         return ret;
-        
     }
 
     /**
@@ -593,13 +601,27 @@ public class ZMQ {
      * @param timeout_
      * @return number of events
      */
-    public static int zmq_poll (Selector selector, PollItem[] items_, long timeout_ ) 
+    public static int zmq_poll(Selector selector, PollItem[] items_, long timeout_)
+    {
+        return zmq_poll(selector, items_, items_.length, timeout_);
+    }
+    /**
+     * Polling on items with given selector
+     * CAUTION: This could be affected by jdk epoll bug
+     *
+     * @param selector Open and reuse this selector and do not forget to close when it is not used.
+     * @param items_
+     * @param count
+     * @param timeout_
+     * @return number of events
+     */
+    public static int zmq_poll(Selector selector, PollItem[] items_, int count, long timeout_)
     {
         if (items_ == null) {
             ZError.errno (ZError.EFAULT);
-            throw new IllegalArgumentException ();
+            throw new IllegalArgumentException();
         }
-        if (items_.length == 0) {
+        if (count == 0) {
             if (timeout_ == 0)
                 return 0;
             try {
@@ -617,9 +639,10 @@ public class ZMQ {
                 saved.put(key.channel (), key);
         }
 
-        for (PollItem item: items_) {
+        for (int i = 0; i < count; i++) {
+            PollItem item = items_[i];
             if (item == null) 
-                break;
+                continue;
 
             SelectableChannel ch = item.getChannel (); // mailbox channel if ZMQ socket
             SelectionKey key = saved.remove (ch);
@@ -736,5 +759,56 @@ public class ZMQ {
 
     public static String zmq_strerror(int errno) {
         return "Errno = " + errno;
+    }
+
+    private static final ThreadLocal <PollSelector> POLL_SELECTOR = new ThreadLocal <PollSelector> ();
+
+    // GC closes selector handle
+    private static class PollSelector {
+
+        private Selector selector;
+
+        private PollSelector (Selector selector) {
+            this.selector = selector;
+        }
+
+        public static Selector open () throws IOException
+        {
+            PollSelector polls = POLL_SELECTOR.get();
+            if (polls == null) {
+                synchronized (POLL_SELECTOR) {
+                    polls = POLL_SELECTOR.get();
+                    try {
+                        if (polls == null) {
+                            polls = new PollSelector (Selector.open ());
+                            POLL_SELECTOR.set (polls);
+                        }
+                    } catch (IOException e) {
+                        throw new ZError.IOException(e);
+                    }
+                }
+            }
+            return polls.get();
+        }
+
+        public Selector get ()
+        {
+            assert (selector != null);
+            assert (selector.isOpen ());
+            return selector;
+        }
+
+        @Override
+        public void finalize ()
+        {
+            try {
+                selector.close ();
+            } catch (IOException e) {
+            }
+            try {
+                super.finalize ();
+            } catch (Throwable e) {
+            }
+        }
     }
 }

@@ -22,7 +22,6 @@ package org.zeromq;
 
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.Selector;
 
@@ -262,7 +261,7 @@ public class ZMQ {
             base = base_;
         }
 
-        public SocketBase base() {
+        protected SocketBase base() {
             return base;
         }
 
@@ -942,46 +941,33 @@ public class ZMQ {
         }
 
         public final boolean send (String data) {
-            zmq.Msg msg = new zmq.Msg(data);
-            boolean ret = base.send(msg, 0);
-            mayRaise ();
-            return ret;
+            return send (data.getBytes (), 0);
         }
         
         public final boolean sendMore (String data) {
-            zmq.Msg msg = new zmq.Msg(data);
-            boolean ret = base.send(msg, zmq.ZMQ.ZMQ_SNDMORE);
-            mayRaise ();
-            return ret;
+            return send(data.getBytes (), zmq.ZMQ.ZMQ_SNDMORE);
         }
         
         public final boolean send (String data, int flags) {
-            zmq.Msg msg = new zmq.Msg(data);
-            boolean ret = base.send(msg, flags);
-            mayRaise ();
-            return ret;
+            return send(data.getBytes (), flags);
         }
         
         public final boolean send (byte[] data) {
-            zmq.Msg msg = new zmq.Msg(data);
-            boolean ret = base.send(msg, 0);
-            mayRaise ();
-            return ret;
+            return send(data, 0);
         }
         
         public final boolean sendMore (byte[] data) {
-            zmq.Msg msg = new zmq.Msg(data);
-            boolean ret = base.send(msg, zmq.ZMQ.ZMQ_SNDMORE);
-            mayRaise ();
-            return ret;
+            return send(data, zmq.ZMQ.ZMQ_SNDMORE);
         }
 
         
         public final boolean send (byte[] data, int flags) {
             zmq.Msg msg = new zmq.Msg(data);
-            boolean ret = base.send(msg, flags);
+            if (base.send(msg, flags))
+                return true;
+
             mayRaise ();
-            return ret;
+            return false;
         }
         
         /**
@@ -1057,13 +1043,12 @@ public class ZMQ {
          */
         public final String recvStr (int flags) 
         {
-            zmq.Msg msg = base.recv(flags);
+            byte [] msg = recv(flags);
             
             if (msg != null) {
-                return new String (msg.data());
+                return new String (msg);
             }
 
-            mayRaise ();
             return null;
         }
         
@@ -1074,43 +1059,6 @@ public class ZMQ {
 
     }
 
-    // GC closes selector handle
-    protected static class ReuseableSelector {
-
-        private Selector selector;
-        
-        protected ReuseableSelector () {
-            selector = null;
-        }
-        
-        public Selector open () throws IOException
-        {
-            selector = Selector.open();
-            return selector;
-        }
-        
-        public Selector get () 
-        {
-            assert (selector != null);
-            assert (selector.isOpen ());
-            return selector;
-        }
-
-        @Override
-        public void finalize ()
-        {
-            try {
-                selector.close ();
-            } catch (IOException e) {
-            }
-            try {
-                super.finalize ();
-            } catch (Throwable e) {
-            }
-        }
-        
-    }
-    
     public static class Poller {
 
         /**
@@ -1123,9 +1071,7 @@ public class ZMQ {
         private static final int SIZE_DEFAULT = 32;
         private static final int SIZE_INCREMENT = 16;
         
-        private static final ThreadLocal <ReuseableSelector> holder = new ThreadLocal <ReuseableSelector> ();
-        private Selector selector;
-        private zmq.PollItem [] items;
+        private PollItem [] items;
         private long timeout;
         private int next;
 
@@ -1142,10 +1088,9 @@ public class ZMQ {
          *            the number of Sockets this poller will contain.
          */
         protected Poller (Context context, int size) {
-            items = new zmq.PollItem[size];
+            items = new PollItem[size];
             timeout = -1L;
             next = 0;
-            open ();
         }
 
         /**
@@ -1156,23 +1101,6 @@ public class ZMQ {
          */
         protected Poller (Context context) {
             this(context, SIZE_DEFAULT);
-        }
-        
-        private void open () {
-            if (holder.get () == null) {
-                synchronized (holder) {
-                    try {
-                       if (selector == null) {
-                           ReuseableSelector s = new ReuseableSelector ();
-                           selector = s.open ();
-                           holder.set (s);
-                       }
-                    } catch (IOException e) {
-                        throw new ZError.IOException(e);
-                    }
-                }
-            }
-            selector = holder.get ().get ();
         }
         
         /**
@@ -1199,7 +1127,7 @@ public class ZMQ {
          */
         public int register (Socket socket, int events) {
 
-            return insert (new zmq.PollItem (socket.base, events));
+            return insert (new PollItem (socket, events));
         }
         
         /**
@@ -1215,14 +1143,27 @@ public class ZMQ {
          */
         public int register (SelectableChannel channel, int events) {
 
-            return insert (new zmq.PollItem (channel, events));
+            return insert (new PollItem (channel, events));
         }
 
-        private int insert (zmq.PollItem item)
+        /**
+         * Register a Channel for polling on the specified events.
+         *
+         * Automatically grow the internal representation if needed.
+         *
+         * @param item
+         *            the PollItem we are registering.
+         * @return the index identifying this Channel in the poll set.
+         */
+        public int register (PollItem item) {
+            return insert (item);
+        }
+
+        private int insert (PollItem item)
         {
             int pos = next++;
             if (pos == items.length) {
-                zmq.PollItem[] nitems = new zmq.PollItem[items.length + SIZE_INCREMENT];
+                PollItem[] nitems = new PollItem[items.length + SIZE_INCREMENT];
                 System.arraycopy (items, 0, nitems, 0, items.length);
                 items = nitems;
             }
@@ -1238,8 +1179,8 @@ public class ZMQ {
          */
         public void unregister (Socket socket) {
             for (int pos = 0; pos < items.length ;pos++) {
-                zmq.PollItem item = items[pos];
-                if (item.socket () == socket.base) {
+                PollItem item = items[pos];
+                if (item.getSocket () == socket) {
                     remove (pos);
                     break;
                 }
@@ -1254,8 +1195,8 @@ public class ZMQ {
          */
         public void unregister (SelectableChannel channel) {
             for (int pos = 0; pos < items.length ;pos++) {
-                zmq.PollItem item = items[pos];
-                if (item.getChannel () == channel) {
+                PollItem item = items[pos];
+                if (item.getRawSocket () == channel) {
                     remove (pos);
                     break;
                 }
@@ -1269,7 +1210,21 @@ public class ZMQ {
                 items [pos] = items [next];
             items [next] = null;
         }
-        
+
+        /**
+         * Get the PollItem associated with an index.
+         *
+         * @param index
+         *            the desired index.
+         * @return the PollItem associated with that index (or null).
+         */
+        public PollItem getItem (int index)
+        {
+            if (index < 0 || index >= this.next)
+                return null;
+            return this.items[index];
+        }
+
         /**
          * Get the socket associated with an index.
          * 
@@ -1280,7 +1235,7 @@ public class ZMQ {
         public Socket getSocket (int index) {
             if (index < 0 || index >= this.next)
                 return null;
-            return new Socket(items [index].socket());
+            return items[index].getSocket ();
         }
         
         /**
@@ -1358,7 +1313,12 @@ public class ZMQ {
          * @return how many objects where signaled by poll ()
          */
         public int poll(long tout) {
-            return zmq.ZMQ.zmq_poll (selector, items, tout);
+
+            zmq.PollItem[] pollItems = new zmq.PollItem[next];
+            for (int i = 0; i < next; i++)
+                pollItems[i] = items[i].base ();
+
+            return zmq.ZMQ.zmq_poll (pollItems, next, tout);
         }
         
         /**
@@ -1387,7 +1347,7 @@ public class ZMQ {
             if (index < 0 || index >= this.next)
                 return false;
             
-            return items [index].isWriteable(); 
+            return items [index].isWritable ();
         }
 
         /**
@@ -1409,25 +1369,28 @@ public class ZMQ {
     public static class PollItem {
 
         private final zmq.PollItem base;
+        private final Socket socket;
         
-        public PollItem (Socket s, int ops) {
-            base = new zmq.PollItem (s.base, ops); 
+        public PollItem (Socket socket, int ops) {
+            this.socket = socket;
+            base = new zmq.PollItem (socket.base, ops);
         }
 
-        public PollItem (SelectableChannel s, int ops) {
-            base = new zmq.PollItem (s, ops); 
+        public PollItem (SelectableChannel channel, int ops) {
+            base = new zmq.PollItem (channel, ops);
+            socket = null;
         }
 
-        public final zmq.PollItem base() {
+        protected final zmq.PollItem base() {
             return base;
         }
 
-        public final SelectableChannel getChannel() {
-            return base.getChannel();
+        public final SelectableChannel getRawSocket () {
+            return base.getRawSocket ();
         }
 
-        public final SocketBase getSocket() {
-            return base.getSocket();
+        public final Socket getSocket() {
+            return socket;
         }
 
         public final boolean isReadable() {
@@ -1435,13 +1398,32 @@ public class ZMQ {
         }
         
         public final boolean isWritable() {
-            return base.isWriteable();
+            return base.isWritable ();
         }
 
-        public final int interestOps(int ops) {
-            return base.interestOps(ops);
+        public final boolean isError () {
+            return base.isError ();
         }
-        
+
+        public final int readyOps () {
+            return base.readyOps ();
+        }
+
+        @Override
+        public boolean equals (Object obj)
+        {
+            if (!(obj instanceof PollItem))
+                return false;
+
+            PollItem target = (PollItem) obj;
+            if (socket != null && socket == target.socket)
+                return true;
+
+            if (getRawSocket () != null && getRawSocket () == target.getRawSocket ())
+                return true;
+
+            return false;
+        }
     }
 
     public enum Error {
@@ -1506,16 +1488,20 @@ public class ZMQ {
         return zmq.ZMQ.zmq_proxy (frontend.base, backend.base, capture != null ? capture.base: null);
     }
     
-    public static int poll (PollItem[] items, long timeout) {
-        
+    public static int poll(PollItem[] items, long timeout)
+    {
+        return poll(items, items.length, timeout);
+    }
+
+    public static int poll(PollItem[] items, int count, long timeout) {
+
         zmq.PollItem[] items_ = new zmq.PollItem[items.length];
         for (int i=0; i < items.length; i++) {
             items_[i] = items[i].base;
         }
-        
-        return zmq.ZMQ.zmq_poll(items_, timeout);
+
+        return zmq.ZMQ.zmq_poll(items_, count, timeout);
     }
-    
 
     /**
      * @return Major version number of the ZMQ library.

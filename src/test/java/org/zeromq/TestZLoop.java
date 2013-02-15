@@ -64,15 +64,15 @@ public class TestZLoop {
         };
 
         //  After 10 msecs, send a ping message to output
-        loop.timer ( 10, 1, s_timer_event, output);
+        loop.addTimer (10, 1, s_timer_event, output);
         
         //  When we get the ping message, end the reactor
-        PollItem poll_input = new PollItem( input, Poller.POLLIN );
-        rc = loop.poller (poll_input, s_socket_event, null);
+        PollItem pollInput = new PollItem( input, Poller.POLLIN );
+        rc = loop.addPoller (pollInput, s_socket_event, null);
         assert (rc == 0);
         loop.start ();
 
-        loop.pollerEnd(poll_input);
+        loop.removePoller (pollInput);
         ctx.destroy();
         //  @end
         printf ("OK\n");
@@ -112,7 +112,7 @@ public class TestZLoop {
 						return 0;
 					}
 				};
-				loop.timer(10, 1, s_timer_event2, arg);
+				loop.addTimer (10, 1, s_timer_event2, arg);
                 return 0;
             }
         };
@@ -128,16 +128,16 @@ public class TestZLoop {
 
         //  After 10 msecs, fire a timer that registers 
         //  another timer that sends the ping message
-        loop.timer ( 10, 1, s_timer_event, output);
+        loop.addTimer (10, 1, s_timer_event, output);
         
         //  When we get the ping message, end the reactor
-        PollItem poll_input = new PollItem( input, Poller.POLLIN );
-        rc = loop.poller (poll_input, s_socket_event, null);
+        PollItem pollInput = new PollItem( input, Poller.POLLIN );
+        rc = loop.addPoller (pollInput, s_socket_event, null);
         assert (rc == 0);
         
         loop.start ();
         
-        loop.pollerEnd(poll_input);
+        loop.removePoller (pollInput);
         ctx.destroy();
     	//  @end
         printf ("OK\n");
@@ -186,22 +186,22 @@ public class TestZLoop {
 					}
 				};
 				//  After 10 msec fire a timer that ends the reactor
-				loop.timer(10, 1, s_timer_event2, arg);
+				loop.addTimer (10, 1, s_timer_event2, arg);
                 return 0;
             }
         };
 
         //  Fire a timer that sends the ping message 
-        loop.timer(0, 1, s_timer_event, output);
+        loop.addTimer (0, 1, s_timer_event, output);
         
         //  When we get the ping message, end the reactor
-        PollItem poll_input = new PollItem( input, Poller.POLLIN );
-        rc = loop.poller (poll_input, s_socket_event, null);
+        PollItem pollInput = new PollItem( input, Poller.POLLIN );
+        rc = loop.addPoller (pollInput, s_socket_event, null);
         assert (rc == 0);
         
         loop.start ();
         
-        loop.pollerEnd(poll_input);
+        loop.removePoller (pollInput);
         ctx.destroy();
     	//  @end
         printf ("OK\n");
@@ -247,21 +247,21 @@ public class TestZLoop {
                         return -1;
                     }
                 };
-                loop.timer(10, 1, s_shutdown_event, s_shutdown_event);
+                loop.addTimer (10, 1, s_shutdown_event, s_shutdown_event);
                 return 0;
             }
         };
 
         //  Fire event that sends a ping message to output
-        loop.timer (0, 1, s_timer_event, output);
+        loop.addTimer (0, 1, s_timer_event, output);
         
         //  When we get the ping message, end the reactor
-        PollItem poll_input = new PollItem( input, Poller.POLLIN );
-        rc = loop.poller (poll_input, s_socket_event, null);
+        PollItem pollInput = new PollItem( input, Poller.POLLIN );
+        rc = loop.addPoller (pollInput, s_socket_event, null);
         assert (rc == 0);
         loop.start ();
 
-        loop.pollerEnd(poll_input);
+        loop.removePoller (pollInput);
         ctx.destroy();
         //  @end
         printf ("OK\n");

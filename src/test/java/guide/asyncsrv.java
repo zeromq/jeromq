@@ -6,6 +6,7 @@ import org.zeromq.ZMQ;
 import org.zeromq.ZMQ.PollItem;
 import org.zeromq.ZMQ.Socket;
 import org.zeromq.ZMsg;
+import org.zeromq.ZMQ.Poller;
 
 import java.util.Random;
 
@@ -17,7 +18,8 @@ import java.util.Random;
 //context and conceptually acts as a separate process.
 
 
-public class asyncsrv {
+public class asyncsrv
+{
     //---------------------------------------------------------------------
     //This is our client task
     //It connects to the server, and then sends a request once per second
@@ -37,13 +39,12 @@ public class asyncsrv {
             client.setIdentity(identity.getBytes());
             client.connect("tcp://localhost:5570");
 
-            PollItem items[] = new PollItem[]{new PollItem(client, zmq.ZMQ.ZMQ_POLLIN)};
+            PollItem[] items = new PollItem[] { new PollItem(client, Poller.POLLIN) };
 
-            int request_nbr = 0;
-            while (true) {
+            int requestNbr = 0;
+            while (!Thread.currentThread().isInterrupted()) {
                 //  Tick once per second, pulling in arriving messages
-                int centitick;
-                for (centitick = 0; centitick < 100; centitick++) {
+                for (int centitick = 0; centitick < 100; centitick++) {
                     ZMQ.poll(items, 10);
                     if (items[0].isReadable()) {
                         ZMsg msg = ZMsg.recvMsg(client);
@@ -51,9 +52,9 @@ public class asyncsrv {
                         msg.destroy();
                     }
                 }
-                client.send(String.format("request #%d", ++request_nbr), 0);
+                client.send(String.format("request #%d", ++requestNbr), 0);
             }
-            //ctx.destroy();
+            ctx.destroy();
         }
     }
 
@@ -76,8 +77,7 @@ public class asyncsrv {
             backend.bind("inproc://backend");
 
             //  Launch pool of worker threads, precise number is not critical
-            int thread_nbr;
-            for (thread_nbr = 0; thread_nbr < 5; thread_nbr++)
+            for (int threadNbr = 0; threadNbr < 5; threadNbr++)
                 new Thread(new server_worker(ctx)).start();
 
             //  Connect backend to frontend via a proxy
@@ -101,7 +101,7 @@ public class asyncsrv {
             Socket worker = ctx.createSocket(ZMQ.DEALER);
             worker.connect("inproc://backend");
 
-            while (true) {
+            while (!Thread.currentThread().isInterrupted()) {
                 //  The DEALER socket gives us the address envelope and message
                 ZMsg msg = ZMsg.recvMsg(worker);
                 ZFrame address = msg.pop();
@@ -110,8 +110,8 @@ public class asyncsrv {
                 msg.destroy();
 
                 //  Send 0..4 replies back
-                int reply, replies = rand.nextInt(5);
-                for (reply = 0; reply < replies; reply++) {
+                int replies = rand.nextInt(5);
+                for (int reply = 0; reply < replies; reply++) {
                     //  Sleep for some fraction of a second
                     try {
                         Thread.sleep(rand.nextInt(1000) + 1);
@@ -123,6 +123,7 @@ public class asyncsrv {
                 address.destroy();
                 content.destroy();
             }
+            ctx.destroy();
         }
     }
 
