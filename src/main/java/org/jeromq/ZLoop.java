@@ -158,7 +158,7 @@ public class ZLoop {
     {
     
         zmq.PollItem item = item_.base();
-        if (item.getChannel() == null)
+        if (item.getRawSocket () == null && item.getSocket () == null)
             return -1;
     
         SPoller poller = new SPoller (item_, handler, arg);
@@ -168,7 +168,7 @@ public class ZLoop {
         if (verbose)
             System.out.printf("I: zloop: register %s poller (%s, %s)\n",
                 item.getSocket() != null? item.getSocket().typeString(): "FD",
-                item.getSocket(), item.getChannel());
+                item.getSocket(), item.getRawSocket ());
         return 0;
     }
         
@@ -180,12 +180,16 @@ public class ZLoop {
     public void pollerEnd (PollItem item_)
     {
         zmq.PollItem item = item_.base();
-        assert (item.getChannel() != null);
+        assert (item.getRawSocket () != null || item.getSocket () != null);
     
         Iterator<SPoller> it = pollers.iterator();
         while (it.hasNext()) {
             SPoller p = it.next();
-            if (item.getChannel() == p.item.getChannel()) {
+            if (item.getSocket () != null && item.getSocket () == p.item.getSocket ()) {
+                it.remove();
+                dirty = true;
+            }
+            if (item.getRawSocket () != null && item.getRawSocket () == p.item.getChannel ()) {
                 it.remove();
                 dirty = true;
             }
@@ -193,7 +197,7 @@ public class ZLoop {
         if (verbose)
             System.out.printf ("I: zloop: cancel %s poller (%s, %s)",
                     item.getSocket() != null? item.getSocket().typeString(): "FD",
-                    item.getSocket(), item.getChannel());
+                    item.getSocket(), item.getRawSocket ());
 
     }
     
