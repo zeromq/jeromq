@@ -940,6 +940,18 @@ public class ZMQ {
             return ret;
         }
 
+        /**
+         * Disconnect to remote application.
+         * 
+         * @param addr
+         *            the endpoint to disconnect to.
+         */
+        public final boolean disconnect (String addr) {
+            boolean ret = base.term_endpoint (addr);
+            mayRaise ();
+            return ret;
+        }
+
         public final boolean send (String data) {
             return send (data.getBytes (), 0);
         }
