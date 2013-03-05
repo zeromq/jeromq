@@ -21,13 +21,10 @@
 package org.zeromq;
 
 
-import java.io.IOException;
 import java.nio.channels.SelectableChannel;
-import java.nio.channels.Selector;
-
 import zmq.Ctx;
-import zmq.EncoderBase;
 import zmq.DecoderBase;
+import zmq.EncoderBase;
 import zmq.SocketBase;
 import zmq.ZError;
 
@@ -829,6 +826,17 @@ public class ZMQ {
          */
         public final void setRouterMandatory (boolean mandatory) {
             base.setsockopt (zmq.ZMQ.ZMQ_ROUTER_MANDATORY, mandatory ? 1 : 0);
+            mayRaiseNot (ZError.ETERM);
+        }
+
+        /**
+         * Sets the XPUB socket behavior on new subscriptions and unsubscriptions.
+         *
+         * @param verbose A value of false is the default and passes only new subscription messages to upstream.
+         *                A value of true passes all subscription messages upstream.
+         */
+        public final void setXpubVerbose(boolean verbose) {
+            base.setsockopt(zmq.ZMQ.ZMQ_XPUB_VERBOSE, verbose ? 1 : 0);
             mayRaiseNot (ZError.ETERM);
         }
 
