@@ -1,8 +1,6 @@
 package guide;
 
 /**
- * (c) 2011 Arkadiusz Orzechowski
- *
  * This file is part of ZGuide
  *
  * ZGuide is free software; you can redistribute it and/or modify it under
@@ -20,12 +18,10 @@ package guide;
  */
 import java.util.Arrays;
 
-import org.jeromq.ZFrame;
+import org.zeromq.ZFrame;
 
 /**
  * Majordomo Protocol definitions, Java version
- * 
- * @author Arkadiusz Orzechowski <aorzecho@gmail.com>
  */
 public enum MDP {
 

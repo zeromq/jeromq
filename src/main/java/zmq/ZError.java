@@ -114,6 +114,14 @@ public class ZError  {
     public static void clear () {
         errno.set(0);
     }
-    
+
+    public static String toString(int code)
+    {
+        switch (code) {
+        case EADDRINUSE:
+            return "Address already in use";
+        }
+        return "";
+    }
 
 }

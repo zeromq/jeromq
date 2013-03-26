@@ -24,16 +24,14 @@ import java.util.Formatter;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.jeromq.ZContext;
-import org.jeromq.ZFrame;
-import org.jeromq.ZMQ;
-import org.jeromq.ZMsg;
+import org.zeromq.ZContext;
+import org.zeromq.ZFrame;
+import org.zeromq.ZMQ;
+import org.zeromq.ZMsg;
 
 /**
 *  Majordomo Protocol broker
 *  A minimal implementation of http://rfc.zeromq.org/spec:7 and spec:8
-*
-*  @author Arkadiusz Orzechowski <aorzecho@gmail.com>
 */
 public class mdbroker {
 
@@ -123,7 +121,7 @@ public class mdbroker {
      */
     public void mediate() {
         while (!Thread.currentThread().isInterrupted()) {
-            ZMQ.Poller items = ctx.getContext().poller();
+            ZMQ.Poller items = new ZMQ.Poller(1);
             items.register(socket, ZMQ.Poller.POLLIN);
             if (items.poll(HEARTBEAT_INTERVAL) == -1)
                 break; // Interrupted

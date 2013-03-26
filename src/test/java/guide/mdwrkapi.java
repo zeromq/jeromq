@@ -1,8 +1,6 @@
 package guide;
 
 /**
-* (c) 2011 Arkadiusz Orzechowski
-*
 * This file is part of ZGuide
 *
 * ZGuide is free software; you can redistribute it and/or modify it under
@@ -20,16 +18,14 @@ package guide;
 */
 import java.util.Formatter;
 
-import org.jeromq.ZContext;
-import org.jeromq.ZFrame;
-import org.jeromq.ZMQ;
-import org.jeromq.ZMsg;
+import org.zeromq.ZContext;
+import org.zeromq.ZFrame;
+import org.zeromq.ZMQ;
+import org.zeromq.ZMsg;
 
 /**
 * Majordomo Protocol Client API, Java version Implements the MDP/Worker spec at
 * http://rfc.zeromq.org/spec:7.
-*
-* @author Arkadiusz Orzechowski <aorzecho@gmail.com>
 */
 public class mdwrkapi {
 
@@ -129,7 +125,7 @@ public class mdwrkapi {
 
         while (!Thread.currentThread().isInterrupted()) {
             // Poll socket for a reply, with timeout
-            ZMQ.Poller items = ctx.getContext().poller();
+            ZMQ.Poller items = new ZMQ.Poller(1);
             items.register(worker, ZMQ.Poller.POLLIN);
             if (items.poll(timeout) == -1)
                 break; // Interrupted
