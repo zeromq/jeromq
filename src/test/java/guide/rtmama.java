@@ -1,6 +1,6 @@
 package guide;
 
-import org.jeromq.ZMQ;
+import org.zeromq.ZMQ;
 
 //
 //Custom routing Router to Mama (ROUTER to REQ)
