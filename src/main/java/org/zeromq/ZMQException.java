@@ -20,6 +20,8 @@
 */
 package org.zeromq;
 
+import zmq.ZError;
+
 public class ZMQException extends RuntimeException {
 
     public static class IOException extends RuntimeException {
@@ -46,7 +48,7 @@ public class ZMQException extends RuntimeException {
 
     @Override
     public String toString() {
-        return super.toString() + "(0x" + Integer.toHexString(code) + ")";
+        return super.toString() + " : " + ZError.toString(code);
     }
 
 }
