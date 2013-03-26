@@ -2,9 +2,9 @@ package guide;
 
 import java.util.Random;
 
-import org.jeromq.ZMQ;
-import org.jeromq.ZMQ.Context;
-import org.jeromq.ZMQ.Socket;
+import org.zeromq.ZMQ;
+import org.zeromq.ZMQ.Context;
+import org.zeromq.ZMQ.Socket;
 
 //
 // Lazy Pirate server
@@ -13,15 +13,16 @@ import org.jeromq.ZMQ.Socket;
 //  - echoes request as-is
 //  - randomly runs slowly, or exits to simulate a crash.
 //
-public class lpserver {
+public class lpserver
+{
 
-    public static void main (String[] argv) throws Exception
+    public static void main(String[] argv) throws Exception
     {
         Random rand = new Random(System.nanoTime());
 
-        Context context = ZMQ.context();
+        Context context = ZMQ.context(1);
         Socket server = context.socket(ZMQ.REP);
-        server.bind( "tcp://*:5555");
+        server.bind("tcp://*:5555");
 
         int cycles = 0;
         while (true) {
@@ -29,18 +30,16 @@ public class lpserver {
             cycles++;
 
             //  Simulate various problems, after a few cycles
-            if (cycles > 3 && rand.nextInt (3) == 0) {
-                System.out.println ("I: simulating a crash\n");
+            if (cycles > 3 && rand.nextInt(3) == 0) {
+                System.out.println("I: simulating a crash");
                 break;
+            } else if (cycles > 3 && rand.nextInt(3) == 0) {
+                System.out.println("I: simulating CPU overload");
+                Thread.sleep(2000);
             }
-            else
-            if (cycles > 3 && rand.nextInt (3) == 0) {
-                System.out.println ("I: simulating CPU overload\n");
-                Thread.sleep (2000);
-            }
-            System.out.println (String.format("I: normal request (%s)\n", request));
-            Thread.sleep (1000);              //  Do some heavy work
-            server.send (request);
+            System.out.printf("I: normal request (%s)\n", request);
+            Thread.sleep(1000);              //  Do some heavy work
+            server.send(request);
         }
         server.close();
         context.term();

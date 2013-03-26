@@ -3,12 +3,12 @@ package guide;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-import org.jeromq.ZContext;
-import org.jeromq.ZFrame;
-import org.jeromq.ZMQ;
-import org.jeromq.ZMQ.PollItem;
-import org.jeromq.ZMQ.Socket;
-import org.jeromq.ZMsg;
+import org.zeromq.ZContext;
+import org.zeromq.ZFrame;
+import org.zeromq.ZMQ;
+import org.zeromq.ZMQ.PollItem;
+import org.zeromq.ZMQ.Socket;
+import org.zeromq.ZMsg;
 
 //
 // Paranoid Pirate queue
@@ -17,7 +17,7 @@ import org.jeromq.ZMsg;
 public class ppqueue {
 
     private final static int HEARTBEAT_LIVENESS = 3;       //  3-5 is reasonable
-    private final static int  HEARTBEAT_INTERVAL =  1000;    //  msecs
+    private final static int HEARTBEAT_INTERVAL =  1000;    //  msecs
 
     //  Paranoid Pirate Protocol constants
     private final static String  PPP_READY     =  "\001";      //  Signals worker is ready
@@ -33,8 +33,8 @@ public class ppqueue {
         
         protected Worker(ZFrame address) {
             this.address = address;
-            identity = new String(address.data());
-            expiry = System.currentTimeMillis() + HEARTBEAT_INTERVAL;
+            identity = new String(address.getData());
+            expiry = System.currentTimeMillis() + HEARTBEAT_INTERVAL * HEARTBEAT_LIVENESS;
         }
 
         //  The ready method puts a worker to the end of the ready list:
@@ -89,14 +89,11 @@ public class ppqueue {
 
         while (true) {
             PollItem items [] = {
-                new PollItem( backend,  ZMQ.POLLIN ),
-                new PollItem( frontend, ZMQ.POLLIN )
+                new PollItem( backend,  ZMQ.Poller.POLLIN ),
+                new PollItem( frontend, ZMQ.Poller.POLLIN )
             };
-            if (workers.size() == 0) {
-                items[1].interestOps(0);
-            }
             //  Poll frontend only if we have available workers
-            int rc = ZMQ.poll (items, 
+            int rc = ZMQ.poll (items, workers.size() > 0 ? 2:1,
                 HEARTBEAT_INTERVAL );
             if (rc == -1)
                 break;              //  Interrupted
@@ -116,7 +113,7 @@ public class ppqueue {
                 //  Validate control message, or return reply to client
                 if (msg.size() == 1) {
                     ZFrame frame = msg.getFirst();
-                    String data = new String(frame.data());
+                    String data = new String(frame.getData());
                     if (!data.equals(PPP_READY)
                     &&  !data.equals( PPP_HEARTBEAT)) {
                         System.out.println ("E: invalid message from worker");

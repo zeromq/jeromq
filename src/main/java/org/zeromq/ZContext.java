@@ -21,6 +21,8 @@ package org.zeromq;
 import org.zeromq.ZMQ.Context;
 import org.zeromq.ZMQ.Socket;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -34,7 +36,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * 
  */
 
-public class ZContext {
+public class ZContext implements Closeable
+{
     /**
      * Reference to underlying Context object
      */
@@ -94,7 +97,8 @@ public class ZContext {
         // Only terminate context if we are on the main thread
         if (isMain() && context != null)
             context.term();
-        
+
+        context = null;
     }
     
     /**
@@ -226,5 +230,10 @@ public class ZContext {
         return sockets;
     }
 
-    
+
+    @Override
+    public void close() throws IOException
+    {
+        destroy();
+    }
 }

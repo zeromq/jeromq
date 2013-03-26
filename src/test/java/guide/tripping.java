@@ -1,16 +1,14 @@
 package guide;
 
-import org.jeromq.ZContext;
-import org.jeromq.ZFrame;
-import org.jeromq.ZMQ;
-import org.jeromq.ZMQ.Socket;
-import org.jeromq.ZMsg;
+import org.zeromq.ZContext;
+import org.zeromq.ZFrame;
+import org.zeromq.ZMQ;
+import org.zeromq.ZMQ.Socket;
+import org.zeromq.ZMsg;
 
 /**
 * Round-trip demonstrator. Broker, Worker and Client are mocked as separate
 * threads.
-*
-* @author Arkadiusz Orzechowski <aorzecho@gmail.com>
 */
 public class tripping {
 
@@ -26,7 +24,7 @@ public class tripping {
             backend.bind("tcp://*:5556");
 
             while (!Thread.currentThread().isInterrupted()) {
-                ZMQ.Poller items = ctx.getContext().poller();
+                ZMQ.Poller items = new ZMQ.Poller(2);
                 items.register(frontend, ZMQ.Poller.POLLIN);
                 items.register(backend, ZMQ.Poller.POLLIN);
                 
@@ -152,7 +150,7 @@ public class tripping {
             workerThread.interrupt();
             brokerThread.interrupt();
             Thread.sleep(200);// give them some time
-        } catch (InterruptedException closingAnyway) {
+        } catch (InterruptedException e) {
         }
     }
 

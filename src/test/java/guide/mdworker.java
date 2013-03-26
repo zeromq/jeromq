@@ -1,11 +1,9 @@
 package guide;
 
-import org.jeromq.ZMsg;
+import org.zeromq.ZMsg;
 
 /**
 * Majordomo Protocol worker example. Uses the mdwrk API to hide all MDP aspects
-*
-* @author Arkadiusz Orzechowski <aorzecho@gmail.com>
 *
 */
 public class mdworker {
