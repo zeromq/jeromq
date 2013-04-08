@@ -51,6 +51,12 @@ public class Blob {
         return this;
     }
 
+    public Blob put(int pos, byte[] data, int start, int length) {
+        System.arraycopy(data, start, buf, pos, length);
+        hash = 0;
+        return this;
+    }
+
     public int size() {
         return buf.length;
     }
