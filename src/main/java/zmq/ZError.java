@@ -120,6 +120,14 @@ public class ZError  {
         switch (code) {
         case EADDRINUSE:
             return "Address already in use";
+        case EFSM:
+            return "Operation cannot be accomplished in current state";
+        case ENOCOMPATPROTO:
+            return "The protocol is not compatible with the socket type";
+        case ETERM:
+            return "Context was terminated";
+        case EMTHREAD:
+            return "No thread available";
         }
         return "";
     }

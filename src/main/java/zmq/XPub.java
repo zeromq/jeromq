@@ -58,7 +58,7 @@ public class XPub extends SocketBase {
         mark_as_matching = new Mtrie.IMtrieHandler() {
 
             @Override
-            public void invoke(Pipe pipe_, byte[] data, Object arg_) {
+            public void invoke(Pipe pipe_, byte[] data, int size, Object arg_) {
                 XPub self = (XPub) arg_;
                 self.dist.match (pipe_);
             }
@@ -68,16 +68,16 @@ public class XPub extends SocketBase {
         send_unsubscription = new Mtrie.IMtrieHandler() {
             
             @Override
-            public void invoke(Pipe pipe_, byte[] data_, Object arg_) {
+            public void invoke(Pipe pipe_, byte[] data_, int size, Object arg_) {
                 XPub self = (XPub) arg_;
 
                 if (self.options.type != ZMQ.ZMQ_PUB) {
 
                     //  Place the unsubscription to the queue of pending (un)sunscriptions
                     //  to be retrived by the user later on.
-                    Blob unsub = new Blob (data_.length + 1);
+                    Blob unsub = new Blob (size + 1);
                     unsub.put(0,(byte)0);
-                    unsub.put(1, data_);
+                    unsub.put(1, data_, 0, size);
                     self.pending.add (unsub);
                 }
 
