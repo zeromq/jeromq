@@ -33,7 +33,7 @@ public class Mtrie {
     private Mtrie[] next;
     
     public static interface IMtrieHandler {
-        void invoke(Pipe pipe, byte[] data, Object arg);
+        void invoke(Pipe pipe, byte[] data, int size, Object arg);
     }
     
     public Mtrie() {
@@ -139,7 +139,7 @@ public class Mtrie {
         
         //  Remove the subscription from this node.
         if (pipes != null && pipes.remove(pipe_) && pipes.isEmpty()) {
-            func_.invoke(null, buff_, arg_);
+            func_.invoke(null, buff_, buffsize_, arg_);
             pipes = null;
         }
 
@@ -352,7 +352,7 @@ public class Mtrie {
             //  Signal the pipes attached to this node.
             if (current.pipes != null) {
                 for (Pipe it : current.pipes)
-                    func_.invoke(it, null, arg_);
+                    func_.invoke(it, null, 0, arg_);
             }
 
             //  If we are at the end of the message, there's nothing more to match.
