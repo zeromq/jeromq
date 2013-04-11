@@ -41,10 +41,13 @@ abstract public class PollerBase {
         }
     }
     private final Map<Long, TimerInfo> timers;
-    
+    private final Map<Long, TimerInfo> addingTimers;
+
+
     protected PollerBase() {
         load = new AtomicInteger(0);
         timers = new MultiMap<Long, TimerInfo>();
+        addingTimers = new MultiMap<Long, TimerInfo>();
     }
     
     //  Returns load of the poller. Note that this function can be
@@ -67,13 +70,19 @@ abstract public class PollerBase {
     {
         long expiration = Clock.now_ms () + timeout_;
         TimerInfo info = new TimerInfo(sink_, id_);
-        timers.put(expiration, info);
+        addingTimers.put(expiration, info);
+
     }
 
     //  Cancel the timer created by sink_ object with ID equal to id_.
     public void cancel_timer(IPollEvents sink_, int id_) {
 
         //  Complexity of this operation is O(n). We assume it is rarely used.
+
+        if (!addingTimers.isEmpty()) {
+            timers.putAll(addingTimers);
+            addingTimers.clear();
+        }
 
         Iterator<Entry<Long, TimerInfo>> it = timers.entrySet().iterator();
         while (it.hasNext()) {
@@ -90,37 +99,45 @@ abstract public class PollerBase {
 
     //  Executes any timers that are due. Returns number of milliseconds
     //  to wait to match the next timer or 0 meaning "no timers".
-    protected long execute_timers ()
+    protected long execute_timers()
     {
+        if (!addingTimers.isEmpty()) {
+            timers.putAll(addingTimers);
+            addingTimers.clear();
+        }
         //  Fast track.
-        if (timers.isEmpty ())
+        if (timers.isEmpty())
             return 0L;
 
         //  Get the current time.
         long current = Clock.now_ms ();
 
-        ArrayList <Long> removes = new ArrayList <Long> ();
         //   Execute the timers that are already due.
-        long ret = 0L;
-        for (Entry <Long, TimerInfo> o : timers.entrySet ()) {
+        Iterator<Entry <Long, TimerInfo>> it = timers.entrySet().iterator();
+        while (it.hasNext()) {
 
+            Entry <Long, TimerInfo> o = it.next();
             //  If we have to wait to execute the item, same will be true about
             //  all the following items (multimap is sorted). Thus we can stop
             //  checking the subsequent timers and return the time to wait for
             //  the next timer (at least 1ms).
+
+
             if (o.getKey() > current) {
-                ret = o.getKey() - current;
-                break;
+                return o.getKey() - current;
             }
 
             //  Trigger the timer.
             o.getValue().sink.timer_event (o.getValue().id);
             //  Remove it from the list of active timers.
-            removes.add (o.getKey ());
+            it.remove();
         }
-        for (long key : removes)
-            timers.remove (key);
+
+        if (!addingTimers.isEmpty())
+            return execute_timers();
+
         //  There are no more timers.
-        return ret;
+
+        return 0L;
     }
 }
