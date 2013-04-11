@@ -228,8 +228,11 @@ public class MultiMap<K extends Comparable<? super K>, V> implements Map<K, V> {
     }
 
     @Override
-    public void putAll(Map<? extends K, ? extends V> arg0) {
-        throw new UnsupportedOperationException();
+    public void putAll(Map<? extends K, ? extends V> src) {
+
+        for (Entry <? extends K, ? extends V> o : src.entrySet ()) {
+            put(o.getKey(), o.getValue());
+        }
     }
 
     @Override
