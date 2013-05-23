@@ -65,8 +65,10 @@ public class Utils {
             int tcp_keepalive_cnt, int tcp_keepalive_idle,
             int tcp_keepalive_intvl) throws SocketException {
 
-        if (tcp_keepalive != -1) {
+        if (tcp_keepalive == 1) {
             fd.setKeepAlive(true);
+        } else if (tcp_keepalive == 0) {
+            fd.setKeepAlive(false);
         }
     }
     
