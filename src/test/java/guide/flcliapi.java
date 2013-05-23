@@ -182,7 +182,7 @@ public class flcliapi
             else
             if (command.equals("REQUEST")) {
                 assert (request == null);    //  Strict request-reply cycle
-                //  Prefix request with sequence number and empty envelope
+                //  Prefix request with getSequence number and empty envelope
                 String sequenceText = String.format("%d", ++sequence);
                 msg.push(sequenceText);
                 //  Take ownership of request message
@@ -213,7 +213,7 @@ public class flcliapi
             server.pingAt = System.currentTimeMillis() + PING_INTERVAL;
             server.expires = System.currentTimeMillis() + SERVER_TTL;
 
-            //  Frame 1 may be sequence number for reply
+            //  Frame 1 may be getSequence number for reply
             String sequenceStr = reply.popString();
             if (Integer.parseInt(sequenceStr) == sequence) {
                 reply.push("OK");

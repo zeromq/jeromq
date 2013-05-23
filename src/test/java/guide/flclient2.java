@@ -41,7 +41,7 @@ public class flclient2
     //  .split class implementation
     //  Here is the {{flclient}} class implementation. Each instance has a
     //  context, a DEALER socket it uses to talk to the servers, a counter
-    //  of how many servers it's connected to, and a request sequence number:
+    //  of how many servers it's connected to, and a request getSequence number:
     private ZContext ctx;        //  Our context wrapper
     private Socket socket;       //  DEALER socket talking to servers
     private int servers;         //  How many servers we have connected to
@@ -66,7 +66,7 @@ public class flclient2
 
     private ZMsg request(ZMsg request)
     {
-        //  Prefix request with sequence number and empty envelope
+        //  Prefix request with getSequence number and empty envelope
         String sequenceText = String.format("%d", ++sequence);
         request.push(sequenceText);
         request.push("");
@@ -85,7 +85,7 @@ public class flclient2
             PollItem[] items = { new PollItem(socket, ZMQ.Poller.POLLIN) };
             ZMQ.poll(items, endtime - System.currentTimeMillis());
             if (items[0].isReadable()) {
-                //  Reply is [empty][sequence][OK]
+                //  Reply is [empty][getSequence][OK]
                 reply = ZMsg.recvMsg(socket);
                 assert (reply.size() == 3);
                 reply.pop();
