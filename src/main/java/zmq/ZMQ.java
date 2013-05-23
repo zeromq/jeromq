@@ -190,6 +190,7 @@ public class ZMQ {
             ByteBuffer buffer = ByteBuffer.allocate (size);
             buffer.putInt (event);
             buffer.put ((byte) addr.length());
+            buffer.put (addr.getBytes());
             buffer.put ((byte) flag);
             if (flag == VALUE_INTEGER)
                 buffer.putInt ((Integer)arg);
