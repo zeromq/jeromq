@@ -295,7 +295,7 @@ public class ZLoop
                 SPoller poller = pollact[itemNbr];
                 if (pollset.getItem(itemNbr).isError()) {
                     if (verbose)
-                        System.out.printf("I: zloop: can't poll %s socket (%s, %s)",
+                        System.out.printf("I: zloop: can't poll %s socket (%s, %s)\n",
                                 poller.item.getSocket() != null ? poller.item.getSocket().getType() : "RAW",
                                 poller.item.getSocket(), poller.item.getRawSocket());
                     //  Give handler one chance to handle error, then kill

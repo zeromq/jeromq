@@ -857,6 +857,27 @@ public class ZMQ {
         }
 
         /**
+         * @see #setTCPKeepAlive(int)
+         *
+         * @return the keep alive setting.
+         */
+        public int getTCPKeepAlive() {
+
+            return base.getsockopt(zmq.ZMQ.ZMQ_TCP_KEEPALIVE);
+        }
+
+        /**
+         * Override SO_KEEPALIVE socket option (where supported by OS) to enable keep-alive packets for a socket
+         * connection. Possible values are -1, 0, 1. The default value -1 will skip all overrides and do the OS default.
+         *
+         * @param optVal The value of 'ZMQ_TCP_KEEPALIVE' to turn TCP keepalives on (1) or off (0).
+         */
+        public void setTCPKeepAlive(int optVal) {
+            base.setsockopt(zmq.ZMQ.ZMQ_TCP_KEEPALIVE, (int)optVal);
+            mayRaiseNot (ZError.ETERM);
+        }
+
+        /**
          * Bind to network interface. Start listening for new connections.
          * 
          * @param addr
@@ -938,10 +959,9 @@ public class ZMQ {
          * @param addr
          *            the endpoint to connect to.
          */
-        public final boolean connect (String addr) {
-            boolean ret = base.connect (addr);
+        public final void connect (String addr) {
+            base.connect (addr);
             mayRaise ();
-            return ret;
         }
 
         /**
@@ -1412,7 +1432,7 @@ public class ZMQ {
         public final boolean isReadable() {
             return base.isReadable();
         }
-        
+
         public final boolean isWritable() {
             return base.isWritable ();
         }
@@ -1511,8 +1531,8 @@ public class ZMQ {
 
     public static int poll(PollItem[] items, int count, long timeout) {
 
-        zmq.PollItem[] items_ = new zmq.PollItem[items.length];
-        for (int i=0; i < items.length; i++) {
+        zmq.PollItem[] items_ = new zmq.PollItem[count];
+        for (int i = 0; i < count; i++) {
             items_[i] = items[i].base;
         }
 

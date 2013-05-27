@@ -561,6 +561,7 @@ public abstract class SocketBase extends Own
 
         while(it.hasNext()) {
             Entry<String, Own> e = it.next();
+            if (!e.getKey().equals(addr_)) continue;
             term_child(e.getValue());
             it.remove();
         }

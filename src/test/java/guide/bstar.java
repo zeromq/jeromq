@@ -297,7 +297,7 @@ public class bstar
 
     //  .split register state-change handlers
     //  Register handlers to be called each time there's a state change:
-    public void newAction(IZLoopHandler handler, Object arg)
+    public void newActive(IZLoopHandler handler, Object arg)
     {
         activeFn = handler;
         activeArg = arg;
