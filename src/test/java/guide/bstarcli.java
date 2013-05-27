@@ -45,7 +45,7 @@ public class bstarcli
                 //  to each server in turn:
 
                 if (items[0].isReadable()) {
-                    //  We got a reply from the server, must match sequence
+                    //  We got a reply from the server, must match getSequence
                     String reply = client.recvStr();
                     if (Integer.parseInt(reply) == sequence) {
                         System.out.printf ("I: server replied OK (%s)\n", reply);

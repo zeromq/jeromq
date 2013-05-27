@@ -11,7 +11,7 @@ import org.zeromq.ZMQ.Socket;
 public class rtpapa
 {
 
-    //  We will do this all in one thread to emphasize the sequence
+    //  We will do this all in one thread to emphasize the getSequence
     //  of events
     public static void main(String[] args)
     {

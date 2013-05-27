@@ -47,6 +47,20 @@ Add it to your Maven project's `pom.xml`:
       <version>0.3.0-SNAPSHOT</version>
     </dependency>
 
+    <!-- If you can't find the latest snapshot -->
+    <repositories>
+      <repository>
+        <id>sonatype-nexus-snapshots</id>
+        <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        <releases>
+          <enabled>false</enabled>
+        </releases>
+        <snapshots>
+          <enabled>true</enabled>
+        </snapshots>
+       </repository>
+    </repositories>
+
 If your are using the Ant 
 
     ant [target]
