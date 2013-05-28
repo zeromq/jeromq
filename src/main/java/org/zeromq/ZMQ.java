@@ -21,6 +21,7 @@
 package org.zeromq;
 
 
+import java.nio.ByteBuffer;
 import java.nio.channels.SelectableChannel;
 import zmq.Ctx;
 import zmq.DecoderBase;
@@ -996,7 +997,6 @@ public class ZMQ {
             return send(data, zmq.ZMQ.ZMQ_SNDMORE);
         }
 
-        
         public final boolean send (byte[] data, int flags) {
             zmq.Msg msg = new zmq.Msg(data);
             if (base.send(msg, flags))
@@ -1005,7 +1005,22 @@ public class ZMQ {
             mayRaise ();
             return false;
         }
-        
+
+        /**
+         * Send a message
+         *
+         * @param bb ByteBuffer payload
+         * @param flags the flags to apply to the send operation
+         * @return the number of bytes sent, -1 on error
+         */
+        public final boolean sendByteBuffer (ByteBuffer data, int flags) {
+            zmq.Msg msg = new zmq.Msg(data);
+            if (base.send(msg, flags))
+                return true;
+
+            mayRaise ();
+            return false;
+        }
         /**
          * Receive a message.
          * 
@@ -1064,6 +1079,25 @@ public class ZMQ {
             return -1;
         }
         
+        /**
+         * Receive a message into the specified ByteBuffer
+         * 
+         * @param buffer the buffer to copy the zmq message payload into
+         * @param flags the flags to apply to the receive operation
+         * @return the number of bytes read, -1 on error
+         */
+        public final int recvByteBuffer (ByteBuffer buffer, int flags)
+        {
+            zmq.Msg msg = base.recv (flags);
+
+            if (msg != null) {
+                buffer.put(msg.data());
+                return msg.size();
+            }
+
+            mayRaise ();
+            return -1;
+        }
         /**
          * 
          * @return the message received, as a String object; null on no message.
