@@ -130,6 +130,8 @@ public class Ctx {
         io_threads = new ArrayList<IOThread>();
         sockets = new ArrayList<SocketBase>();
         endpoints = new HashMap<String, Endpoint>();
+
+        ZError.clear();
     }
     
     protected void destroy() {

@@ -20,6 +20,8 @@ package zmq;
 
 import java.net.SocketException;
 import java.nio.channels.ClosedChannelException;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 
 public class ZError  {
@@ -41,14 +43,8 @@ public class ZError  {
         }
     }
 
-    private static ThreadLocal<Integer> errno = new ThreadLocal<Integer>() {
-        
-        protected synchronized Integer initialValue() {
-            return new Integer(0);
-        }
-    };
-    
-    private static ThreadLocal<Throwable> exc = new ThreadLocal<Throwable>();
+    private static AtomicInteger errno = new AtomicInteger(0);
+    private static AtomicReference<Throwable> exc = new AtomicReference<Throwable>();
 
 
     public static final int EINTR = 4;
