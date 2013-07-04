@@ -72,7 +72,7 @@ public class TcpAddress implements Address.IZAddress {
         //  Remove square brackets around the address, if any.
         if (addr_str.length () >= 2 && addr_str.charAt(0) == '[' &&
               addr_str.charAt(addr_str.length () - 1) == ']')
-            addr_str = addr_str.substring (1, addr_str.length () - 2);
+            addr_str = addr_str.substring (1, addr_str.length () - 1);
 
         int port;
         //  Allow 0 specifically, to detect invalid port error in atoi if not
