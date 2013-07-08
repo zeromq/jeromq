@@ -143,8 +143,13 @@ public class XSub extends SocketBase {
         
         // Process the subscription.
         if (data[0] == 1) {
-            if (subscriptions.add (data , 1))
-                return dist.send_to_all (msg_, flags_);
+            // this used to filter out duplicate subscriptions,
+            // however this is alread done on the XPUB side and
+            // doing it here as well breaks ZMQ_XPUB_VERBOSE
+            // when there are forwarding devices involved
+            //
+            subscriptions.add(data , 1);
+            return dist.send_to_all(msg_, flags_);
         }
         else {
             if (subscriptions.rm (data, 1))
