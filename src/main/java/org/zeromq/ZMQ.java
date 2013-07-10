@@ -255,7 +255,12 @@ public class ZMQ {
             base = base_;
         }
 
-        protected SocketBase base() {
+        /**
+         * DO NOT USE if you're trying to build a special proxy
+         *
+         * @return raw zmq.SocketBase
+         */
+        public SocketBase base() {
             return base;
         }
 
