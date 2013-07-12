@@ -57,7 +57,7 @@ public class TestInvalidRep {
         addr = ZMQ.zmq_recv (router_socket, 0);
         int addr_size = addr.size();
         System.out.println("addr_size: " + addr.size());
-        assertThat (addr.size() >= 0, is(true));
+        assertThat (addr.size() > 0, is(true));
         bottom = ZMQ.zmq_recv (router_socket,  0);
         assertThat (bottom.size(), is(0));
         body = ZMQ.zmq_recv (router_socket,  0);

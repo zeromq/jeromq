@@ -226,7 +226,7 @@ public class Mtrie {
             count = 1;
             min = new_min;
         }
-        else if (live_nodes > 1 && (new_min > min || new_max < min + count - 1)) {
+        else if (new_min > min || new_max < min + count - 1) {
             assert (new_max - new_min + 1 > 1);
 
             Mtrie[] old_table = next;

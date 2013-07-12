@@ -277,13 +277,14 @@ public class ZMQ {
             return base;
         }
         
-        private final static void mayRaise () 
+        private void mayRaise ()
         {
-            if (zmq.ZError.is (0) || zmq.ZError.is (zmq.ZError.EAGAIN) ) ;
-            else if (zmq.ZError.is (zmq.ZError.ETERM) ) 
-                throw new ZMQException.CtxTerminated ();
+            int errno = base.errno();
+            if (errno == 0 || errno == zmq.ZError.EAGAIN) ;
+            else if (errno == zmq.ZError.ETERM)
+                throw new ZMQException.CtxTerminated();
             else
-                throw new ZMQException (zmq.ZError.errno ());
+                throw new ZMQException(errno);
 
         }
         

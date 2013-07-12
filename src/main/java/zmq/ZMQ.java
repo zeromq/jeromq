@@ -540,7 +540,6 @@ public class ZMQ {
     public static boolean zmq_proxy (SocketBase frontend_, SocketBase backend_, SocketBase control_)
     {
         if (frontend_ == null || backend_ == null) {
-            ZError.errno (ZError.EFAULT);
             throw new IllegalArgumentException();
         }
         return Proxy.proxy (
@@ -619,7 +618,6 @@ public class ZMQ {
     public static int zmq_poll(Selector selector, PollItem[] items_, int count, long timeout_)
     {
         if (items_ == null) {
-            ZError.errno (ZError.EFAULT);
             throw new IllegalArgumentException();
         }
         if (count == 0) {

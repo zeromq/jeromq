@@ -48,7 +48,7 @@ public class Rep extends Router {
     }
     
     @Override
-    protected boolean xsend (Msg msg_, int flags_)
+    protected boolean xsend(Msg msg_)
     {
         //  If we are in the middle of receiving a request, we cannot send reply.
         if (!sending_reply) {
@@ -58,7 +58,7 @@ public class Rep extends Router {
         boolean more = msg_.has_more();
 
         //  Push message to the reply pipe.
-        boolean rc = super.xsend (msg_, flags_);
+        boolean rc = super.xsend(msg_);
         if (!rc)
             return rc;
 
@@ -70,27 +70,28 @@ public class Rep extends Router {
     }
     
     @Override
-    protected Msg xrecv (int flags_)
+    protected Msg xrecv()
     {
         //  If we are in middle of sending a reply, we cannot receive next request.
         if (sending_reply) {
             throw new IllegalStateException("Cannot receive another request");
         }
 
+        Msg msg_ = null;
         //  First thing to do when receiving a request is to copy all the labels
         //  to the reply pipe.
         if (request_begins) {
             while (true) {
-                Msg msg_ = super.xrecv (flags_);
+                msg_ = super.xrecv();
                 if (msg_ == null)
                     return null;
                 
                 if (msg_.has_more()) {
                     //  Empty message part delimits the traceback stack.
-                    boolean bottom = (msg_.size () == 0);
+                    boolean bottom = (msg_.size() == 0);
                     
                     //  Push it to the reply pipe.
-                    boolean rc = super.xsend (msg_, flags_);
+                    boolean rc = super.xsend(msg_);
                     assert (rc);
                     if (bottom)
                         break;
@@ -104,7 +105,7 @@ public class Rep extends Router {
         }
 
         //  Get next message part to return to the user.
-        Msg msg_ = super.xrecv (flags_);
+        msg_ = super.xrecv();
         if (msg_ == null)
            return null;
 

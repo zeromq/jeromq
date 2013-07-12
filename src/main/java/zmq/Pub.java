@@ -37,11 +37,10 @@ public class Pub extends XPub {
 	}
     
     @Override
-    protected Msg xrecv (int flags_)
+    protected Msg xrecv()
     {
         //  Messages cannot be received from PUB socket.
-        ZError.errno(ZError.ENOTSUP);
-        return null;
+        throw new UnsupportedOperationException();
     }
 
 

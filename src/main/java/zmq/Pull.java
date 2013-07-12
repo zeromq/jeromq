@@ -59,9 +59,9 @@ public class Pull extends SocketBase {
     }
 
     @Override
-    public Msg xrecv (int flags_)
+    public Msg xrecv()
     {
-        return fq.recv ();
+        return fq.recv(errno);
     }
     
     @Override

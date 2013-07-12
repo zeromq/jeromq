@@ -131,7 +131,6 @@ public class Ctx {
         sockets = new ArrayList<SocketBase>();
         endpoints = new HashMap<String, Endpoint>();
 
-        ZError.clear();
     }
     
     protected void destroy() {
@@ -286,14 +285,12 @@ public class Ctx {
     
             //  Once zmq_term() was called, we can't create new sockets.
             if (terminating) {
-                ZError.errno(ZError.ETERM);
-                return null;
+                throw new ZError.CtxTerminatedException();
             }
     
             //  If max_sockets limit was reached, return error.
             if (empty_slots.isEmpty ()) {
-                ZError.errno(ZError.EMFILE);
-                return null;
+                throw new IllegalStateException("EMFILE");
             }
     
             //  Choose a slot for the socket.
@@ -387,7 +384,7 @@ public class Ctx {
             endpoints_sync.unlock ();
         }
         if (inserted != null) {
-            ZError.errno(ZError.EADDRINUSE);
+            //ZError.errno(ZError.EADDRINUSE);
             return false;
         }
         return true;
@@ -420,7 +417,7 @@ public class Ctx {
         try {
             endpoint = endpoints.get(addr_);
             if (endpoint == null) {
-                ZError.errno(ZError.ECONNREFUSED);
+                //ZError.errno(ZError.ECONNREFUSED);
                 return new Endpoint(null, new Options());
             }
     

@@ -46,7 +46,7 @@ public class TestMonitor {
             // Only some of the exceptional events could fire
             while (true) {
                 ZMQ.Event event = ZMQ.Event.read (s);
-                if (event == null || ZError.is (ZError.ETERM))
+                if (event == null && s.errno() == ZError.ETERM)
                     break;
                 assert (event != null);
 
@@ -102,12 +102,13 @@ public class TestMonitor {
         // set socket monitor
         SocketBase rep = ZMQ.zmq_socket (ctx, ZMQ.ZMQ_REP);
         assert (rep != null);
-        boolean rc = ZMQ.zmq_socket_monitor (rep, addr, 0);
-        assertEquals (false, rc);
-        assertEquals (ZError.EPROTONOSUPPORT, ZError.errno ());
+        try {
+            ZMQ.zmq_socket_monitor (rep, addr, 0);
+            assertTrue(false);
+        } catch (IllegalArgumentException e) {}
 
         // REP socket monitor, all events
-        rc = ZMQ.zmq_socket_monitor (rep, "inproc://monitor.rep", ZMQ.ZMQ_EVENT_ALL);
+        boolean rc = ZMQ.zmq_socket_monitor (rep, "inproc://monitor.rep", ZMQ.ZMQ_EVENT_ALL);
         assertEquals (true, rc);
 
         threads [0] = new SocketMonitor (ctx, "inproc://monitor.rep");

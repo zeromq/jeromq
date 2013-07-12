@@ -284,7 +284,7 @@ public class ZLoop {
             rc = zmq.ZMQ.zmq_poll (selector, pollset, wait);
             if (rc == -1) {
                 if (verbose)
-                    System.out.printf ("I: zloop: interrupted (%d - %d)\n", rc, zmq.ZError.errno());
+                    System.out.printf ("I: zloop: interrupted\n", rc);
                 rc = 0;
                 break;              //  Context has been shut down
             }
@@ -314,10 +314,9 @@ public class ZLoop {
                 assert (pollset [item_nbr].getSocket() == poller.item.getSocket());
                 if (pollset [item_nbr].isError()) {
                     if (verbose)
-                        System.out.printf ("I: zloop: can't poll %s socket (%s, %s): %d",
+                        System.out.printf ("I: zloop: can't poll %s socket (%s, %s)",
                             poller.item.getSocket() != null? poller.item.getSocket().typeString(): "FD",
-                            poller.item.getSocket(), poller.item.getChannel(),
-                            zmq.ZError.errno());
+                            poller.item.getSocket(), poller.item.getChannel());
                     //  Give handler one chance to handle error, then kill
                     //  poller because it'll disrupt the reactor otherwise.
                     if (poller.errors++ > 0) {

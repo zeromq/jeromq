@@ -86,8 +86,7 @@ public class TcpListener extends Own implements IPollEvents {
         } catch (IOException e) {
             //  If connection was reset by the peer in the meantime, just ignore it.
             //  TODO: Handle specific errors like ENFILE/EMFILE etc.
-            ZError.exc (e);
-            socket.event_accept_failed (endpoint, ZError.errno());
+            socket.event_accept_failed (endpoint, ZError.exccode(e));
             return;
         }
 
@@ -97,8 +96,7 @@ public class TcpListener extends Own implements IPollEvents {
         try {
             engine = new StreamEngine (fd, options, endpoint);
         } catch (ZError.InstantiationException e) {
-            ZError.errno (ZError.EINVAL);
-            socket.event_accept_failed (endpoint, ZError.errno());
+            socket.event_accept_failed (endpoint, ZError.EINVAL);
             return;
         }
         //  Choose I/O thread to run connecter in. Given that we are already
@@ -124,8 +122,7 @@ public class TcpListener extends Own implements IPollEvents {
             handle.close();
             socket.event_closed (endpoint, handle);
         } catch (IOException e) {
-            ZError.exc (e);
-            socket.event_close_failed (endpoint, ZError.errno());
+            socket.event_close_failed (endpoint, ZError.exccode(e));
         }
         handle = null;
     }
@@ -135,7 +132,7 @@ public class TcpListener extends Own implements IPollEvents {
     }
 
     //  Set address to listen on.
-    public boolean set_address(final String addr_)  {
+    public int set_address(final String addr_)  {
         address.resolve(addr_, options.ipv4only > 0 ? true : false);
         
         endpoint = address.toString();
@@ -144,22 +141,13 @@ public class TcpListener extends Own implements IPollEvents {
             handle.configureBlocking(false);
             handle.socket().setReuseAddress(true);
             handle.socket().bind(address.address(), options.backlog);
-        } catch (SecurityException e) {
-            ZError.errno(ZError.EACCESS);
-            close ();
-            return false;
-        } catch (IllegalArgumentException e) {
-            ZError.errno(ZError.ENOTSUP);
-            close ();
-            return false;
         } catch (IOException e) {
-            ZError.errno(ZError.EADDRINUSE);
             close ();
-            return false;
+            return ZError.EADDRINUSE;
         }
         
         socket.event_listening(endpoint, handle);
-        return true;
+        return 0;
     }
 
     //  Accept the new connection. Returns the file descriptor of the

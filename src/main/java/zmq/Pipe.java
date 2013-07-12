@@ -201,7 +201,7 @@ public class Pipe extends ZObject {
         if (!in_active || (state != State.active && state != State.pending))
             return null;
 
-        Msg msg_ = inpipe.read ();
+        Msg msg_ = inpipe.read();
 
         if (msg_ == null) {
             in_active = false;
@@ -209,7 +209,7 @@ public class Pipe extends ZObject {
         }
 
         //  If delimiter was read, start termination process of the pipe.
-        if (msg_.is_delimiter ()) {
+        if (msg_.is_delimiter()) {
             delimit ();
             return null;
         }
@@ -218,7 +218,7 @@ public class Pipe extends ZObject {
             msgs_read++;
 
         if (lwm > 0 && msgs_read % lwm == 0)
-            send_activate_write (peer, msgs_read);
+            send_activate_write(peer, msgs_read);
 
         return msg_;
     }
@@ -249,9 +249,6 @@ public class Pipe extends ZObject {
 
         boolean more = msg_.has_more();
         outpipe.write (msg_, more);
-        //if (LOG.isDebugEnabled()) {
-        //    LOG.debug(parent.toString() + " write " + msg_);
-        //}
 
         if (!more)
             msgs_written++;
