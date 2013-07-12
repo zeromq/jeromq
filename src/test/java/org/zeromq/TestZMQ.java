@@ -1,10 +1,16 @@
 package org.zeromq;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.charset.CharacterCodingException;
+
+import junit.framework.TestCase;
+
+import org.junit.Test;
 import org.zeromq.ZMQ.Context;
 import org.zeromq.ZMQ.Socket;
-import org.junit.Test;
 
-public class TestZMQ
+public class TestZMQ extends TestCase
 {
     static class Client extends Thread {
 
@@ -54,5 +60,72 @@ public class TestZMQ
         client.join ();
         sender.close ();
         context.term ();
+    }
+    
+    @Test
+    public void testByteBufferSend() throws InterruptedException {
+        ZMQ.Context context = ZMQ.context(1);
+        ByteBuffer bb = ByteBuffer.allocate(4).order(ByteOrder.nativeOrder());
+        ZMQ.Socket push = null;
+        ZMQ.Socket pull = null;
+        try {
+            push = context.socket(ZMQ.PUSH);
+            pull = context.socket(ZMQ.PULL);
+            pull.bind("tcp://*:12344");
+            push.connect("tcp://localhost:12344");
+            bb.put("PING".getBytes());
+            bb.flip();
+            push.sendByteBuffer(bb, 0);
+            String actual = new String(pull.recv());
+            assertEquals("PING", actual);
+        } finally {
+            try {
+                push.close();
+            } catch (Exception ignore) {
+            }
+            try {
+                pull.close();
+            } catch (Exception ignore) {
+            }
+            try {
+                context.term();
+            } catch (Exception ignore) {
+            }
+        }
+
+    }
+
+    @Test
+    public void testByteBufferRecv() throws InterruptedException, CharacterCodingException {
+        ZMQ.Context context = ZMQ.context(1);
+        ByteBuffer bb = ByteBuffer.allocate(6).order(ByteOrder.nativeOrder());
+        ZMQ.Socket push = null;
+        ZMQ.Socket pull = null;
+        try {
+            push = context.socket(ZMQ.PUSH);
+            pull = context.socket(ZMQ.PULL);
+            pull.bind("tcp://*:12345");
+            push.connect("tcp://localhost:12345");
+            push.send("PING".getBytes(), 0);
+            pull.recvByteBuffer(bb, 0);
+            bb.flip();
+            byte[] b = new byte[bb.remaining()];
+            bb.duplicate().get(b);
+            assertEquals("PING", new String(b));
+        } finally {
+            try {
+                push.close();
+            } catch (Exception ignore) {
+            }
+            try {
+                pull.close();
+            } catch (Exception ignore) {
+            }
+            try {
+                context.term();
+            } catch (Exception ignore) {
+            }
+        }
+
     }
 }
