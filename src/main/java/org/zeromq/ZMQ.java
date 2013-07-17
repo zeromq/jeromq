@@ -984,7 +984,7 @@ public class ZMQ {
         /**
          * Send a message
          *
-         * @param bb ByteBuffer payload
+         * @param data ByteBuffer payload
          * @param flags the flags to apply to the send operation
          * @return the number of bytes sent, -1 on error
          */
