@@ -128,11 +128,6 @@ abstract public class Own extends ZObject {
         send_own (this, object_);
     }
     
- 
-	
-
-
-	
 	//  Terminate owned object
 	protected void term_child (Own object_)
 	{
