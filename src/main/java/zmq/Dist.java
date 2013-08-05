@@ -106,12 +106,18 @@ public class Dist {
     public void terminated(Pipe pipe_) {
         //  Remove the pipe from the list; adjust number of matching, active and/or
         //  eligible pipes accordingly.
-        if (pipes.indexOf (pipe_) < matching)
+        if (pipes.indexOf(pipe_) < matching) {
+            Utils.swap(pipes, pipes.indexOf(pipe_), matching - 1);
             matching--;
-        if (pipes.indexOf (pipe_) < active)
+        }
+        if (pipes.indexOf(pipe_) < active) {
+            Utils.swap(pipes, pipes.indexOf(pipe_), active - 1);
             active--;
-        if (pipes.indexOf (pipe_) < eligible)
+        }
+        if (pipes.indexOf(pipe_) < eligible) {
+            Utils.swap(pipes, pipes.indexOf(pipe_), eligible - 1);
             eligible--;
+        }
         pipes.remove(pipe_);
     }
 
