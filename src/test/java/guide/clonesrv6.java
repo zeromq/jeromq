@@ -80,21 +80,23 @@ public class clonesrv6
 
             kvmsg msg = kvmsg.recv(socket);
             if (msg != null) {
-                msg.setSequence(++srv.sequence);
-                msg.send(srv.publisher);
-                int ttl = Integer.parseInt(msg.getProp("ttl"));
-                if (ttl > 0)
-                    msg.setProp("ttl",
-                            "%d", System.currentTimeMillis() + ttl * 1000);
-                msg.store(srv.kvmap);
-                System.out.printf("I: publishing update=%d\n", srv.sequence);
-            } else {
-                //  If we already got message from active, drop it, else
-                //  hold on pending list
-                if (srv.wasPending(msg))
-                    msg.destroy();
-                else
-                    srv.pending.add(msg);
+                if(srv.active){
+                    msg.setSequence(++srv.sequence);
+                    msg.send(srv.publisher);
+                    int ttl = Integer.parseInt(msg.getProp("ttl"));
+                    if (ttl > 0)
+                        msg.setProp("ttl",
+                                "%d", System.currentTimeMillis() + ttl * 1000);
+                    msg.store(srv.kvmap);
+                    System.out.printf("I: publishing update=%d\n", srv.sequence);
+                } else {
+                    //  If we already got message from active, drop it, else
+                    //  hold on pending list
+                    if (srv.wasPending(msg))
+                        msg.destroy();
+                    else
+                        srv.pending.add(msg);
+                }
             }
 
 
