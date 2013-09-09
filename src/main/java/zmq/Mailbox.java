@@ -124,6 +124,14 @@ public class Mailbox {
     }
 
     public void close () {
+
+        //  TODO: Retrieve and deallocate commands inside the cpipe.
+
+        // Work around problem that other threads might still be in our
+        // send() method, by waiting on the mutex before disappearing.
+        sync.lock ();
+        sync.unlock ();
+
         signaler.close();
     }
     

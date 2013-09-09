@@ -20,10 +20,19 @@ package zmq;
 
 import java.net.SocketException;
 import java.nio.channels.ClosedChannelException;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 
 public class ZError  {
 
+    public static class CtxTerminatedException extends RuntimeException {
+        private static final long serialVersionUID = -4404921838608052956L;
+
+        public CtxTerminatedException() {
+            super();
+        }
+    }
 
     public static class InstantiationException extends RuntimeException {
         private static final long serialVersionUID = -4404921838608052955L;
@@ -40,16 +49,6 @@ public class ZError  {
             super(e);
         }
     }
-
-    private static ThreadLocal<Integer> errno = new ThreadLocal<Integer>() {
-        
-        protected synchronized Integer initialValue() {
-            return new Integer(0);
-        }
-    };
-    
-    private static ThreadLocal<Throwable> exc = new ThreadLocal<Throwable>();
-
 
     public static final int EINTR = 4;
     public static final int EACCESS = 13;
@@ -78,41 +77,15 @@ public class ZError  {
     public static final int EIOEXC = ZMQ_HAUSNUMERO + 105;
     public static final int ESOCKET = ZMQ_HAUSNUMERO + 106;
     public static final int EMFILE = ZMQ_HAUSNUMERO + 107;
-    public static int errno () {
-        return errno.get();
-    }
-    
-    public static void errno (int code) {
-        errno.set(code);
-    }
-    
-    public static Throwable exc () {
-        return exc.get();
-    }
-    
-    public static void exc (java.io.IOException e) {
-        if (e instanceof SocketException) {
-            errno.set(ESOCKET);
-        } else if (e instanceof ClosedChannelException) {
-            errno.set(ENOTCONN);
-        } else {
-            errno.set(EIOEXC);
-        }
-        exc.set(e);
-    }
-    
-    public static boolean is (int code) {
-        switch(code) {
-        case EINTR:
-            return false;
-        default:
-            return errno.get() == code;
-        }
-        
-    }
 
-    public static void clear () {
-        errno.set(0);
+    public static int exccode (java.io.IOException e) {
+        if (e instanceof SocketException) {
+            return ESOCKET;
+        } else if (e instanceof ClosedChannelException) {
+            return ENOTCONN;
+        } else {
+            return EIOEXC;
+        }
     }
 
     public static String toString(int code)

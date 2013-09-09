@@ -59,9 +59,9 @@ public class Push extends SocketBase {
     }
 
     @Override
-    public boolean xsend (Msg msg_, int flags_)
+    public boolean xsend(Msg msg_)
     {
-        return lb.send (msg_, flags_);
+        return lb.send(msg_, errno);
     }
     
     @Override

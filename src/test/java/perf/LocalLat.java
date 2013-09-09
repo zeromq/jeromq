@@ -30,26 +30,26 @@ public class LocalLat {
 
         ctx = ZMQ.zmq_init (1);
         if (ctx == null) {
-            printf ("error in zmq_init: %s\n", ZMQ.zmq_strerror (ZError.errno()));
+            printf ("error in zmq_init: %s\n");
             return ;
         }
 
         s = ZMQ.zmq_socket (ctx, ZMQ.ZMQ_REP);
         if (s == null) {
-            printf ("error in zmq_socket: %s\n", ZMQ.zmq_strerror (ZError.errno()));
+            printf ("error in zmq_socket: %s\n", ZMQ.zmq_strerror (s.errno()));
             return ;
         }
 
         rc = ZMQ.zmq_bind (s, bind_to);
         if (!rc) {
-            printf ("error in zmq_bind: %s\n", ZMQ.zmq_strerror (ZError.errno()));
+            printf ("error in zmq_bind: %s\n", ZMQ.zmq_strerror (s.errno()));
             return;
         }
 
         for (i = 0; i != roundtrip_count; i++) {
             msg = ZMQ.zmq_recvmsg (s, 0);
             if (msg == null) {
-                printf ("error in zmq_recvmsg: %s\n", ZMQ.zmq_strerror (ZError.errno()));
+                printf ("error in zmq_recvmsg: %s\n", ZMQ.zmq_strerror (s.errno()));
                 return ;
             }
             if (ZMQ.zmq_msg_size (msg) != message_size) {
@@ -58,7 +58,7 @@ public class LocalLat {
             }
             n = ZMQ.zmq_sendmsg (s, msg, 0);
             if (n < 0) {
-                printf ("error in zmq_sendmsg: %s\n", ZMQ.zmq_strerror (ZError.errno()));
+                printf ("error in zmq_sendmsg: %s\n", ZMQ.zmq_strerror (s.errno()));
                 return;
             }
         }

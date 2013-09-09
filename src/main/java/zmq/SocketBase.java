@@ -71,6 +71,8 @@ public abstract class SocketBase extends Own
     // Bitmask of events being monitored
     private int monitor_events;
 
+    protected ValueReference<Integer> errno;
+
     protected SocketBase (Ctx parent_, int tid_, int sid_) 
     {
         super (parent_, tid_);
@@ -89,6 +91,8 @@ public abstract class SocketBase extends Own
         pipes = new ArrayList<Pipe>();
         
         mailbox = new Mailbox("socket-" + sid_);
+
+        errno = new ValueReference<Integer>(0);
     }
     
     //  Concrete algorithms for the x- methods are to be defined by
@@ -181,7 +185,6 @@ public abstract class SocketBase extends Own
         //  First check out whether the protcol is something we are aware of.
         if (!protocol_.equals("inproc") && !protocol_.equals("ipc") && !protocol_.equals("tcp") /*&&
               !protocol_.equals("pgm") && !protocol_.equals("epgm")*/) {
-            ZError.errno (ZError.EPROTONOSUPPORT);
             throw new UnsupportedOperationException (protocol_);
         }
 
@@ -191,7 +194,6 @@ public abstract class SocketBase extends Own
         if ((protocol_.equals("pgm") || protocol_.equals("epgm")) &&
               options.type != ZMQ.ZMQ_PUB && options.type != ZMQ.ZMQ_SUB &&
               options.type != ZMQ.ZMQ_XPUB && options.type != ZMQ.ZMQ_XSUB) {
-            ZError.errno (ZError.EPROTONOSUPPORT);
             throw new UnsupportedOperationException (protocol_ + ",type=" + options.type);
         }
 
@@ -222,37 +224,34 @@ public abstract class SocketBase extends Own
         }
     }
     
-    public boolean setsockopt(int option_, Object optval_) {
+    public void setsockopt(int option_, Object optval_) {
         
         if (ctx_terminated) {
-            ZError.errno(ZError.ETERM);
-            return false;
+            throw new ZError.CtxTerminatedException();
         }
 
         //  First, check whether specific socket type overloads the option.
-        boolean rc = xsetsockopt (option_, optval_);
-        if (rc || !ZError.is(ZError.EINVAL))
-            return false;
+        if (xsetsockopt(option_, optval_))
+            return;
 
         //  If the socket type doesn't support the option, pass it to
         //  the generic option parser.
-        ZError.clear();
-        return options.setsockopt (option_, optval_);
+        options.setsockopt (option_, optval_);
     }
     
     public int getsockopt(int option_) {
         
-        if (ctx_terminated) {
-            ZError.errno(ZError.ETERM);
-            return -1;
+        if (option_ != ZMQ.ZMQ_EVENTS && ctx_terminated) {
+            throw new ZError.CtxTerminatedException();
         }
-        
+
+        // fast track to avoid boxing
         if (option_ == ZMQ.ZMQ_RCVMORE) {
             return rcvmore ? 1 : 0;
         }
         if (option_ == ZMQ.ZMQ_EVENTS) {
             boolean rc = process_commands (0, false);
-            if (!rc && (ZError.is(ZError.EINTR) || ZError.is(ZError.ETERM)))
+            if (!rc && errno.get() == ZError.ETERM)
                 return -1;
             assert (rc);
             int val = 0;
@@ -268,8 +267,7 @@ public abstract class SocketBase extends Own
     
     public Object getsockoptx(int option_) {
         if (ctx_terminated) {
-            ZError.errno(ZError.ETERM);
-            return null;
+            throw new ZError.CtxTerminatedException();
         }
 
         if (option_ == ZMQ.ZMQ_RCVMORE) {
@@ -282,7 +280,7 @@ public abstract class SocketBase extends Own
         
         if (option_ == ZMQ.ZMQ_EVENTS) {
             boolean rc = process_commands (0, false);
-            if (!rc && (ZError.is(ZError.EINTR) || ZError.is(ZError.ETERM)))
+            if (!rc && errno.get() == ZError.ETERM)
                 return -1;
             assert (rc);
             int val = 0;
@@ -295,18 +293,16 @@ public abstract class SocketBase extends Own
         //  If the socket type doesn't support the option, pass it to
         //  the generic option parser.
         return options.getsockopt (option_);
-
     }
     
     public boolean bind (final String addr_) 
     {
         if (ctx_terminated) {
-            ZError.errno(ZError.ETERM);
-            return false;
+            throw new ZError.CtxTerminatedException();
         }
 
         //  Process pending commands, if any.
-        boolean brc = process_commands (0, false);
+        boolean brc = process_commands(0, false);
         if (!brc)
             return false;
 
@@ -331,7 +327,6 @@ public abstract class SocketBase extends Own
             if (rc) {
                 // Save last endpoint URI
                 options.last_endpoint = addr_;
-                ZError.clear ();
             }
             return rc;
         }
@@ -345,43 +340,40 @@ public abstract class SocketBase extends Own
         //  point we'll choose one.
         IOThread io_thread = choose_io_thread (options.affinity);
         if (io_thread == null) {
-            ZError.errno (ZError.EMTHREAD);
-            return false;
+            throw new IllegalStateException("EMTHREAD");
         }
 
         if (protocol.equals("tcp")) {
             TcpListener listener = new TcpListener (
                 io_thread, this, options);
-            boolean rc = listener.set_address (address);
-            if (!rc) {
+            int rc = listener.set_address (address);
+            if (rc != 0) {
                 listener.destroy();
-                event_bind_failed (address, ZError.errno ());
+                event_bind_failed (address, rc);
                 return false;
             }
 
             // Save last endpoint URI
             options.last_endpoint = listener.get_address ();
 
-            add_endpoint (addr_, listener);
-            ZError.clear ();
+            add_endpoint(addr_, listener);
             return true;
         }
 
         if (protocol.equals("ipc")) {
             IpcListener listener = new IpcListener (
                 io_thread, this, options);
-            boolean rc = listener.set_address (address);
-            if (!rc) {
+            int rc = listener.set_address (address);
+            if (rc != 0) {
                 listener.destroy();
-                event_bind_failed (address, ZError.errno ());
+                event_bind_failed (address, rc);
                 return false;
             }
 
             // Save last endpoint URI
             options.last_endpoint = listener.get_address ();
 
-            add_endpoint (addr_, listener);
-            ZError.clear ();
+            add_endpoint(addr_, listener);
             return true;
         }
 
@@ -392,8 +384,7 @@ public abstract class SocketBase extends Own
     public boolean connect (String addr_)
     {
         if (ctx_terminated) {
-            ZError.errno(ZError.ETERM);
-            return false;
+            throw new ZError.CtxTerminatedException();
         }
 
         //  Process pending commands, if any.
@@ -538,8 +529,7 @@ public abstract class SocketBase extends Own
     public boolean term_endpoint(String addr_) {
 
         if (ctx_terminated) {
-            ZError.errno(ZError.ETERM);
-            return false;
+            throw new ZError.CtxTerminatedException();
         }
         
         //  Check whether endpoint address passed to the function is valid.
@@ -572,19 +562,18 @@ public abstract class SocketBase extends Own
     public boolean send (Msg msg_, int flags_)
     {
         if (ctx_terminated) {
-            ZError.errno(ZError.ETERM);
+            errno.set(ZError.ETERM);
             return false;
         }
         
         //  Check whether message passed to the function is valid.
         if (msg_ == null) {
-            ZError.errno(ZError.EFAULT);
             throw new IllegalArgumentException();
         }
 
         //  Process pending commands, if any.
-        boolean rc = process_commands (0, true);
-        if (!rc)
+        boolean brc = process_commands (0, true);
+        if (!brc)
             return false;
 
         //  Clear any user-visible flags that are set on the message.
@@ -595,10 +584,12 @@ public abstract class SocketBase extends Own
             msg_.set_flags (Msg.more);
 
         //  Try to send the message.
-        rc = xsend (msg_, flags_);
+        boolean rc = xsend(msg_);
+
         if (rc)
             return true;
-        if (!ZError.is(ZError.EAGAIN))
+
+        if (errno.get() != ZError.EAGAIN)
             return false;
 
         //  In case of non-blocking send we'll simply propagate
@@ -618,17 +609,17 @@ public abstract class SocketBase extends Own
             if (!process_commands (timeout, false) )
                 return false;
             
-            rc = xsend (msg_, flags_);
+            rc = xsend (msg_);
             if (rc)
                 break;
-            
-            if (!ZError.is(ZError.EAGAIN))
+
+            if (errno.get() != ZError.EAGAIN)
                 return false;
             
             if (timeout > 0) {
                 timeout = (int) (end - Clock.now_ms ());
                 if (timeout <= 0) {
-                    ZError.errno(ZError.EAGAIN);
+                    errno.set(ZError.EAGAIN);
                     return false;
                 }
             }
@@ -640,7 +631,7 @@ public abstract class SocketBase extends Own
     public Msg recv(int flags_) {
         
         if (ctx_terminated) {
-            ZError.errno(ZError.ETERM);
+            errno.set(ZError.ETERM);
             return null;
         }
         
@@ -659,8 +650,8 @@ public abstract class SocketBase extends Own
         }
         
         //  Get the message.
-        Msg msg_ = xrecv (flags_);
-        if (msg_ == null && !ZError.is(ZError.EAGAIN))
+        Msg msg_ = xrecv ();
+        if (msg_ == null && errno.get() != ZError.EAGAIN)
             return null;
 
         //  If we have the message, return immediately.
@@ -678,7 +669,7 @@ public abstract class SocketBase extends Own
                 return null;
             ticks = 0;
 
-            msg_ = xrecv (flags_);
+            msg_ = xrecv();
             if (msg_ == null)
                 return null;
             extract_flags (msg_);
@@ -694,21 +685,24 @@ public abstract class SocketBase extends Own
         //  we are able to fetch a message.
         boolean block = (ticks != 0);
         while (true) {
-            if (!process_commands (block ? timeout : 0, false))
+            if (!process_commands (block ? timeout : 0, false)) {
                 return null;
-            msg_ = xrecv (flags_);
+            }
+            msg_ = xrecv();
+
             if (msg_ != null) {
                 ticks = 0;
                 break;
             }
-            if (!ZError.is(ZError.EAGAIN))
+
+            if (errno.get() != ZError.EAGAIN)
                 return null;
-            
+
             block = true;
             if (timeout > 0) {
                 timeout = (int) (end - Clock.now_ms ());
                 if (timeout <= 0) {
-                    ZError.errno(ZError.EAGAIN);
+                    errno.set(ZError.EAGAIN);
                     return null;
                 }
             }
@@ -735,7 +729,7 @@ public abstract class SocketBase extends Own
     //  These functions are used by the polling mechanism to determine
     //  which events are to be reported from this socket.
     public boolean has_in() {
-        return xhas_in ();
+        return xhas_in();
     }
     
     public boolean has_out() {
@@ -810,7 +804,7 @@ public abstract class SocketBase extends Own
             cmd = mailbox.recv (0);
         }
         if (ctx_terminated) {
-            ZError.errno(ZError.ETERM);
+            errno.set(ZError.ETERM); // Do not raise exception at the blocked operation
             return false;
         }
 
@@ -833,7 +827,7 @@ public abstract class SocketBase extends Own
     @Override
     protected void process_bind (Pipe pipe_)
     {       
-        attach_pipe (pipe_);
+        attach_pipe(pipe_);
     }       
 
     @Override
@@ -864,7 +858,6 @@ public abstract class SocketBase extends Own
     //  options for the particular socket type. If not so, overload this
     //  method.
     protected boolean xsetsockopt(int option_, Object optval_) {
-        ZError.errno(ZError.EINVAL);
         return false;
     }
 
@@ -873,16 +866,15 @@ public abstract class SocketBase extends Own
         return false;
     }
 
-    protected boolean xsend(Msg msg_, int flags_) {
+    protected boolean xsend(Msg msg_) {
         throw new UnsupportedOperationException("Must Override");
     }
 
     protected boolean xhas_in() {
         return false;
     }
-    
 
-    protected Msg xrecv(int flags_) {
+    protected Msg xrecv() {
         throw new UnsupportedOperationException("Must Override");
     }
     
@@ -905,7 +897,10 @@ public abstract class SocketBase extends Own
         //  of the reaper thread. Process any commands from other threads/sockets
         //  that may be available at the moment. Ultimately, the socket will
         //  be destroyed.
-        process_commands (0, false);
+        try {
+            process_commands (0, false);
+        } catch (ZError.CtxTerminatedException e) {}
+
         check_destroy ();
     }
 
@@ -954,7 +949,7 @@ public abstract class SocketBase extends Own
     @Override
     public void read_activated (Pipe pipe_) 
     {
-        xread_activated (pipe_);
+        xread_activated(pipe_);
     }
 
     @Override
@@ -1004,8 +999,7 @@ public abstract class SocketBase extends Own
     public boolean monitor (final String addr_, int events_) {
         boolean rc;
         if (ctx_terminated) {
-            ZError.errno(ZError.ETERM);
-            return false;
+            throw new ZError.CtxTerminatedException();
         }
 
         // Support deregistering monitoring endpoints as well
@@ -1019,7 +1013,6 @@ public abstract class SocketBase extends Own
         try {
             uri = new URI(addr_);
         } catch (URISyntaxException e) {
-            ZError.errno (ZError.EINVAL);
             throw new IllegalArgumentException (e);
         }
         String protocol = uri.getScheme();
@@ -1032,8 +1025,8 @@ public abstract class SocketBase extends Own
 
         // Event notification only supported over inproc://
         if (!protocol.equals ("inproc")) {
-            ZError.errno (ZError.EPROTONOSUPPORT);
-            return false;
+            stop_monitor ();
+            throw new IllegalArgumentException("inproc socket required");
         }
 
         // Register events to monitor
@@ -1045,9 +1038,12 @@ public abstract class SocketBase extends Own
 
         // Never block context termination on pending event messages
         int linger = 0;
-        rc = monitor_socket.setsockopt (ZMQ.ZMQ_LINGER, linger);
-        if (!rc)
-             stop_monitor ();
+        try {
+            monitor_socket.setsockopt (ZMQ.ZMQ_LINGER, linger);
+        } catch (IllegalArgumentException e) {
+            stop_monitor ();
+            throw e;
+        }
 
         // Spawn the monitor socket endpoint
         rc = monitor_socket.bind (addr_);
@@ -1133,7 +1129,7 @@ public abstract class SocketBase extends Own
         if ((monitor_events & ZMQ.ZMQ_EVENT_DISCONNECTED) == 0) 
             return;
         
-        monitor_event (new ZMQ.Event (ZMQ.ZMQ_EVENT_DISCONNECTED, addr, ch));
+        monitor_event(new ZMQ.Event(ZMQ.ZMQ_EVENT_DISCONNECTED, addr, ch));
     }
     
     protected void monitor_event (ZMQ.Event event) 
@@ -1189,4 +1185,8 @@ public abstract class SocketBase extends Own
         }
     }
 
+    public int errno()
+    {
+        return errno.get();
+    }
 }

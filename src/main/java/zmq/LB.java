@@ -83,7 +83,7 @@ public class LB {
         active++;
     }
 
-    public boolean send(Msg msg_, int flags_) {
+    public boolean send(Msg msg_, ValueReference<Integer> errno) {
         //  Drop the message if required. If we are at the end of the message
         //  switch back to non-dropping mode.
         if (dropping) {
@@ -91,7 +91,7 @@ public class LB {
             more = msg_.has_more();
             dropping = more;
 
-            msg_.close ();
+            msg_.close();
             return true;
         }
 
@@ -109,7 +109,7 @@ public class LB {
 
         //  If there are no pipes we cannot send the message.
         if (active == 0) {
-            ZError.errno(ZError.EAGAIN);
+            errno.set(ZError.EAGAIN);
             return false;
         }
 

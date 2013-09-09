@@ -71,30 +71,27 @@ public class Pair extends SocketBase {
     }
     
     @Override
-    protected boolean xsend (Msg msg_, int flags_)
+    protected boolean xsend(Msg msg_)
     {
         if (pipe == null || !pipe.write (msg_)) {
-            ZError.errno(ZError.EAGAIN);
+            errno.set(ZError.EAGAIN);
             return false;
         }
 
-        if ((flags_ & ZMQ.ZMQ_SNDMORE) == 0)
+        if ((msg_.flags() & ZMQ.ZMQ_SNDMORE) == 0)
             pipe.flush ();
-
-        //  Detach the original message from the data buffer.
 
         return true;
     }
 
     @Override
-    protected Msg xrecv (int flags_)
+    protected Msg xrecv()
     {
         //  Deallocate old content of the message.
-
         Msg msg_ = null;
-        if (pipe == null || (msg_ = pipe.read ()) == null) {
-            ZError.errno(ZError.EAGAIN);
+        if (pipe == null || (msg_ = pipe.read()) == null) {
             //  Initialise the output parameter to be a 0-byte message.
+            errno.set(ZError.EAGAIN);
             return null;
         }
         return msg_;

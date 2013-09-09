@@ -81,22 +81,19 @@ public class FQ {
         active++;
     }
 
-    public Msg recv ()
+    public Msg recv(ValueReference<Integer> errno)
     {
-        return recvpipe (null);
+        return recvpipe(errno, null);
     }
 
-    public Msg recvpipe(Pipe[] pipe_) {
-        //  Deallocate old content of the message.
-        Msg msg_;
+    public Msg recvpipe(ValueReference<Integer> errno, ValueReference<Pipe> pipe_) {
 
         //  Round-robin over the pipes to get the next message.
         while (active > 0) {
 
             //  Try to fetch new message. If we've already read part of the message
             //  subsequent part should be immediately available.
-            msg_ = pipes.get(current).read ();
-
+            Msg msg_ = pipes.get(current).read();
             boolean fetched = msg_ != null;
 
             //  Note that when message is not fetched, current pipe is deactivated
@@ -104,7 +101,7 @@ public class FQ {
             //  the 'current' pointer.
             if (fetched) {
                 if (pipe_ != null)
-                    pipe_[0] = pipes.get(current);
+                    pipe_.set(pipes.get(current));
                 more = msg_.has_more();
                 if (!more)
                     current = (current + 1) % active;
@@ -124,7 +121,7 @@ public class FQ {
 
         //  No message is available. Initialise the output parameter
         //  to be a 0-byte message.
-        ZError.errno(ZError.EAGAIN);
+        errno.set(ZError.EAGAIN);
         return null;
     }
 

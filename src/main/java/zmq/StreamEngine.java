@@ -562,14 +562,14 @@ public class StreamEngine implements IEngine, IPollEvents, IMsgSink {
     }
     
     @Override
-    public boolean push_msg (Msg msg_)
+    public int push_msg (Msg msg_)
     {
         assert (options.type == ZMQ.ZMQ_PUB || options.type == ZMQ.ZMQ_XPUB);
 
         //  The first message is identity.
         //  Let the session process it.
-        boolean rc = session.push_msg (msg_);
-        assert (rc);
+        int rc = session.push_msg (msg_);
+        assert (rc == 0);
 
         //  Inject the subscription message so that the ZMQ 2.x peer
         //  receives our messages.

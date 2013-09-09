@@ -67,23 +67,23 @@ public class Dealer extends SocketBase {
     }
     
     @Override
-    protected boolean xsend (Msg msg_, int flags_)
+    protected boolean xsend(Msg msg_)
     {
-        return lb.send (msg_, flags_);
+        return lb.send(msg_, errno);
     }
 
     @Override
-    protected Msg xrecv (int flags_)
+    protected Msg xrecv()
     {
-        return xxrecv(flags_);
+        return xxrecv();
     }
-    
-    private Msg xxrecv (int flags_)
+
+    private Msg xxrecv()
     {
         Msg msg_ = null;
         //  If there is a prefetched message, return it.
         if (prefetched) {
-            msg_ = prefetched_msg ;
+            msg_ = prefetched_msg;
             prefetched = false;
             prefetched_msg = null;
             return msg_;
@@ -91,10 +91,10 @@ public class Dealer extends SocketBase {
 
         //  DEALER socket doesn't use identities. We can safely drop it and 
         while (true) {
-            msg_ = fq.recv ();
+            msg_ = fq.recv(errno);
             if (msg_ == null)
-                return msg_;
-            if ((msg_.flags () & Msg.identity) == 0)
+                return null;
+            if ((msg_.flags() & Msg.identity) == 0)
                 break;
         }
         return msg_;
@@ -108,8 +108,8 @@ public class Dealer extends SocketBase {
             return true;
 
         //  Try to read the next message to the pre-fetch buffer.
-        prefetched_msg = xxrecv (ZMQ.ZMQ_DONTWAIT);
-        if (prefetched_msg == null && ZError.is(ZError.EAGAIN))
+        prefetched_msg = xxrecv();
+        if (prefetched_msg == null)
             return false;
         prefetched = true;
         return true;

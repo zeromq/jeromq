@@ -18,8 +18,8 @@ public class tripping {
             ZContext ctx = new ZContext();
             Socket frontend = ctx.createSocket(ZMQ.ROUTER);
             Socket backend = ctx.createSocket(ZMQ.ROUTER);
-            frontend.setHWM (-1);
-            backend.setHWM (-1);
+            frontend.setHWM (0);
+            backend.setHWM (0);
             frontend.bind("tcp://*:5555");
             backend.bind("tcp://*:5556");
 
@@ -61,7 +61,7 @@ public class tripping {
         public void run() {
             ZContext ctx = new ZContext();
             Socket worker = ctx.createSocket(ZMQ.DEALER);
-            worker.setHWM (-1);
+            worker.setHWM (0);
             worker.setIdentity("W".getBytes());
             worker.connect("tcp://localhost:5556");
             while (!Thread.currentThread().isInterrupted()) {
@@ -82,7 +82,7 @@ public class tripping {
         public void run() {
             ZContext ctx = new ZContext();
             Socket client = ctx.createSocket(ZMQ.DEALER);
-            client.setHWM (-1);
+            client.setHWM (0);
             client.setIdentity("C".getBytes());
             client.connect("tcp://localhost:5555");
             System.out.println("Setting up test");

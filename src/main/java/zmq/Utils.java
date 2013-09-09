@@ -89,9 +89,9 @@ public class Utils {
         } else if (size < src.length) {
             dest = (T[])(Array.newInstance(klass, size));
             if (ended)
-                System.arraycopy(src, 0, dest, 0, size);
-            else
                 System.arraycopy(src, src.length - size, dest, 0, size);
+            else
+                System.arraycopy(src, 0, dest, 0, size);
 
         } else {
             dest = src;

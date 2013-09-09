@@ -79,17 +79,19 @@ public class Poller extends PollerBase implements Runnable {
     }
 
     public void destroy() {
-        
+
         if (!stopped) {
             try {
                 worker.join();
             } catch (InterruptedException e) {
             }
+        }
             
-            try {
-                selector.close();
-            } catch (IOException e) {
-            }
+        try {
+            selector.close();
+
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
     public final void add_fd (SelectableChannel fd_, IPollEvents events_)

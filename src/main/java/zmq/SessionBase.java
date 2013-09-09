@@ -176,11 +176,9 @@ public class SessionBase extends Own implements
     public Msg pull_msg () 
     {
         
-        Msg msg_ = null;
-        
         //  First message to send is identity
         if (!identity_sent) {
-            msg_ = new Msg(options.identity_size);
+            Msg msg_ = new Msg(options.identity_size);
             msg_.put(options.identity, 0, options.identity_size);
             identity_sent = true;
             incomplete_in = false;
@@ -188,7 +186,8 @@ public class SessionBase extends Own implements
             return msg_;
         }
 
-        if (pipe == null || (msg_ = pipe.read ()) == null ) {
+        Msg msg_ = null;
+        if (pipe == null || (msg_ = pipe.read()) == null) {
             return null;
         }
         incomplete_in = msg_.has_more();
@@ -196,8 +195,9 @@ public class SessionBase extends Own implements
         return msg_;
 
     }
-    
-    public boolean push_msg (Msg msg_)
+
+    @Override
+    public int push_msg (Msg msg_)
     {
         //  First message to receive is identity (if required).
         if (!identity_received) {
@@ -205,16 +205,15 @@ public class SessionBase extends Own implements
             identity_received = true;
             
             if (!options.recv_identity) {
-                return true;
+                return 0;
             }
         }
         
         if (pipe != null && pipe.write (msg_)) {
-            return true;
+            return 0;
         }
 
-        ZError.errno (ZError.EAGAIN);
-        return false;
+        return ZError.EAGAIN;
     }
     
 

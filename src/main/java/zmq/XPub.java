@@ -148,10 +148,10 @@ public class XPub extends SocketBase {
     public boolean xsetsockopt (int option_, Object optval_)
     {
         if (option_ != ZMQ.ZMQ_XPUB_VERBOSE) {
-            ZError.errno(ZError.EINVAL);
             return false;
         }
         verbose = (Integer) optval_ == 1;
+
         return true;
     }
 
@@ -171,7 +171,7 @@ public class XPub extends SocketBase {
 
 
     @Override
-    protected boolean xsend(Msg msg_, int flags_) {
+    protected boolean xsend(Msg msg_) {
         boolean msg_more = msg_.has_more(); 
 
         //  For the first part of multi-part message, find the matching pipes.
@@ -181,9 +181,9 @@ public class XPub extends SocketBase {
 
         //  Send the message to all the pipes that were marked as matching
         //  in the previous step.
-        boolean rc = dist.send_to_matching (msg_, flags_);
+        boolean rc = dist.send_to_matching (msg_);
         if (!rc)
-            return rc;
+            return false;
 
         //  If we are at the end of multi-part message we can mark all the pipes
         //  as non-matching.
@@ -200,17 +200,16 @@ public class XPub extends SocketBase {
     }
     
     @Override
-    protected Msg xrecv(int flags_) {
+    protected Msg xrecv() {
         //  If there is at least one 
         if (pending.isEmpty ()) {
-            ZError.errno(ZError.EAGAIN);
+            errno.set(ZError.EAGAIN);
             return null;
         }
 
         Blob first = pending.pollFirst();
         Msg msg_ = new Msg(first.data());
         return msg_;
-
     }
     
     @Override

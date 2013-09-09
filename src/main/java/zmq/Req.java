@@ -43,7 +43,7 @@ public class Req extends Dealer {
     }
     
     @Override
-    public boolean xsend (Msg msg_, int flags_)
+    public boolean xsend(Msg msg_)
     {
         //  If we've sent a request and we still haven't got the reply,
         //  we can't send another request.
@@ -54,16 +54,16 @@ public class Req extends Dealer {
         //  First part of the request is the request identity.
         if (message_begins) {
             Msg bottom = new Msg();
-            bottom.set_flags (Msg.more);
-            boolean rc = super.xsend (bottom, 0);
+            bottom.set_flags(Msg.more);
+            boolean rc = super.xsend(bottom);
             if (!rc)
-                return false;
+                return rc;
             message_begins = false;
         }
 
         boolean more = msg_.has_more();
 
-        boolean rc = super.xsend (msg_, flags_);
+        boolean rc = super.xsend(msg_);
         if (!rc)
             return rc;
 
@@ -77,37 +77,35 @@ public class Req extends Dealer {
     }
 
     @Override
-    protected Msg xrecv (int flags_)
+    protected Msg xrecv()
     {
-        Msg msg_ = null;
         //  If request wasn't send, we can't wait for reply.
         if (!receiving_reply) {
-            ZError.errno(ZError.EFSM);
             throw new IllegalStateException("Cannot wait before send");
         }
-
+        Msg msg_ = null;
         //  First part of the reply should be the original request ID.
         if (message_begins) {
-            msg_ = super.xrecv (flags_);
+            msg_ = super.xrecv();
             if (msg_ == null)
                 return null;
 
             // TODO: This should also close the connection with the peer!
-            if ( !msg_.has_more() || msg_.size () != 0) {
+            if ( !msg_.has_more() || msg_.size() != 0) {
                 while (true) {
-                    msg_ = super.xrecv (flags_);
+                    msg_ = super.xrecv();
                     assert (msg_ != null);
                     if (!msg_.has_more())
                         break;
                 }
-                ZError.errno(ZError.EAGAIN);
+                errno.set(ZError.EAGAIN);
                 return null;
             }
 
             message_begins = false;
         }
 
-        msg_ = super.xrecv (flags_);
+        msg_ = super.xrecv();
         if (msg_ == null)
             return null;
 
@@ -161,7 +159,7 @@ public class Req extends Dealer {
         }
         
         @Override
-        public boolean push_msg (Msg msg_)
+        public int push_msg (Msg msg_)
         {
             switch (state) {
             case bottom:
