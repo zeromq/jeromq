@@ -68,6 +68,7 @@
   <target name="compile" depends="get-deps" description="Compile the code">
     <mkdir dir="${maven.build.outputDir}"/>
     <javac destdir="${maven.build.outputDir}" 
+           encoding="UTF-8"
            nowarn="false" 
            debug="true" 
            optimize="false" 
@@ -93,6 +94,7 @@
           unless="maven.test.skip">
     <mkdir dir="${maven.build.testOutputDir}"/>
     <javac destdir="${maven.build.testOutputDir}" 
+           encoding="UTF-8"
            nowarn="false" 
            debug="true" 
            optimize="false" 
