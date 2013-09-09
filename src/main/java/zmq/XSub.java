@@ -133,22 +133,27 @@ public class XSub extends SocketBase {
 
 
     @Override
-    protected boolean xsend (Msg msg_, int flags_)
+    protected boolean xsend(Msg msg_)
     {   
         byte[] data = msg_.data(); 
         // Malformed subscriptions.
         if (data.length < 1 || (data[0] != 0 && data[0] != 1)) {
-            return false;
+            throw new IllegalArgumentException("subscription flag");
         }
         
         // Process the subscription.
         if (data[0] == 1) {
-            if (subscriptions.add (data , 1))
-                return dist.send_to_all (msg_, flags_);
+            // this used to filter out duplicate subscriptions,
+            // however this is alread done on the XPUB side and
+            // doing it here as well breaks ZMQ_XPUB_VERBOSE
+            // when there are forwarding devices involved
+            //
+            subscriptions.add(data , 1);
+            return dist.send_to_all(msg_);
         }
         else {
             if (subscriptions.rm (data, 1))
-                return dist.send_to_all (msg_, flags_);
+                return dist.send_to_all (msg_);
         }
 
         return true;
@@ -161,12 +166,14 @@ public class XSub extends SocketBase {
     }
 
     @Override
-    protected Msg xrecv (int flags_) {
+    protected Msg xrecv() {
+
+        Msg msg_ = null;
+
         //  If there's already a message prepared by a previous call to zmq_poll,
         //  return it straight ahead.
-        Msg msg_;
         if (has_message) {
-            msg_ = new Msg(message);
+            msg_ = message;
             has_message = false;
             more = msg_.has_more();
             return msg_;
@@ -178,16 +185,17 @@ public class XSub extends SocketBase {
         while (true) {
 
             //  Get a message using fair queueing algorithm.
-            msg_ = fq.recv ();
+            msg_ = fq.recv(errno);
 
             //  If there's no message available, return immediately.
             //  The same when error occurs.
-            if (msg_ == null)
+            if (msg_ == null) {
                 return null;
+            }
 
             //  Check whether the message matches at least one subscription.
             //  Non-initial parts of the message are passed 
-            if (more || !options.filter || match (msg_)) {
+            if (more || !options.filter || match(msg_)) {
                 more = msg_.has_more();
                 return msg_;
             }
@@ -195,7 +203,7 @@ public class XSub extends SocketBase {
             //  Message doesn't match. Pop any remaining parts of the message
             //  from the pipe.
             while (msg_.has_more()) {
-                msg_ = fq.recv ();
+                msg_ = fq.recv(errno);
                 assert (msg_ != null);
             }
         }
@@ -217,12 +225,11 @@ public class XSub extends SocketBase {
         while (true) {
 
             //  Get a message using fair queueing algorithm.
-            message = fq.recv ();
+            message = fq.recv(errno);
 
             //  If there's no message available, return immediately.
             //  The same when error occurs.
             if (message == null) {
-                assert(ZError.is(ZError.EAGAIN));
                 return false;
             }
 
@@ -235,7 +242,7 @@ public class XSub extends SocketBase {
             //  Message doesn't match. Pop any remaining parts of the message
             //  from the pipe.
             while (message.has_more()) {
-                message = fq.recv ();
+                message = fq.recv(errno);
                 assert (message != null);
             }
         }

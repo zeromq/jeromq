@@ -178,7 +178,7 @@ public class TcpConnecter extends Own implements IPollEvents {
         try {
             engine = new StreamEngine (fd, options, endpoint);
         } catch (ZError.InstantiationException e) {
-            socket.event_connect_delayed (endpoint, ZError.errno());
+            socket.event_connect_delayed (endpoint, -1);
             return;
         }
 
@@ -217,7 +217,7 @@ public class TcpConnecter extends Own implements IPollEvents {
                 io_object.add_fd (handle);
                 handle_valid = true;
                 io_object.set_pollconnect (handle);
-                socket.event_connect_delayed (endpoint, ZError.errno());
+                socket.event_connect_delayed (endpoint, -1);
             }
         } catch (IOException e) {
             //  Handle any other error condition by eventual reconnect.
@@ -297,8 +297,7 @@ public class TcpConnecter extends Own implements IPollEvents {
             handle.close();
             socket.event_closed (endpoint, handle);
         } catch (IOException e) {
-            ZError.exc (e);
-            socket.event_close_failed (endpoint, ZError.errno());
+            socket.event_close_failed (endpoint, ZError.exccode(e));
         }
         handle = null;
     }

@@ -39,7 +39,7 @@ public class IpcListener extends TcpListener {
     
 
     //  Set address to listen on.
-    public boolean set_address(String addr_) {
+    public int set_address(String addr_) {
         
         address.resolve (addr_, false);
         

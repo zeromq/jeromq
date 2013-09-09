@@ -178,8 +178,8 @@ public class Decoder extends DecoderBase {
         if (msg_sink == null)
             return false;
         
-        boolean rc = msg_sink.push_msg (in_progress);
-        if (!rc) {
+        int rc = msg_sink.push_msg (in_progress);
+        if (rc != 0) {
             return false;
         }
         

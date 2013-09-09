@@ -28,6 +28,7 @@ import zmq.DecoderBase;
 import zmq.EncoderBase;
 import zmq.SocketBase;
 import zmq.ZError;
+import zmq.ZError.CtxTerminatedException;
 
 public class ZMQ {
     
@@ -247,7 +248,6 @@ public class ZMQ {
         protected Socket(Context context, int type) {
             ctx = context.ctx;
             base = ctx.create_socket(type);
-            mayRaise();
         }
 
         protected Socket(SocketBase base_) {
@@ -255,22 +255,14 @@ public class ZMQ {
             base = base_;
         }
 
-        protected SocketBase base() {
+        /**
+         * DO NOT USE if you're trying to build a special proxy
+         *
+         * @return raw zmq.SocketBase
+         */
+        public SocketBase base() {
             return base;
         }
-
-        private final static void mayRaise ()
-        {
-            if (!ZError.is (0) && !ZError.is (ZError.EAGAIN))
-                throw new ZMQException (ZError.errno ());
-        }
-
-        private final static void mayRaiseNot (int codeToIgnore)
-        {
-            if (!ZError.is (codeToIgnore))
-                mayRaise ();
-        }
-
 
         /**
          * This is an explicit "destructor". It can be called to ensure the corresponding 0MQ Socket
@@ -300,6 +292,11 @@ public class ZMQ {
             return base.getsockopt(zmq.ZMQ.ZMQ_LINGER);
         }
 
+        private void setsockopt(int option, Object value) {
+            try {
+                base.setsockopt(option, value);
+            } catch (CtxTerminatedException e) { }
+        }
         /**
          * The 'ZMQ_LINGER' option shall retrieve the period for pending outbound
          * messages to linger in memory after closing the socket. Value of -1 means
@@ -314,7 +311,6 @@ public class ZMQ {
         public final void setLinger (long value) 
         {
             base.setsockopt (zmq.ZMQ.ZMQ_LINGER, (int) value);
-            mayRaiseNot (ZError.ETERM);
         }
         
         /**
@@ -330,7 +326,6 @@ public class ZMQ {
          */
         public final void setReconnectIVL(long value) {
             base.setsockopt(zmq.ZMQ.ZMQ_RECONNECT_IVL, (int)value);
-            mayRaiseNot (ZError.ETERM);
         }
         
 
@@ -347,8 +342,7 @@ public class ZMQ {
         /**
          */
         public final void setBacklog(long value) {
-            base.setsockopt(zmq.ZMQ.ZMQ_BACKLOG, (int)value);
-            mayRaiseNot (ZError.ETERM);
+            setsockopt(zmq.ZMQ.ZMQ_BACKLOG, (int)value);
         }
         
 
@@ -364,8 +358,7 @@ public class ZMQ {
         /**
          */
         public final void setReconnectIVLMax (long value) {
-            base.setsockopt(zmq.ZMQ.ZMQ_RECONNECT_IVL_MAX, (int)value);
-            mayRaiseNot (ZError.ETERM);
+            setsockopt(zmq.ZMQ.ZMQ_RECONNECT_IVL_MAX, (int)value);
         }
         
 
@@ -381,8 +374,7 @@ public class ZMQ {
         /**
          */
         public final void setMaxMsgSize(long value) {
-            base.setsockopt(zmq.ZMQ.ZMQ_MAXMSGSIZE, value);
-            mayRaiseNot (ZError.ETERM);
+            setsockopt(zmq.ZMQ.ZMQ_MAXMSGSIZE, value);
         }
         
 
@@ -398,8 +390,7 @@ public class ZMQ {
         /**
          */
         public final void setSndHWM(long value) {
-            base.setsockopt(zmq.ZMQ.ZMQ_SNDHWM, (int)value);
-            mayRaiseNot (ZError.ETERM);
+            setsockopt(zmq.ZMQ.ZMQ_SNDHWM, (int)value);
         }
         
 
@@ -415,8 +406,7 @@ public class ZMQ {
         /**
          */
         public final void setRcvHWM(long value) {
-            base.setsockopt(zmq.ZMQ.ZMQ_RCVHWM, (int)value);
-            mayRaiseNot (ZError.ETERM);
+            setsockopt(zmq.ZMQ.ZMQ_RCVHWM, (int)value);
         }
         
         
@@ -502,8 +492,7 @@ public class ZMQ {
          *            the io_thread affinity.
          */
         public final void setAffinity (long value) {
-            base.setsockopt(zmq.ZMQ.ZMQ_AFFINITY, value);
-            mayRaiseNot (ZError.ETERM);
+            setsockopt(zmq.ZMQ.ZMQ_AFFINITY, value);
         }
         
         /**
@@ -533,8 +522,7 @@ public class ZMQ {
          * @param identity
          */
         public final void setIdentity(byte[] identity) {
-            base.setsockopt(zmq.ZMQ.ZMQ_IDENTITY, identity);
-            mayRaiseNot (ZError.ETERM);
+            setsockopt(zmq.ZMQ.ZMQ_IDENTITY, identity);
         }
         
         /**
@@ -650,8 +638,7 @@ public class ZMQ {
          * @param value Timeout for receive operation in milliseconds. Default -1 (infinite)
          */
         public final void setReceiveTimeOut (int value) {
-            base.setsockopt(zmq.ZMQ.ZMQ_RCVTIMEO, value);
-            mayRaiseNot (ZError.ETERM);
+            setsockopt(zmq.ZMQ.ZMQ_RCVTIMEO, value);
         }
         
 
@@ -674,8 +661,7 @@ public class ZMQ {
          * @param value Timeout for send operation in milliseconds. Default -1 (infinite)
          */
         public final void setSendTimeOut(int value) {
-            base.setsockopt(zmq.ZMQ.ZMQ_SNDTIMEO, value);
-            mayRaiseNot (ZError.ETERM);
+            setsockopt(zmq.ZMQ.ZMQ_SNDTIMEO, value);
         }
         
 
@@ -698,8 +684,7 @@ public class ZMQ {
          *              A value of zero means leave the OS default unchanged.
          */
         public final void setSendBufferSize(long value) {
-            base.setsockopt(zmq.ZMQ.ZMQ_SNDBUF, (int)value);
-            mayRaiseNot (ZError.ETERM);
+            setsockopt(zmq.ZMQ.ZMQ_SNDBUF, (int)value);
         }
         
         /**
@@ -721,8 +706,7 @@ public class ZMQ {
          *              A value of zero means leave the OS default unchanged.
          */
         public final void setReceiveBufferSize(long value) {
-            base.setsockopt(zmq.ZMQ.ZMQ_RCVBUF, (int)value);
-            mayRaiseNot (ZError.ETERM);
+            setsockopt(zmq.ZMQ.ZMQ_RCVBUF, (int)value);
         }
         
         /**
@@ -780,8 +764,7 @@ public class ZMQ {
          * @param topic
          */
         public final void subscribe(byte[] topic) {
-            base.setsockopt(zmq.ZMQ.ZMQ_SUBSCRIBE, topic);
-            mayRaiseNot (ZError.ETERM);
+            setsockopt(zmq.ZMQ.ZMQ_SUBSCRIBE, topic);
         }
         
 
@@ -795,8 +778,7 @@ public class ZMQ {
          * @param topic
          */        
         public final void unsubscribe(byte[] topic) {
-            base.setsockopt(zmq.ZMQ.ZMQ_UNSUBSCRIBE, topic);
-            mayRaiseNot (ZError.ETERM);
+            setsockopt(zmq.ZMQ.ZMQ_UNSUBSCRIBE, topic);
         }
         
         /**
@@ -822,8 +804,7 @@ public class ZMQ {
          *                  A value of true returns an EHOSTUNREACH error code if the message cannot be routed.
          */
         public final void setRouterMandatory (boolean mandatory) {
-            base.setsockopt (zmq.ZMQ.ZMQ_ROUTER_MANDATORY, mandatory ? 1 : 0);
-            mayRaiseNot (ZError.ETERM);
+            setsockopt (zmq.ZMQ.ZMQ_ROUTER_MANDATORY, mandatory ? 1 : 0);
         }
 
         /**
@@ -833,8 +814,7 @@ public class ZMQ {
          *                A value of true passes all subscription messages upstream.
          */
         public final void setXpubVerbose(boolean verbose) {
-            base.setsockopt(zmq.ZMQ.ZMQ_XPUB_VERBOSE, verbose ? 1 : 0);
-            mayRaiseNot (ZError.ETERM);
+            setsockopt(zmq.ZMQ.ZMQ_XPUB_VERBOSE, verbose ? 1 : 0);
         }
 
         /**
@@ -853,8 +833,7 @@ public class ZMQ {
          * @param v4only A value of true will use IPv4 sockets, while the value of false will use IPv6 sockets
          */
         public void setIPv4Only (boolean v4only) {
-            base.setsockopt (zmq.ZMQ.ZMQ_IPV4ONLY, v4only ? 1 : 0);
-            mayRaiseNot (ZError.ETERM);
+            setsockopt (zmq.ZMQ.ZMQ_IPV4ONLY, v4only ? 1 : 0);
         }
 
         /**
@@ -874,8 +853,7 @@ public class ZMQ {
          * @param optVal The value of 'ZMQ_TCP_KEEPALIVE' to turn TCP keepalives on (1) or off (0).
          */
         public void setTCPKeepAlive(int optVal) {
-            base.setsockopt(zmq.ZMQ.ZMQ_TCP_KEEPALIVE, (int)optVal);
-            mayRaiseNot (ZError.ETERM);
+            setsockopt(zmq.ZMQ.ZMQ_TCP_KEEPALIVE, (int)optVal);
         }
 
         /**
@@ -922,7 +900,6 @@ public class ZMQ {
                     return port;
                 }
             }
-            mayRaise ();
             return -1;
         }
         
@@ -962,7 +939,6 @@ public class ZMQ {
          */
         public final void connect (String addr) {
             base.connect (addr);
-            mayRaise ();
         }
 
         /**
@@ -973,7 +949,6 @@ public class ZMQ {
          */
         public final boolean disconnect (String addr) {
             boolean ret = base.term_endpoint (addr);
-            mayRaise ();
             return ret;
         }
 
@@ -1009,7 +984,7 @@ public class ZMQ {
         /**
          * Send a message
          *
-         * @param bb ByteBuffer payload
+         * @param data ByteBuffer payload
          * @param flags the flags to apply to the send operation
          * @return the number of bytes sent, -1 on error
          */
@@ -1018,7 +993,7 @@ public class ZMQ {
             if (base.send(msg, flags))
                 return true;
 
-            mayRaise ();
+            mayRaise();
             return false;
         }
         /**
@@ -1045,8 +1020,8 @@ public class ZMQ {
             if (msg != null) {
                 return msg.data();
             }
-            mayRaise ();
-            
+
+            mayRaise();
             return null;
         }
         
@@ -1075,7 +1050,6 @@ public class ZMQ {
                 return size;
             }
 
-            mayRaise ();
             return -1;
         }
         
@@ -1125,6 +1099,13 @@ public class ZMQ {
         public boolean monitor (String addr, int events) 
         {
             return base.monitor (addr, events);
+        }
+
+        private void mayRaise()
+        {
+            int errno = base.errno();
+            if (errno != 0 && errno != zmq.ZError.EAGAIN)
+                throw new ZMQException (errno);
         }
 
     }

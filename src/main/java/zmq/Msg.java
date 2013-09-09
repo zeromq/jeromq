@@ -118,7 +118,7 @@ public class Msg {
          return type >= type_min && type <= type_max;
     }
 
-    private final void init(byte type_) {
+    protected final void init(byte type_) {
         type = type_;
         flags = 0;
         size = -1;
@@ -182,7 +182,7 @@ public class Msg {
         }
         return data;
     }
-    
+
     public final ByteBuffer buf()
     {
         if (buf == null && type != type_lmsg)

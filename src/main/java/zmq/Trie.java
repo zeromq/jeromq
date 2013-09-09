@@ -27,8 +27,8 @@ public class Trie {
     private int refcnt;
 
     private byte min;
-    private short count;
-    private short live_nodes;
+    private int count;
+    private int live_nodes;
     
     public static interface ITrieHandler {
         void added(byte[] data, int size, Object arg);
@@ -72,7 +72,7 @@ public class Trie {
             else if (count == 1) {
                 byte oldc = min;
                 Trie oldp = next[0];
-                count = (short) ((min < c ? c - min : min - c) + 1);
+                count = (min < c ? c - min : min - c) + 1;
                 next = new Trie[count];
                 min = (byte)Math.min ((byte)min, (byte)c);
                 next[oldc - min] = oldp;
@@ -80,13 +80,13 @@ public class Trie {
             else if (min < c) {
 
                 //  The new character is above the current character range.
-                count = (short) (c - min + 1);
+                count = c - min + 1;
                 next = realloc(next, count, true);
             }
             else {
 
                 //  The new character is below the current character range.
-                count = (short) ((min + count) - c);
+                count = (min + count) - c;
                 next = realloc(next, count, false);
                 min = c;
             }
@@ -112,7 +112,7 @@ public class Trie {
         }
     }
     
-    private Trie[] realloc(Trie[] table, short size, boolean ended) {
+    private Trie[] realloc(Trie[] table, int size, boolean ended) {
         return Utils.realloc(Trie.class, table, size, ended);
     }
     
@@ -159,7 +159,7 @@ public class Trie {
                     //  switch to using the more compact single-node
                     //  representation
                     Trie node = null;
-                    for (short i = 0; i < count; ++i) {
+                    for (int i = 0; i < count; ++i) {
                         if (next[i] != null) {
                             node = next[i];
                             min = (byte)(i + min);
@@ -176,7 +176,7 @@ public class Trie {
                 else if (c == min) {
                     //  We can compact the table "from the left"
                     byte new_min = min;
-                    for (short i = 1; i < count; ++i) {
+                    for (int i = 1; i < count; ++i) {
                         if (next[i] != null) {
                             new_min = (byte) (i + min);
                             break;
@@ -186,7 +186,7 @@ public class Trie {
 
                     assert (new_min > min);
                     assert (count > new_min - min);
-                    count = (short) (count - (new_min - min));
+                    count = count - (new_min - min);
                     
                     next = realloc(next, count, true);
 
@@ -194,10 +194,10 @@ public class Trie {
                 }
                 else if (c == min + count - 1) {
                     //  We can compact the table "from the right"
-                    short new_count = count;
-                    for (short i = 1; i < count; ++i) {
+                    int new_count = count;
+                    for (int i = 1; i < count; ++i) {
                         if (next[count - 1 - i] != null) {
-                            new_count = (short) (count - i);
+                            new_count = count - i;
                             break;
                         }
                     }
@@ -278,7 +278,7 @@ public class Trie {
         }
         
         //  If there are multiple subnodes.
-        for (short c = 0; c != count; c++) {
+        for (int c = 0; c != count; c++) {
             buff_ [buffsize_] = (byte) (min + c);
             if (next[c] != null)
                 next[c].apply_helper (buff_, buffsize_ + 1, maxbuffsize_,

@@ -119,11 +119,11 @@ public class Helper {
         }
         
         @Override
-        public boolean push_msg (Msg msg) 
+        public int push_msg (Msg msg)
         {
             System.out.println("session.write " + msg);
             out.add(msg);
-            return true;
+            return 0;
         }
         
         @Override

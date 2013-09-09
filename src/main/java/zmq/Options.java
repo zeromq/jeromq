@@ -154,29 +154,26 @@ public class Options {
     }
     
     @SuppressWarnings("unchecked")
-    public boolean setsockopt(int option_, Object optval_) {
+    public void setsockopt(int option_, Object optval_) {
         switch (option_) {
         
         case ZMQ.ZMQ_SNDHWM:
             sndhwm = (Integer)optval_;
             if (sndhwm < 0) {
-                ZError.errno(ZError.EINVAL);
-                return false;
+                throw new IllegalArgumentException("sndhwm " + optval_);
             }
-            return true;
+            return;
             
         case ZMQ.ZMQ_RCVHWM:
             rcvhwm = (Integer)optval_;
             if (rcvhwm < 0) {
-                ZError.errno(ZError.EINVAL);
-                return false;
+                throw new IllegalArgumentException("rcvhwm " + optval_);
             }
-            return true;
-            
+            return ;
 
         case ZMQ.ZMQ_AFFINITY:
             affinity = (Long)optval_;
-            return true;
+            return;
             
         case ZMQ.ZMQ_IDENTITY:
             byte[] val;
@@ -186,125 +183,116 @@ public class Options {
             else if (optval_ instanceof byte[])
                 val = (byte[]) optval_;
             else {
-                ZError.errno(ZError.EINVAL);
-                return false;
+                throw new IllegalArgumentException("identity " + optval_);
             }
             
             if (val == null || val.length > 255) {
-                ZError.errno(ZError.EINVAL);
-                return false;
+                throw new IllegalArgumentException("identity must not be null or less than 255 " + optval_);
             }
             identity = Arrays.copyOf(val, val.length);
             identity_size = (byte)identity.length;
-            return true;
+            return;
             
         case ZMQ.ZMQ_RATE:
             rate = (Integer)optval_;
-            return true;
+            return;
             
         case ZMQ.ZMQ_RECOVERY_IVL:
             recovery_ivl = (Integer)optval_;
-            return true;
+            return;
             
         case ZMQ.ZMQ_SNDBUF:
-           sndbuf = (Integer)optval_;
-           return true;
+            sndbuf = (Integer)optval_;
+            return;
            
         case ZMQ.ZMQ_RCVBUF:
-           rcvbuf = (Integer)optval_;
-           return true;
+            rcvbuf = (Integer)optval_;
+            return;
            
         case ZMQ.ZMQ_LINGER:
             linger = (Integer)optval_;
-            return true;
+            return;
             
         case ZMQ.ZMQ_RECONNECT_IVL:
             reconnect_ivl = (Integer)optval_;
             
             if (reconnect_ivl < -1) {
-                ZError.errno(ZError.EINVAL);
-                return false;
+                throw new IllegalArgumentException("reconnect_ivl " + optval_);
             }
             
-            return true;
+            return;
             
         case ZMQ.ZMQ_RECONNECT_IVL_MAX:
             reconnect_ivl_max = (Integer)optval_;
             
             if (reconnect_ivl_max < 0) {
-                ZError.errno(ZError.EINVAL);
-                return false;
+                throw new IllegalArgumentException("reconnect_ivl_max " + optval_);
             }
             
-            return true;
+            return;
 
         case ZMQ.ZMQ_BACKLOG:
             backlog = (Integer)optval_;
-            return true;
-            
-          
+            return;
+
         case ZMQ.ZMQ_MAXMSGSIZE:
             maxmsgsize = (Long)optval_;
-            return true;
+            return;
             
         case ZMQ.ZMQ_MULTICAST_HOPS:
             multicast_hops = (Integer)optval_;
-            return true;
+            return;
             
         case ZMQ.ZMQ_RCVTIMEO:
             rcvtimeo = (Integer)optval_;
-            return true;
+            return;
             
         case ZMQ.ZMQ_SNDTIMEO:
             sndtimeo = (Integer)optval_;
-            return true;
+            return;
             
         case ZMQ.ZMQ_IPV4ONLY:
             
             ipv4only = (Integer)optval_;
             if (ipv4only != 0 && ipv4only != 1) {
-                ZError.errno(ZError.EINVAL);
-                return false;
+                throw new IllegalArgumentException("ipv4only only accepts 0 or 1 " + optval_);
             }
-            return true;
+            return;
             
         case ZMQ.ZMQ_TCP_KEEPALIVE:
             
             tcp_keepalive = (Integer)optval_;
             if (tcp_keepalive != -1 && tcp_keepalive != 0 && tcp_keepalive != 1) {
-                ZError.errno(ZError.EINVAL);
-                return false;
+                throw new IllegalArgumentException("tcp_keepalive only accepts one of -1,0,1 " + optval_);
             }
-            return true;
+            return;
             
         case ZMQ.ZMQ_DELAY_ATTACH_ON_CONNECT:
             
             delay_attach_on_connect = (Integer) optval_;
             if (delay_attach_on_connect !=0 && delay_attach_on_connect != 1) {
-                ZError.errno(ZError.EINVAL);
-                return false;
+                throw new IllegalArgumentException("delay_attach_on_connect only accept 0 or 1 " + optval_);
             }
-            return true;
+            return;
             
         case ZMQ.ZMQ_TCP_KEEPALIVE_CNT:
         case ZMQ.ZMQ_TCP_KEEPALIVE_IDLE:
         case ZMQ.ZMQ_TCP_KEEPALIVE_INTVL:
             // not supported
-            return true;
+            return;
             
         case ZMQ.ZMQ_TCP_ACCEPT_FILTER:
             String filter_str = (String) optval_;
             if (filter_str == null) {
                 tcp_accept_filters.clear();
             } else if (filter_str.length() == 0 || filter_str.length() > 255) {
-                ZError.errno(ZError.EINVAL);
-                return false;
+                throw new IllegalArgumentException("tcp_accept_filter " + optval_);
             } else {
                 TcpAddressMask filter = new TcpAddressMask();
                 filter.resolve (filter_str, ipv4only==1 ? true : false);
                 tcp_accept_filters.add(filter);
             }
-            return true;
+            return;
             
         case ZMQ.ZMQ_ENCODER:
             if (optval_ instanceof String) {
@@ -318,7 +306,7 @@ public class Options {
             } else {
                 throw new IllegalArgumentException("encoder " + optval_);
             }
-            return true;
+            return;
             
         case ZMQ.ZMQ_DECODER:
             if (optval_ instanceof String) {
@@ -332,11 +320,10 @@ public class Options {
             } else {
                 throw new IllegalArgumentException("decoder " + optval_);
             }
-            return true;
+            return;
 
         default:
-            ZError.errno(ZError.EINVAL);
-            return false;
+            throw new IllegalArgumentException("Unknown Option " + option_);
         }
     }
 

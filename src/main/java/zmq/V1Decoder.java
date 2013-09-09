@@ -136,9 +136,9 @@ public class V1Decoder extends DecoderBase
         if (msg_sink == null)
             return false;
         
-        boolean rc = msg_sink.push_msg (in_progress);
-        if (!rc) {
-            if (!ZError.is (ZError.EAGAIN))
+        int rc = msg_sink.push_msg(in_progress);
+        if (rc != 0) {
+            if (rc != ZError.EAGAIN)
                 decoding_error ();
             
             return false;

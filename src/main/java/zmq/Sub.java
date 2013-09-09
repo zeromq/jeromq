@@ -46,7 +46,6 @@ public class Sub extends XSub {
     public boolean xsetsockopt (int option_, Object optval_)
     {
         if (option_ != ZMQ.ZMQ_SUBSCRIBE && option_ != ZMQ.ZMQ_UNSUBSCRIBE) {
-            ZError.errno(ZError.EINVAL);
             return false;
         }
 
@@ -68,16 +67,18 @@ public class Sub extends XSub {
         msg.put (val,1);
 
         //  Pass it further on in the stack.
-        boolean rc = super.xsend (msg, 0);
-        return rc;
+        boolean rc = super.xsend(msg);
+        if (!rc)
+            throw new IllegalStateException("Failed to send subscribe/unsubscribe message");
+
+        return true;
     }
     
     @Override
-    protected boolean xsend (Msg msg_, int flags_)
+    protected boolean xsend (Msg msg_)
     {
         //  Overload the XSUB's send.
-        ZError.errno(ZError.ENOTSUP);
-        return false;
+        throw new UnsupportedOperationException();
     }
 
     @Override

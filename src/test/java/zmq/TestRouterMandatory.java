@@ -24,6 +24,7 @@ package zmq;
 import org.junit.Test;
 import static org.junit.Assert.*;
 import static org.hamcrest.CoreMatchers.*;
+import static org.junit.Assert.assertThat;
 
 public class TestRouterMandatory {
     
@@ -55,8 +56,8 @@ public class TestRouterMandatory {
         
         // Send a message and check that it fails
         rc = ZMQ.zmq_send (sa, "UNKNOWN", ZMQ.ZMQ_SNDMORE | ZMQ.ZMQ_DONTWAIT);
-        assertThat (rc ,is (-1));
-        assertTrue (ZError.is (ZError.EHOSTUNREACH));
+        assertThat(rc, is(-1));
+        assertThat(sa.errno(), is(ZError.EHOSTUNREACH));
         
         // Create a valid socket
         SocketBase sb = ZMQ.zmq_socket (ctx, ZMQ.ZMQ_DEALER);
@@ -87,7 +88,7 @@ public class TestRouterMandatory {
             rc = ZMQ.zmq_send (sa, "X", ZMQ.ZMQ_SNDMORE | ZMQ.ZMQ_DONTWAIT);
         }
         assertThat (rc ,is (-1));
-        assertThat (ZError.errno (), is(ZError.EAGAIN));
+        assertThat (sa.errno(), is(ZError.EAGAIN));
         
         //  Clean up.
         ZMQ.zmq_close (sa);

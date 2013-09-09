@@ -136,7 +136,6 @@ public class Router extends SocketBase {
     public boolean xsetsockopt (int option_, Object optval_)
     {
         if (option_ != ZMQ.ZMQ_ROUTER_MANDATORY) {
-            ZError.errno(ZError.EINVAL);
             return false;
         }
         mandatory = (Integer) optval_ == 1;
@@ -185,7 +184,7 @@ public class Router extends SocketBase {
     }
     
     @Override
-    protected boolean xsend (Msg msg_, int flags_)
+    protected boolean xsend(Msg msg_)
     {
         //  If this is the first part of the message it's the ID of the
         //  peer to send the message to.
@@ -212,13 +211,13 @@ public class Router extends SocketBase {
                         current_out = null;
                         if (mandatory) {
                             more_out = false;
-                            ZError.errno(ZError.EAGAIN);
+                            errno.set(ZError.EAGAIN);
                             return false;
                         }
                     }
                 } else if (mandatory) {
                     more_out = false;
-                    ZError.errno(ZError.EHOSTUNREACH);
+                    errno.set(ZError.EHOSTUNREACH);
                     return false;
                 }
             }
@@ -240,14 +239,12 @@ public class Router extends SocketBase {
             }
         }
 
-        //  Detach the message from the data buffer.
-
         return true;
     }
 
 
     @Override
-    protected Msg xrecv (int flags_)
+    protected Msg xrecv()
     {
         Msg msg_ = null;
         if (prefetched) {
@@ -265,20 +262,20 @@ public class Router extends SocketBase {
             return msg_;
         }
 
-        Pipe[] pipe = new Pipe[1];
-        msg_ = fq.recvpipe (pipe);
+        ValueReference<Pipe> pipe = new ValueReference<Pipe>();
+        msg_ = fq.recvpipe(errno, pipe);
         
         //  It's possible that we receive peer's identity. That happens
         //  after reconnection. The current implementation assumes that
         //  the peer always uses the same identity.
         //  TODO: handle the situation when the peer changes its identity.
-        while (msg_ != null && msg_.is_identity ())
-            msg_ = fq.recvpipe (pipe);
+        while (msg_ != null && msg_.is_identity())
+            msg_ = fq.recvpipe(errno, pipe);
 
         if (msg_ == null)
             return null;
-        
-        assert (pipe[0] != null);
+
+        assert (pipe.get() != null);
 
         //  If we are in the middle of reading a message, just return the next part.
         if (more_in)
@@ -288,12 +285,11 @@ public class Router extends SocketBase {
             //  Keep the message part we have in the prefetch buffer
             //  and return the ID of the peer instead.
             prefetched_msg = msg_;
-
             prefetched = true;
 
-            Blob identity = pipe[0].get_identity ();
+            Blob identity = pipe.get().get_identity();
             msg_ = new Msg(identity.data());
-            msg_.set_flags (Msg.more);
+            msg_.set_flags(Msg.more);
             identity_sent = true;
         }
 
@@ -324,22 +320,22 @@ public class Router extends SocketBase {
 
         //  Try to read the next message.
         //  The message, if read, is kept in the pre-fetch buffer.
-        Pipe[] pipe = new Pipe[1];
-        prefetched_msg = fq.recvpipe (pipe);
+        ValueReference<Pipe> pipe = new ValueReference<Pipe>();
+        prefetched_msg = fq.recvpipe(errno, pipe);
 
         //  It's possible that we receive peer's identity. That happens
         //  after reconnection. The current implementation assumes that
         //  the peer always uses the same identity.
         //  TODO: handle the situation when the peer changes its identity.
         while (prefetched_msg != null && prefetched_msg.is_identity ())
-            prefetched_msg = fq.recvpipe (pipe);
+            prefetched_msg = fq.recvpipe(errno, pipe);
 
         if (prefetched_msg == null)
             return false;
 
-        assert (pipe[0] != null);
+        assert (pipe.get() != null);
         
-        Blob identity = pipe[0].get_identity ();
+        Blob identity = pipe.get().get_identity();
         prefetched_id = new Msg(identity.data());
         prefetched_id.set_flags (Msg.more);
 
@@ -358,11 +354,11 @@ public class Router extends SocketBase {
         return true;
     }
 
-    private boolean identify_peer (Pipe pipe_)
+    private boolean identify_peer(Pipe pipe_)
     {
         Blob identity;
 
-        Msg msg = pipe_.read ();
+        Msg msg = pipe_.read();
         if (msg == null)
             return false;
 
