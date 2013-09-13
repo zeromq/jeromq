@@ -234,7 +234,7 @@ public class clonesrv6
             if (msg == null)
                 return 0;
 
-            if (msg.getKey().equals("HUGZ")) {
+            if (!msg.getKey().equals("HUGZ")) {
                 if (!srv.wasPending(msg)) {
                     //  If active update came before client update, flip it
                     //  around, store active update (with sequence) on pending
