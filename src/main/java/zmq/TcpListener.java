@@ -135,18 +135,19 @@ public class TcpListener extends Own implements IPollEvents {
     public int set_address(final String addr_)  {
         address.resolve(addr_, options.ipv4only > 0 ? true : false);
         
-        endpoint = address.toString();
         try {
             handle = ServerSocketChannel.open();
             handle.configureBlocking(false);
             handle.socket().setReuseAddress(true);
             handle.socket().bind(address.address(), options.backlog);
+            if (address.getPort()==0)
+                address.updatePort(handle.socket().getLocalPort());
         } catch (IOException e) {
             close ();
             return ZError.EADDRINUSE;
         }
-        
-        socket.event_listening(endpoint, handle);
+         
+        socket.event_listening(address.toString(), handle);
         return 0;
     }
 

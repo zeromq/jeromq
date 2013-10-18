@@ -356,7 +356,7 @@ public abstract class SocketBase extends Own
             // Save last endpoint URI
             options.last_endpoint = listener.get_address ();
 
-            add_endpoint(addr_, listener);
+            add_endpoint(options.last_endpoint, listener);
             return true;
         }
 
