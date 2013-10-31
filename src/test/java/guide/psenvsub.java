@@ -17,7 +17,7 @@ public class psenvsub {
         Socket subscriber = context.socket(ZMQ.SUB);
 
         subscriber.connect("tcp://localhost:5563");
-        subscriber.subscribe("B".getBytes());
+        subscriber.subscribe("B".getBytes(ZMQ.CHARSET));
         while (!Thread.currentThread ().isInterrupted ()) {
             // Read envelope with address
             String address = subscriber.recvStr ();

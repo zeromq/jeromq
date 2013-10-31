@@ -33,7 +33,7 @@ public class ppqueue {
         
         protected Worker(ZFrame address) {
             this.address = address;
-            identity = new String(address.getData());
+            identity = new String(address.getData(), ZMQ.CHARSET);
             expiry = System.currentTimeMillis() + HEARTBEAT_INTERVAL * HEARTBEAT_LIVENESS;
         }
 
@@ -113,7 +113,7 @@ public class ppqueue {
                 //  Validate control message, or return reply to client
                 if (msg.size() == 1) {
                     ZFrame frame = msg.getFirst();
-                    String data = new String(frame.getData());
+                    String data = new String(frame.getData(), ZMQ.CHARSET);
                     if (!data.equals(PPP_READY)
                     &&  !data.equals( PPP_HEARTBEAT)) {
                         System.out.println ("E: invalid message from worker");

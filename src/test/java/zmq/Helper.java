@@ -142,7 +142,7 @@ public class Helper {
     
     public static void bounce (SocketBase sb, SocketBase sc)
     {
-        byte[] content = "12345678ABCDEFGH12345678abcdefgh".getBytes();
+        byte[] content = "12345678ABCDEFGH12345678abcdefgh".getBytes(ZMQ.CHARSET);
 
         //  Send the message.
         int rc = ZMQ.zmq_send (sc, content, 32, ZMQ.ZMQ_SNDMORE);
@@ -180,9 +180,9 @@ public class Helper {
     
     public static void send (Socket sa, String data) throws IOException
     {
-        byte[] content = data.getBytes();
+        byte[] content = data.getBytes(ZMQ.CHARSET);
 
-        byte[] length = String.format("%04d", content.length).getBytes();
+        byte[] length = String.format("%04d", content.length).getBytes(ZMQ.CHARSET);
 
         byte[] buf = new byte[1024];
         int reslen ;
@@ -209,10 +209,10 @@ public class Helper {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        reslen = Integer.valueOf(new String(buf, 0, 4));
+        reslen = Integer.valueOf(new String(buf, 0, 4, ZMQ.CHARSET));
 
         in.read(buf, 0, reslen);
-        System.out.println("recv " + reslen + " " + new String(buf,0, reslen));
+        System.out.println("recv " + reslen + " " + new String(buf, 0, reslen, ZMQ.CHARSET));
         
     }
 

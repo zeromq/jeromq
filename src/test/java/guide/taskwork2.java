@@ -19,7 +19,7 @@ public class taskwork2 {
 
         ZMQ.Socket controller = context.socket(ZMQ.SUB);
         controller.connect("tcp://localhost:5559");
-        controller.subscribe("".getBytes());
+        controller.subscribe(ZMQ.SUBSCRIPTION_ALL);
 
         ZMQ.Poller items = new ZMQ.Poller (2);
         items.register(receiver, ZMQ.Poller.POLLIN);

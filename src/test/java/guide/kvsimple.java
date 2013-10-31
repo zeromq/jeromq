@@ -41,7 +41,7 @@ public class kvsimple {
 
 	public void send(Socket publisher) {
 
-		publisher.send(key.getBytes(), ZMQ.SNDMORE);
+		publisher.send(key.getBytes(ZMQ.CHARSET), ZMQ.SNDMORE);
 
 		ByteBuffer bb = ByteBuffer.allocate(8);
 		bb.asLongBuffer().put(sequence);
@@ -54,7 +54,7 @@ public class kvsimple {
         byte [] data = updates.recv(0);
         if (data == null || !updates.hasReceiveMore())
             return null;
-		String key = new String(data);
+		String key = new String(data, ZMQ.CHARSET);
         data = updates.recv(0);
         if (data == null || !updates.hasReceiveMore())
             return null;

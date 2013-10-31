@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.Selector;
+import java.nio.charset.Charset;
 
 import zmq.Ctx;
 import zmq.DecoderBase;
@@ -166,6 +167,12 @@ public class ZMQ {
     public static final int EVENT_DISCONNECTED = zmq.ZMQ.ZMQ_EVENT_DISCONNECTED;
     
     public static final int EVENT_ALL = zmq.ZMQ.ZMQ_EVENT_ALL;
+
+    public static final byte[] MESSAGE_SEPARATOR = new byte[0];
+
+    public static final byte[] SUBSCRIPTION_ALL = new byte[0];
+
+    public static Charset CHARSET = Charset.defaultCharset();
 
     /**
      * Create a new Context.
@@ -569,7 +576,7 @@ public class ZMQ {
         }
         
         public final void setIdentity(String identity) {
-            setIdentity(identity.getBytes());
+            setIdentity(identity.getBytes(CHARSET));
         }
         /**
          * @see #setRate(long)
@@ -821,7 +828,7 @@ public class ZMQ {
         }
         
         public final void subscribe(String topic) {
-            subscribe(topic.getBytes());
+            subscribe(topic.getBytes(CHARSET));
         }
         
 
@@ -840,7 +847,7 @@ public class ZMQ {
         }
         
         public final void unsubscribe(String topic) {
-            unsubscribe(topic.getBytes());
+            unsubscribe(topic.getBytes(CHARSET));
         }
 
         
@@ -1138,7 +1145,7 @@ public class ZMQ {
             zmq.Msg msg = base.recv(flags);
             
             if (msg != null) {
-                return new String (msg.data());
+                return new String (msg.data(), CHARSET);
             }
             
             return null;
@@ -1154,7 +1161,7 @@ public class ZMQ {
             while(true) {
                 Msg msg = recvMsg(0);
                 System.out.println(String.format("[%03d] %s", msg.size(), 
-                        msg.size() > 0 ? new String(msg.data()) : ""));
+                        msg.size() > 0 ? new String(msg.data(), CHARSET) : ""));
                 if (!hasReceiveMore()) {
                     break;
                 }

@@ -47,7 +47,7 @@ public class TestEncoder {
     // as if it read data from socket
     private Msg read_short_message () {
         Msg msg = new Msg(5);
-        msg.put("hello".getBytes(),0);
+        msg.put("hello".getBytes(ZMQ.CHARSET),0);
         
         return msg;
     }
@@ -57,7 +57,7 @@ public class TestEncoder {
         
         Msg msg = new Msg(200);
         for (int i=0; i < 20; i++)
-            msg.put("0123456789".getBytes(), i*10);
+            msg.put("0123456789".getBytes(ZMQ.CHARSET), i*10);
         return msg;
     }
 
@@ -164,7 +164,7 @@ public class TestEncoder {
                 return false;
             }
             header.clear();
-            header.put("HEADER".getBytes());
+            header.put("HEADER".getBytes(ZMQ.CHARSET));
             header.putInt(msg.size());
             header.flip();
             next_step(header.array (), 10, read_header, !msg.has_more());
@@ -191,9 +191,9 @@ public class TestEncoder {
         write(out);
         byte[] data = sock.data();
 
-        assertThat(new String(data,0, 6), is("HEADER"));
+        assertThat(new String(data, 0, 6, ZMQ.CHARSET), is("HEADER"));
         assertThat((int)data[9], is(20));
-        assertThat(new String(data,10, 20), is("12345678901234567890"));
+        assertThat(new String(data, 10, 20, ZMQ.CHARSET), is("12345678901234567890"));
         
     }
 }

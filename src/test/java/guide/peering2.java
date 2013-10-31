@@ -101,12 +101,12 @@ public class peering2
 
         //  Bind cloud frontend to endpoint
         Socket cloudfe = ctx.createSocket(ZMQ.ROUTER);
-        cloudfe.setIdentity(self.getBytes());
+        cloudfe.setIdentity(self.getBytes(ZMQ.CHARSET));
         cloudfe.bind(String.format("ipc://%s-cloud.ipc", self));
 
         //  Connect cloud backend to all peers
         Socket cloudbe = ctx.createSocket(ZMQ.ROUTER);
-        cloudbe.setIdentity(self.getBytes());
+        cloudbe.setIdentity(self.getBytes(ZMQ.CHARSET));
         int argn;
         for (argn = 1; argn < argv.length; argn++) {
             String peer = argv[argn];
@@ -169,7 +169,7 @@ public class peering2
 
                 //  If it's READY, don't route the message any further
                 ZFrame frame = msg.getFirst();
-                if (new String(frame.getData()).equals(WORKER_READY)) {
+                if (new String(frame.getData(), ZMQ.CHARSET).equals(WORKER_READY)) {
                     msg.destroy();
                     msg = null;
                 }
@@ -186,7 +186,7 @@ public class peering2
             //  Route reply to cloud if it's addressed to a broker
             for (argn = 1; msg != null && argn < argv.length; argn++) {
                 byte[] data = msg.getFirst().getData();
-                if (argv[argn].equals(new String(data))) {
+                if (argv[argn].equals(new String(data, ZMQ.CHARSET))) {
                     msg.send(cloudfe);
                     msg = null;
                 }

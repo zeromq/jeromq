@@ -19,7 +19,7 @@ public class flserver3
         String bindEndpoint = "tcp://*:5555";
         String connectEndpoint = "tcp://localhost:5555";
         Socket server = ctx.createSocket(ZMQ.ROUTER);
-        server.setIdentity(connectEndpoint.getBytes());
+        server.setIdentity(connectEndpoint.getBytes(ZMQ.CHARSET));
         server.bind(bindEndpoint);
         System.out.printf ("I: service is ready at %s\n", bindEndpoint);
 

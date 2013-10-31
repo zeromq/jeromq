@@ -29,7 +29,7 @@ public class ZHelper
                 data += String.format ("%02X", msg[i]);
             }
             if (isText)
-                data = new String (msg);
+                data = new String (msg, ZMQ.CHARSET);
 
             System.out.println (String.format ("[%03d] %s", msg.length, data));
             if (!sock.hasReceiveMore ())
@@ -41,7 +41,7 @@ public class ZHelper
     {
         String identity = String.format ("%04X-%04X", rand.nextInt (), rand.nextInt ());
 
-        sock.setIdentity (identity.getBytes ());
+        sock.setIdentity (identity.getBytes (ZMQ.CHARSET));
     }
 
     public static List<Socket> buildZPipe(Context ctx) {

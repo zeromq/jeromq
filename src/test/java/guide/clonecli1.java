@@ -21,7 +21,7 @@ public class clonecli1 {
 		ZContext ctx = new ZContext();
 		Socket subscriber = ctx.createSocket(ZMQ.SUB);
 		subscriber.connect("tcp://localhost:5556");
-		subscriber.subscribe("".getBytes());
+		subscriber.subscribe(ZMQ.SUBSCRIPTION_ALL);
 
 		while (true) {
 			kvsimple kvMsg = kvsimple.recv(subscriber);

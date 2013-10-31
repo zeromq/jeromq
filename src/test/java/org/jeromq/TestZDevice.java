@@ -47,10 +47,10 @@ public class TestZDevice {
             s.connect( "tcp://127.0.0.1:6660");
             s.send("hellow", 0);
             Msg msg = s.recvMsg(0);
-            System.out.println(name + " got response1 " + new String(msg.data()));
+            System.out.println(name + " got response1 " + new String(msg.data(), ZMQ.CHARSET));
             s.send("world cup", 0);
             msg = s.recvMsg(0);
-            System.out.println(name + " got response2 " + new String(msg.data()));
+            System.out.println(name + " got response2 " + new String(msg.data(), ZMQ.CHARSET));
 
             s.close();
             System.out.println("Stop client thread " + name);
@@ -80,7 +80,7 @@ public class TestZDevice {
                 if (msg == null) {
                     throw new RuntimeException();
                 }
-                String identity = new String(msg.data(), 0 , msg.size());
+                String identity = new String(msg.data(), 0 , msg.size(), ZMQ.CHARSET);
                 System.out.println(name + " recieved cleint identity " + identity);
                 msg = s.recvMsg(0);
                 if (msg == null) {
@@ -92,7 +92,7 @@ public class TestZDevice {
                 if (msg == null) {
                     throw new RuntimeException();
                 }
-                String data = new String(msg.data(), 0 , msg.size());
+                String data = new String(msg.data(), 0 , msg.size(), ZMQ.CHARSET);
 
                 System.out.println(name + " recieved data " + msg + " " + data);
                 s.send(identity, ZMQ.SNDMORE);

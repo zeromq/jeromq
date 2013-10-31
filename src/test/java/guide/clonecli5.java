@@ -28,7 +28,7 @@ public class clonecli5
 
 		Socket subscriber = ctx.createSocket(ZMQ.SUB);
         subscriber.connect("tcp://localhost:5557");
-        subscriber.subscribe(SUBTREE.getBytes());
+        subscriber.subscribe(SUBTREE.getBytes(ZMQ.CHARSET));
 
 		Socket publisher = ctx.createSocket(ZMQ.PUSH);
 		publisher.connect("tcp://localhost:5558");
