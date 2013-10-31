@@ -106,7 +106,7 @@ public class ppworker
                     //  queue was (recently) alive, so reset our liveness indicator:
                     if (msg.size() == 1) {
                         ZFrame frame = msg.getFirst();
-                        if (PPP_HEARTBEAT.equals(new String(frame.getData())))
+                        if (PPP_HEARTBEAT.equals(new String(frame.getData(), ZMQ.CHARSET)))
                             liveness = HEARTBEAT_LIVENESS;
                         else {
                             System.out.println("E: invalid message\n");

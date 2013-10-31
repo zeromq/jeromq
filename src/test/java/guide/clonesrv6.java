@@ -61,7 +61,7 @@ public class clonesrv6
                     socket.send(identity, ZMQ.SNDMORE);
                     kvmsg kvmsg = new kvmsg(srv.sequence);
                     kvmsg.setKey("KTHXBAI");
-                    kvmsg.setBody(subtree.getBytes());
+                    kvmsg.setBody(subtree.getBytes(ZMQ.CHARSET));
                     kvmsg.send(socket);
                     kvmsg.destroy();
                 }
@@ -117,7 +117,7 @@ public class clonesrv6
 
             kvmsg msg = new kvmsg(srv.sequence);
             msg.setKey("HUGZ");
-            msg.setBody("".getBytes());
+            msg.setBody(ZMQ.MESSAGE_SEPARATOR);
             msg.send(srv.publisher);
             msg.destroy();
 
@@ -287,13 +287,13 @@ public class clonesrv6
         //  Set up our clone server sockets
         publisher = ctx.createSocket(ZMQ.PUB);
         collector = ctx.createSocket(ZMQ.SUB);
-        collector.subscribe("".getBytes());
+        collector.subscribe(ZMQ.SUBSCRIPTION_ALL);
         publisher.bind(String.format("tcp://*:%d", port + 1));
         collector.bind(String.format("tcp://*:%d", port+2));
 
         //  Set up our own clone client interface to peer
         subscriber = ctx.createSocket(ZMQ.SUB);
-        subscriber.subscribe("".getBytes());
+        subscriber.subscribe(ZMQ.SUBSCRIPTION_ALL);
         subscriber.connect(String.format("tcp://localhost:%d", peer + 1));
     }
 
@@ -371,7 +371,7 @@ public class clonesrv6
         long ttl = Long.parseLong(msg.getProp("ttl"));
         if (ttl > 0 && System.currentTimeMillis() >= ttl) {
             msg.setSequence(++sequence);
-            msg.setBody("".getBytes());
+            msg.setBody(ZMQ.MESSAGE_SEPARATOR);
             msg.send(publisher);
             msg.store(kvmap);
             System.out.printf("I: publishing delete=%d\n", sequence);

@@ -74,7 +74,7 @@ public class TestProxyTcp {
                     throw new RuntimeException("hello");
                 }
                 System.out.println("REP recieved " + msg);
-                String data = new String(msg.data(), 0 , msg.size());
+                String data = new String(msg.data(), 0 , msg.size(), ZMQ.CHARSET);
 
                 Msg response = null;
                 if (i%3 == 2) {
@@ -131,7 +131,7 @@ public class TestProxyTcp {
         }
 
         private boolean read_header() {
-            size = Integer.parseInt(new String(header));
+            size = Integer.parseInt(new String(header, ZMQ.CHARSET));
             System.out.println("Received " + size);
             msg = new Msg(size);
             next_step(msg, read_body);
@@ -144,7 +144,7 @@ public class TestProxyTcp {
             if (msg_sink == null)
                 return false;
             
-            System.out.println("Received body " + new String(msg.data()));
+            System.out.println("Received body " + new String(msg.data(), ZMQ.CHARSET));
             
             if (!identity_sent) {
                 Msg identity = new Msg();
@@ -238,7 +238,7 @@ public class TestProxyTcp {
             System.out.println ("write header " + msg.size());
 
             header.clear ();
-            header.put (String.format("%04d", msg.size()).getBytes());
+            header.put (String.format("%04d", msg.size()).getBytes(ZMQ.CHARSET));
             header.flip ();
             next_step (header.array (), 4, write_body, false);
             return true;

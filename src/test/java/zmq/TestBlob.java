@@ -33,7 +33,7 @@ public class TestBlob {
     public void testBlobMap() {
         HashMap<Blob, String> map = new HashMap<Blob, String>();
         
-        Blob b = new Blob("a".getBytes());
+        Blob b = new Blob("a".getBytes(ZMQ.CHARSET));
         map.put(b, "aa");
         
         assertThat(map.remove(b), notNullValue());

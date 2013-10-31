@@ -24,7 +24,7 @@ public class taskwork {
 
         //  Process tasks forever
         while (!Thread.currentThread ().isInterrupted ()) {
-            String string = new String(receiver.recv(0)).trim();
+            String string = new String(receiver.recv(0), ZMQ.CHARSET).trim();
             long msec = Long.parseLong(string);
             //  Simple progress indicator for the viewer
             System.out.flush();
@@ -34,7 +34,7 @@ public class taskwork {
             Thread.sleep(msec);
 
             //  Send results to sink
-            sender.send("".getBytes(), 0);
+            sender.send(ZMQ.MESSAGE_SEPARATOR, 0);
         }
         sender.close();
         receiver.close();

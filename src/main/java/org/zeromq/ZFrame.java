@@ -77,7 +77,7 @@ public class ZFrame {
      */
     public ZFrame(String data) {
         if (data != null) {
-            this.data = data.getBytes();
+            this.data = data.getBytes(ZMQ.CHARSET);
         }
     }
     
@@ -235,7 +235,7 @@ public class ZFrame {
      *          New byte array contents for frame
      */
     public void reset(String data) {
-        this.data = data.getBytes();
+        this.data = data.getBytes(ZMQ.CHARSET);
     }
     
     /**
@@ -273,7 +273,7 @@ public class ZFrame {
      */
     public boolean streq(String str) {
         if (!hasData()) return false;
-        return new String(this.data).compareTo(str) == 0;
+        return new String(this.data, ZMQ.CHARSET).compareTo(str) == 0;
     }
 
     @Override
@@ -307,7 +307,7 @@ public class ZFrame {
                 isText = false;
         }
         if (isText) 
-            return new String(data);
+            return new String(data, ZMQ.CHARSET);
         else
             return strhex();
     }

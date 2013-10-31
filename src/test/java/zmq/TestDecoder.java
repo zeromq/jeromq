@@ -45,7 +45,7 @@ public class TestDecoder {
     private int read_short_message (ByteBuffer buf) {
         buf.put((byte)6);
         buf.put((byte)0); // flag
-        buf.put("hello".getBytes());
+        buf.put("hello".getBytes(ZMQ.CHARSET));
         
         return buf.position();
     }
@@ -56,15 +56,15 @@ public class TestDecoder {
         buf.put((byte)201);
         buf.put((byte)0); // flag
         for (int i=0; i < 6; i++)
-            buf.put("0123456789".getBytes());
-        buf.put("01".getBytes());
+            buf.put("0123456789".getBytes(ZMQ.CHARSET));
+        buf.put("01".getBytes(ZMQ.CHARSET));
         return buf.position();
     }
 
     private int read_long_message2 (ByteBuffer buf) {
-        buf.put("23456789".getBytes());        
+        buf.put("23456789".getBytes(ZMQ.CHARSET));        
         for (int i=0; i < 13; i++)
-            buf.put("0123456789".getBytes());
+            buf.put("0123456789".getBytes(ZMQ.CHARSET));
         return buf.position();
     }
 
@@ -150,7 +150,7 @@ public class TestDecoder {
 
         private boolean read_header () {
             
-            assertThat (new String (header, 0, 6), is ("HEADER"));
+            assertThat (new String (header, 0, 6, ZMQ.CHARSET), is ("HEADER"));
             ByteBuffer b = ByteBuffer.wrap (header, 6, 4);
             size = b.getInt();
             
@@ -197,11 +197,11 @@ public class TestDecoder {
         assertThat(session.out.size(), is(1));
     }
     private void read_body(ByteBuffer in) {
-        in.put("1234567890".getBytes());
-        in.put("1234567890".getBytes());
+        in.put("1234567890".getBytes(ZMQ.CHARSET));
+        in.put("1234567890".getBytes(ZMQ.CHARSET));
     }
     private int read_header(ByteBuffer in) {
-        in.put("HEADER".getBytes());
+        in.put("HEADER".getBytes(ZMQ.CHARSET));
         in.putInt(20);
         return in.position();
     }

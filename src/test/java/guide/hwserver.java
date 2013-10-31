@@ -21,12 +21,12 @@ public class hwserver{
         while (!Thread.currentThread ().isInterrupted ()) {
 
             byte[] reply = socket.recv(0);
-            System.out.println("Received " + ": [" + new String(reply) + "]");
+            System.out.println("Received " + ": [" + new String(reply, ZMQ.CHARSET) + "]");
 
             //  Create a "Hello" message.
             String request = "world" ;
             // Send the message
-            socket.send(request.getBytes (), 0);
+            socket.send(request.getBytes (ZMQ.CHARSET), 0);
 
             Thread.sleep(1000); //  Do some 'work'
         }

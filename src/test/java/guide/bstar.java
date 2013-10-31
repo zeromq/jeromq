@@ -254,7 +254,7 @@ public class bstar
 
         //  Create subscriber for state coming from peer
         statesub = ctx.createSocket(ZMQ.SUB);
-        statesub.subscribe("".getBytes());
+        statesub.subscribe(ZMQ.SUBSCRIPTION_ALL);
         statesub.connect(remote);
 
         //  Set-up basic reactor events

@@ -21,7 +21,7 @@ public class rtpapa
         client.bind("ipc://routing.ipc");
 
         Socket worker = context.socket(ZMQ.REP);
-        worker.setIdentity("A".getBytes());
+        worker.setIdentity("A".getBytes(ZMQ.CHARSET));
         worker.connect("ipc://routing.ipc");
 
         //  Wait for the worker to connect so that when we send a message

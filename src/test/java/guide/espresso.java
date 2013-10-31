@@ -24,8 +24,8 @@ public class espresso
             //  Subscribe to "A" and "B"
             Socket subscriber = ctx.createSocket(ZMQ.SUB);
             subscriber.connect("tcp://localhost:6001");
-            subscriber.subscribe("A".getBytes());
-            subscriber.subscribe("B".getBytes());
+            subscriber.subscribe("A".getBytes(ZMQ.CHARSET));
+            subscriber.subscribe("B".getBytes(ZMQ.CHARSET));
 
             int count = 0;
             while (count < 5) {

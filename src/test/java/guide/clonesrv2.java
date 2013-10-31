@@ -88,7 +88,7 @@ public class clonesrv2 {
 					byte[] identity = snapshot.recv(0);
                     if (identity == null)
                         break;
-					String request = new String(snapshot.recv(0));
+					String request = new String(snapshot.recv(0), ZMQ.CHARSET);
 
                     if (!request.equals("ICANHAZ?")) {
                         System.out.println("E: bad request, aborting");
@@ -106,7 +106,7 @@ public class clonesrv2 {
                     // now send end message with getSequence number
                     System.out.println("Sending state snapshot = " + stateSequence);
                     snapshot.send(identity, ZMQ.SNDMORE);
-                    kvsimple message = new kvsimple("KTHXBAI", stateSequence, "".getBytes());
+                    kvsimple message = new kvsimple("KTHXBAI", stateSequence, ZMQ.MESSAGE_SEPARATOR);
                     message.send(snapshot);
 				}
 			}

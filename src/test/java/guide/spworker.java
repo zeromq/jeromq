@@ -26,7 +26,7 @@ public class spworker
         //  Set random identity to make tracing easier
         Random rand = new Random(System.nanoTime());
         String identity = String.format("%04X-%04X", rand.nextInt(0x10000), rand.nextInt(0x10000));
-        worker.setIdentity(identity.getBytes());
+        worker.setIdentity(identity.getBytes(ZMQ.CHARSET));
         worker.connect("tcp://localhost:5556");
 
         //  Tell broker we're ready for work

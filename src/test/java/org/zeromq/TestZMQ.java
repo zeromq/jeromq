@@ -73,10 +73,10 @@ public class TestZMQ extends TestCase
             pull = context.socket(ZMQ.PULL);
             pull.bind("tcp://*:12344");
             push.connect("tcp://localhost:12344");
-            bb.put("PING".getBytes());
+            bb.put("PING".getBytes(ZMQ.CHARSET));
             bb.flip();
             push.sendByteBuffer(bb, 0);
-            String actual = new String(pull.recv());
+            String actual = new String(pull.recv(), ZMQ.CHARSET);
             assertEquals("PING", actual);
         } finally {
             try {
@@ -106,12 +106,12 @@ public class TestZMQ extends TestCase
             pull = context.socket(ZMQ.PULL);
             pull.bind("tcp://*:12345");
             push.connect("tcp://localhost:12345");
-            push.send("PING".getBytes(), 0);
+            push.send("PING".getBytes(ZMQ.CHARSET), 0);
             pull.recvByteBuffer(bb, 0);
             bb.flip();
             byte[] b = new byte[bb.remaining()];
             bb.duplicate().get(b);
-            assertEquals("PING", new String(b));
+            assertEquals("PING", new String(b, ZMQ.CHARSET));
         } finally {
             try {
                 push.close();

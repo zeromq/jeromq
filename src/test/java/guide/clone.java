@@ -111,7 +111,7 @@ public class clone
             snapshot.connect(String.format("%s:%d", address, port));
             subscriber = ctx.createSocket(ZMQ.SUB);
             subscriber.connect(String.format("%s:%d", address, port + 1));
-            subscriber.subscribe(subtree.getBytes());
+            subscriber.subscribe(subtree.getBytes(ZMQ.CHARSET));
         }
 
         protected void destroy()

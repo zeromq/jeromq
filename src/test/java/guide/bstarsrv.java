@@ -132,7 +132,7 @@ public class bstarsrv
         ZContext ctx = new ZContext();
         Socket statepub = ctx.createSocket(ZMQ.PUB);
         Socket statesub = ctx.createSocket(ZMQ.SUB);
-        statesub.subscribe("".getBytes());
+        statesub.subscribe(ZMQ.SUBSCRIPTION_ALL);
         Socket frontend = ctx.createSocket(ZMQ.ROUTER);
         bstarsrv fsm = new bstarsrv();
 

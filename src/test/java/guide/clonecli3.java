@@ -25,14 +25,14 @@ public class clonecli3 {
 
 		Socket subscriber = ctx.createSocket(ZMQ.SUB);
 		subscriber.connect("tcp://localhost:5557");
-		subscriber.subscribe("".getBytes());
+		subscriber.subscribe(ZMQ.SUBSCRIPTION_ALL);
 
 		Socket push = ctx.createSocket(ZMQ.PUSH);
 		push.connect("tcp://localhost:5558");
 
 		// get state snapshot
         long sequence = 0;
-        snapshot.send("ICANHAZ?".getBytes(), 0);
+        snapshot.send("ICANHAZ?".getBytes(ZMQ.CHARSET), 0);
 		while (true) {
             kvsimple kvMsg = kvsimple.recv(snapshot);
             if (kvMsg == null)

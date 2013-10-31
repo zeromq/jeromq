@@ -26,6 +26,7 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
+import java.nio.charset.Charset;
 import java.util.HashMap;
 
 
@@ -157,6 +158,12 @@ public class ZMQ {
     public static final int ZMQ_STREAMER = 1;
     public static final int ZMQ_FORWARDER = 2;
     public static final int ZMQ_QUEUE = 3;
+    
+    public static final byte[] MESSAGE_SEPARATOR = new byte[0];
+
+    public static final byte[] SUBSCRIPTION_ALL = new byte[0];
+
+    public static Charset CHARSET = Charset.defaultCharset();
 
     public static class Event
     {
@@ -190,7 +197,7 @@ public class ZMQ {
             ByteBuffer buffer = ByteBuffer.allocate (size);
             buffer.putInt (event);
             buffer.put ((byte) addr.length());
-            buffer.put (addr.getBytes());
+            buffer.put (addr.getBytes(CHARSET));
             buffer.put ((byte) flag);
             if (flag == VALUE_INTEGER)
                 buffer.putInt ((Integer)arg);
@@ -217,7 +224,7 @@ public class ZMQ {
             if (flag == VALUE_INTEGER)
                 arg = buffer.getInt ();
             
-            return new Event (event, new String (addr), arg);
+            return new Event (event, new String (addr, CHARSET), arg);
         }
     }
     //  New context API
@@ -353,7 +360,7 @@ public class ZMQ {
     // Sending functions.
     public static int zmq_send(SocketBase s_, String str, 
             int flags_) {
-        byte [] data = str.getBytes();
+        byte [] data = str.getBytes(CHARSET);
         return zmq_send(s_, data, data.length, flags_);
     }
 

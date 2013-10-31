@@ -21,7 +21,7 @@ public class pathosub
 
         Random rand = new Random(System.currentTimeMillis());
         String subscription = String.format("%03d", rand.nextInt(1000));
-        subscriber.subscribe(subscription.getBytes());
+        subscriber.subscribe(subscription.getBytes(ZMQ.CHARSET));
 
         while (true) {
             String topic = subscriber.recvStr();

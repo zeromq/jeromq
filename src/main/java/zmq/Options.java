@@ -179,7 +179,7 @@ public class Options {
             byte[] val;
             
             if (optval_ instanceof String)
-                val = ((String) optval_).getBytes();
+                val = ((String) optval_).getBytes(ZMQ.CHARSET);
             else if (optval_ instanceof byte[])
                 val = (byte[]) optval_;
             else {

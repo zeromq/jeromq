@@ -79,7 +79,7 @@ public class clonesrv4
                 // now send end message with getSequence number
                 System.out.println("Sending state snapshot = " + sequence);
                 snapshot.send(identity, ZMQ.SNDMORE);
-                kvsimple message = new kvsimple("KTHXBAI", sequence, "".getBytes());
+                kvsimple message = new kvsimple("KTHXBAI", sequence, ZMQ.SUBSCRIPTION_ALL);
                 message.send(snapshot);
             }
         }

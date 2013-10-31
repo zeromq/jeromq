@@ -300,7 +300,7 @@ public class mdbroker {
             String name = msg.peekLast().toString();
             returnCode = services.containsKey(name) ? "200" : "400";
         }
-        msg.peekLast().reset(returnCode.getBytes());
+        msg.peekLast().reset(returnCode.getBytes(ZMQ.CHARSET));
         // Remove & save client return envelope and insert the
         // protocol header and service name, then rewrap envelope.
         ZFrame client = msg.unwrap();

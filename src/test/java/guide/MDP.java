@@ -18,6 +18,7 @@ package guide;
  */
 import java.util.Arrays;
 
+import org.zeromq.ZMQ;
 import org.zeromq.ZFrame;
 
 /**
@@ -45,7 +46,7 @@ public enum MDP {
     private final byte[] data;
 
     MDP(String value) {
-        this.data = value.getBytes();
+        this.data = value.getBytes(ZMQ.CHARSET);
     }
     MDP(int value) { //watch for ints>255, will be truncated
         byte b = (byte) (value & 0xFF);

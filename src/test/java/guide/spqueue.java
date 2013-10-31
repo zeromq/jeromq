@@ -54,7 +54,7 @@ public class spqueue
 
                 //  Forward message to client if it's not a READY
                 ZFrame frame = msg.getFirst();
-                if (new String(frame.getData()).equals(WORKER_READY))
+                if (new String(frame.getData(), ZMQ.CHARSET).equals(WORKER_READY))
                     msg.destroy();
                 else
                     msg.send(frontend);

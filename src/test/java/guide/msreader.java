@@ -19,7 +19,7 @@ public class msreader {
         //  Connect to weather server
         ZMQ.Socket subscriber = context.socket(ZMQ.SUB);
         subscriber.connect("tcp://localhost:5556");
-        subscriber.subscribe("10001 ".getBytes());
+        subscriber.subscribe("10001 ".getBytes(ZMQ.CHARSET));
 
         //  Process messages from both sockets
         //  We prioritize traffic from the task ventilator

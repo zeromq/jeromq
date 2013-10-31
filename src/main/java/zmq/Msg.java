@@ -80,7 +80,7 @@ public class Msg {
     }
     
     public Msg(String src) {
-        this(src.getBytes(), false);
+        this(src.getBytes(ZMQ.CHARSET), false);
     }
     
     public Msg(byte[] src, boolean copy) {
@@ -254,7 +254,7 @@ public class Msg {
     }
 
     public final void put(String str, int i) {
-        put(str.getBytes(), i);
+        put(str.getBytes(ZMQ.CHARSET), i);
     }
 
     public final void put(Msg data, int i) {

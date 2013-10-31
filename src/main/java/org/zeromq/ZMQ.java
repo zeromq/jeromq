@@ -23,6 +23,8 @@ package org.zeromq;
 
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectableChannel;
+import java.nio.charset.Charset;
+
 import zmq.Ctx;
 import zmq.DecoderBase;
 import zmq.EncoderBase;
@@ -157,6 +159,12 @@ public class ZMQ {
     public static final int EVENT_DISCONNECTED = zmq.ZMQ.ZMQ_EVENT_DISCONNECTED;
 
     public static final int EVENT_ALL = zmq.ZMQ.ZMQ_EVENT_ALL;
+
+    public static final byte[] MESSAGE_SEPARATOR = new byte[0];
+
+    public static final byte[] SUBSCRIPTION_ALL = new byte[0];
+    
+    public static Charset CHARSET = Charset.defaultCharset();
 
     /**
      * Create a new Context.
@@ -953,15 +961,15 @@ public class ZMQ {
         }
 
         public final boolean send (String data) {
-            return send (data.getBytes (), 0);
+            return send (data.getBytes (CHARSET), 0);
         }
         
         public final boolean sendMore (String data) {
-            return send(data.getBytes (), zmq.ZMQ.ZMQ_SNDMORE);
+            return send(data.getBytes (CHARSET), zmq.ZMQ.ZMQ_SNDMORE);
         }
         
         public final boolean send (String data, int flags) {
-            return send(data.getBytes (), flags);
+            return send(data.getBytes (CHARSET), flags);
         }
         
         public final boolean send (byte[] data) {
@@ -1090,7 +1098,7 @@ public class ZMQ {
             byte [] msg = recv(flags);
             
             if (msg != null) {
-                return new String (msg);
+                return new String (msg, CHARSET);
             }
 
             return null;

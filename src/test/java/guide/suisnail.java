@@ -26,7 +26,7 @@ public class suisnail
         {
             //  Subscribe to everything
             Socket subscriber = ctx.createSocket(ZMQ.SUB);
-            subscriber.subscribe("".getBytes());
+            subscriber.subscribe(ZMQ.SUBSCRIPTION_ALL);
             subscriber.connect("tcp://localhost:5556");
 
             //  Get and process messages

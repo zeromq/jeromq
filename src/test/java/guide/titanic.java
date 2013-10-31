@@ -249,8 +249,8 @@ public class titanic
                     //  UUID is prefixed with '-' if still waiting
                     if (entry[0] == '-') {
                         if (verbose)
-                            System.out.printf("I: processing request %s\n", new String(entry, 1, entry.length -1));
-                        if (serviceSuccess(new String(entry, 1, entry.length -1))) {
+                            System.out.printf("I: processing request %s\n", new String(entry, 1, entry.length -1, ZMQ.CHARSET));
+                        if (serviceSuccess(new String(entry, 1, entry.length -1, ZMQ.CHARSET))) {
                             //  Mark queue entry as processed
                             file.seek(file.getFilePointer() - 37);
                             file.writeBytes("+");

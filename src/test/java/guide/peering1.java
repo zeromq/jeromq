@@ -35,7 +35,7 @@ public class peering1
 
         //  Connect statefe to all peers
         Socket statefe = ctx.createSocket(ZMQ.SUB);
-        statefe.subscribe("".getBytes());
+        statefe.subscribe(ZMQ.SUBSCRIPTION_ALL);
         int argn;
         for (argn = 1; argn < argv.length; argn++) {
             String peer = argv[argn];
@@ -55,8 +55,8 @@ public class peering1
 
             //  Handle incoming status messages
             if (items[0].isReadable()) {
-                String peer_name = new String(statefe.recv(0));
-                String available = new String(statefe.recv(0));
+                String peer_name = new String(statefe.recv(0), ZMQ.CHARSET);
+                String available = new String(statefe.recv(0), ZMQ.CHARSET);
                 System.out.printf("%s - %s workers free\n", peer_name, available);
             } else {
                 //  Send random values for worker availability

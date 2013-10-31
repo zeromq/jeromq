@@ -17,7 +17,7 @@ public class tasksink {
         receiver.bind("tcp://*:5558");
 
         //  Wait for start of batch
-        String string = new String(receiver.recv(0));
+        String string = new String(receiver.recv(0), ZMQ.CHARSET);
 
         //  Start our clock now
         long tstart = System.currentTimeMillis();
@@ -26,7 +26,7 @@ public class tasksink {
         int task_nbr;
         int total_msec = 0;     //  Total calculated cost in msecs
         for (task_nbr = 0; task_nbr < 100; task_nbr++) {
-            string = new String(receiver.recv(0)).trim();
+            string = new String(receiver.recv(0), ZMQ.CHARSET).trim();
             if ((task_nbr / 10) * 10 == task_nbr) {
                 System.out.print(":");
             } else {

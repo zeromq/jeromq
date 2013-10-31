@@ -22,7 +22,7 @@ public class wuproxy{
         backend.bind("tcp://10.1.1.0:8100");
 
         //  Subscribe on everything
-        frontend.subscribe("".getBytes());
+        frontend.subscribe(ZMQ.SUBSCRIPTION_ALL);
 
         //  Run the proxy until the user interrupts us
         ZMQ.proxy (frontend, backend, null);

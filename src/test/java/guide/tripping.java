@@ -62,7 +62,7 @@ public class tripping {
             ZContext ctx = new ZContext();
             Socket worker = ctx.createSocket(ZMQ.DEALER);
             worker.setHWM (0);
-            worker.setIdentity("W".getBytes());
+            worker.setIdentity("W".getBytes(ZMQ.CHARSET));
             worker.connect("tcp://localhost:5556");
             while (!Thread.currentThread().isInterrupted()) {
                 ZMsg msg = ZMsg.recvMsg(worker);
@@ -83,7 +83,7 @@ public class tripping {
             ZContext ctx = new ZContext();
             Socket client = ctx.createSocket(ZMQ.DEALER);
             client.setHWM (0);
-            client.setIdentity("C".getBytes());
+            client.setIdentity("C".getBytes(ZMQ.CHARSET));
             client.connect("tcp://localhost:5555");
             System.out.println("Setting up test");
             try {

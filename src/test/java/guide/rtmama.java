@@ -10,7 +10,7 @@ public class rtmama {
     private static final int NBR_WORKERS  =10;
     
     public static class Worker implements Runnable {
-        private final byte[] END = "END".getBytes();
+        private final byte[] END = "END".getBytes(ZMQ.CHARSET);
 
         public void run() {
             ZMQ.Context context = ZMQ.context(1);
@@ -22,7 +22,7 @@ public class rtmama {
             while (true) {
                 worker.send("ready", 0);
                 byte[] workerload = worker.recv(0);
-                if (new String(workerload).equals("END")) {
+                if (new String(workerload, ZMQ.CHARSET).equals("END")) {
                     System.out.println(
                         String.format(
                             "Processs %d tasks.", total

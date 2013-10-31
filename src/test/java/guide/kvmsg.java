@@ -48,7 +48,7 @@ public class kvmsg
         ByteBuffer msg = ByteBuffer.allocate(props_size);
         for (Entry<Object, Object> o: props.entrySet()) {
             String prop = o.getKey().toString() + "=" + o.getValue().toString() + "\n";
-            msg.put(prop.getBytes());
+            msg.put(prop.getBytes(ZMQ.CHARSET));
         }
         present[FRAME_PROPS] = true;
         frame[FRAME_PROPS] = msg.array();
@@ -63,8 +63,8 @@ public class kvmsg
         if (msg.length == 0)
             return;
 
-        System.out.println("" + msg.length + " :" + new String(msg));
-        for (String prop: new String(msg).split("\n")) {
+        System.out.println("" + msg.length + " :" + new String(msg, ZMQ.CHARSET));
+        for (String prop: new String(msg, ZMQ.CHARSET).split("\n")) {
             String[] split = prop.split("=");
             props.setProperty(split[0], split[1]);
         }
@@ -125,7 +125,7 @@ public class kvmsg
         //  .skip
         int frameNbr;
         for (frameNbr = 0; frameNbr < KVMSG_FRAMES; frameNbr++) {
-            byte[] copy = new byte[0];
+            byte[] copy = ZMQ.MESSAGE_SEPARATOR;
             if (present[frameNbr])
                 copy = frame[frameNbr];
             socket.send(copy, (frameNbr < KVMSG_FRAMES - 1)? ZMQ.SNDMORE: 0);
@@ -165,7 +165,7 @@ public class kvmsg
                     size = KVMSG_KEY_MAX;
                 byte[] buf = new byte[size];
                 System.arraycopy(frame[FRAME_KEY], 0, buf, 0, size);
-                key = new String(buf);
+                key = new String(buf, ZMQ.CHARSET);
             }
             return key;
         }
@@ -177,7 +177,7 @@ public class kvmsg
     public void setKey(String key)
     {
         byte[] msg = new byte[key.length()];
-        System.arraycopy(key.getBytes(), 0, msg, 0, key.length());
+        System.arraycopy(key.getBytes(ZMQ.CHARSET), 0, msg, 0, key.length());
         frame[FRAME_KEY] = msg;
         present[FRAME_KEY] = true;
     }
@@ -232,7 +232,7 @@ public class kvmsg
     //  Set message body using printf format
     public void fmtBody(String fmt, Object... args)
     {
-        setBody(String.format(fmt, args).getBytes());
+        setBody(String.format(fmt, args).getBytes(ZMQ.CHARSET));
     }
 
     //  Return body size from last read message, if any, else zero
@@ -258,7 +258,7 @@ public class kvmsg
     //  Sets the UUID to a randomly generated value
     public void setUUID()
     {
-        byte[] msg = UUID.randomUUID().toString().getBytes();
+        byte[] msg = UUID.randomUUID().toString().getBytes(ZMQ.CHARSET);
         present[FRAME_UUID] = true;
         frame[FRAME_UUID] = msg;
     }
@@ -347,7 +347,7 @@ public class kvmsg
         kvmsg kvmsg = new kvmsg(1);
         kvmsg.setKey("getKey");
         kvmsg.setUUID();
-        kvmsg.setBody("body".getBytes());
+        kvmsg.setBody("body".getBytes(ZMQ.CHARSET));
         if (verbose)
             kvmsg.dump();
         kvmsg.send(output);
@@ -366,7 +366,7 @@ public class kvmsg
         kvmsg.setProp("prop2", "value2");
         kvmsg.setKey("getKey");
         kvmsg.setUUID();
-        kvmsg.setBody("body".getBytes());
+        kvmsg.setBody("body".getBytes(ZMQ.CHARSET));
         assert (kvmsg.getProp("prop2").equals("value2"));
         if (verbose)
             kvmsg.dump();

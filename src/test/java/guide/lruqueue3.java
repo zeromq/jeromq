@@ -25,12 +25,12 @@ class ClientThread3 extends Thread
 
         //  Send request, get reply
         while (true) {
-            client.send("HELLO".getBytes(), 0);
+            client.send("HELLO".getBytes(ZMQ.CHARSET), 0);
             byte[] data = client.recv(0);
 
             if (data == null)
                 break;
-            String reply = new String(data);
+            String reply = new String(data, ZMQ.CHARSET);
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
@@ -63,7 +63,7 @@ class WorkerThread3 extends Thread
             if (msg == null)
                 break;
 
-            msg.getLast().reset("OK".getBytes());
+            msg.getLast().reset("OK".getBytes(ZMQ.CHARSET));
 
             msg.send(worker);
             System.out.println(Thread.currentThread().getName() + " Worker Sent OK");
@@ -132,7 +132,7 @@ class BackendHandler implements ZLoop.IZLoopHandler
 
             //  Forward message to client if it's not a READY
             ZFrame frame = msg.getFirst();
-            if (new String(frame.getData()).equals(lruqueue3.LRU_READY))
+            if (new String(frame.getData(), ZMQ.CHARSET).equals(lruqueue3.LRU_READY))
                 msg.destroy();
             else
                 msg.send(arg.frontend);

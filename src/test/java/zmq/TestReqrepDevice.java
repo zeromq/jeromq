@@ -84,13 +84,13 @@ public class TestReqrepDevice {
         //  Receive the request.
         msg = ZMQ.zmq_recv (rep, 0);
         assertThat (msg.size() , is(3));
-        buff = new String(msg.data());
+        buff = new String(msg.data(), ZMQ.CHARSET);
         assertThat (buff , is("ABC"));
         rcvmore = ZMQ.zmq_getsockopt (rep, ZMQ.ZMQ_RCVMORE);
         assertThat (rcvmore>0, is(true));
         msg = ZMQ.zmq_recv (rep, 0);
         assertThat (msg.size(), is( 4));
-        buff = new String(msg.data());
+        buff = new String(msg.data(), ZMQ.CHARSET);
         assertThat (buff, is("DEFG") );
         rcvmore = ZMQ.zmq_getsockopt (rep, ZMQ.ZMQ_RCVMORE);
         assertThat (rcvmore, is(0L));
@@ -115,13 +115,13 @@ public class TestReqrepDevice {
         //  Receive the reply.
         msg = ZMQ.zmq_recv (req, 0);
         assertThat (msg.size() , is(6));
-        buff = new String(msg.data());
+        buff = new String(msg.data(), ZMQ.CHARSET);
         assertThat (buff , is("GHIJKL"));
         rcvmore = ZMQ.zmq_getsockopt (req, ZMQ.ZMQ_RCVMORE);
         assertThat (rcvmore>0, is(true));
         msg = ZMQ.zmq_recv (req, 0);
         assertThat (msg.size(), is( 2));
-        buff = new String(msg.data());
+        buff = new String(msg.data(), ZMQ.CHARSET);
         assertThat (buff, is("MN") );
         rcvmore = ZMQ.zmq_getsockopt (req, ZMQ.ZMQ_RCVMORE);
         assertThat (rcvmore, is(0L));

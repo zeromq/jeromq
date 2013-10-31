@@ -77,7 +77,7 @@ public class mdwrkapi {
 
         msg.addFirst(command.newFrame());
         msg.addFirst(MDP.W_WORKER.newFrame());
-        msg.addFirst(new ZFrame(new byte[0]));
+        msg.addFirst(new ZFrame(ZMQ.MESSAGE_SEPARATOR));
 
         if (verbose) {
             log.format("I: sending %s to broker\n", command);

@@ -22,7 +22,7 @@ public class lvcache
         backend.bind("tcp://*:5558");
 
         //  Subscribe to every single topic from publisher
-        frontend.subscribe("".getBytes());
+        frontend.subscribe(ZMQ.SUBSCRIPTION_ALL);
 
         //  Store last instance of each topic in a cache
         Map<String, String> cache = new HashMap<String, String>();
@@ -59,7 +59,7 @@ public class lvcache
                 //  Event is one byte 0=unsub or 1=sub, followed by topic
                 byte[] event = frame.getData();
                 if (event [0] == 1) {
-                    String topic = new String(event, 1, event.length -1);
+                    String topic = new String(event, 1, event.length -1, ZMQ.CHARSET);
                     System.out.printf ("Sending cached topic %s\n", topic);
                     String previous = cache.get(topic);
                     if (previous != null) {

@@ -18,7 +18,7 @@ public class mspoller {
         //  Connect to weather server
         ZMQ.Socket subscriber = context.socket(ZMQ.SUB);
         subscriber.connect("tcp://localhost:5556");
-        subscriber.subscribe("10001 ".getBytes());
+        subscriber.subscribe("10001 ".getBytes(ZMQ.CHARSET));
 
         //  Initialize poll set
         ZMQ.Poller items = new ZMQ.Poller (2);

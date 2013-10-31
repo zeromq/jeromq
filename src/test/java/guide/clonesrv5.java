@@ -58,7 +58,7 @@ public class clonesrv5
                     socket.send(identity, ZMQ.SNDMORE);
                     kvmsg kvmsg = new kvmsg(srv.sequence);
                     kvmsg.setKey("KTHXBAI");
-                    kvmsg.setBody(subtree.getBytes());
+                    kvmsg.setBody(subtree.getBytes(ZMQ.CHARSET));
                     kvmsg.send(socket);
                     kvmsg.destroy();
                 }
@@ -161,7 +161,7 @@ public class clonesrv5
         long ttl = Long.parseLong(msg.getProp("ttl"));
         if (ttl > 0 && System.currentTimeMillis() >= ttl) {
             msg.setSequence(++sequence);
-            msg.setBody("".getBytes());
+            msg.setBody(ZMQ.MESSAGE_SEPARATOR);
             msg.send(publisher);
             msg.store(kvmap);
             System.out.printf("I: publishing delete=%d\n", sequence);

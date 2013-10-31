@@ -20,7 +20,7 @@ public class wuclient {
 
         //  Subscribe to zipcode, default is NYC, 10001
         String filter = (args.length > 0) ? args[0] : "10001 ";
-        subscriber.subscribe(filter.getBytes());
+        subscriber.subscribe(filter.getBytes(ZMQ.CHARSET));
 
         //  Process 100 updates
         int update_nbr;
