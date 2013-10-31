@@ -173,7 +173,13 @@ public class Msg {
     public final byte[] data ()
     {
         if (data == null && type == type_lmsg) {
-            if (buf.arrayOffset () == 0)
+            if (buf.isDirect ()) {
+                data = new byte [size];
+                int pos = buf.position();
+                buf.get(data);
+                buf.position(pos);
+            }
+            else if (buf.arrayOffset () == 0)
                 data = buf.array();
             else {
                 data = new byte [size];
