@@ -318,7 +318,7 @@ public class ZFrame {
      * @param socket
      *          0MQ socket to read from
      * @return
-     *          ByteBuffer
+     *          byte[] data
      */
     private byte[] recv(Socket socket, int flags) {
         if (socket == null)

@@ -18,8 +18,6 @@
 */
 package org.jeromq.codec;
 
-import java.nio.ByteBuffer;
-
 import zmq.DecoderBase;
 import zmq.EncoderBase;
 import zmq.IMsgSink;
@@ -148,7 +146,7 @@ public class Proxy {
         private final static int write_header = 0;
         private final static int write_body = 1;
         
-        private ByteBuffer header ;
+        private byte[] header;
         private Msg msg;
         private boolean message_ready;
         private boolean identity_received;
@@ -160,7 +158,7 @@ public class Proxy {
             message_ready = false;
             identity_received = false;
             
-            header = ByteBuffer.allocate(headerSize());
+            header = new byte[headerSize()];
         }
 
         abstract protected byte[] getHeader(byte[] body);
@@ -219,10 +217,8 @@ public class Proxy {
 
             byte[] hbuf = getHeader(msg.data());
             if (hbuf != null) {
-                header.clear();
-                header.put(hbuf);
-                header.flip();
-                next_step(header.array (), header.remaining(), write_body, false);
+                System.arraycopy(hbuf, 0, header, 0, hbuf.length);
+                next_step(header, hbuf.length, write_body, false);
             } else {
                 next_step(hbuf, 0, write_body, false);
             }
