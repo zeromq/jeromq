@@ -185,10 +185,14 @@ public class Poller extends PollerBase implements Runnable {
                         try {
                             pollset.key = ch.register(selector, pollset.ops, pollset.handler);
                         } catch (ClosedChannelException e) {
-                            continue;
                         }
-                    } else if (pollset.cancelled) {
-                        pollset.key.cancel ();
+                    } 
+                    
+                    
+                    if (pollset.cancelled || !ch.isOpen()) {
+                        if(pollset.key != null) {
+                            pollset.key.cancel();
+                        }
                         it.remove ();
                     }
                 }

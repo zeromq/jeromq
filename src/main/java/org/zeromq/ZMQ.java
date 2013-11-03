@@ -865,6 +865,29 @@ public class ZMQ {
         }
 
         /**
+         * @see #setDelayAttachOnConnect(boolean)
+         *
+         * @return the keep alive setting.
+         */
+        public boolean getDelayAttachOnConnect() {
+
+            return base.getsockopt(zmq.ZMQ.ZMQ_DELAY_ATTACH_ON_CONNECT) == 1;
+        }
+
+        /**
+         * Accept messages only when connections are made
+         *
+         * If set to true, will delay the attachment of a pipe on connect until the underlying connection
+         * has completed. This will cause the socket to block if there are no other connections, but will
+         * prevent queues from filling on pipes awaiting connection
+         *
+         * @param value The value of 'ZMQ_DELAY_ATTACH_ON_CONNECT'. Default false.
+         */
+        public void setDelayAttachOnConnect(boolean value) {
+            setsockopt(zmq.ZMQ.ZMQ_DELAY_ATTACH_ON_CONNECT, value ? 1 : 0);
+        }
+
+        /**
          * Bind to network interface. Start listening for new connections.
          * 
          * @param addr
@@ -1527,7 +1550,7 @@ public class ZMQ {
     }
 
     /**
-     * Starts the built-in ØMQ proxy in the current application thread.
+     * Starts the built-in 0MQ proxy in the current application thread.
      * The proxy connects a frontend socket to a backend socket. Conceptually, data flows from frontend to backend.
      * Depending on the socket types, replies may flow in the opposite direction. The direction is conceptual only;
      * the proxy is fully symmetric and there is no technical difference between frontend and backend.

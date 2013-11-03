@@ -32,8 +32,12 @@ import java.util.Map.Entry;
 
 public abstract class SocketBase extends Own 
     implements IPollEvents, Pipe.IPipeEvents {
-    
+
+    //  Map of open endpoints.
     private final Map<String, Own> endpoints;
+
+    //  Map of open inproc endpoints.
+    private final Map<String, Pipe> inprocs;
 
     //  Used to check whether the object is a socket.
     private int tag;
@@ -88,6 +92,7 @@ public abstract class SocketBase extends Own
         options.socket_id = sid_;
         
         endpoints = new MultiMap<String, Own>();
+        inprocs = new MultiMap<String, Pipe>();
         pipes = new ArrayList<Pipe>();
         
         mailbox = new Mailbox("socket-" + sid_);
@@ -465,6 +470,9 @@ public abstract class SocketBase extends Own
             // Save last endpoint URI
             options.last_endpoint = addr_;
 
+            // remember inproc connections for disconnect
+            inprocs.put(addr_, pipes[0]);
+
             return true;
         }
 
@@ -542,6 +550,29 @@ public abstract class SocketBase extends Own
         boolean rc = process_commands (0, false);
         if (!rc)
             return rc;
+
+        //  Parse addr_ string.
+        URI uri;
+        try {
+            uri = new URI(addr_);
+        } catch (URISyntaxException e) {
+            throw new IllegalArgumentException(e);
+        }
+
+        String protocol = uri.getScheme();
+        // Disconnect an inproc socket
+        if (protocol.equals("inproc")) {
+            if (!inprocs.containsKey(addr_)) {
+                return false;
+            }
+
+            Iterator<Entry<String, Pipe>> it = inprocs.entrySet().iterator();
+            while(it.hasNext()) {
+                it.next().getValue().terminate(true);
+                it.remove();
+            }
+            return true;
+        }
 
         if (!endpoints.containsKey(addr_)) {
             return false;
@@ -973,6 +1004,15 @@ public abstract class SocketBase extends Own
     public void terminated(Pipe pipe_) {
         //  Notify the specific socket type about the pipe termination.
         xterminated (pipe_);
+
+        // Remove pipe from inproc pipes
+        Iterator<Entry<String, Pipe>> it = inprocs.entrySet().iterator();
+        while(it.hasNext()) {
+            if (it.next().getValue() == pipe_) {
+                it.remove();
+                break;
+            }
+        }
 
         //  Remove the pipe from the list of attached pipes and confirm its
         //  termination if we are already shutting down.
