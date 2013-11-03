@@ -2,6 +2,8 @@
 
 Pure Java implementation of libzmq (http://zeromq.org)
 
+[![Build Status](https://travis-ci.org/zeromq/jeromq.png)](https://travis-ci.org/zeromq/jeromq)
+
 ## Features
 
 * based on libzmq 3.2.2
