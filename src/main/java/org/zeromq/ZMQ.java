@@ -1019,13 +1019,13 @@ public class ZMQ {
          * @param flags the flags to apply to the send operation
          * @return the number of bytes sent, -1 on error
          */
-        public final boolean sendByteBuffer (ByteBuffer data, int flags) {
+        public final int sendByteBuffer(ByteBuffer data, int flags) {
             zmq.Msg msg = new zmq.Msg(data);
             if (base.send(msg, flags))
-                return true;
+                return msg.size();
 
             mayRaise();
-            return false;
+            return -1;
         }
         /**
          * Receive a message.
