@@ -201,6 +201,7 @@ public class ZMQ {
             buffer.put ((byte) flag);
             if (flag == VALUE_INTEGER)
                 buffer.putInt ((Integer)arg);
+            buffer.flip();
 
             Msg msg = new Msg (buffer);
             return s.send (msg, 0);

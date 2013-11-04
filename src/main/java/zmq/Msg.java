@@ -98,7 +98,6 @@ public class Msg {
     {
         init (type_lmsg);
         buf = src.duplicate ();
-        buf.rewind ();
         size = buf.remaining ();
     }
     
