@@ -324,10 +324,9 @@ public class Ctx {
     public void destroy_socket(SocketBase socket_) {
         slot_sync.lock ();
 
-        int tid;
         //  Free the associated thread slot.
         try {
-            tid = socket_.get_tid ();
+            int tid = socket_.get_tid ();
             empty_slots.add (tid);
             slots [tid].close();
             slots [tid] = null;
