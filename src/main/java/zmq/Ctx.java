@@ -204,14 +204,20 @@ public class Ctx {
     {
         if (option_ == ZMQ.ZMQ_MAX_SOCKETS && optval_ >= 1) {
             opt_sync.lock ();
-            max_sockets = optval_;
-            opt_sync.unlock ();
+            try {
+                max_sockets = optval_;
+            } finally {
+                opt_sync.unlock ();
+            }
         }
         else
         if (option_ == ZMQ.ZMQ_IO_THREADS && optval_ >= 0) {
             opt_sync.lock ();
-            io_thread_count = optval_;
-            opt_sync.unlock ();
+            try {
+                io_thread_count = optval_;
+            } finally {
+                opt_sync.unlock ();
+            }
         }
         else {
             throw new IllegalArgumentException("option = " + option_);
@@ -242,10 +248,15 @@ public class Ctx {
                 starting = false;
                 //  Initialise the array of mailboxes. Additional three slots are for
                 //  zmq_term thread and reaper thread.
+                int mazmq;
+                int ios;
                 opt_sync.lock ();
-                int mazmq = max_sockets;
-                int ios = io_thread_count;
-                opt_sync.unlock ();
+                try {
+                    mazmq = max_sockets;
+                    ios = io_thread_count;
+                } finally {
+                    opt_sync.unlock ();
+                }
                 slot_count = mazmq + ios + 2;
                 slots = new Mailbox[slot_count];
                 //alloc_assert (slots);
