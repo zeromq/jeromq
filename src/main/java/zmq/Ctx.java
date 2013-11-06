@@ -64,7 +64,7 @@ public class Ctx {
 
     //  If true, zmq_init has been called but no socket has been created
     //  yet. Launching of I/O threads is delayed.
-    private volatile boolean starting;
+    private boolean starting;
 
     //  If true, zmq_term was already called.
     private boolean terminating;
