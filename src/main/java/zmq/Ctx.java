@@ -163,7 +163,7 @@ public class Ctx {
     public void terminate() {
         
         tag = 0xdeadbeef;
-        
+
         slot_sync.lock ();
         if (!starting) {
 
@@ -185,8 +185,7 @@ public class Ctx {
             }
             slot_sync.unlock();
             //  Wait till reaper thread closes all the sockets.
-            Command cmd;
-            cmd = term_mailbox.recv (-1);
+            Command cmd = term_mailbox.recv (-1);
             if (cmd == null)
                 throw new IllegalStateException();
             assert (cmd.type() == Command.Type.done);
