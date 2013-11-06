@@ -171,7 +171,6 @@ public class Ctx {
             //  restarted.
             boolean restarted = terminating;
             terminating = true;
-            slot_sync.unlock ();
 
             //  First attempt to terminate the context.
             if (!restarted) {
@@ -179,17 +178,12 @@ public class Ctx {
                 //  First send stop command to sockets so that any blocking calls
                 //  can be interrupted. If there are no sockets we can ask reaper
                 //  thread to stop.
-                slot_sync.lock ();
-                try {
-                    for (int i = 0; i != sockets.size (); i++)
-                        sockets.get(i).stop ();
-                    if (sockets.isEmpty ())
-                        reaper.stop ();
-                } finally {
-                    slot_sync.unlock ();
-                }
+                for (int i = 0; i != sockets.size (); i++)
+                    sockets.get(i).stop ();
+                if (sockets.isEmpty ())
+                    reaper.stop ();
             }
-
+            slot_sync.unlock();
             //  Wait till reaper thread closes all the sockets.
             Command cmd;
             cmd = term_mailbox.recv (-1);
