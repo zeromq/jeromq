@@ -28,6 +28,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -64,7 +65,7 @@ public class Ctx {
 
     //  If true, zmq_init has been called but no socket has been created
     //  yet. Launching of I/O threads is delayed.
-    private boolean starting;
+    private AtomicBoolean starting = new AtomicBoolean(true);
 
     //  If true, zmq_term was already called.
     private boolean terminating;
@@ -112,7 +113,6 @@ public class Ctx {
     public Ctx ()
     {
         tag = 0xabadcafe;
-        starting = true;
         terminating = false;
         reaper = null;
         slot_count = 0;
@@ -164,39 +164,43 @@ public class Ctx {
         
         tag = 0xdeadbeef;
 
-        slot_sync.lock ();
-        if (!starting) {
+        if (!starting.get()) {
+            slot_sync.lock ();
+            try {
+                //  Check whether termination was already underway, but interrupted and now
+                //  restarted.
+                boolean restarted = terminating;
+                terminating = true;
 
-            //  Check whether termination was already underway, but interrupted and now
-            //  restarted.
-            boolean restarted = terminating;
-            terminating = true;
+                //  First attempt to terminate the context.
+                if (!restarted) {
 
-            //  First attempt to terminate the context.
-            if (!restarted) {
-
-                //  First send stop command to sockets so that any blocking calls
-                //  can be interrupted. If there are no sockets we can ask reaper
-                //  thread to stop.
-                for (int i = 0; i != sockets.size (); i++)
-                    sockets.get(i).stop ();
-                if (sockets.isEmpty ())
-                    reaper.stop ();
+                    //  First send stop command to sockets so that any blocking calls
+                    //  can be interrupted. If there are no sockets we can ask reaper
+                    //  thread to stop.
+                    for (int i = 0; i != sockets.size (); i++)
+                        sockets.get(i).stop ();
+                    if (sockets.isEmpty ())
+                        reaper.stop ();
+                }
+            } finally {
+                slot_sync.unlock();
             }
-            slot_sync.unlock();
             //  Wait till reaper thread closes all the sockets.
             Command cmd = term_mailbox.recv (-1);
             if (cmd == null)
                 throw new IllegalStateException();
             assert (cmd.type() == Command.Type.DONE);
             slot_sync.lock ();
-            assert (sockets.isEmpty ());
+            try {
+                assert (sockets.isEmpty ());
+            } finally {
+                slot_sync.unlock ();
+            }
         }
-        slot_sync.unlock ();
 
         //  Deallocate the resources.
         destroy();
-        
     }
     
     public void set (int option_, int optval_)
@@ -242,9 +246,7 @@ public class Ctx {
         SocketBase s = null;
         slot_sync.lock ();
         try {
-            if (starting) {
-    
-                starting = false;
+            if (starting.compareAndSet(true, false)) {
                 //  Initialise the array of mailboxes. Additional three slots are for
                 //  zmq_term thread and reaper thread.
                 int mazmq;
