@@ -24,8 +24,7 @@ import java.util.Arrays;
 
 public class Blob {
 
-    private byte[] buf;
-    private int hash = 0;
+    private final byte[] buf;
     
     public Blob(byte[] data_) {
         buf = Arrays.copyOf(data_, data_.length);
@@ -41,19 +40,16 @@ public class Blob {
 
     public Blob put(int pos, byte b) {
         buf[pos] = b;
-        hash = 0;
         return this;
     }
     
     public Blob put(int pos, byte[] data) {
         System.arraycopy(data, 0, buf, pos, data.length);
-        hash = 0;
         return this;
     }
 
     public Blob put(int pos, byte[] data, int start, int length) {
         System.arraycopy(data, start, buf, pos, length);
-        hash = 0;
         return this;
     }
 
@@ -75,11 +71,6 @@ public class Blob {
     
     @Override
     public int hashCode() {
-        if (hash == 0) {
-            for (byte b: buf) {
-                hash = 31 * hash + b;
-            }
-        }
-        return hash;
+        return Arrays.hashCode(buf);
     }
 }
