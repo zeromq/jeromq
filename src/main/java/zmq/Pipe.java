@@ -79,13 +79,13 @@ public class Pipe extends ZObject {
     //  by the user. Double_terminated means that user called 'terminate'
     //  and then we've got term command from the peer as well.
     enum State {
-        active,
-        delimited,
-        pending,
-        terminating,
-        terminated,
-        double_terminated
-    } ;
+        ACTIVE,
+        DELIMITED,
+        PENDING,
+        TERMINATING,
+        TERMINATED,
+        DOUBLE_TERMINATED
+    }
     private State state;
 
     //  If true, we receive all the pending inbound messages before
@@ -115,7 +115,7 @@ public class Pipe extends ZObject {
 		peers_msgs_read = 0;
 		peer = null ;
 		sink = null ;
-		state = State.active;
+		state = State.ACTIVE;
 		delay = delay_;
 		
 		parent = parent_;
@@ -133,8 +133,8 @@ public class Pipe extends ZObject {
 	    //   Creates two pipe objects. These objects are connected by two ypipes,
 	    //   each to pass messages in one direction.
 	            
-		YPipe<Msg> upipe1 = new YPipe<Msg>(Config.message_pipe_granularity.getValue());
-		YPipe<Msg> upipe2 = new YPipe<Msg>(Config.message_pipe_granularity.getValue());
+		YPipe<Msg> upipe1 = new YPipe<Msg>(Config.MESSAGE_PIPE_GRANULARITY.getValue());
+		YPipe<Msg> upipe2 = new YPipe<Msg>(Config.MESSAGE_PIPE_GRANULARITY.getValue());
 	            
 	    pipes_ [0] = new Pipe(parents_ [0], upipe1, upipe2,
 	        hwms_ [1], hwms_ [0], delays_ [0]);
@@ -173,7 +173,7 @@ public class Pipe extends ZObject {
 
     //  Returns true if there is at least one message to read in the pipe.
     public boolean check_read() {
-        if (!in_active || (state != State.active && state != State.pending))
+        if (!in_active || (state != State.ACTIVE && state != State.PENDING))
             return false;
 
         //  Check if there's an item in the pipe.
@@ -198,7 +198,7 @@ public class Pipe extends ZObject {
     //  Reads a message to the underlying pipe.
     public Msg read()
     {
-        if (!in_active || (state != State.active && state != State.pending))
+        if (!in_active || (state != State.ACTIVE && state != State.PENDING))
             return null;
 
         Msg msg_ = inpipe.read();
@@ -227,7 +227,7 @@ public class Pipe extends ZObject {
     //  the message would cause high watermark the function returns false.
     public boolean check_write ()
     {
-        if (!out_active || state != State.active)
+        if (!out_active || state != State.ACTIVE)
             return false;
 
         boolean full = hwm > 0 && msgs_written - peers_msgs_read == (long) (hwm);
@@ -274,7 +274,7 @@ public class Pipe extends ZObject {
     public void flush ()
     {
         //  The peer does not exist anymore at this point.
-        if (state == State.terminating)
+        if (state == State.TERMINATING)
             return;
 
         if (outpipe != null && !outpipe.flush ()) {
@@ -286,7 +286,7 @@ public class Pipe extends ZObject {
     @Override
     protected void process_activate_read ()
     {
-        if (!in_active && (state == State.active || state == State.pending)) {
+        if (!in_active && (state == State.ACTIVE || state == State.PENDING)) {
             in_active = true;
             sink.read_activated (this);
         }
@@ -298,7 +298,7 @@ public class Pipe extends ZObject {
         //  Remember the peers's message sequence number.
         peers_msgs_read = msgs_read_;
 
-        if (!out_active && state == State.active) {
+        if (!out_active && state == State.ACTIVE) {
             out_active = true;
             sink.write_activated (this);
         }
@@ -320,7 +320,7 @@ public class Pipe extends ZObject {
         out_active = true;
 
         //  If appropriate, notify the user about the hiccup.
-        if (state == State.active)
+        if (state == State.ACTIVE)
             sink.hiccuped (this);
     }
     
@@ -332,21 +332,21 @@ public class Pipe extends ZObject {
         //  pending messages, we can move directly to the terminating state.
         //  Otherwise we'll hang up in pending state till all the pending messages
         //  are sent.
-        if (state == State.active) {
+        if (state == State.ACTIVE) {
             if (!delay) {
-                state = State.terminating;
+                state = State.TERMINATING;
                 outpipe = null;
                 send_pipe_term_ack (peer);
             }
             else
-                state = State.pending;
+                state = State.PENDING;
             return;
         }
 
         //  Delimiter happened to arrive before the term command. Now we have the
         //  term command as well, so we can move straight to terminating state.
-        if (state == State.delimited) {
-            state = State.terminating;
+        if (state == State.DELIMITED) {
+            state = State.TERMINATING;
             outpipe = null;
             send_pipe_term_ack (peer);
             return;
@@ -355,8 +355,8 @@ public class Pipe extends ZObject {
         //  This is the case where both ends of the pipe are closed in parallel.
         //  We simply reply to the request by ack and continue waiting for our
         //  own ack.
-        if (state == State.terminated) {
-            state = State.double_terminated;
+        if (state == State.TERMINATED) {
+            state = State.DOUBLE_TERMINATED;
             outpipe = null;
             send_pipe_term_ack (peer);
             return;
@@ -377,12 +377,12 @@ public class Pipe extends ZObject {
         //  Simply deallocate the pipe. In terminated state we have to ack the
         //  peer before deallocating this side of the pipe. All the other states
         //  are invalid.
-        if (state == State.terminated) {
+        if (state == State.TERMINATED) {
             outpipe = null;
             send_pipe_term_ack (peer);
         }
         else
-            assert (state == State.terminating || state == State.double_terminated);
+            assert (state == State.TERMINATING || state == State.DOUBLE_TERMINATED);
 
         //  We'll deallocate the inbound pipe, the peer will deallocate the outbound
         //  pipe (which is an inbound pipe from its point of view).
@@ -407,39 +407,39 @@ public class Pipe extends ZObject {
         delay = delay_;
 
         //  If terminate was already called, we can ignore the duplicit invocation.
-        if (state == State.terminated || state == State.double_terminated)
+        if (state == State.TERMINATED || state == State.DOUBLE_TERMINATED)
             return;
 
         //  If the pipe is in the final phase of async termination, it's going to
         //  closed anyway. No need to do anything special here.
-        else if (state == State.terminating)
+        else if (state == State.TERMINATING)
             return;
 
         //  The simple sync termination case. Ask the peer to terminate and wait
         //  for the ack.
-        else if (state == State.active) {
+        else if (state == State.ACTIVE) {
             send_pipe_term (peer);
-            state = State.terminated;
+            state = State.TERMINATED;
         }
 
         //  There are still pending messages available, but the user calls
         //  'terminate'. We can act as if all the pending messages were read.
-        else if (state == State.pending && !delay) {
+        else if (state == State.PENDING && !delay) {
             outpipe = null;
             send_pipe_term_ack (peer);
-            state = State.terminating;
+            state = State.TERMINATING;
         }
 
         //  If there are pending messages still availabe, do nothing.
-        else if (state == State.pending) {
+        else if (state == State.PENDING) {
         }
 
         //  We've already got delimiter, but not term command yet. We can ignore
         //  the delimiter and ack synchronously terminate as if we were in
         //  active state.
-        else if (state == State.delimited) {
+        else if (state == State.DELIMITED) {
             send_pipe_term (peer);
-            state = State.terminated;
+            state = State.TERMINATED;
         }
 
         //  There are no other states.
@@ -494,8 +494,8 @@ public class Pipe extends ZObject {
 	    //  That done, we still we have to account for the cases where
 	    //  HWM < max_wm_delta thus driving LWM to negative numbers.
 	    //  Let's make LWM 1/2 of HWM in such cases.
-	    int result = (hwm_ > Config.max_wm_delta.getValue() * 2) ?
-	        hwm_ - Config.max_wm_delta.getValue() : (hwm_ + 1) / 2;
+	    int result = (hwm_ > Config.MAX_WM_DELTA.getValue() * 2) ?
+	        hwm_ - Config.MAX_WM_DELTA.getValue() : (hwm_ + 1) / 2;
 
 	    return result;
 	}
@@ -504,15 +504,15 @@ public class Pipe extends ZObject {
     //  Handler for delimiter read from the pipe.
 	private void delimit ()
 	{
-	    if (state == State.active) {
-	        state = State.delimited;
+	    if (state == State.ACTIVE) {
+	        state = State.DELIMITED;
 	        return;
 	    }
 
-	    if (state == State.pending) {
+	    if (state == State.PENDING) {
 	        outpipe = null;
 	        send_pipe_term_ack (peer);
-	        state = State.terminating;
+	        state = State.TERMINATING;
 	        return;
 	    }
 
@@ -526,7 +526,7 @@ public class Pipe extends ZObject {
     //  in the peer.
     public void hiccup() {
         //  If termination is already under way do nothing.
-        if (state != State.active)
+        if (state != State.ACTIVE)
             return;
 
         //  We'll drop the pointer to the inpipe. From now on, the peer is
@@ -534,7 +534,7 @@ public class Pipe extends ZObject {
         inpipe = null;
 
         //  Create new inpipe.
-        inpipe = new YPipe<Msg>(Config.message_pipe_granularity.getValue());
+        inpipe = new YPipe<Msg>(Config.MESSAGE_PIPE_GRANULARITY.getValue());
         in_active = true;
 
         //  Notify the peer about the hiccup.

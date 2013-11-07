@@ -507,10 +507,10 @@ public class StreamEngine implements IEngine, IPollEvents, IMsgSink {
         //  If so, we send and receive rests of identity
         //  messages.
         if (greeting.array () [0] != -1 || (greeting.array () [9] & 0x01) == 0) {
-            encoder = new_encoder (Config.out_batch_size.getValue (), null, 0);
+            encoder = new_encoder (Config.OUT_BATCH_SIZE.getValue (), null, 0);
             encoder.set_msg_source (session);
 
-            decoder = new_decoder (Config.in_batch_size.getValue (), options.maxmsgsize, null, 0);
+            decoder = new_decoder (Config.IN_BATCH_SIZE.getValue (), options.maxmsgsize, null, 0);
             decoder.set_msg_sink (session);
 
             //  We have already sent the message header.
@@ -538,17 +538,17 @@ public class StreamEngine implements IEngine, IPollEvents, IMsgSink {
         else
         if (greeting.array () [version_pos] == 0) {
             //  ZMTP/1.0 framing.
-            encoder = new_encoder (Config.out_batch_size.getValue (), null, 0);
+            encoder = new_encoder (Config.OUT_BATCH_SIZE.getValue (), null, 0);
             encoder.set_msg_source (session);
 
-            decoder = new_decoder (Config.in_batch_size.getValue (), options.maxmsgsize, null, 0);
+            decoder = new_decoder (Config.IN_BATCH_SIZE.getValue (), options.maxmsgsize, null, 0);
             decoder.set_msg_sink (session);
         }
         else {
             //  v1 framing protocol.
-            encoder = new_encoder (Config.out_batch_size.getValue (), session, V1Protocol.VERSION);
+            encoder = new_encoder (Config.OUT_BATCH_SIZE.getValue (), session, V1Protocol.VERSION);
 
-            decoder = new_decoder (Config.in_batch_size.getValue (), options.maxmsgsize, session, V1Protocol.VERSION);
+            decoder = new_decoder (Config.IN_BATCH_SIZE.getValue (), options.maxmsgsize, session, V1Protocol.VERSION);
         }
         // Start polling for output if necessary.
         if (outsize == 0)

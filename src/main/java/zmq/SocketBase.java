@@ -674,7 +674,7 @@ public abstract class SocketBase extends Own
         //  Note that 'recv' uses different command throttling algorithm (the one
         //  described above) from the one used by 'send'. This is because counting
         //  ticks is more efficient than doing RDTSC all the time.
-        if (++ticks == Config.inbound_poll_rate.getValue()) {
+        if (++ticks == Config.INBOUND_POLL_RATE.getValue()) {
             if (!process_commands (0, false))
                 return null;
             ticks = 0;
@@ -816,7 +816,7 @@ public abstract class SocketBase extends Own
                 //  Check whether TSC haven't jumped backwards (in case of migration
                 //  between CPU cores) and whether certain time have elapsed since
                 //  last command processing. If it didn't do nothing.
-                if (tsc >= last_tsc && tsc - last_tsc <= Config.max_command_delay.getValue())
+                if (tsc >= last_tsc && tsc - last_tsc <= Config.MAX_COMMAND_DELAY.getValue())
                     return true;
                 last_tsc = tsc;
             }

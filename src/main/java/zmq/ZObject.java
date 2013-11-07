@@ -54,67 +54,67 @@ public abstract class ZObject {
     protected void process_command(Command cmd_) {
         switch (cmd_.type()) {
 
-        case activate_read:
+        case ACTIVATE_READ:
             process_activate_read ();
             break;
 
-        case activate_write:
+        case ACTIVATE_WRITE:
             process_activate_write ((Long)cmd_.arg);
             break;
 
-        case stop:
+        case STOP:
             process_stop ();
             break;
 
-        case plug:
+        case PLUG:
             process_plug ();
             process_seqnum ();
             break;
 
-        case own:
+        case OWN:
             process_own ((Own)cmd_.arg);
             process_seqnum ();
             break;
 
-        case attach:
+        case ATTACH:
             process_attach ((IEngine)cmd_.arg);
             process_seqnum ();
             break;
 
-        case bind:
+        case BIND:
             process_bind ((Pipe)cmd_.arg);
             process_seqnum ();
             break;
 
-        case hiccup:
+        case HICCUP:
             process_hiccup (cmd_.arg);
             break;
     
-        case pipe_term:
+        case PIPE_TERM:
             process_pipe_term ();
             break;
     
-        case pipe_term_ack:
+        case PIPE_TERM_ACK:
             process_pipe_term_ack ();
             break;
     
-        case term_req:
+        case TERM_REQ:
             process_term_req ((Own)cmd_.arg);
             break;
     
-        case term:
+        case TERM:
             process_term ((Integer)cmd_.arg);
             break;
     
-        case term_ack:
+        case TERM_ACK:
             process_term_ack ();
             break;
     
-        case reap:
+        case REAP:
             process_reap ((SocketBase)cmd_.arg);
             break;
             
-        case reaped:
+        case REAPED:
             process_reaped ();
             break;
     
@@ -154,7 +154,7 @@ public abstract class ZObject {
     {
         //  'stop' command goes always from administrative thread to
         //  the current object. 
-        Command cmd = new Command(this, Command.Type.stop);
+        Command cmd = new Command(this, Command.Type.STOP);
         ctx.send_command (tid, cmd);
     }
     
@@ -168,7 +168,7 @@ public abstract class ZObject {
         if (inc_seqnum_)
             destination_.inc_seqnum ();
 
-        Command cmd = new Command(destination_, Command.Type.plug);
+        Command cmd = new Command(destination_, Command.Type.PLUG);
         send_command (cmd);
     }
     
@@ -176,7 +176,7 @@ public abstract class ZObject {
     protected void send_own (Own destination_, Own object_)
     {
         destination_.inc_seqnum ();
-        Command cmd = new Command(destination_, Command.Type.own, object_);
+        Command cmd = new Command(destination_, Command.Type.OWN, object_);
         send_command (cmd);
     }
     
@@ -190,7 +190,7 @@ public abstract class ZObject {
         if (inc_seqnum_)
             destination_.inc_seqnum ();
 
-        Command cmd = new Command(destination_, Command.Type.attach, engine_);
+        Command cmd = new Command(destination_, Command.Type.ATTACH, engine_);
         send_command (cmd);
     }
 
@@ -206,41 +206,41 @@ public abstract class ZObject {
         if (inc_seqnum_)
             destination_.inc_seqnum ();
 
-        Command cmd = new Command(destination_, Command.Type.bind, pipe_);
+        Command cmd = new Command(destination_, Command.Type.BIND, pipe_);
         send_command (cmd);
     }
 
 
     protected void send_activate_read(Pipe destination_)
     {
-        Command cmd = new Command(destination_, Command.Type.activate_read);
+        Command cmd = new Command(destination_, Command.Type.ACTIVATE_READ);
         send_command (cmd);
     }
 
     protected void send_activate_write (Pipe destination_,
             long msgs_read_)
     {
-        Command cmd = new Command(destination_, Command.Type.activate_write, msgs_read_);
+        Command cmd = new Command(destination_, Command.Type.ACTIVATE_WRITE, msgs_read_);
         send_command (cmd);
     }
 
     protected void send_hiccup (Pipe destination_, Object pipe_)
     {
-        Command cmd = new Command(destination_, Command.Type.hiccup, pipe_);
+        Command cmd = new Command(destination_, Command.Type.HICCUP, pipe_);
         send_command (cmd);
     }
 
     
     protected void send_pipe_term (Pipe destination_)
     {
-        Command cmd = new Command(destination_, Command.Type.pipe_term);
+        Command cmd = new Command(destination_, Command.Type.PIPE_TERM);
         send_command (cmd);
     }
 
 
     protected void send_pipe_term_ack (Pipe destination_)
     {
-        Command cmd = new Command(destination_, Command.Type.pipe_term_ack);
+        Command cmd = new Command(destination_, Command.Type.PIPE_TERM_ACK);
         send_command (cmd);
     }
 
@@ -248,14 +248,14 @@ public abstract class ZObject {
     protected void send_term_req (Own destination_,
             Own object_)
     {
-        Command cmd = new Command(destination_, Command.Type.term_req, object_);
+        Command cmd = new Command(destination_, Command.Type.TERM_REQ, object_);
         send_command (cmd);
     }
     
 
     protected void send_term (Own destination_, int linger_)
     {
-        Command cmd = new Command(destination_, Command.Type.term, linger_);
+        Command cmd = new Command(destination_, Command.Type.TERM, linger_);
         send_command (cmd);
         
     }
@@ -263,20 +263,20 @@ public abstract class ZObject {
 
     protected void send_term_ack (Own destination_)
     {   
-        Command cmd = new Command(destination_, Command.Type.term_ack);
+        Command cmd = new Command(destination_, Command.Type.TERM_ACK);
         send_command (cmd);
     }   
 
     protected void send_reap (SocketBase socket_)
     {
-        Command cmd = new Command(ctx.get_reaper (), Command.Type.reap, socket_);
+        Command cmd = new Command(ctx.get_reaper (), Command.Type.REAP, socket_);
         send_command (cmd);
     }
     
     
     protected void send_reaped ()
     {
-        Command cmd = new Command(ctx.get_reaper (), Command.Type.reaped);
+        Command cmd = new Command(ctx.get_reaper (), Command.Type.REAPED);
         send_command (cmd);
     }
 
@@ -284,7 +284,7 @@ public abstract class ZObject {
 
     protected void send_done ()
     {
-        Command cmd = new Command(null, Command.Type.done);
+        Command cmd = new Command(null, Command.Type.DONE);
         ctx.send_command(Ctx.term_tid, cmd);
     }
 
