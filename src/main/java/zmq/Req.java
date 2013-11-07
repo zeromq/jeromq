@@ -143,42 +143,42 @@ public class Req extends Dealer {
         
         
         enum State {
-            identity,
-            bottom,
-            body
+            IDENTITY,
+            BOTTOM,
+            BODY
         };
 
-        State state;
+        private State state;
         
         public ReqSession(IOThread io_thread_, boolean connect_,
             SocketBase socket_, final Options options_,
             final Address addr_) {
             super(io_thread_, connect_, socket_, options_, addr_);
             
-            state = State.identity;
+            state = State.IDENTITY;
         }
         
         @Override
         public int push_msg (Msg msg_)
         {
             switch (state) {
-            case bottom:
+            case BOTTOM:
                 if (msg_.flags () == Msg.more && msg_.size () == 0) {
-                    state = State.body;
+                    state = State.BODY;
                     return super.push_msg (msg_);
                 }
                 break;
-            case body:
+            case BODY:
                 if (msg_.flags () == Msg.more)
                     return super.push_msg (msg_);
                 if (msg_.flags () == 0) {
-                    state = State.bottom;
+                    state = State.BOTTOM;
                     return super.push_msg (msg_);
                 }
                 break;
-            case identity:
+            case IDENTITY:
                 if (msg_.flags () == 0) {
-                    state = State.bottom;
+                    state = State.BOTTOM;
                     return super.push_msg (msg_);
                 }
                 break;
@@ -190,9 +190,7 @@ public class Req extends Dealer {
         public void reset ()
         {
             super.reset ();
-            state = State.identity;
+            state = State.IDENTITY;
         }
-
     }
-
 }

@@ -188,7 +188,7 @@ public class Ctx {
             Command cmd = term_mailbox.recv (-1);
             if (cmd == null)
                 throw new IllegalStateException();
-            assert (cmd.type() == Command.Type.done);
+            assert (cmd.type() == Command.Type.DONE);
             slot_sync.lock ();
             assert (sockets.isEmpty ());
         }
