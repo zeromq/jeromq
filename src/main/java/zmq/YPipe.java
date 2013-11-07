@@ -48,8 +48,8 @@ public class YPipe<T> {
     //  atomic operations.
     private final AtomicInteger c;
 
-    public YPipe(Class<T> klass, int qsize) {
-        queue = new YQueue<T>(klass, qsize);
+    public YPipe(int qsize) {
+        queue = new YQueue<T>(qsize);
         w = r = f = queue.back_pos();
         c = new AtomicInteger(queue.back_pos());
             
