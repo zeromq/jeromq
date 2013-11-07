@@ -133,8 +133,8 @@ public class Pipe extends ZObject {
 	    //   Creates two pipe objects. These objects are connected by two ypipes,
 	    //   each to pass messages in one direction.
 	            
-		YPipe<Msg> upipe1 = new YPipe<Msg>(Msg.class, Config.message_pipe_granularity.getValue());
-		YPipe<Msg> upipe2 = new YPipe<Msg>(Msg.class, Config.message_pipe_granularity.getValue());
+		YPipe<Msg> upipe1 = new YPipe<Msg>(Config.message_pipe_granularity.getValue());
+		YPipe<Msg> upipe2 = new YPipe<Msg>(Config.message_pipe_granularity.getValue());
 	            
 	    pipes_ [0] = new Pipe(parents_ [0], upipe1, upipe2,
 	        hwms_ [1], hwms_ [0], delays_ [0]);
@@ -534,7 +534,7 @@ public class Pipe extends ZObject {
         inpipe = null;
 
         //  Create new inpipe.
-        inpipe = new YPipe<Msg>(Msg.class, Config.message_pipe_granularity.getValue());
+        inpipe = new YPipe<Msg>(Config.message_pipe_granularity.getValue());
         in_active = true;
 
         //  Notify the peer about the hiccup.

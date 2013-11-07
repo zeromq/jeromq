@@ -29,7 +29,7 @@ public class TestYQueue {
     @Test
     public void testReuse() {
         // yqueue has a first empty entry
-        YQueue<Msg> p = new YQueue<Msg>(Msg.class, 3);
+        YQueue<Msg> p = new YQueue<Msg>(3);
         
         Msg m1 = new Msg(1);
         Msg m2 = new Msg(2);
