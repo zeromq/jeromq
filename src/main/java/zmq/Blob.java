@@ -16,41 +16,27 @@
 
     You should have received a copy of the GNU Lesser General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ */
 package zmq;
 
-import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 public class Blob {
 
     private final byte[] buf;
-    
-    public Blob(byte[] data_) {
-        buf = Arrays.copyOf(data_, data_.length);
-    }
-    
-    public Blob(int size) {
-       buf = new byte[size];
-    }
-    
-    public Blob(ByteBuffer buf_) {
-       buf = Utils.bytes(buf_);
-    }
 
-    public Blob put(int pos, byte b) {
-        buf[pos] = b;
-        return this;
+    private Blob(byte[] data_) {
+        buf = data_;
     }
     
-    public Blob put(int pos, byte[] data) {
-        System.arraycopy(data, 0, buf, pos, data.length);
-        return this;
-    }
-
-    public Blob put(int pos, byte[] data, int start, int length) {
-        System.arraycopy(data, start, buf, pos, length);
-        return this;
+    public static Blob createBlob(byte[] data, boolean copy) {
+        if(copy) {
+            byte[] b = new byte[data.length];
+            System.arraycopy(data, 0, b, 0, data.length);
+            return new Blob(b);
+        } else {
+            return new Blob(data);
+        }
     }
 
     public int size() {
@@ -60,15 +46,15 @@ public class Blob {
     public byte[] data() {
         return buf;
     }
-    
+
     @Override
     public boolean equals(Object t) {
 
         if (t instanceof Blob)
-            return Arrays.equals(buf, ((Blob)t).buf);
+            return Arrays.equals(buf, ((Blob) t).buf);
         return false;
     }
-    
+
     @Override
     public int hashCode() {
         return Arrays.hashCode(buf);

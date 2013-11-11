@@ -49,7 +49,8 @@ public class XPub extends SocketBase {
 
     //  List of pending (un)subscriptions, ie. those that were already
     //  applied to the trie, but not yet received by the user.
-    private final Deque<Blob> pending;
+    private final Deque<Blob> pending_data;
+    private final Deque<Integer> pending_flags;
     
     private static Mtrie.IMtrieHandler mark_as_matching;
     private static Mtrie.IMtrieHandler send_unsubscription;
@@ -72,15 +73,14 @@ public class XPub extends SocketBase {
                 XPub self = (XPub) arg_;
 
                 if (self.options.type != ZMQ.ZMQ_PUB) {
-
                     //  Place the unsubscription to the queue of pending (un)sunscriptions
                     //  to be retrived by the user later on.
-                    Blob unsub = new Blob (size + 1);
-                    unsub.put(0,(byte)0);
-                    unsub.put(1, data_, 0, size);
-                    self.pending.add (unsub);
+                    byte[] unsub = new byte[size + 1];
+                    unsub[0] = 0;
+                    System.arraycopy(data_, 0, unsub, 1, size);
+                    self.pending_data.add (Blob.createBlob(unsub, false));
+                    self.pending_flags.add (0);
                 }
-
             }
         };
     }
@@ -94,7 +94,8 @@ public class XPub extends SocketBase {
         
         subscriptions = new Mtrie();
         dist = new Dist();
-        pending = new ArrayDeque<Blob>();
+        pending_data = new ArrayDeque<Blob>();
+        pending_flags = new ArrayDeque<Integer>();
     }
     
     @Override
@@ -120,7 +121,7 @@ public class XPub extends SocketBase {
         Msg sub = null;
         while ((sub = pipe_.read()) != null) {
 
-            //  Apply the subscription to the trie.
+            //  Apply the subscription to the trie
             byte[] data = sub.data();
             int size = sub.size ();
             if (size > 0 && (data[0] == 0 || data[0] == 1)) {
@@ -132,8 +133,14 @@ public class XPub extends SocketBase {
 
                 //  If the subscription is not a duplicate, store it so that it can be
                 //  passed to used on next recv call. (Unsubscribe is not verbose.)
-                if (options.type == ZMQ.ZMQ_XPUB && (unique || (data[0] == 1 && verbose)))
-                    pending.add (new Blob (sub.data ()));
+                if (options.type == ZMQ.ZMQ_XPUB && (unique || (data[0] == 1 && verbose))) {
+                    pending_data.add (Blob.createBlob(data, true));
+                    pending_flags.add(0);
+                }
+            } else {
+                //  Process user message coming upstream from xsub socket
+                pending_data.add (Blob.createBlob(data, true));
+                pending_flags.add(sub.flags());
             }
         }
     }
@@ -202,20 +209,20 @@ public class XPub extends SocketBase {
     @Override
     protected Msg xrecv() {
         //  If there is at least one 
-        if (pending.isEmpty ()) {
+        if (pending_data.isEmpty ()) {
             errno.set(ZError.EAGAIN);
             return null;
         }
 
-        Blob first = pending.pollFirst();
-        Msg msg_ = new Msg(first.data());
-        return msg_;
+        Blob first = pending_data.pollFirst();
+        Msg msg = new Msg(first.data());
+        int flags = pending_flags.pollFirst();
+        msg.set_flags(flags);
+        return msg;
     }
     
     @Override
     protected boolean xhas_in() {
-        return !pending.isEmpty ();
+        return !pending_data.isEmpty ();
     }
-    
-
 }
