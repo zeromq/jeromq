@@ -54,7 +54,6 @@ public class ZFrame {
      * (Useful when reading frames from a 0MQ Socket)
      */
     protected ZFrame() {
-        // Empty constructor
     }
 
     /**
