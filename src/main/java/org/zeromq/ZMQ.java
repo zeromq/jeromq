@@ -21,6 +21,7 @@
 package org.zeromq;
 
 
+import java.io.Closeable;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectableChannel;
 import java.nio.charset.Charset;
@@ -164,7 +165,7 @@ public class ZMQ {
 
     public static final byte[] SUBSCRIPTION_ALL = new byte[0];
     
-    public static Charset CHARSET = Charset.defaultCharset();
+    public static Charset CHARSET = Charset.forName("UTF-8");
 
     /**
      * Create a new Context.
@@ -177,7 +178,7 @@ public class ZMQ {
         return new Context(ioThreads);
     }
 
-    public static class Context {
+    public static class Context implements Closeable {
 
         private final Ctx ctx;
 
@@ -233,9 +234,13 @@ public class ZMQ {
             return new Poller (this, size);
         }
 
+        @Override
+        public void close() {
+            ctx.terminate();
+        }
     }
 
-    public static class Socket {
+    public static class Socket implements Closeable {
 
         //  This port range is defined by IANA for dynamic or private ports
         //  We use this when choosing a port for dynamic binding.
@@ -276,7 +281,8 @@ public class ZMQ {
          * This is an explicit "destructor". It can be called to ensure the corresponding 0MQ Socket
          * has been disposed of.
          */
-        public final void close() {
+        @Override
+        public void close() {
             base.close();
         }
         

@@ -54,7 +54,6 @@ public class ZFrame {
      * (Useful when reading frames from a 0MQ Socket)
      */
     protected ZFrame() {
-        // Empty constructor
     }
 
     /**
@@ -290,7 +289,7 @@ public class ZFrame {
 
     @Override
     public int hashCode() {
-        return data != null ? Arrays.hashCode(data) : 0;
+        return Arrays.hashCode(data);
     }
 
     /**
