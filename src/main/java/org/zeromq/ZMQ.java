@@ -164,7 +164,7 @@ public class ZMQ {
 
     public static final byte[] SUBSCRIPTION_ALL = new byte[0];
     
-    public static Charset CHARSET = Charset.defaultCharset();
+    public static Charset CHARSET = Charset.forName("UTF-8");
 
     /**
      * Create a new Context.
