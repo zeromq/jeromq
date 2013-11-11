@@ -201,7 +201,7 @@ public class Router extends SocketBase {
                 //  Find the pipe associated with the identity stored in the prefix.
                 //  If there's no such pipe just silently ignore the message, unless
                 //  mandatory is set.
-                Blob identity = new Blob(msg_.data());
+                Blob identity = Blob.createBlob(msg_.data(), true);
                 Outpipe op = outpipes.get(identity);
 
                 if (op != null) {
@@ -365,13 +365,12 @@ public class Router extends SocketBase {
         if (msg.size () == 0) {
             //  Fall back on the auto-generation
             ByteBuffer buf = ByteBuffer.allocate(5);
-            buf.put((byte)0);
+            buf.put((byte) 0);
             buf.putInt (next_peer_id++);
-            buf.flip();
-            identity = new Blob(buf);
+            identity = Blob.createBlob(buf.array(), false);
         }
         else {
-            identity = new Blob(msg.data ());
+            identity = Blob.createBlob(msg.data (), true);
 
             //  Ignore peers with duplicate ID.
             if (outpipes.containsKey(identity))
