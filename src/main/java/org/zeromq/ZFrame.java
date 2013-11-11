@@ -290,7 +290,7 @@ public class ZFrame {
 
     @Override
     public int hashCode() {
-        return data != null ? Arrays.hashCode(data) : 0;
+        return Arrays.hashCode(data);
     }
 
     /**
