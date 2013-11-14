@@ -95,11 +95,14 @@ public class TestProxy
             Socket frontend = ctx.socket(ZMQ.ROUTER);
 
             assertNotNull (frontend);
-            frontend.bind ("tcp://127.0.0.1:6660");
+            port = frontend.bind ("tcp://127.0.0.1:6660");
+            assertEquals (port, 6660);
+
 
             Socket backend = ctx.socket(ZMQ.DEALER);
             assertNotNull (backend);
-            backend.bind ("tcp://127.0.0.1:6661");
+            port = backend.bind ("tcp://127.0.0.1:6661");
+            assertEquals (port, 6661);
 
             ZMQ.proxy (frontend, backend, null);
 
