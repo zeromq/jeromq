@@ -203,7 +203,7 @@ public class Ctx {
         destroy();
     }
     
-    public void set (int option_, int optval_)
+    public boolean set (int option_, int optval_)
     {
         if (option_ == ZMQ.ZMQ_MAX_SOCKETS && optval_ >= 1) {
             opt_sync.lock ();
@@ -223,8 +223,9 @@ public class Ctx {
             }
         }
         else {
-            throw new IllegalArgumentException("option = " + option_);
+            return false;
         }
+        return true;
     }
 
     public int get (int option_)
