@@ -179,7 +179,6 @@ public class ZMQ {
     }
 
     public static class Context implements Closeable {
-
         private final Ctx ctx;
 
         /**
@@ -190,6 +189,34 @@ public class ZMQ {
          */
         protected Context(int ioThreads) {
             ctx = zmq.ZMQ.zmq_init(ioThreads);
+        }
+
+        /**
+         * The size of the 0MQ thread pool to handle I/O operations.
+         */
+        public int getIOThreads() {
+            return ctx.get(zmq.ZMQ.ZMQ_IO_THREADS);
+        }
+
+        /**
+         * Set the size of the 0MQ thread pool to handle I/O operations.
+         */
+        public boolean setIOThreads(int ioThreads) {
+            return ctx.set(zmq.ZMQ.ZMQ_IO_THREADS, ioThreads);
+        }
+
+        /**
+         * The maximum number of sockets allowed on the context
+         */
+        public int getMaxSockets() {
+            return ctx.get(zmq.ZMQ.ZMQ_MAX_SOCKETS);
+        }
+
+        /**
+         * Sets the maximum number of sockets allowed on the context
+         */
+        public boolean setMaxSockets(int maxSockets) {
+            return ctx.set(zmq.ZMQ.ZMQ_MAX_SOCKETS, maxSockets);
         }
 
         /**
