@@ -265,10 +265,12 @@ public class TestProxyTcp {
         public void run() {
             boolean rc ;
             SocketBase sa = ZMQ.zmq_socket (ctx, ZMQ.ZMQ_ROUTER);
+            assert (sa != null);
+            
             sa.setsockopt(ZMQ.ZMQ_DECODER, ProxyDecoder.class);
             sa.setsockopt(ZMQ.ZMQ_ENCODER, ProxyEncoder.class);
             
-            assert (sa != null);
+            
             rc = ZMQ.zmq_bind (sa, "tcp://127.0.0.1:6560");
             assert (rc );
 

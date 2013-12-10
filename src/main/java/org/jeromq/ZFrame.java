@@ -314,7 +314,7 @@ public class ZFrame {
      *          A text string or hex-encoded string if data contains any non-printable ASCII characters
      */
     public String toString() {
-        if (!hasData()) return null;
+        if (!hasData()) return "";
         // Dump message as text or hex-encoded string
         boolean isText = true;
         for (int i = 0;i< data.length;i++) {
