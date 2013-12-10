@@ -45,7 +45,7 @@ public class TcpAddress implements Address.IZAddress {
     @Override
     public String toString() {
         if (address == null) {
-            return null;
+            return "";
         }
         
         if (address.getAddress() instanceof Inet6Address) {

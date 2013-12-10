@@ -37,8 +37,10 @@ public class TestPubsubTcp {
         assert (rc );
 
         SocketBase sc = ZMQ.zmq_socket (ctx, ZMQ.ZMQ_SUB);
-        sc.setsockopt(ZMQ.ZMQ_SUBSCRIBE, "topic");
         assert (sc != null);
+        
+        sc.setsockopt(ZMQ.ZMQ_SUBSCRIBE, "topic");
+        
         rc = ZMQ.zmq_connect (sc, "tcp://127.0.0.1:7660");
         assert (rc);
 

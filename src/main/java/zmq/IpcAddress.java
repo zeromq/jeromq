@@ -32,7 +32,7 @@ public class IpcAddress implements Address.IZAddress {
     @Override
     public String toString() {
         if (name == null) {
-            return null;
+            return "";
         }
         
         return "ipc://" + name;

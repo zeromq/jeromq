@@ -284,7 +284,7 @@ public class ZLoop {
             rc = zmq.ZMQ.zmq_poll (selector, pollset, wait);
             if (rc == -1) {
                 if (verbose)
-                    System.out.printf ("I: zloop: interrupted\n", rc);
+                    System.out.println("I: zloop: interrupted");
                 rc = 0;
                 break;              //  Context has been shut down
             }

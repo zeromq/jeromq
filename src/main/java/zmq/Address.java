@@ -65,7 +65,7 @@ public class Address {
             return protocol + "://" + address;
         }
         
-        return null;
+        return "";
     }
 
     public String protocol() {
