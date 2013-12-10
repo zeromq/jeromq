@@ -2,7 +2,16 @@
 
 ## v0.3.2
 
-*
+* Various code improvements
+* Update junit to version 4.11
+* Fix issue #115 - Expose all Context options
+* Fix issue #58 - XPUB can receive multipart messages
+* Fix issue #109 - Make ZMQ.Context and ZMQ.Socket implement java.io.Closeable
+* Use UTF-8 as default charset
+* Use monotonic source for time
+* Use try finally idiom on locks
+* Backport fix for race condition on shutdown
+* sendByteBuffer should return number of sent bytes
 
 ## v0.3.1
 
