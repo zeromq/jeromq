@@ -474,7 +474,7 @@ public class StreamEngine implements IEngine, IPollEvents, IMsgSink {
             //  We have received at least one byte from the peer.
             //  If the first byte is not 0xff, we know that the
             //  peer is using unversioned protocol.
-            if (greeting.array () [0] != -1)
+            if ((greeting.get (0) & 0xff) != 0xff)
                 break;
 
             if (greeting.position () < 10)
@@ -483,7 +483,7 @@ public class StreamEngine implements IEngine, IPollEvents, IMsgSink {
             //  with the 'flags' field if a regular message was sent).
             //  Zero indicates this is a header of identity message
             //  (i.e. the peer is using the unversioned protocol).
-            if ((greeting.array () [9] & 0x01) == 0)
+            if ((greeting.get (9) & 0x01) == 0)
                 break;
 
             //  The peer is using versioned protocol.
@@ -506,7 +506,7 @@ public class StreamEngine implements IEngine, IPollEvents, IMsgSink {
         //  Is the peer using the unversioned protocol?
         //  If so, we send and receive rests of identity
         //  messages.
-        if (greeting.array () [0] != -1 || (greeting.array () [9] & 0x01) == 0) {
+        if ((greeting.get (0) & 0xff) != 0xff || (greeting.get (9) & 0x01) == 0) {
             encoder = new_encoder (Config.OUT_BATCH_SIZE.getValue (), null, 0);
             encoder.set_msg_source (session);
 
@@ -536,7 +536,7 @@ public class StreamEngine implements IEngine, IPollEvents, IMsgSink {
                 decoder.set_msg_sink (this);
         }
         else
-        if (greeting.array () [version_pos] == 0) {
+        if (greeting.get (version_pos) == 0) {
             //  ZMTP/1.0 framing.
             encoder = new_encoder (Config.OUT_BATCH_SIZE.getValue (), null, 0);
             encoder.set_msg_source (session);
