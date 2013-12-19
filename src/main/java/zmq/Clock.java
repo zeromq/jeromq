@@ -30,7 +30,6 @@ public class Clock {
     private Clock() {
     }
 
-    
     //  High precision timestamp.
     public static final long now_us() {
         return System.nanoTime() / 1000L;
@@ -39,7 +38,7 @@ public class Clock {
     //  Low precision timestamp. In tight loops generating it can be
     //  10 to 100 times faster than the high precision timestamp.
     public static final long now_ms() {
-        return now_us() / 1000L;
+        return System.currentTimeMillis();
     }
     
     //  CPU's timestamp counter. Returns 0 if it's not available.
