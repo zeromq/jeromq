@@ -94,7 +94,7 @@ public class Dealer extends SocketBase {
             msg_ = fq.recv(errno);
             if (msg_ == null)
                 return null;
-            if ((msg_.flags() & Msg.identity) == 0)
+            if ((msg_.flags() & Msg.IDENTITY) == 0)
                 break;
         }
         return msg_;

@@ -82,10 +82,10 @@ public class TestDisconnectInproc
                 break;
             }
 
-            Msg channelEnvlp = new Msg("foo");
+            Msg channelEnvlp = new Msg("foo".getBytes(ZMQ.CHARSET));
             ZMQ.zmq_sendmsg(pubSocket, channelEnvlp, ZMQ.ZMQ_SNDMORE);
 
-            Msg message = new Msg("this is foo!");
+            Msg message = new Msg("this is foo!".getBytes(ZMQ.CHARSET));
             ZMQ.zmq_sendmsg(pubSocket, message, 0);
             iteration++;
         }

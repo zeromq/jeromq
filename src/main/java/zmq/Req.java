@@ -54,14 +54,14 @@ public class Req extends Dealer {
         //  First part of the request is the request identity.
         if (message_begins) {
             Msg bottom = new Msg();
-            bottom.set_flags(Msg.more);
+            bottom.setFlags(Msg.MORE);
             boolean rc = super.xsend(bottom);
             if (!rc)
                 return rc;
             message_begins = false;
         }
 
-        boolean more = msg_.has_more();
+        boolean more = msg_.hasMore();
 
         boolean rc = super.xsend(msg_);
         if (!rc)
@@ -91,11 +91,11 @@ public class Req extends Dealer {
                 return null;
 
             // TODO: This should also close the connection with the peer!
-            if ( !msg_.has_more() || msg_.size() != 0) {
+            if ( !msg_.hasMore() || msg_.size() != 0) {
                 while (true) {
                     msg_ = super.xrecv();
                     assert (msg_ != null);
-                    if (!msg_.has_more())
+                    if (!msg_.hasMore())
                         break;
                 }
                 errno.set(ZError.EAGAIN);
@@ -110,7 +110,7 @@ public class Req extends Dealer {
             return null;
 
         //  If the reply is fully received, flip the FSM into request-sending state.
-        if (!msg_.has_more()) {
+        if (!msg_.hasMore()) {
             receiving_reply = false;
             message_begins = true;
         }
@@ -163,13 +163,13 @@ public class Req extends Dealer {
         {
             switch (state) {
             case BOTTOM:
-                if (msg_.flags () == Msg.more && msg_.size () == 0) {
+                if (msg_.flags () == Msg.MORE && msg_.size () == 0) {
                     state = State.BODY;
                     return super.push_msg (msg_);
                 }
                 break;
             case BODY:
-                if (msg_.flags () == Msg.more)
+                if (msg_.flags () == Msg.MORE)
                     return super.push_msg (msg_);
                 if (msg_.flags () == 0) {
                     state = State.BOTTOM;

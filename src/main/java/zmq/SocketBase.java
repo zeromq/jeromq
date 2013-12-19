@@ -446,7 +446,7 @@ public abstract class SocketBase extends Own
             if (peer.options.recv_identity) {
                 Msg id = new Msg (options.identity_size);
                 id.put (options.identity, 0 , options.identity_size);
-                id.set_flags (Msg.identity);
+                id.setFlags (Msg.IDENTITY);
                 boolean written = pipes [0].write (id);
                 assert (written);
                 pipes [0].flush ();
@@ -456,7 +456,7 @@ public abstract class SocketBase extends Own
             if (options.recv_identity) {
                 Msg id = new Msg (peer.options.identity_size);
                 id.put (peer.options.identity, 0 , peer.options.identity_size);
-                id.set_flags (Msg.identity);
+                id.setFlags (Msg.IDENTITY);
                 boolean written = pipes [1].write (id);
                 assert (written);
                 pipes [1].flush ();
@@ -608,11 +608,11 @@ public abstract class SocketBase extends Own
             return false;
 
         //  Clear any user-visible flags that are set on the message.
-        msg_.reset_flags (Msg.more);
+        msg_.resetFlags (Msg.MORE);
 
         //  At this point we impose the flags on the message.
         if ((flags_ & ZMQ.ZMQ_SNDMORE) > 0)
-            msg_.set_flags (Msg.more);
+            msg_.setFlags (Msg.MORE);
 
         //  Try to send the message.
         boolean rc = xsend(msg_);
@@ -1028,11 +1028,11 @@ public abstract class SocketBase extends Own
     //  to be later retrieved by getsockopt.
     private void extract_flags(Msg msg_) {
         //  Test whether IDENTITY flag is valid for this socket type.
-        if ((msg_.flags () & Msg.identity) > 0)
+        if ((msg_.flags () & Msg.IDENTITY) > 0)
             assert (options.recv_identity);
 
         //  Remove MORE flag.
-        rcvmore = msg_.has_more();
+        rcvmore = msg_.hasMore();
     }
 
 

@@ -21,6 +21,7 @@
 package zmq;
 
 import org.junit.Test;
+
 import static org.junit.Assert.*;
 import static org.hamcrest.CoreMatchers.*;
 
@@ -88,7 +89,7 @@ public class TestTimeo {
         ZMQ.zmq_setsockopt(sb, ZMQ.ZMQ_SNDTIMEO, timeout);
         rc = ZMQ.zmq_connect (sc, "inproc://timeout_test");
         assert (rc);
-        Msg smsg = new Msg("12345678ABCDEFGH12345678abcdefgh");
+        Msg smsg = new Msg("12345678ABCDEFGH12345678abcdefgh".getBytes(ZMQ.CHARSET));
         int r = ZMQ.zmq_send (sc, smsg, 0);
         assertThat (r ,is( 32));
         msg = ZMQ.zmq_recv (sb, 0);

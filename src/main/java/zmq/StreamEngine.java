@@ -24,10 +24,10 @@ import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.channels.SocketChannel;
 
 public class StreamEngine implements IEngine, IPollEvents, IMsgSink {
-    
     //  Size of the greeting message:
     //  Preamble (10 bytes) + version (1 byte) + socket type (1 byte).
     private static final int GREETING_SIZE = 12;
@@ -94,8 +94,8 @@ public class StreamEngine implements IEngine, IPollEvents, IMsgSink {
         terminating = false;
         endpoint = endpoint_;
         socket = null;
-        greeting = ByteBuffer.allocate (GREETING_SIZE);
-        greeting_output_buffer = ByteBuffer.allocate (GREETING_SIZE);
+        greeting = ByteBuffer.allocate(GREETING_SIZE).order(ByteOrder.BIG_ENDIAN);
+        greeting_output_buffer = ByteBuffer.allocate(GREETING_SIZE).order(ByteOrder.BIG_ENDIAN);
         encoder = null;
         decoder = null;
 
@@ -231,7 +231,8 @@ public class StreamEngine implements IEngine, IPollEvents, IMsgSink {
         
         if (!custom) {
             outsize = greeting_output_buffer.position ();
-            outbuf = new Transfer.ByteBufferTransfer ((ByteBuffer) greeting_output_buffer.flip ());
+            greeting_output_buffer.flip();
+            outbuf = new Transfer.ByteBufferTransfer (greeting_output_buffer);
             io_object.set_pollout (handle);
         }        
         
@@ -573,8 +574,7 @@ public class StreamEngine implements IEngine, IPollEvents, IMsgSink {
 
         //  Inject the subscription message so that the ZMQ 2.x peer
         //  receives our messages.
-        msg_ = new Msg (1);
-        msg_.put ((byte) 1);
+        msg_ = new Msg (new byte[] { 1 });
         rc = session.push_msg (msg_);
         session.flush ();
 

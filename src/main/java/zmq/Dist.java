@@ -145,7 +145,7 @@ public class Dist {
     //  Send the message to the matching outbound pipes.
     public boolean send_to_matching(Msg msg_) {
         //  Is this end of a multipart message?
-        boolean msg_more = msg_.has_more();
+        boolean msg_more = msg_.hasMore();
 
         //  Push the message to matching pipes.
         distribute (msg_);
@@ -192,7 +192,7 @@ public class Dist {
             eligible--;
             return false;
         }
-        if (!msg_.has_more())
+        if (!msg_.hasMore())
             pipe_.flush ();
         return true;
     }

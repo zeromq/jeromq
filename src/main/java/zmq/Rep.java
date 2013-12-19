@@ -55,7 +55,7 @@ public class Rep extends Router {
             throw new IllegalStateException("Cannot send another reply");
         }
 
-        boolean more = msg_.has_more();
+        boolean more = msg_.hasMore();
 
         //  Push message to the reply pipe.
         boolean rc = super.xsend(msg_);
@@ -86,7 +86,7 @@ public class Rep extends Router {
                 if (msg_ == null)
                     return null;
                 
-                if (msg_.has_more()) {
+                if (msg_.hasMore()) {
                     //  Empty message part delimits the traceback stack.
                     boolean bottom = (msg_.size() == 0);
                     
@@ -110,7 +110,7 @@ public class Rep extends Router {
            return null;
 
         //  If whole request is read, flip the FSM to reply-sending state.
-        if (!msg_.has_more()) {
+        if (!msg_.hasMore()) {
             sending_reply = true;
             request_begins = true;
         }

@@ -72,7 +72,7 @@ public class Proxy {
                         
                         //  Copy message to capture socket if any
                         if (capture_ != null) {
-                            Msg ctrl = new Msg (msg);
+                            Msg ctrl = new Msg(msg);
                             success = capture_.send (ctrl, more > 0 ? ZMQ.ZMQ_SNDMORE: 0);
                             if (!success)
                                 return false;
@@ -101,7 +101,7 @@ public class Proxy {
                         
                         //  Copy message to capture socket if any
                         if (capture_ != null) {
-                            Msg ctrl = new Msg (msg);
+                            Msg ctrl = new Msg(msg);
                             success = capture_.send (ctrl, more > 0 ? ZMQ.ZMQ_SNDMORE: 0);
                             if (!success)
                                 return false;

@@ -102,7 +102,7 @@ public class FQ {
             if (fetched) {
                 if (pipe_ != null)
                     pipe_.set(pipes.get(current));
-                more = msg_.has_more();
+                more = msg_.hasMore();
                 if (!more)
                     current = (current + 1) % active;
                 return msg_;

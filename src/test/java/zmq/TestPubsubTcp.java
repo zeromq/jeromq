@@ -46,9 +46,9 @@ public class TestPubsubTcp {
 
         ZMQ.zmq_sleep(2);
         
-        sb.send(new Msg("topic abc"), 0);
-        sb.send(new Msg("topix defg"), 0);
-        sb.send(new Msg("topic defgh"), 0);
+        sb.send(new Msg("topic abc".getBytes(ZMQ.CHARSET)), 0);
+        sb.send(new Msg("topix defg".getBytes(ZMQ.CHARSET)), 0);
+        sb.send(new Msg("topic defgh".getBytes(ZMQ.CHARSET)), 0);
         
         Msg msg = sc.recv(0);
         assertThat(msg.size(), is(9));

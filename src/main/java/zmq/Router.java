@@ -194,7 +194,7 @@ public class Router extends SocketBase {
             //  If we have malformed message (prefix with no subsequent message)
             //  then just silently ignore it.
             //  TODO: The connections should be killed instead.
-            if (msg_.has_more()) {
+            if (msg_.hasMore()) {
 
                 more_out = true;
 
@@ -226,7 +226,7 @@ public class Router extends SocketBase {
         }
 
         //  Check whether this is the last part of the message.
-        more_out = msg_.has_more();
+        more_out = msg_.hasMore();
 
         //  Push the message into the pipe. If there's no out pipe, just drop it.
         if (current_out != null) {
@@ -258,7 +258,7 @@ public class Router extends SocketBase {
                 prefetched_msg = null;
                 prefetched = false;
             }
-            more_in = msg_.has_more();
+            more_in = msg_.hasMore();
             return msg_;
         }
 
@@ -269,7 +269,7 @@ public class Router extends SocketBase {
         //  after reconnection. The current implementation assumes that
         //  the peer always uses the same identity.
         //  TODO: handle the situation when the peer changes its identity.
-        while (msg_ != null && msg_.is_identity())
+        while (msg_ != null && msg_.isIdentity())
             msg_ = fq.recvpipe(errno, pipe);
 
         if (msg_ == null)
@@ -279,7 +279,7 @@ public class Router extends SocketBase {
 
         //  If we are in the middle of reading a message, just return the next part.
         if (more_in)
-            more_in = msg_.has_more();
+            more_in = msg_.hasMore();
         else {
             //  We are at the beginning of a message.
             //  Keep the message part we have in the prefetch buffer
@@ -289,7 +289,7 @@ public class Router extends SocketBase {
 
             Blob identity = pipe.get().get_identity();
             msg_ = new Msg(identity.data());
-            msg_.set_flags(Msg.more);
+            msg_.setFlags(Msg.MORE);
             identity_sent = true;
         }
 
@@ -327,7 +327,7 @@ public class Router extends SocketBase {
         //  after reconnection. The current implementation assumes that
         //  the peer always uses the same identity.
         //  TODO: handle the situation when the peer changes its identity.
-        while (prefetched_msg != null && prefetched_msg.is_identity ())
+        while (prefetched_msg != null && prefetched_msg.isIdentity ())
             prefetched_msg = fq.recvpipe(errno, pipe);
 
         if (prefetched_msg == null)
@@ -337,7 +337,7 @@ public class Router extends SocketBase {
         
         Blob identity = pipe.get().get_identity();
         prefetched_id = new Msg(identity.data());
-        prefetched_id.set_flags (Msg.more);
+        prefetched_id.setFlags (Msg.MORE);
 
         prefetched = true;
         identity_sent = false;

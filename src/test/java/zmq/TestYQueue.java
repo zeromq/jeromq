@@ -38,7 +38,7 @@ public class TestYQueue {
         Msg m5 = new Msg(5);
         Msg m6 = new Msg(6);
         Msg m7 = new Msg(7);
-        m7.put("1234567".getBytes(ZMQ.CHARSET),0);
+        m7.put("1234567".getBytes(ZMQ.CHARSET));
 
         p.push(m1); 
         assertThat(p.back_pos(), is(1));

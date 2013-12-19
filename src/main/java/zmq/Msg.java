@@ -17,254 +17,211 @@
 
     You should have received a copy of the GNU Lesser General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
+ */
 
 package zmq;
 
 import java.nio.ByteBuffer;
-import java.util.Arrays;
+import java.nio.ByteOrder;
 
 public class Msg {
+    private static final int MAX_VSM_SIZE = 29;
 
-    //  Size in bytes of the largest message that is still copied around
-    //  rather than being reference-counted.
-    
-    public final static int more = 1;
-    public final static int identity = 64;
-    public final static int shared = 128;
-    
-    private final static byte type_min = 101;
-    private final static byte type_vsm = 102;
-    private final static byte type_lmsg = 103;
-    private final static byte type_delimiter = 104;
-    private final static byte type_max = 105;
-    
-    private byte type;
+    private static final byte TYPE_MIN = 101;
+    private static final byte TYPE_VSM = 101;
+    private static final byte TYPE_LMSG = 102;
+    private static final byte TYPE_DELIMITER = 103;
+    private static final byte TYPE_CMSG = 104;
+    private static final byte TYPE_MAX = 104;
+
+    public static final int MORE = 1;
+    public static final int COMMAND = 2;
+    public static final int IDENTITY = 64;
+    public static final int SHARED = 128;
+
     private int flags;
+    private byte type;
+
     private int size;
     private byte[] data;
     private ByteBuffer buf;
-    
-    public Msg () {
-        init (type_vsm);
-        size (0);
+
+    public Msg() {
+        this.type = TYPE_VSM;
+        this.flags = 0;
+        this.size = 0;
+        this.buf = ByteBuffer.wrap(new byte[0]).order(ByteOrder.BIG_ENDIAN);
+        this.data = buf.array();
     }
 
-    public Msg(boolean buffered) {
-        if (buffered)
-            init(type_lmsg);
+    public Msg(int capacity) {
+        if (capacity <= MAX_VSM_SIZE)
+            this.type = TYPE_VSM;
         else
-            init(type_vsm);
+            this.type = TYPE_LMSG;
+        this.flags = 0;
+        this.size = capacity;
+        this.buf = ByteBuffer.wrap(new byte[capacity]).order(ByteOrder.BIG_ENDIAN);
+        this.data = buf.array();
     }
 
-    public Msg(int size) {
-        init(type_vsm);
-        size(size);
-    }
-    
-    public Msg(int size, boolean buffered) {
-        if (buffered)
-            init(type_lmsg);
-        else
-            init(type_vsm);
-        size(size);
-    }
-
-    
-    public Msg(Msg m) {
-        clone(m);
-    }
-    
     public Msg(byte[] src) {
-        this(src, false);
-    }
-    
-    public Msg(String src) {
-        this(src.getBytes(ZMQ.CHARSET), false);
-    }
-    
-    public Msg(byte[] src, boolean copy) {
-        this();
-        if (src != null) {
-            size = src.length;
-            if (copy)
-                data = Arrays.copyOf(src, src.length);
-            else
-                data = src;
+        if (src == null) {
+            src = new byte[0];
         }
-    }
-    
-    public Msg (ByteBuffer src) 
-    {
-        init (type_lmsg);
-        buf = src.duplicate ();
-        size = buf.remaining ();
-    }
-    
-    public final boolean is_identity ()
-    {
-        return (flags & identity) == identity ;
-    }
-
-    public final boolean is_delimiter ()
-    {
-        return type == type_delimiter;
-    }
-
-
-    public final boolean check ()
-    {
-         return type >= type_min && type <= type_max;
-    }
-
-    protected final void init(byte type_) {
-        type = type_;
-        flags = 0;
-        size = -1;
-        data = null;
-        buf = null;
-    }
-
-    private final void size (int size_)
-    {
-        size = size_;
-        if (type == type_lmsg) {
-            flags = 0;
-            
-            buf = ByteBuffer.allocate(size_);
-            data = null;
+        if (src.length <= MAX_VSM_SIZE) {
+            this.type = TYPE_VSM;
+        } else {
+            this.type = TYPE_LMSG;
         }
-        else {
-            flags = 0;
-            data = new byte[size_];
-            buf = null;
-        }
+        this.flags = 0;
+        this.size = src.length;
+        this.data = src;
+        this.buf = ByteBuffer.wrap(src).order(ByteOrder.BIG_ENDIAN);
     }
 
-    public final int flags ()
-    {
+    public Msg(final ByteBuffer src) {
+        if (src == null)
+            throw new IllegalArgumentException("ByteBuffer cannot be null");
+        this.type = TYPE_LMSG;
+        this.flags = 0;
+        this.buf = src.duplicate();
+        if (buf.hasArray())
+            this.data = buf.array();
+        else
+            this.data = null;
+        this.size = buf.remaining();
+    }
+
+    public Msg(final Msg m) {
+        if (m == null)
+            throw new IllegalArgumentException("Msg cannot be null");
+        this.type = m.type;
+        this.flags = m.flags;
+        this.size = m.size;
+        this.buf = m.buf != null ? m.buf.duplicate() : null;
+        this.data = new byte[this.size];
+        System.arraycopy(m.data, 0, this.data, 0, m.size);
+    }
+
+    public boolean isIdentity() {
+        return (flags & IDENTITY) == IDENTITY;
+    }
+
+    public boolean isDelimiter() {
+        return type == TYPE_DELIMITER;
+    }
+
+    public boolean isVSM() {
+        return type == TYPE_VSM;
+    }
+
+    public boolean isCMSG() {
+        return type == TYPE_CMSG;
+    }
+
+    public boolean check() {
+        return type >= TYPE_MIN && type <= TYPE_MAX;
+    }
+
+    public int flags() {
         return flags;
     }
-    
-    public final boolean has_more ()
-    {
-        return (flags & Msg.more) > 0;
+
+    public boolean hasMore() {
+        return (flags & MORE) > 0;
     }
-    
-    public final byte type ()
-    {
+
+    public byte type() {
         return type;
     }
-    
-    public final void set_flags (int flags_)
-    {
-        flags = flags | flags_;
+
+    public void setFlags(int flags_) {
+        flags |= flags_;
     }
 
-
-    
-    public final void init_delimiter() {
-        type = type_delimiter;
+    public void initDelimiter() {
+        type = TYPE_DELIMITER;
         flags = 0;
     }
 
-    
-    public final byte[] data ()
-    {
-        if (data == null && type == type_lmsg) {
-            if (buf.isDirect ()) {
-                data = new byte [size];
-                int pos = buf.position();
-                buf.get(data);
-                buf.position(pos);
-            }
-            else if (buf.arrayOffset () == 0)
-                data = buf.array();
-            else {
-                data = new byte [size];
-                System.arraycopy (buf.array (), buf.arrayOffset (), data, 0, size);
-            }
+    public byte[] data() {
+        if (buf.isDirect()) {
+            int length = buf.remaining();
+            byte[] bytes = new byte[length];
+            buf.duplicate().get(bytes);
+            return bytes;
         }
         return data;
     }
 
-    public final ByteBuffer buf()
-    {
-        if (buf == null && type != type_lmsg)
-            buf = ByteBuffer.wrap(data);
-        return buf;
+    public ByteBuffer buf() {
+        return buf.duplicate();
     }
-    
-    
-    public final int size ()
-    {
+
+    public int size() {
         return size;
     }
 
-    public final void close ()
-    {
-        if (!check ()) {
-            throw new IllegalStateException();
-        }
-
-        init(type_vsm);
+    public void resetFlags(int f) {
+        flags = flags & ~f;
     }
 
+    public byte get() {
+        return buf.get();
+    }
 
+    public byte get(int index) {
+        return buf.get(index);
+    }
+
+    public Msg put(byte b) {
+        buf.put(b);
+        return this;
+    }
+
+    public Msg put(int index, byte b) {
+        buf.put(index, b);
+        return this;
+    }
+
+    public Msg put(byte[] src) {
+        return put(src, 0, src.length);
+    }
+
+    public Msg put(byte[] src, int off, int len) {
+        if (src == null)
+            return this;
+        buf.put(src, off, len);
+        return this;
+    }
+
+    public Msg put(ByteBuffer src) {
+        buf.put(src);
+        return this;
+    }
+
+    public int getBytes(int index, byte[] dst, int off, int len) {
+        int count = Math.min(len, size);
+        if (buf.isDirect()) {
+            ByteBuffer dup = buf.duplicate();
+            dup.position(index);
+            dup.put(dst, off, count);
+            return count;
+        }
+        System.arraycopy(data, index, dst, off, count);
+        return count;
+    }
+
+    public int getBytes(int index, ByteBuffer bb, int len) {
+        int count = Math.min(bb.remaining(), size - index);
+        count = Math.min(count, len);
+        bb.put(buf);
+        return count;
+    }
 
     @Override
-    public String toString () {
-        return super.toString() + "[" + type + "," + size + "," + flags + "]";
+    public String toString() {
+        return String.format("#zmq.Msg{type=%s, size=%s, flags=%s}", type, size, flags);
     }
-
-    private void clone (Msg m) {
-        type = m.type;
-        flags = m.flags;
-        size = m.size;
-        buf = m.buf;
-        data = m.data;
-    }
-
-    public final void reset_flags (int f) {
-        flags = flags &~ f;
-    }
-    
-    public final void put(byte[] src, int i) {
-        
-        if (src == null)
-            return;
-
-        System.arraycopy(src, 0, data, i, src.length);
-    }
-    
-    public final void put(byte[] src, int i, int len_) {
-        
-        if (len_ == 0 || src == null)
-            return;
-        
-        System.arraycopy(src, 0, data, i, len_);
-    }
-
-    public final boolean is_vsm() {
-        return type == type_vsm;
-    }
-
-    
-    public final void put(byte b) {
-        data[0] = b;
-    }
-
-    public final void put(byte b, int i) {
-        data[i] = b;
-    }
-
-    public final void put(String str, int i) {
-        put(str.getBytes(ZMQ.CHARSET), i);
-    }
-
-    public final void put(Msg data, int i) {
-        put(data.data, i);
-    }
-    
-
 }
