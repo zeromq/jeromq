@@ -209,12 +209,12 @@ public class Pipe extends ZObject {
         }
 
         //  If delimiter was read, start termination process of the pipe.
-        if (msg_.is_delimiter()) {
+        if (msg_.isDelimiter()) {
             delimit ();
             return null;
         }
 
-        if (!msg_.has_more())
+        if (!msg_.hasMore())
             msgs_read++;
 
         if (lwm > 0 && msgs_read % lwm == 0)
@@ -247,7 +247,7 @@ public class Pipe extends ZObject {
         if (!check_write ())
             return false;
 
-        boolean more = msg_.has_more();
+        boolean more = msg_.hasMore();
         outpipe.write (msg_, more);
 
         if (!more)
@@ -264,7 +264,7 @@ public class Pipe extends ZObject {
         Msg msg;
         if (outpipe!= null) {
             while ((msg = outpipe.unwrite ()) != null) {
-                assert ((msg.flags () & Msg.more) > 0);
+                assert ((msg.flags () & Msg.MORE) > 0);
                 //msg.close ();
             }
         }
@@ -458,7 +458,7 @@ public class Pipe extends ZObject {
             //  checked; thus the delimiter can be written even when the pipe is full.
             
             Msg msg = new Msg();
-            msg.init_delimiter ();
+            msg.initDelimiter ();
             outpipe.write (msg, false);
             flush ();
             
@@ -468,7 +468,7 @@ public class Pipe extends ZObject {
 
     //  Returns true if the message is delimiter; false otherwise.
     private static boolean is_delimiter(Msg msg_) {
-        return msg_.is_delimiter ();
+        return msg_.isDelimiter ();
     }
 
 	//  Computes appropriate low watermark from the given high watermark.

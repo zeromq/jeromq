@@ -61,11 +61,10 @@ public class Sub extends XSub {
         //  Create the subscription message.
         Msg msg = new Msg(val.length + 1);
         if (option_ == ZMQ.ZMQ_SUBSCRIBE)
-            msg.put((byte)1);
+            msg.put((byte) 1);
         else if (option_ == ZMQ.ZMQ_UNSUBSCRIBE)
-            msg.put((byte)0);
-        msg.put (val,1);
-
+            msg.put((byte) 0);
+        msg.put (val);
         //  Pass it further on in the stack.
         boolean rc = super.xsend(msg);
         if (!rc)

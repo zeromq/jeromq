@@ -179,7 +179,7 @@ public class XPub extends SocketBase {
 
     @Override
     protected boolean xsend(Msg msg_) {
-        boolean msg_more = msg_.has_more(); 
+        boolean msg_more = msg_.hasMore(); 
 
         //  For the first part of multi-part message, find the matching pipes.
         if (!more)
@@ -217,7 +217,7 @@ public class XPub extends SocketBase {
         Blob first = pending_data.pollFirst();
         Msg msg = new Msg(first.data());
         int flags = pending_flags.pollFirst();
-        msg.set_flags(flags);
+        msg.setFlags(flags);
         return msg;
     }
     

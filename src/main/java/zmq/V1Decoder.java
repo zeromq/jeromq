@@ -72,7 +72,7 @@ public class V1Decoder extends DecoderBase
         //  message and thus we can treat it as uninitialised...
         in_progress = new Msg (size);
 
-        in_progress.set_flags (msg_flags);
+        in_progress.setFlags (msg_flags);
         next_step (in_progress.data (), in_progress.size (),
             message_ready);
 
@@ -103,7 +103,7 @@ public class V1Decoder extends DecoderBase
         //  message and thus we can treat it as uninitialised.
         in_progress = new Msg ((int) msg_size);
 
-        in_progress.set_flags (msg_flags);
+        in_progress.setFlags (msg_flags);
         next_step (in_progress.data (), in_progress.size (),
                 message_ready);
 
@@ -116,7 +116,7 @@ public class V1Decoder extends DecoderBase
         msg_flags = 0;
         int first = tmpbuf[0];
         if ((first & V1Protocol.MORE_FLAG) > 0)
-            msg_flags |= Msg.more;
+            msg_flags |= Msg.MORE;
         
         //  The payload length is either one or eight bytes,
         //  depending on whether the 'large' bit is set.

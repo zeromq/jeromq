@@ -64,7 +64,7 @@ public class Encoder extends EncoderBase {
     {
         //  Write message body into the buffer.
         next_step (in_progress.data (), in_progress.size (),
-            message_ready, !in_progress.has_more());
+            message_ready, !in_progress.hasMore());
         return true;
     }
 
@@ -99,14 +99,14 @@ public class Encoder extends EncoderBase {
         
         if (size < 255) {
             tmpbuf[0] = (byte)size;
-            tmpbuf[1] = (byte) (in_progress.flags () & Msg.more);
+            tmpbuf[1] = (byte) (in_progress.flags () & Msg.MORE);
             next_step (tmpbuf, 2, size_ready, false);
         }
         else {
             ByteBuffer b = ByteBuffer.wrap(tmpbuf);
             b.put((byte)0xff);
             b.putLong(size);
-            b.put((byte) (in_progress.flags () & Msg.more));
+            b.put((byte) (in_progress.flags () & Msg.MORE));
             next_step (tmpbuf, 10, size_ready, false);
         }
         

@@ -46,9 +46,7 @@ public class TestEncoder {
     }
     // as if it read data from socket
     private Msg read_short_message () {
-        Msg msg = new Msg(5);
-        msg.put("hello".getBytes(ZMQ.CHARSET),0);
-        
+        Msg msg = new Msg("hello".getBytes(ZMQ.CHARSET));
         return msg;
     }
     
@@ -57,7 +55,7 @@ public class TestEncoder {
         
         Msg msg = new Msg(200);
         for (int i=0; i < 20; i++)
-            msg.put("0123456789".getBytes(ZMQ.CHARSET), i*10);
+            msg.put("0123456789".getBytes(ZMQ.CHARSET));
         return msg;
     }
 
@@ -151,7 +149,7 @@ public class TestEncoder {
 
         private boolean read_header() {
             next_step (msg.data (), msg.size (),
-                    read_body, !msg.has_more());
+                    read_body, !msg.hasMore());
             return true;
                 
         }
@@ -167,7 +165,7 @@ public class TestEncoder {
             header.put("HEADER".getBytes(ZMQ.CHARSET));
             header.putInt(msg.size());
             header.flip();
-            next_step(header.array (), 10, read_header, !msg.has_more());
+            next_step(header.array (), 10, read_header, !msg.hasMore());
             return true;
         }
 
@@ -184,7 +182,7 @@ public class TestEncoder {
     {
         CustomEncoder cencoder = new CustomEncoder(32);
         cencoder.set_msg_source (session);
-        Msg msg = new Msg("12345678901234567890");
+        Msg msg = new Msg("12345678901234567890".getBytes(ZMQ.CHARSET));
         session.push_msg (msg);
         
         Transfer out = cencoder.get_data (null);

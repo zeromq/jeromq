@@ -79,8 +79,8 @@ public class TestProxyTcp {
                 Msg response = null;
                 if (i%3 == 2) {
                     response = new Msg(msg.size() + 3);
-                    response.put("OK ", 0);
-                    response.put(msg.data(), 3);
+                    response.put("OK ".getBytes(ZMQ.CHARSET))
+                            .put(msg.data());
                 } else {
                     response = new Msg(msg.data());
                 }
@@ -116,7 +116,7 @@ public class TestProxyTcp {
             next_step(header, 4, read_header);
             
             bottom = new Msg();
-            bottom.set_flags (Msg.more);
+            bottom.setFlags (Msg.MORE);
         }
 
         @Override
@@ -205,7 +205,7 @@ public class TestProxyTcp {
 
         private boolean write_body() {
             System.out.println("writer body ");
-            next_step(msg, write_header, !msg.has_more());
+            next_step(msg, write_header, !msg.hasMore());
             
             return true;
         }

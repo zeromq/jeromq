@@ -61,17 +61,16 @@ public class XSub extends SocketBase {
 
                 //  Create the subsctription message.
                 Msg msg = new Msg(size + 1);
-                msg.put((byte)1);
-                msg.put(data_,1, size);
-
+                msg.put((byte) 1).put(data_, 0, size);
+                
                 //  Send it to the pipe.
                 boolean sent = pipe.write (msg);
                 //  If we reached the SNDHWM, and thus cannot send the subscription, drop
                 //  the subscription message instead. This matches the behaviour of
                 //  zmq_setsockopt(ZMQ_SUBSCRIBE, ...), which also drops subscriptions
                 //  when the SNDHWM is reached.
-                if (!sent)
-                    msg.close ();
+//                if (!sent)
+//                    msg.close ();
 
             }
         };
@@ -175,7 +174,7 @@ public class XSub extends SocketBase {
         if (has_message) {
             msg_ = message;
             has_message = false;
-            more = msg_.has_more();
+            more = msg_.hasMore();
             return msg_;
         }
 
@@ -196,13 +195,13 @@ public class XSub extends SocketBase {
             //  Check whether the message matches at least one subscription.
             //  Non-initial parts of the message are passed 
             if (more || !options.filter || match(msg_)) {
-                more = msg_.has_more();
+                more = msg_.hasMore();
                 return msg_;
             }
 
             //  Message doesn't match. Pop any remaining parts of the message
             //  from the pipe.
-            while (msg_.has_more()) {
+            while (msg_.hasMore()) {
                 msg_ = fq.recv(errno);
                 assert (msg_ != null);
             }
@@ -241,7 +240,7 @@ public class XSub extends SocketBase {
 
             //  Message doesn't match. Pop any remaining parts of the message
             //  from the pipe.
-            while (message.has_more()) {
+            while (message.hasMore()) {
                 message = fq.recv(errno);
                 assert (message != null);
             }

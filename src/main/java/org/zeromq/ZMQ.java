@@ -1109,8 +1109,7 @@ public class ZMQ {
             zmq.Msg msg = base.recv (flags);
             
             if (msg != null) {
-                int size = Math.min (msg.size (), len);
-                System.arraycopy (msg.data (), 0, buffer, offset, size);
+                int size = msg.getBytes(0, buffer, offset, len);
                 return size;
             }
 

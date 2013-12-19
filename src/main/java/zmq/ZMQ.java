@@ -22,6 +22,7 @@ package zmq;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
@@ -163,7 +164,7 @@ public class ZMQ {
 
     public static final byte[] SUBSCRIPTION_ALL = new byte[0];
 
-    public static Charset CHARSET = Charset.defaultCharset();
+    public static Charset CHARSET = Charset.forName("UTF-8");
 
     public static class Event
     {
@@ -194,7 +195,7 @@ public class ZMQ {
             if (flag == VALUE_INTEGER)
                 size += 4;
             
-            ByteBuffer buffer = ByteBuffer.allocate (size);
+            ByteBuffer buffer = ByteBuffer.allocate (size).order(ByteOrder.BIG_ENDIAN);
             buffer.putInt (event);
             buffer.put ((byte) addr.length());
             buffer.put (addr.getBytes(CHARSET));
@@ -491,7 +492,7 @@ public class ZMQ {
             a_[i] = msg.data();
 
             // Assume zmq_socket ZMQ_RVCMORE is properly set.
-            recvmore = msg.has_more();
+            recvmore = msg.hasMore();
         }
         return nread;
     }
@@ -530,7 +531,7 @@ public class ZMQ {
     {
         switch (option_) {
             case ZMQ_MORE:
-                return msg_.has_more() ? 1: 0;
+                return msg_.hasMore() ? 1: 0;
             default:
                 throw new IllegalArgumentException();
         }

@@ -71,7 +71,7 @@ public class TestProxy
 
                 System.out.println(name + " received data " + msg + " " + data);
                 s.send(identity, ZMQ.SNDMORE);
-                s.send((byte[])null, ZMQ.SNDMORE);
+                s.send((byte[]) null, ZMQ.SNDMORE);
 
                 String response = "OK " + data;
 

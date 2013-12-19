@@ -47,7 +47,7 @@ public class V1Encoder extends EncoderBase
     {
         //  Write message body into the buffer.
         next_step (in_progress.data (), in_progress.size (),
-            message_ready, !in_progress.has_more());
+            message_ready, !in_progress.hasMore());
         return true;
     }
 
@@ -68,7 +68,7 @@ public class V1Encoder extends EncoderBase
         }
 
         int protocol_flags = 0;
-        if (in_progress.has_more ())
+        if (in_progress.hasMore ())
             protocol_flags |= V1Protocol.MORE_FLAG;
         if (in_progress.size () > 255)
             protocol_flags |= V1Protocol.LARGE_FLAG;

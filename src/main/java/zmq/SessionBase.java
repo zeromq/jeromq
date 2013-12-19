@@ -190,7 +190,7 @@ public class SessionBase extends Own implements
         if (pipe == null || (msg_ = pipe.read()) == null) {
             return null;
         }
-        incomplete_in = msg_.has_more();
+        incomplete_in = msg_.hasMore();
 
         return msg_;
 
@@ -201,7 +201,7 @@ public class SessionBase extends Own implements
     {
         //  First message to receive is identity (if required).
         if (!identity_received) {
-            msg_.set_flags (Msg.identity);
+            msg_.setFlags (Msg.IDENTITY);
             identity_received = true;
             
             if (!options.recv_identity) {
@@ -248,7 +248,7 @@ public class SessionBase extends Own implements
                     assert (!incomplete_in);
                     break;
                 }
-                msg.close ();
+                // msg.close ();
             }
         }
     }

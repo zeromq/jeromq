@@ -88,10 +88,10 @@ public class LB {
         //  switch back to non-dropping mode.
         if (dropping) {
 
-            more = msg_.has_more();
+            more = msg_.hasMore();
             dropping = more;
 
-            msg_.close();
+            // msg_.close();
             return true;
         }
 
@@ -115,7 +115,7 @@ public class LB {
 
         //  If it's final part of the message we can fluch it downstream and
         //  continue round-robinning (load balance).
-        more = msg_.has_more();
+        more = msg_.hasMore();
         if (!more) {
             pipes.get(current).flush ();
             if (active > 1)

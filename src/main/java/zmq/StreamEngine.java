@@ -231,7 +231,8 @@ public class StreamEngine implements IEngine, IPollEvents, IMsgSink {
         
         if (!custom) {
             outsize = greeting_output_buffer.position ();
-            outbuf = new Transfer.ByteBufferTransfer ((ByteBuffer) greeting_output_buffer.flip ());
+            greeting_output_buffer.flip();
+            outbuf = new Transfer.ByteBufferTransfer (greeting_output_buffer);
             io_object.set_pollout (handle);
         }        
         
@@ -573,8 +574,7 @@ public class StreamEngine implements IEngine, IPollEvents, IMsgSink {
 
         //  Inject the subscription message so that the ZMQ 2.x peer
         //  receives our messages.
-        msg_ = new Msg (1);
-        msg_.put ((byte) 1);
+        msg_ = new Msg (new byte[] { 1 });
         rc = session.push_msg (msg_);
         session.flush ();
 
