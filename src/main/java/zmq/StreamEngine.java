@@ -24,10 +24,10 @@ import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.channels.SocketChannel;
 
 public class StreamEngine implements IEngine, IPollEvents, IMsgSink {
-    
     //  Size of the greeting message:
     //  Preamble (10 bytes) + version (1 byte) + socket type (1 byte).
     private static final int GREETING_SIZE = 12;
@@ -94,8 +94,8 @@ public class StreamEngine implements IEngine, IPollEvents, IMsgSink {
         terminating = false;
         endpoint = endpoint_;
         socket = null;
-        greeting = ByteBuffer.allocate (GREETING_SIZE);
-        greeting_output_buffer = ByteBuffer.allocate (GREETING_SIZE);
+        greeting = ByteBuffer.allocate(GREETING_SIZE).order(ByteOrder.BIG_ENDIAN);
+        greeting_output_buffer = ByteBuffer.allocate(GREETING_SIZE).order(ByteOrder.BIG_ENDIAN);
         encoder = null;
         decoder = null;
 
