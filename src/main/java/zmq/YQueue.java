@@ -23,15 +23,15 @@ package zmq;
 public class YQueue<T> {
 
     //  Individual memory chunk to hold N elements.
-    private class Chunk
+    private class Chunk<T>
     {
-         final Object[] values;
+         final T[] values;
          final int[] pos;
          Chunk prev;
          Chunk next;
-         
+
          protected Chunk(int size, int memory_ptr) {
-             values = new Object[size];
+             values = (T[]) new Object[size];
              pos = new int[size];
              for (int i=0; i != values.length; i++) {
                  pos[i] = memory_ptr;
@@ -44,21 +44,21 @@ public class YQueue<T> {
     //  while begin & end positions are always valid. Begin position is
     //  accessed exclusively be queue reader (front/pop), while back and
     //  end positions are accessed exclusively by queue writer (back/push).
-    private Chunk begin_chunk;
+    private Chunk<T> begin_chunk;
     private int begin_pos;
-    private Chunk back_chunk;
+    private Chunk<T> back_chunk;
     private int back_pos;
-    private Chunk end_chunk;
+    private Chunk<T> end_chunk;
     private int end_pos;
-    private volatile Chunk spare_chunk;
+    private volatile Chunk<T> spare_chunk;
     private final int size;
 
     //  People are likely to produce and consume at similar rates.  In
     //  this scenario holding onto the most recently freed chunk saves
     //  us from having to call malloc/free.
-    
+
     private int memory_ptr;
-    
+
 
     public YQueue(int size) {
         this.size = size;
@@ -72,16 +72,15 @@ public class YQueue<T> {
         end_chunk = begin_chunk;
         end_pos = 1;
     }
-    
+
     public final int front_pos() {
         return begin_chunk.pos[begin_pos];
     }
-    
+
     //  Returns reference to the front element of the queue.
     //  If the queue is empty, behaviour is undefined.
-    @SuppressWarnings("unchecked")
     public final T front() {
-        return (T) begin_chunk.values [begin_pos];
+        return begin_chunk.values [begin_pos];
     }
 
     public final int back_pos() {
@@ -90,14 +89,12 @@ public class YQueue<T> {
 
     //  Returns reference to the back element of the queue.
     //  If the queue is empty, behaviour is undefined.
-    @SuppressWarnings("unchecked")
     public final T back() {
-        return (T) back_chunk.values [back_pos];
+        return back_chunk.values [back_pos];
     }
-    
-    @SuppressWarnings("unchecked")
+
     public final T pop() {
-        T val = (T) begin_chunk.values [begin_pos];
+        T val = begin_chunk.values [begin_pos];
         begin_chunk.values [begin_pos] = null;
         begin_pos++;
         if (begin_pos == size) {
