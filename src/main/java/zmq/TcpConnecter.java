@@ -32,9 +32,9 @@ public class TcpConnecter extends Own implements IPollEvents {
 
     //  ID of the timer used to delay the reconnection.
     private final static int reconnect_timer_id = 1;
-    
+
     private final IOObject io_object;
-    
+
     //  Address to connect to. Owned by session_base_t.
     private final Address addr;
 
@@ -50,7 +50,7 @@ public class TcpConnecter extends Own implements IPollEvents {
 
     //  True iff a timer has been started.
     private boolean timer_started;
-    
+
     //  Reference to the session we belong to.
     private SessionBase session;
 
@@ -58,37 +58,37 @@ public class TcpConnecter extends Own implements IPollEvents {
     private int current_reconnect_ivl;
 
     // String representation of endpoint to connect to
-    private String endpoint;
+    private Address address;
 
     // Socket
     private SocketBase socket;
-    
+
     public TcpConnecter (IOThread io_thread_,
       SessionBase session_, final Options options_,
       final Address addr_, boolean delayed_start_) {
-        
+
         super (io_thread_, options_);
         io_object = new IOObject(io_thread_);
         addr = addr_;
-        handle = null; 
+        handle = null;
         handle_valid = false;
         delayed_start = delayed_start_;
         timer_started = false;
         session = session_;
         current_reconnect_ivl = options.reconnect_ivl;
-        
+
         assert (addr != null);
-        endpoint = addr.toString ();
+        address = addr;
         socket = session_.get_soket ();
     }
-    
+
     public void destroy ()
     {
         assert (!timer_started);
         assert (!handle_valid);
         assert (handle == null);
     }
-    
+
     @Override
     protected void process_plug ()
     {
@@ -99,7 +99,7 @@ public class TcpConnecter extends Own implements IPollEvents {
             start_connecting ();
         }
     }
-    
+
     @Override
     public void process_term (int linger_)
     {
@@ -107,7 +107,7 @@ public class TcpConnecter extends Own implements IPollEvents {
             io_object.cancel_timer (reconnect_timer_id);
             timer_started = false;
         }
-        
+
         if (handle_valid) {
             io_object.rm_fd (handle);
             handle_valid = false;
@@ -115,7 +115,7 @@ public class TcpConnecter extends Own implements IPollEvents {
 
         if (handle != null)
             close ();
-        
+
         super.process_term (linger_);
     }
 
@@ -124,18 +124,18 @@ public class TcpConnecter extends Own implements IPollEvents {
         // connected but attaching to stream engine is not completed. do nothing
         return;
     }
-    
+
     @Override
     public void out_event() {
         // connected but attaching to stream engine is not completed. do nothing
         return;
     }
-    
+
     @Override
     public void accept_event() {
         throw new UnsupportedOperationException();
     }
-    
+
     @Override
     public void connect_event ()
     {
@@ -155,18 +155,18 @@ public class TcpConnecter extends Own implements IPollEvents {
 
         io_object.rm_fd (handle);
         handle_valid = false;
-        
+
         if (err) {
             //  Handle the error condition by attempt to reconnect.
             close ();
             add_reconnect_timer();
             return;
         }
-        
+
         handle = null;
-        
+
         try {
-            
+
             Utils.tune_tcp_socket (fd);
             Utils.tune_tcp_keepalives (fd, options.tcp_keepalive, options.tcp_keepalive_cnt, options.tcp_keepalive_idle, options.tcp_keepalive_intvl);
         } catch (SocketException e) {
@@ -176,9 +176,9 @@ public class TcpConnecter extends Own implements IPollEvents {
         //  Create the engine object for this connection.
         StreamEngine engine = null;
         try {
-            engine = new StreamEngine (fd, options, endpoint);
+            engine = new StreamEngine (fd, options, address.toString());
         } catch (ZError.InstantiationException e) {
-            socket.event_connect_delayed (endpoint, -1);
+            socket.event_connect_delayed (address.toString(), -1);
             return;
         }
 
@@ -188,36 +188,36 @@ public class TcpConnecter extends Own implements IPollEvents {
         //  Shut the connecter down.
         terminate ();
 
-        socket.event_connected (endpoint, fd);
+        socket.event_connected (address.toString(), fd);
     }
-    
+
     @Override
     public void timer_event(int id_) {
         timer_started = false;
         start_connecting ();
     }
-    
+
     //  Internal function to start the actual connection establishment.
     private void start_connecting ()
     {
         //  Open the connecting socket.
-       
+
         try {
             boolean rc = open ();
-    
+
             //  Connect may succeed in synchronous manner.
             if (rc) {
                 io_object.add_fd (handle);
                 handle_valid = true;
                 io_object.connect_event();
             }
-    
+
             //  Connection establishment may be delayed. Poll for its completion.
             else {
                 io_object.add_fd (handle);
                 handle_valid = true;
                 io_object.set_pollconnect (handle);
-                socket.event_connect_delayed (endpoint, -1);
+                socket.event_connect_delayed (address.toString(), -1);
             }
         } catch (IOException e) {
             //  Handle any other error condition by eventual reconnect.
@@ -231,11 +231,16 @@ public class TcpConnecter extends Own implements IPollEvents {
     private void add_reconnect_timer()
     {
         int rc_ivl = get_new_reconnect_ivl();
-        io_object.add_timer (rc_ivl, reconnect_timer_id);
-        socket.event_connect_retried (endpoint, rc_ivl);
+        io_object.add_timer(rc_ivl, reconnect_timer_id);
+
+        // resolve address again to take into account other addresses
+        // besides the failing one (e.g. multiple dns entries).
+        address.resolve();
+
+        socket.event_connect_retried(address.toString(), rc_ivl);
         timer_started = true;
     }
-    
+
     //  Internal function to return a reconnect backoff delay.
     //  Will modify the current_reconnect_ivl used for next call
     //  Returns the currently used interval
@@ -258,7 +263,7 @@ public class TcpConnecter extends Own implements IPollEvents {
         }
         return this_interval;
     }
-    
+
     //  Open TCP connecting socket. Returns -1 in case of error,
     //  true if connect was successfull immediately. Returns false with
     //  if async connect was launched.
@@ -278,7 +283,7 @@ public class TcpConnecter extends Own implements IPollEvents {
         return rc;
 
     }
-    
+
     //  Get the file descriptor of newly created connection. Returns
     //  retired_fd if the connection was unsuccessfull.
     private SocketChannel connect () throws IOException
@@ -286,18 +291,18 @@ public class TcpConnecter extends Own implements IPollEvents {
         boolean finished = handle.finishConnect();
         assert finished;
         SocketChannel ret = handle;
-        
+
         return ret;
     }
-    
+
     //  Close the connecting socket.
     private void close() {
         assert (handle != null);
         try {
             handle.close();
-            socket.event_closed (endpoint, handle);
+            socket.event_closed (address.toString(), handle);
         } catch (IOException e) {
-            socket.event_close_failed (endpoint, ZError.exccode(e));
+            socket.event_close_failed (address.toString(), ZError.exccode(e));
         }
         handle = null;
     }
