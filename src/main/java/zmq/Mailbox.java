@@ -24,12 +24,8 @@ import java.nio.channels.SelectableChannel;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-//import org.slf4j.Logger;
-//import org.slf4j.LoggerFactory;
 public class Mailbox {
 
-    //private static Logger LOG = LoggerFactory.getLogger(Mailbox.class);
-    
     //  The pipe to store actual commands.
     private final YPipe<Command> cpipe;
 
@@ -82,9 +78,6 @@ public class Mailbox {
         } finally {
             sync.unlock ();
         }
-        
-        //if (LOG.isDebugEnabled())
-        //    LOG.debug( "{} -> {} / {} {}", new Object[] { Thread.currentThread().getName(), cmd_, cmd_.arg , !ok});
         
         if (!ok) {
             signaler.send ();
