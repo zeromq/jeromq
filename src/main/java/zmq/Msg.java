@@ -81,8 +81,12 @@ public class Msg {
     }
 
     public Msg(final ByteBuffer src) {
-        if (src == null)
+        if (src == null) {
             throw new IllegalArgumentException("ByteBuffer cannot be null");
+        }
+        if (src.position() > 0) {
+            throw new IllegalArgumentException("ByteBuffer position is not zero, did you forget to flip it?");
+        }
         this.type = TYPE_LMSG;
         this.flags = 0;
         this.buf = src.duplicate();
