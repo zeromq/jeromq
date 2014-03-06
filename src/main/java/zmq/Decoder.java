@@ -127,7 +127,7 @@ public class Decoder extends DecoderBase {
         final long payload_length = ByteBuffer.wrap(tmpbuf).getLong();
 
         //  There has to be at least one byte (the flags) in the message).
-        if (payload_length == 0) {
+        if (payload_length <= 0) {
             decoding_error ();
             return false;
         }
