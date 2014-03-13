@@ -390,7 +390,6 @@ public class Ctx {
             endpoints_sync.unlock ();
         }
         if (inserted != null) {
-            //ZError.errno(ZError.EADDRINUSE);
             return false;
         }
         return true;
