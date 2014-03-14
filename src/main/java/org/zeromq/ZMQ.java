@@ -1017,15 +1017,15 @@ public class ZMQ {
          * @param max
          *            The maximum port in the range of ports to try.
          */
-        private final int bind (String addr, int min, int max)
+        private final int bind(String addr, int min, int max)
         {
-            if (addr.endsWith (":*")) {
+            if (addr.endsWith(":*")) {
                 int port = min;
-                String prefix = addr.substring (0, addr.lastIndexOf (':') + 1);
+                String prefix = addr.substring(0, addr.lastIndexOf(':') + 1);
                 while (port <= max) {
                     addr = prefix + port;
                     //  Try to bind on the next plausible port
-                    if (base.bind (addr))
+                    if (base.bind(addr))
                         return port;
                     port++;
                 }
@@ -1033,13 +1033,14 @@ public class ZMQ {
                 if (base.bind(addr)) {
                     int port = 0;
                     try {
-                        port = Integer.parseInt (
-                            addr.substring (addr.lastIndexOf (':') + 1));
+                        port = Integer.parseInt(
+                            addr.substring(addr.lastIndexOf(':') + 1));
                     } catch (NumberFormatException e) {
                     }
                     return port;
                 }
             }
+            mayRaise();
             return -1;
         }
 
@@ -1077,8 +1078,10 @@ public class ZMQ {
          * @param addr
          *            the endpoint to connect to.
          */
-        public final void connect (String addr) {
-            base.connect (addr);
+        public final void connect(String addr)
+        {
+            base.connect(addr);
+            mayRaise();
         }
 
         /**
@@ -1631,13 +1634,13 @@ public class ZMQ {
         ENOCOMPATPROTO(ZError.ENOCOMPATPROTO),
         ETERM(ZError.ETERM);
 
-        private final long code;
+        private final int code;
 
-        Error(long code) {
+        Error(int code) {
             this.code = code;
         }
 
-        public long getCode() {
+        public int getCode() {
             return code;
         }
 

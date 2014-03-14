@@ -300,7 +300,7 @@ public abstract class SocketBase extends Own
         return options.getsockopt (option_);
     }
 
-    public boolean bind (final String addr_)
+    public boolean bind(final String addr)
     {
         if (ctx_terminated) {
             throw new ZError.CtxTerminatedException();
@@ -314,7 +314,7 @@ public abstract class SocketBase extends Own
         //  Parse addr_ string.
         URI uri;
         try {
-            uri = new URI(addr_);
+            uri = new URI(addr);
         } catch (URISyntaxException e) {
             throw new IllegalArgumentException(e);
         }
@@ -324,66 +324,66 @@ public abstract class SocketBase extends Own
         if (address == null)
             address = path;
 
-        check_protocol (protocol);
+        check_protocol(protocol);
 
         if (protocol.equals("inproc")) {
             Ctx.Endpoint endpoint = new Ctx.Endpoint(this, options);
-            boolean rc = register_endpoint (addr_, endpoint);
+            boolean rc = register_endpoint(addr, endpoint);
             if (rc) {
                 // Save last endpoint URI
-                options.last_endpoint = addr_;
+                options.last_endpoint = addr;
+                errno.set(ZError.EADDRINUSE);
             }
             return rc;
         }
         if (protocol.equals("pgm") || protocol.equals("epgm")) {
             //  For convenience's sake, bind can be used interchageable with
             //  connect for PGM and EPGM transports.
-            return connect (addr_);
+            return connect(addr);
         }
 
         //  Remaining trasnports require to be run in an I/O thread, so at this
         //  point we'll choose one.
-        IOThread io_thread = choose_io_thread (options.affinity);
+        IOThread io_thread = choose_io_thread(options.affinity);
         if (io_thread == null) {
             throw new IllegalStateException("EMTHREAD");
         }
 
         if (protocol.equals("tcp")) {
-            TcpListener listener = new TcpListener (
-                io_thread, this, options);
-            int rc = listener.set_address (address);
+            TcpListener listener = new TcpListener(io_thread, this, options);
+            int rc = listener.set_address(address);
             if (rc != 0) {
                 listener.destroy();
-                event_bind_failed (address, rc);
+                event_bind_failed(address, rc);
+                errno.set(rc);
                 return false;
             }
 
             // Save last endpoint URI
-            options.last_endpoint = listener.get_address ();
+            options.last_endpoint = listener.get_address();
 
             add_endpoint(options.last_endpoint, listener);
             return true;
         }
 
         if (protocol.equals("ipc")) {
-            IpcListener listener = new IpcListener (
-                io_thread, this, options);
-            int rc = listener.set_address (address);
+            IpcListener listener = new IpcListener(io_thread, this, options);
+            int rc = listener.set_address(address);
             if (rc != 0) {
                 listener.destroy();
-                event_bind_failed (address, rc);
+                event_bind_failed(address, rc);
+                errno.set(rc);
                 return false;
             }
 
             // Save last endpoint URI
-            options.last_endpoint = listener.get_address ();
+            options.last_endpoint = listener.get_address();
 
-            add_endpoint(addr_, listener);
+            add_endpoint(addr, listener);
             return true;
         }
 
-        assert (false);
-        return false;
+        throw new IllegalArgumentException(addr);
     }
 
     public boolean connect (String addr_)
