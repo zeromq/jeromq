@@ -177,7 +177,7 @@ public class Router extends SocketBase {
             if (it.getValue().pipe == pipe_) {
                 assert (!it.getValue().active);
                 it.getValue().active = true;
-                break;
+                return;
             }
         }
         assert (false);
