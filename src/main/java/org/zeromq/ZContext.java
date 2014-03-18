@@ -215,6 +215,8 @@ public class ZContext implements Closeable
      * @return the context
      */
     public Context getContext() {
+        if (context == null)
+            context = ZMQ.context (ioThreads);
         return context;
     }
 
