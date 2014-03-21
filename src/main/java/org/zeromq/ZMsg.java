@@ -646,4 +646,23 @@ public class ZMsg implements Iterable<ZFrame>, Deque<ZFrame> {
     public int size() {
         return frames.size();
     }
+
+    /**
+     * Returns pretty string representation of multipart message:
+     * [ frame0, frame1, ..., frameN ]
+     *
+     * @return toString version of ZMsg object
+     */
+    @Override
+    public String toString() {
+        StringBuilder out = new StringBuilder("[ ");
+        Iterator<ZFrame> frameIterator = frames.iterator();
+        while (frameIterator.hasNext()) {
+            out.append(frameIterator.next());
+            if (frameIterator.hasNext()) out.append(", "); // skip last iteration
+        }
+        out.append(" ]");
+        return out.toString();
+    }
+
 }
