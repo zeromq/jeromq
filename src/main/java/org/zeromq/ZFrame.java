@@ -356,7 +356,8 @@ public class ZFrame {
      */ 
     public static ZFrame recvFrame(Socket socket, int flags) {
         ZFrame f = new ZFrame ();
-        f.recv(socket, flags);
+        byte [] data = f.recv(socket, flags);
+        if (data == null) return null;
         return f;
     }
 

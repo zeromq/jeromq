@@ -198,7 +198,8 @@ public class ZMsg implements Iterable<ZFrame>, Deque<ZFrame> {
      * recv was interrupted. Does a blocking recv, if you want not to block then use
      * the ZLoop class or ZMQ.Poller to check for socket input before receiving or recvMsg with flag ZMQ.DONTWAIT.
      * @param   socket
-     * @return true if send is success, false otherwise
+     * @return
+     *          ZMsg object, null if interrupted
      */
     public static ZMsg recvMsg(Socket socket) {
         return recvMsg(socket, 0);
@@ -209,7 +210,8 @@ public class ZMsg implements Iterable<ZFrame>, Deque<ZFrame> {
      * recv was interrupted. Setting the flag to ZMQ.DONTWAIT does a non-blocking recv.
      * @param   socket
      * @param   flag see ZMQ constants
-     * @return true if receive is success, false otherwise
+     * @return
+     *          ZMsg object, null if interrupted
      */
     public static ZMsg recvMsg(Socket socket, int flag) {
         if (socket == null)
@@ -644,4 +646,23 @@ public class ZMsg implements Iterable<ZFrame>, Deque<ZFrame> {
     public int size() {
         return frames.size();
     }
+
+    /**
+     * Returns pretty string representation of multipart message:
+     * [ frame0, frame1, ..., frameN ]
+     *
+     * @return toString version of ZMsg object
+     */
+    @Override
+    public String toString() {
+        StringBuilder out = new StringBuilder("[ ");
+        Iterator<ZFrame> frameIterator = frames.iterator();
+        while (frameIterator.hasNext()) {
+            out.append(frameIterator.next());
+            if (frameIterator.hasNext()) out.append(", "); // skip last iteration
+        }
+        out.append(" ]");
+        return out.toString();
+    }
+
 }
