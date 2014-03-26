@@ -22,85 +22,87 @@ package zmq;
 
 import org.junit.Test;
 
-import static org.junit.Assert.*;
-import static org.hamcrest.CoreMatchers.*;
+import static org.junit.Assert.assertThat;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.CoreMatchers.notNullValue;
 
-public class TestTimeo {
-
-    class Worker implements Runnable {
-
+public class TestTimeo
+{
+    class Worker implements Runnable
+    {
         Ctx ctx;
-        Worker(Ctx ctx_) {
-            ctx = ctx_;
+        Worker(Ctx ctx)
+        {
+            this.ctx = ctx;
         }
-        @Override
-        public void run() {
-            
-            ZMQ.zmq_sleep (1);
-            SocketBase sc = ZMQ.zmq_socket (ctx, ZMQ.ZMQ_PUSH);
-            assert (sc != null);
-            boolean rc = ZMQ.zmq_connect (sc, "inproc://timeout_test");
-            assert (rc);
-            ZMQ.zmq_sleep (1);
-            ZMQ.zmq_close (sc);
-        }
-        
-    }
-    @Test
-    public void testTimeo()  throws Exception {
-        Ctx ctx = ZMQ.zmq_init (1);
-        assert (ctx!= null);
 
-        SocketBase sb = ZMQ.zmq_socket (ctx, ZMQ.ZMQ_PULL);
-        assert (sb != null);
-        boolean rc = ZMQ.zmq_bind (sb, "inproc://timeout_test");
-        assert (rc );
-        
-    //  Check whether non-blocking recv returns immediately.
-        Msg msg = ZMQ.zmq_recv (sb, ZMQ.ZMQ_DONTWAIT);
-        assert (msg == null);
+        @Override
+        public void run()
+        {
+            ZMQ.zmq_sleep(1);
+            SocketBase sc = ZMQ.zmq_socket(ctx, ZMQ.ZMQ_PUSH);
+            assertThat(sc, notNullValue());
+            boolean rc = ZMQ.zmq_connect(sc, "inproc://timeout_test");
+            assertThat(rc, is(true));
+            ZMQ.zmq_sleep(1);
+            ZMQ.zmq_close(sc);
+        }
+    }
+
+    @Test
+    public void testTimeo() throws Exception
+    {
+        Ctx ctx = ZMQ.zmq_init(1);
+        assertThat(ctx, notNullValue());
+
+        SocketBase sb = ZMQ.zmq_socket(ctx, ZMQ.ZMQ_PULL);
+        assertThat(sb, notNullValue());
+        boolean rc = ZMQ.zmq_bind(sb, "inproc://timeout_test");
+        assertThat(rc, is(true));
+
+        //  Check whether non-blocking recv returns immediately.
+        Msg msg = ZMQ.zmq_recv(sb, ZMQ.ZMQ_DONTWAIT);
+        assertThat(msg, nullValue());
 
         //  Check whether recv timeout is honoured.
         int timeout = 500;
         ZMQ.zmq_setsockopt(sb, ZMQ.ZMQ_RCVTIMEO, timeout);
         long watch = ZMQ.zmq_stopwatch_start();
-        msg = ZMQ.zmq_recv (sb, 0);
-        assertThat (msg , nullValue());
-        long elapsed = ZMQ.zmq_stopwatch_stop (watch);
-        assertThat (elapsed > 440000 && elapsed < 550000, is(true));
+        msg = ZMQ.zmq_recv(sb, 0);
+        assertThat(msg , nullValue());
+        long elapsed = ZMQ.zmq_stopwatch_stop(watch);
+        assertThat(elapsed > 440000 && elapsed < 550000, is(true));
 
         //  Check whether connection during the wait doesn't distort the timeout.
         timeout = 2000;
         ZMQ.zmq_setsockopt(sb, ZMQ.ZMQ_RCVTIMEO, timeout);
         Thread thread = new Thread(new Worker(ctx));
         thread.start();
-        
-        watch = ZMQ.zmq_stopwatch_start ();
-        msg = ZMQ.zmq_recv (sb, 0);
-        assertThat (msg , nullValue());
-        elapsed = ZMQ.zmq_stopwatch_stop (watch);
-        assertThat (elapsed > 1900000 && elapsed < 2100000, is(true));
+
+        watch = ZMQ.zmq_stopwatch_start();
+        msg = ZMQ.zmq_recv(sb, 0);
+        assertThat(msg , nullValue());
+        elapsed = ZMQ.zmq_stopwatch_stop(watch);
+        assertThat(elapsed > 1900000 && elapsed < 2100000, is(true));
         thread.join();
-        
+
         //  Check that timeouts don't break normal message transfer.
-        SocketBase sc = ZMQ.zmq_socket (ctx, ZMQ.ZMQ_PUSH);
-        assert (sc != null);
+        SocketBase sc = ZMQ.zmq_socket(ctx, ZMQ.ZMQ_PUSH);
+        assertThat(sc, notNullValue());
         ZMQ.zmq_setsockopt(sb, ZMQ.ZMQ_RCVTIMEO, timeout);
         ZMQ.zmq_setsockopt(sb, ZMQ.ZMQ_SNDTIMEO, timeout);
-        rc = ZMQ.zmq_connect (sc, "inproc://timeout_test");
-        assert (rc);
+        rc = ZMQ.zmq_connect(sc, "inproc://timeout_test");
+        assertThat(rc, is(true));
         Msg smsg = new Msg("12345678ABCDEFGH12345678abcdefgh".getBytes(ZMQ.CHARSET));
-        int r = ZMQ.zmq_send (sc, smsg, 0);
-        assertThat (r ,is( 32));
-        msg = ZMQ.zmq_recv (sb, 0);
-        assertThat (msg.size() ,is( 32));
+        int r = ZMQ.zmq_send(sc, smsg, 0);
+        assertThat(r, is(32));
+        msg = ZMQ.zmq_recv(sb, 0);
+        assertThat(msg.size(), is(32));
 
-
-
-        ZMQ.zmq_close (sc);
-
-        ZMQ.zmq_close (sb);
-        
-        ZMQ.zmq_term (ctx);
+        ZMQ.zmq_close(sc);
+        ZMQ.zmq_close(sb);
+        ZMQ.zmq_term(ctx);
     }
 }

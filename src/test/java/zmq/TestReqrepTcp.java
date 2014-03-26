@@ -21,30 +21,32 @@
 package zmq;
 
 import org.junit.Test;
+import static org.junit.Assert.assertThat;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 
-public class TestReqrepTcp {
-
+public class TestReqrepTcp
+{
     @Test
-    public void testReqrepTcp()  throws Exception {
-        Ctx ctx = ZMQ.zmq_init (1);
-        assert (ctx!= null);
+    public void testReqrepTcp() throws Exception
+    {
+        Ctx ctx = ZMQ.zmq_init(1);
+        assertThat(ctx, notNullValue());
 
-        SocketBase sb = ZMQ.zmq_socket (ctx, ZMQ.ZMQ_REP);
-        assert (sb != null);
-        boolean rc = ZMQ.zmq_bind (sb, "tcp://127.0.0.1:7560");
-        assert (rc );
+        SocketBase sb = ZMQ.zmq_socket(ctx, ZMQ.ZMQ_REP);
+        assertThat(sb, notNullValue());
+        boolean rc = ZMQ.zmq_bind(sb, "tcp://127.0.0.1:7560");
+        assertThat(rc, is(true));
 
-        SocketBase sc = ZMQ.zmq_socket (ctx, ZMQ.ZMQ_REQ);
-        assert (sc != null);
-        rc = ZMQ.zmq_connect (sc, "tcp://127.0.0.1:7560");
-        assert (rc);
+        SocketBase sc = ZMQ.zmq_socket(ctx, ZMQ.ZMQ_REQ);
+        assertThat(sc, notNullValue());
+        rc = ZMQ.zmq_connect(sc, "tcp://127.0.0.1:7560");
+        assertThat(rc, is(true));
 
-        Helper.bounce (sb, sc);
+        Helper.bounce(sb, sc);
 
-        ZMQ.zmq_close (sc);
-
-        ZMQ.zmq_close (sb);
-        
-        ZMQ.zmq_term (ctx);
+        ZMQ.zmq_close(sc);
+        ZMQ.zmq_close(sb);
+        ZMQ.zmq_term(ctx);
     }
 }
