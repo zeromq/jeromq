@@ -134,7 +134,6 @@ public class ZMQ {
     public static final int ZMQ_EVENT_CONNECTED = 1;
     public static final int ZMQ_EVENT_CONNECT_DELAYED = 2;
     public static final int ZMQ_EVENT_CONNECT_RETRIED = 4;
-    public static final int ZMQ_EVENT_CONNECT_FAILED = 1024;
 
     public static final int ZMQ_EVENT_LISTENING = 8;
     public static final int ZMQ_EVENT_BIND_FAILED = 16;
@@ -145,12 +144,13 @@ public class ZMQ {
     public static final int ZMQ_EVENT_CLOSED = 128;
     public static final int ZMQ_EVENT_CLOSE_FAILED = 256;
     public static final int ZMQ_EVENT_DISCONNECTED = 512;
+    public static final int ZMQ_EVENT_MONITOR_STOPPED = 1024;
 
     public static final int ZMQ_EVENT_ALL = ZMQ_EVENT_CONNECTED | ZMQ_EVENT_CONNECT_DELAYED |
                 ZMQ_EVENT_CONNECT_RETRIED | ZMQ_EVENT_LISTENING |
                 ZMQ_EVENT_BIND_FAILED | ZMQ_EVENT_ACCEPTED |
                 ZMQ_EVENT_ACCEPT_FAILED | ZMQ_EVENT_CLOSED |
-                ZMQ_EVENT_CLOSE_FAILED | ZMQ_EVENT_DISCONNECTED;
+                ZMQ_EVENT_CLOSE_FAILED | ZMQ_EVENT_DISCONNECTED | ZMQ_EVENT_MONITOR_STOPPED;
     
     public static final int ZMQ_POLLIN = 1;
     public static final int ZMQ_POLLOUT = 2;
@@ -173,7 +173,7 @@ public class ZMQ {
         
         public final int event;
         public final String addr;
-        private final Object arg;
+        public final Object arg;
         private final int flag;
 
         public Event (int event, String addr, Object arg) 
@@ -208,9 +208,9 @@ public class ZMQ {
             return s.send (msg, 0);
         }
         
-        public static Event read (SocketBase s) 
+        public static Event read (SocketBase s, int flags) 
         {
-            Msg msg = s.recv (0);
+            Msg msg = s.recv (flags);
             if (msg == null)
                 return null;
             
@@ -227,6 +227,10 @@ public class ZMQ {
                 arg = buffer.getInt ();
             
             return new Event (event, new String (addr, CHARSET), arg);
+        }
+        
+        public static Event read (SocketBase s) {
+            return read(s, 0);
         }
     }
     //  New context API
