@@ -1180,6 +1180,8 @@ public abstract class SocketBase extends Own
     {
 
         if (monitor_socket != null) {
+            if ((monitor_events & ZMQ.ZMQ_EVENT_MONITOR_STOPPED) != 0)
+                monitor_event(new ZMQ.Event(ZMQ.ZMQ_EVENT_MONITOR_STOPPED, "", 0));
             monitor_socket.close();
             monitor_socket = null;
             monitor_events = 0;
