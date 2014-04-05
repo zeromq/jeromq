@@ -41,7 +41,7 @@ public class ZContext implements Closeable
     /**
      * Reference to underlying Context object
      */
-    private Context context;
+    private volatile Context context;
     
     /**
      * List of sockets managed by this ZContext
@@ -110,11 +110,8 @@ public class ZContext implements Closeable
      *          Newly created Socket object
      */
     public Socket createSocket(int type) {
-        if (context == null)
-            context = ZMQ.context (ioThreads);
-
         // Create and register socket
-        Socket socket = context.socket(type);
+        Socket socket = getContext().socket(type);
         sockets.add(socket);
         return socket;
     }
@@ -215,9 +212,15 @@ public class ZContext implements Closeable
      * @return the context
      */
     public Context getContext() {
-        if (context == null)
-            context = ZMQ.context (ioThreads);
-        return context;
+        Context result;
+        if ((result = context) == null) {
+            synchronized (this) {
+                if ((result = context) == null) {
+                    context = result = ZMQ.context(ioThreads);
+                }
+            }
+        }
+        return result;
     }
 
     /**
