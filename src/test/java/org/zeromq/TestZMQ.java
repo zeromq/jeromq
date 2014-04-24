@@ -3,6 +3,7 @@ package org.zeromq;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.CharacterCodingException;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
@@ -10,6 +11,7 @@ import org.zeromq.ZMQ.Context;
 import org.zeromq.ZMQ.Socket;
 
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -370,6 +372,33 @@ public class TestZMQ
         
         socket.close();
         monitor.close();
+        context.term();
+    }
+
+    @Test
+    public void testSocketUnbind()
+    {
+        Context context = ZMQ.context(1);
+
+        Socket push = context.socket(ZMQ.PUSH);
+        Socket pull = context.socket(ZMQ.PULL);
+        pull.setReceiveTimeOut(50);
+
+        int port = pull.bindToRandomPort("tcp://127.0.0.1");
+        push.connect("tcp://127.0.0.1:" + port);
+
+        byte[] data = "ABC".getBytes();
+
+        push.send(data);
+        assertArrayEquals(data, pull.recv());
+
+        pull.unbind("tcp://127.0.0.1:" + port);
+
+        push.send(data);
+        assertNull(pull.recv());
+
+        push.close();
+        pull.close();
         context.term();
     }
 }

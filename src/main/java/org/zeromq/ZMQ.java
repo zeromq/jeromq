@@ -1162,10 +1162,23 @@ public class ZMQ {
          *
          * @param addr
          *            the endpoint to disconnect to.
+         * @return true if successful.
          */
-        public final boolean disconnect (String addr) {
-            boolean ret = base.term_endpoint (addr);
-            return ret;
+        public final boolean disconnect(String addr)
+        {
+            return base.term_endpoint(addr);
+        }
+
+        /**
+         * Stop accepting connections on a socket.
+         *
+         * @param addr
+         *            the endpoint to unbind from.
+         * @return true if successful.
+         */
+        public final boolean unbind(String addr)
+        {
+            return base.term_endpoint(addr);
         }
 
         public final boolean send (String data) {
@@ -1860,7 +1873,7 @@ public class ZMQ {
         public String getAddress() {
             return address;
         }
-        
+
         /**
          * Receive an event from a monitor socket.
          * @param socket the socket
