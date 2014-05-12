@@ -77,7 +77,6 @@ public class ZContext implements Closeable
     }
 
     public ZContext(int ioThreads_) {
-        context = null;     // Don't create Context until create 1st 0MQ socket
         sockets = new CopyOnWriteArrayList<Socket>();
         ioThreads = ioThreads_;
         linger = 0;
