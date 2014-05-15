@@ -1,5 +1,27 @@
 # Changelog
 
+## v0.3.3
+
+* Various code improvements
+* Add unbind method to org.zeromq.ZMQ.Socket
+* Added double checked locking for shared variable context. getContext() and createSocket() should now be thread safe.
+* Extend support for ZMQ monitors to inline with jzmq
+* Apply checkstyle and sample changes
+* Fixed recvFrame to return null on no data. Added Test cases.
+* Corrected ZMsg documentation.
+* Adds lazy create context to getContext() method
+* Fix wrong Router xwrite_activated assert
+* Raise exception when bind fails
+* Fix issue #80
+* throw an exception if the ByteBuffer provided to Msg is not flipped
+* re-resolve tcp addresses on reconnections
+* add convenience methods to set TCP keep alive options
+* Refactor Msg to better handle memory and Java idiomatic
+* Force StreamEngine to use big endian
+* Remove org.jeromq.* namespace and associated tests
+* Revert back to use currentTimeMillis because it's less expensive than nanoTime
+* Fix issue #122 - handshake now uses ByteBuffer accessor methods directly
+
 ## v0.3.2
 
 * Various code improvements
