@@ -1,5 +1,7 @@
 # Changelog
 
+## v0.3.4
+
 ## v0.3.3
 
 * Various code improvements

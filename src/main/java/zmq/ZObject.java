@@ -285,7 +285,7 @@ public abstract class ZObject {
     protected void send_done ()
     {
         Command cmd = new Command(null, Command.Type.DONE);
-        ctx.send_command(Ctx.term_tid, cmd);
+        ctx.send_command(Ctx.TERM_TID, cmd);
     }
 
 
