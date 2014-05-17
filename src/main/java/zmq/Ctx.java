@@ -107,8 +107,8 @@ public class Ctx {
     //  Synchronisation of access to context options.
     private final Lock opt_sync;
 
-    public static final int term_tid = 0;
-    public static final int reaper_tid = 1;
+    public static final int TERM_TID = 0;
+    public static final int REAPER_TID = 1;
     
     public Ctx ()
     {
@@ -264,12 +264,12 @@ public class Ctx {
                 //alloc_assert (slots);
     
                 //  Initialise the infrastructure for zmq_term thread.
-                slots [term_tid] = term_mailbox;
+                slots [TERM_TID] = term_mailbox;
     
                 //  Create the reaper thread.
-                reaper = new Reaper (this, reaper_tid);
+                reaper = new Reaper (this, REAPER_TID);
                 //alloc_assert (reaper);
-                slots [reaper_tid] = reaper.get_mailbox ();
+                slots [REAPER_TID] = reaper.get_mailbox ();
                 reaper.start ();
     
                 //  Create I/O thread objects and launch them.
