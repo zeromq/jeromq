@@ -178,8 +178,9 @@ public class Ctx {
                     //  First send stop command to sockets so that any blocking calls
                     //  can be interrupted. If there are no sockets we can ask reaper
                     //  thread to stop.
-                    for (int i = 0; i != sockets.size (); i++)
-                        sockets.get(i).stop ();
+                    for(SocketBase socket: sockets) {
+                        socket.stop();
+                    }
                     if (sockets.isEmpty ())
                         reaper.stop ();
                 }
