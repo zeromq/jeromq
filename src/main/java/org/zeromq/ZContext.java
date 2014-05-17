@@ -87,9 +87,8 @@ public class ZContext implements Closeable
      * Destructor.  Call this to gracefully terminate context and close any managed 0MQ sockets
      */
     public void destroy() {
-        ListIterator<Socket> itr = sockets.listIterator();
-        while (itr.hasNext()) {
-            destroySocket(itr.next());
+        for(Socket socket : sockets) {
+            destroySocket(socket);
         }
         sockets.clear();
         
