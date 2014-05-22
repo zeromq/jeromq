@@ -2,8 +2,6 @@
 
 ## v0.3.4
 
-## v0.3.3
-
 * Various code improvements
 * Add unbind method to org.zeromq.ZMQ.Socket
 * Added double checked locking for shared variable context. getContext() and createSocket() should now be thread safe.
