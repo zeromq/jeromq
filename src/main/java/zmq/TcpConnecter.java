@@ -235,7 +235,13 @@ public class TcpConnecter extends Own implements IPollEvents {
 
         // resolve address again to take into account other addresses
         // besides the failing one (e.g. multiple dns entries).
-        address.resolve();
+        try {
+            address.resolve();
+        } catch ( Exception ignored ) {
+            // This will fail if the network goes away and the
+            // address cannot be resolved for some reason. Try
+            // not to fail as the event loop will quit
+        }
 
         socket.event_connect_retried(address.toString(), rc_ivl);
         timer_started = true;
@@ -278,7 +284,12 @@ public class TcpConnecter extends Own implements IPollEvents {
         Utils.unblock_socket(handle);
 
         //  Connect to the remote peer.
-        boolean rc = handle.connect(addr.resolved().address());
+        boolean rc = false;
+        try {
+            rc = handle.connect(addr.resolved().address());
+        } catch ( Exception e ) {
+            throw new IOException(e.getMessage(), e);
+        }
 
         return rc;
 
