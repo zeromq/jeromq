@@ -22,6 +22,7 @@ package zmq;
 
 import java.io.IOException;
 import java.net.ConnectException;
+import java.net.SocketAddress;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.nio.channels.SocketChannel;
@@ -235,7 +236,13 @@ public class TcpConnecter extends Own implements IPollEvents {
 
         // resolve address again to take into account other addresses
         // besides the failing one (e.g. multiple dns entries).
-        address.resolve();
+        try {
+            address.resolve();
+        } catch ( Exception ignored ) {
+            // This will fail if the network goes away and the
+            // address cannot be resolved for some reason. Try
+            // not to fail as the event loop will quit
+        }
 
         socket.event_connect_retried(address.toString(), rc_ivl);
         timer_started = true;
@@ -278,7 +285,25 @@ public class TcpConnecter extends Own implements IPollEvents {
         Utils.unblock_socket(handle);
 
         //  Connect to the remote peer.
-        boolean rc = handle.connect(addr.resolved().address());
+        if (addr == null) {
+            throw new IOException("Null address");
+        }
+        Address.IZAddress resolved = addr.resolved();
+        if (resolved == null) {
+            throw new IOException("Address not resolved");
+        }
+        SocketAddress sa = resolved.address();
+        if (sa == null) {
+            throw new IOException("Socket address not resolved");
+        }
+        boolean rc = false;
+        try {
+            rc = handle.connect(sa);
+        } catch (IllegalArgumentException e) {
+            // this will happen if sa is bad.  Address validation is not documented but
+            // I've found that IAE is thrown in openjdk as well as on android.
+            throw new IOException(e.getMessage(), e);
+        }
 
         return rc;
 
