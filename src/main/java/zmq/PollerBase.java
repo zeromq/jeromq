@@ -20,9 +20,11 @@
 package zmq;
 
 import java.util.Iterator;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Multimap;
 
 abstract public class PollerBase {
 
@@ -39,14 +41,14 @@ abstract public class PollerBase {
             id = id_;
         }
     }
-    private final Map<Long, TimerInfo> timers;
-    private final Map<Long, TimerInfo> addingTimers;
+    private final Multimap<Long, TimerInfo> timers;
+    private final Multimap<Long, TimerInfo> addingTimers;
 
 
     protected PollerBase() {
         load = new AtomicInteger(0);
-        timers = new MultiMap<Long, TimerInfo>();
-        addingTimers = new MultiMap<Long, TimerInfo>();
+        timers = ArrayListMultimap.create();
+        addingTimers = ArrayListMultimap.create();
     }
     
     //  Returns load of the poller. Note that this function can be
@@ -83,7 +85,7 @@ abstract public class PollerBase {
             addingTimers.clear();
         }
 
-        Iterator<Entry<Long, TimerInfo>> it = timers.entrySet().iterator();
+        Iterator<Entry<Long, TimerInfo>> it = timers.entries().iterator();
         while (it.hasNext()) {
             TimerInfo v = it.next().getValue();
             if (v.sink == sink_ && v.id == id_) {
@@ -112,7 +114,7 @@ abstract public class PollerBase {
         long current = Clock.now_ms ();
 
         //   Execute the timers that are already due.
-        Iterator<Entry <Long, TimerInfo>> it = timers.entrySet().iterator();
+        Iterator<Entry <Long, TimerInfo>> it = timers.entries().iterator();
         while (it.hasNext()) {
 
             Entry <Long, TimerInfo> o = it.next();
