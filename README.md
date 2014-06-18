@@ -47,7 +47,7 @@ Add it to your Maven project's `pom.xml`:
     <dependency>
       <groupId>org.zeromq</groupId>
       <artifactId>jeromq</artifactId>
-      <version>0.3.3-SNAPSHOT</version>
+      <version>0.3.5-SNAPSHOT</version>
     </dependency>
 
     <!-- If you can't find the latest snapshot -->
