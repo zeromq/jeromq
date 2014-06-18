@@ -6,12 +6,12 @@ Pure Java implementation of libzmq (http://zeromq.org)
 
 ## Features
 
-* based on libzmq 3.2.2
+* based on libzmq 3.2.4
 * ZMTP/2.0 (http://rfc.zeromq.org/spec:15)
 * tcp:// protocol and inproc:// is compatible with zeromq
 * ipc:// protocol works only between jeromq (uses tcp://127.0.0.1:port internally)
 * not too bad performance compared to zeromq
- * 2M messages (100B) per sec
+ * 4.5M messages (100B) per sec
  * [Performance](https://github.com/zeromq/jeromq/wiki/Perfomance)
 * exactly same develope experience with zeromq and jzmq
 
@@ -36,10 +36,11 @@ terms of this contract."
 
 Add it to your Maven project's `pom.xml`:
 
+```xml
     <dependency>
       <groupId>org.zeromq</groupId>
       <artifactId>jeromq</artifactId>
-      <version>0.3.2</version>
+      <version>0.3.4</version>
     </dependency>
 
     <!-- for the latest SNAPSHOT -->
@@ -62,6 +63,7 @@ Add it to your Maven project's `pom.xml`:
         </snapshots>
        </repository>
     </repositories>
+```
 
 If your are using the Ant 
 
