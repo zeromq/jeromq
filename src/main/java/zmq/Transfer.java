@@ -1,6 +1,6 @@
 /*
-    Copyright other contributors as noted in the AUTHORS file.
-    
+    Copyright (c) 2007-2014 Contributors as noted in the AUTHORS file
+
     This file is part of 0MQ.
 
     0MQ is free software; you can redistribute it and/or modify it under
@@ -16,6 +16,7 @@
     You should have received a copy of the GNU Lesser General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 package zmq;
 
 import java.io.IOException;
