@@ -12,7 +12,7 @@ Pure Java implementation of libzmq (http://zeromq.org)
 * ipc:// protocol works only between jeromq (uses tcp://127.0.0.1:port internally)
 * not too bad performance compared to zeromq
  * 4.5M messages (100B) per sec
- * [Performance](https://github.com/zeromq/jeromq/wiki/Perfomance)
+ * [Performance](https://github.com/zeromq/jeromq/wiki/Performance)
 * exactly same develope experience with zeromq and jzmq
 
 ## Not supported Features
