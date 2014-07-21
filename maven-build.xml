@@ -45,12 +45,14 @@
 
   <path id="build.classpath">
     <pathelement location="${maven.repo.local}/org/slf4j/slf4j-api/1.6.6/slf4j-api-1.6.6.jar"/>
+    <pathelement location="${maven.repo.local}/guava/guava/17.0/guava-17.0.jar"/>
   </path>
   <path id="build.test.classpath">
     <pathelement location="${maven.repo.local}/log4j/log4j/1.2.16/log4j-1.2.16.jar"/>
     <pathelement location="${maven.repo.local}/org/slf4j/slf4j-api/1.6.6/slf4j-api-1.6.6.jar"/>
     <pathelement location="${maven.repo.local}/org/slf4j/slf4j-log4j12/1.6.6/slf4j-log4j12-1.6.6.jar"/>
     <pathelement location="${maven.repo.local}/junit/junit/4.8.2/junit-4.8.2.jar"/>
+    <pathelement location="${maven.repo.local}/guava/guava/17.0/guava-17.0.jar"/>
   </path>
 
   <!-- ====================================================================== -->
@@ -270,6 +272,11 @@
          ignoreerrors="true"/>
     <get src="http://repo1.maven.org/maven2/junit/junit/4.8.2/junit-4.8.2.jar" 
          dest="${maven.repo.local}/junit/junit/4.8.2/junit-4.8.2.jar" 
+         usetimestamp="false" 
+         ignoreerrors="true"/>
+    <mkdir dir="${maven.repo.local}/guava/guava/17.0"/>
+    <get src="http://search.maven.org/remotecontent?filepath=com/google/guava/guava/17.0/guava-17.0.jar" 
+         dest="${maven.repo.local}/guava/guava/17.0/guava-17.0.jar" 
          usetimestamp="false" 
          ignoreerrors="true"/>
   </target>
