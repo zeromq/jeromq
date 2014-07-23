@@ -65,9 +65,12 @@ Add it to your Maven project's `pom.xml`:
     </repositories>
 ```
 
-If your are using the Ant 
+## Using ANT
 
-    ant [target]
+To generate an ant build file from `pom.xml`, issue the following command:
 
+```bash
+mvn ant:ant
+```
 
 Also please refer the [Wiki](https://github.com/zeromq/jeromq/wiki)
