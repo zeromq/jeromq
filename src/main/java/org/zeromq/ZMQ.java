@@ -1209,6 +1209,17 @@ public class ZMQ {
             return false;
         }
 
+        public final boolean send (byte[] data, int off, int length, int flags) {
+            byte[] copy = new byte[length];
+            System.arraycopy(data, off, copy, 0, length);
+            zmq.Msg msg = new zmq.Msg(copy);
+            if (base.send(msg, flags))
+                return true;
+
+            mayRaise ();
+            return false;
+        }
+
         /**
          * Send a message
          *
