@@ -20,34 +20,34 @@
 package zmq;
 
 import org.junit.Test;
-import static org.junit.Assert.*;
-import static org.hamcrest.CoreMatchers.*;
+import static org.junit.Assert.assertThat;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 
-public class TestPairIpc {
+public class TestPairIpc
+{
     //  Create REQ/ROUTER wiring.
-    
+
     @Test
-    public void testPairIpc() {
-        
-        Ctx ctx = ZMQ.zmq_init (1);
-        assertThat (ctx, notNullValue());
-        SocketBase sb = ZMQ.zmq_socket (ctx, ZMQ.ZMQ_PAIR);
-        assertThat (sb, notNullValue());
-        boolean brc = ZMQ.zmq_bind (sb, "ipc:///tmp/tester");
-        assertThat (brc , is(true));
-        
-        SocketBase sc = ZMQ.zmq_socket (ctx, ZMQ.ZMQ_PAIR);
-        assertThat (sc, notNullValue());
-        brc = ZMQ.zmq_connect (sc, "ipc:///tmp/tester");
-        assertThat (brc , is(true));
-        
+    public void testPairIpc()
+    {
+        Ctx ctx = ZMQ.zmq_init(1);
+        assertThat(ctx, notNullValue());
+        SocketBase sb = ZMQ.zmq_socket(ctx, ZMQ.ZMQ_PAIR);
+        assertThat(sb, notNullValue());
+        boolean brc = ZMQ.zmq_bind(sb, "ipc:///tmp/tester");
+        assertThat(brc, is(true));
+
+        SocketBase sc = ZMQ.zmq_socket(ctx, ZMQ.ZMQ_PAIR);
+        assertThat(sc, notNullValue());
+        brc = ZMQ.zmq_connect(sc, "ipc:///tmp/tester");
+        assertThat(brc, is(true));
+
         Helper.bounce(sb, sc);
 
-        
         //  Tear down the wiring.
-        ZMQ.zmq_close (sb);
-        ZMQ.zmq_close (sc);
-        ZMQ.zmq_term (ctx);
-        
+        ZMQ.zmq_close(sb);
+        ZMQ.zmq_close(sc);
+        ZMQ.zmq_term(ctx);
     }
 }

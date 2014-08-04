@@ -23,10 +23,11 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.zeromq.ZMQ.Socket;
 
-public class TestZContext {
-
+public class TestZContext
+{
     @Test
-    public void testZContext() {
+    public void testZContext()
+    {
         ZContext ctx = new ZContext();
         Socket s1 = ctx.createSocket(ZMQ.PAIR);
         Socket s2 = ctx.createSocket(ZMQ.XREQ);

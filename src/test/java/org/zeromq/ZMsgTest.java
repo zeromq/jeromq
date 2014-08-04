@@ -25,10 +25,11 @@ import org.junit.Test;
 /**
  * Created by hartmann on 3/21/14.
  */
-public class ZMsgTest {
-
+public class ZMsgTest
+{
     @Test
-    public void testRecvFrame() throws Exception {
+    public void testRecvFrame() throws Exception
+    {
         ZMQ.Context ctx = ZMQ.context(0);
         ZMQ.Socket  socket   = ctx.socket(ZMQ.PULL);
 
@@ -37,7 +38,8 @@ public class ZMsgTest {
     }
 
     @Test
-    public void testRecvMsg() throws Exception {
+    public void testRecvMsg() throws Exception
+    {
         ZMQ.Context ctx = ZMQ.context(0);
         ZMQ.Socket  socket   = ctx.socket(ZMQ.PULL);
 
@@ -46,19 +48,17 @@ public class ZMsgTest {
     }
 
     @Test
-    public void testRecvNullByteMsg() throws Exception {
+    public void testRecvNullByteMsg() throws Exception
+    {
         ZMQ.Context ctx = ZMQ.context(0);
         ZMQ.Socket sender = ctx.socket(ZMQ.PUSH);
         ZMQ.Socket receiver = ctx.socket(ZMQ.PULL);
 
         receiver.bind("inproc://" + this.hashCode());
-        sender.connect("inproc://" +this.hashCode());
+        sender.connect("inproc://" + this.hashCode());
 
         sender.send(new byte[0]);
         ZMsg msg = ZMsg.recvMsg(receiver, ZMQ.NOBLOCK);
         Assert.assertNotNull(msg);
     }
-
-
-
 }

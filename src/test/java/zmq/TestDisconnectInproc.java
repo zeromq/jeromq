@@ -42,8 +42,8 @@ public class TestDisconnectInproc
         int more;
         int iteration = 0;
 
-        while(true) {
-            PollItem items [] = {
+        while (true) {
+            PollItem[] items = {
                     new PollItem(subSocket, ZMQ.ZMQ_POLLIN), // read publications
                     new PollItem(pubSocket, ZMQ.ZMQ_POLLIN) // read subscriptions
             };
@@ -59,16 +59,18 @@ public class TestDisconnectInproc
                         assertTrue(isSubscribed);
                         System.out.printf("unsubscribing from '%s'\n", new String(buffer, 1, msgSize - 1));
                         isSubscribed = false;
-                    } else {
-                        assert(!isSubscribed);
+                    }
+                    else {
+                        assert (!isSubscribed);
                         System.out.printf("subscribing on '%s'\n", new String(buffer, 1, msgSize - 1));
                         isSubscribed = true;
                     }
 
                     more = ZMQ.zmq_getsockopt(pubSocket, ZMQ.ZMQ_RCVMORE);
 
-                    if (more == 0)
+                    if (more == 0) {
                         break;      //  Last message part
+                    }
                 }
             }
 
