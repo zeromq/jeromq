@@ -25,16 +25,21 @@ import java.nio.ByteBuffer;
 import java.nio.channels.Selector;
 
 import org.junit.Test;
+import static org.junit.Assert.assertThat;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 
-public class TestProxyTcp {
-    
-    static class Client extends Thread {
-        
-        public Client () {
+public class TestProxyTcp
+{
+    static class Client extends Thread
+    {
+        public Client()
+        {
         }
-        
+
         @Override
-        public void run () {
+        public void run()
+        {
             System.out.println("Start client thread");
             try {
                 Socket s = new Socket("127.0.0.1", 6560);
@@ -43,28 +48,30 @@ public class TestProxyTcp {
                 Helper.send(s, "end");
                 Helper.send(s, "end");
                 s.close();
-            } catch (IOException e) {
+            }
+            catch (IOException e) {
                 e.printStackTrace();
             }
             System.out.println("Stop client thread");
         }
     }
-    
-    static class Dealer extends Thread {
-        
-        private SocketBase s = null;
-        private String name = null;
-        public Dealer(Ctx ctx, String name_) {
-            s = ZMQ.zmq_socket (ctx, ZMQ.ZMQ_DEALER);
 
-            name = name_;
+    static class Dealer extends Thread
+    {
+        private final SocketBase s;
+        private final String name;
+
+        public Dealer(Ctx ctx, String name)
+        {
+            this.s = ZMQ.zmq_socket(ctx, ZMQ.ZMQ_DEALER);
+            this.name = name;
         }
-        
+
         @Override
-        public void run () {
-            
+        public void run()
+        {
             System.out.println("Start dealer " + name);
-            
+
             ZMQ.zmq_connect(s, "tcp://127.0.0.1:6561");
             int i = 0;
             while (true) {
@@ -73,237 +80,240 @@ public class TestProxyTcp {
                     throw new RuntimeException("hello");
                 }
                 System.out.println("REP recieved " + msg);
-                String data = new String(msg.data(), 0 , msg.size(), ZMQ.CHARSET);
+                String data = new String(msg.data(), 0, msg.size(), ZMQ.CHARSET);
 
                 Msg response = null;
-                if (i%3 == 2) {
+                if ((i % 3) == 2) {
                     response = new Msg(msg.size() + 3);
                     response.put("OK ".getBytes(ZMQ.CHARSET))
                             .put(msg.data());
-                } else {
+                }
+                else {
                     response = new Msg(msg.data());
                 }
-                
-                s.send(response, i%3==2?0:ZMQ.ZMQ_SNDMORE);
+
+                s.send(response, (i % 3) == 2 ? 0 : ZMQ.ZMQ_SNDMORE);
                 i++;
                 if (data.equals("end")) {
                     break;
                 }
-                
-                
             }
             s.close();
             System.out.println("Stop dealer " + name);
         }
     }
-    
+
     static class ProxyDecoder extends DecoderBase
     {
+        private static final int READ_HEADER = 0;
+        private static final int READ_BODY = 1;
 
-        private final static int read_header = 0;
-        private final static int read_body = 1;
-        
         byte [] header = new byte [4];
         Msg msg;
         int size = -1;
-        boolean identity_sent = false;
-        Msg bottom ;
-        IMsgSink msg_sink;
-        
-        public ProxyDecoder(int bufsize_, long maxmsgsize_) {
-            super(bufsize_);
-            next_step(header, 4, read_header);
-            
+        boolean identitySent = false;
+        Msg bottom;
+        IMsgSink msgSink;
+
+        public ProxyDecoder(int bufsize, long maxmsgsize)
+        {
+            super(bufsize);
+            next_step(header, 4, READ_HEADER);
+
             bottom = new Msg();
-            bottom.setFlags (Msg.MORE);
+            bottom.setFlags(Msg.MORE);
         }
 
         @Override
-        protected boolean next() {
+        protected boolean next()
+        {
             switch (state()) {
-            case read_header:
+            case READ_HEADER:
                 return read_header();
-            case read_body:
+            case READ_BODY:
                 return read_body();
             }
             return false;
         }
 
-        private boolean read_header() {
+        private boolean read_header()
+        {
             size = Integer.parseInt(new String(header, ZMQ.CHARSET));
             System.out.println("Received " + size);
             msg = new Msg(size);
-            next_step(msg, read_body);
-            
+            next_step(msg, READ_BODY);
+
             return true;
         }
 
-        private boolean read_body() {
-            
-            if (msg_sink == null)
-                return false;
-            
-            System.out.println("Received body " + new String(msg.data(), ZMQ.CHARSET));
-            
-            if (!identity_sent) {
-                Msg identity = new Msg();
-                msg_sink.push_msg (identity);
-                identity_sent = true;
-            }
-            
-            msg_sink.push_msg (bottom);
-            msg_sink.push_msg (msg);
-            
-            next_step(header, 4, read_header);
-            return true;
-        }
-
-        @Override
-        public boolean stalled() {
-            return state() == read_body;
-        }
-
-        @Override
-        public void set_msg_sink (IMsgSink msg_sink_)
+        private boolean read_body()
         {
-            msg_sink = msg_sink_;
+            if (msgSink == null) {
+                return false;
+            }
+
+            System.out.println("Received body " + new String(msg.data(), ZMQ.CHARSET));
+
+            if (!identitySent) {
+                Msg identity = new Msg();
+                msgSink.push_msg(identity);
+                identitySent = true;
+            }
+
+            msgSink.push_msg(bottom);
+            msgSink.push_msg(msg);
+
+            next_step(header, 4, READ_HEADER);
+            return true;
         }
-        
+
+        @Override
+        public boolean stalled()
+        {
+            return state() == READ_BODY;
+        }
+
+        @Override
+        public void set_msg_sink(IMsgSink msgSink)
+        {
+            this.msgSink = msgSink;
+        }
     }
 
     static class ProxyEncoder extends EncoderBase
     {
-        public final static boolean RAW_ENCODER = true;
-        private final static int write_header = 0;
-        private final static int write_body = 1;
-        
+        public static final boolean RAW_ENCODER = true;
+        private static final int WRITE_HEADER = 0;
+        private static final int WRITE_BODY = 1;
+
         ByteBuffer header = ByteBuffer.allocate(4);
         Msg msg;
         int size = -1;
-        boolean message_ready;
-        boolean identity_recieved;
-        IMsgSource msg_source;
-        
-        public ProxyEncoder(int bufsize_) {
-            super(bufsize_);
-            next_step(null, write_header, true);
-            message_ready = false;
-            identity_recieved = false;
+        boolean messageReady;
+        boolean identityRecieved;
+        IMsgSource msgSource;
+
+        public ProxyEncoder(int bufsize)
+        {
+            super(bufsize);
+            next_step(null, WRITE_HEADER, true);
+            messageReady = false;
+            identityRecieved = false;
         }
 
         @Override
-        protected boolean next() {
+        protected boolean next()
+        {
             switch (state()) {
-            case write_header:
+            case WRITE_HEADER:
                 return write_header();
-            case write_body:
+            case WRITE_BODY:
                 return write_body();
             }
             return false;
         }
 
-        private boolean write_body() {
+        private boolean write_body()
+        {
             System.out.println("writer body ");
-            next_step(msg, write_header, !msg.hasMore());
-            
+            next_step(msg, WRITE_HEADER, !msg.hasMore());
+
             return true;
         }
 
-        private boolean write_header () 
+        private boolean write_header()
         {
-            if (msg_source == null)
+            if (msgSource == null) {
                 return false;
-            
-            msg = msg_source.pull_msg ();
-            
+            }
+
+            msg = msgSource.pull_msg();
+
             if (msg == null) {
                 return false;
             }
-            if (!identity_recieved) {
-                identity_recieved = true;
-                next_step (header.array (), msg.size () < 255 ? 2 : 10, write_body, false);
+            if (!identityRecieved) {
+                identityRecieved = true;
+                next_step(header.array(), msg.size() < 255 ? 2 : 10, WRITE_BODY, false);
                 return true;
             }
             else
-            if (!message_ready) {
-                message_ready = true;
-                msg = msg_source.pull_msg ();
-                
+            if (!messageReady) {
+                messageReady = true;
+                msg = msgSource.pull_msg();
+
                 if (msg == null) {
                     return false;
                 }
             }
-            message_ready = false;
-            System.out.println ("write header " + msg.size());
+            messageReady = false;
+            System.out.println("write header " + msg.size());
 
-            header.clear ();
-            header.put (String.format("%04d", msg.size()).getBytes(ZMQ.CHARSET));
-            header.flip ();
-            next_step (header.array (), 4, write_body, false);
+            header.clear();
+            header.put(String.format("%04d", msg.size()).getBytes(ZMQ.CHARSET));
+            header.flip();
+            next_step(header.array(), 4, WRITE_BODY, false);
             return true;
         }
 
         @Override
-        public void set_msg_source (IMsgSource msg_source_)
+        public void set_msg_source(IMsgSource msgSource)
         {
-            msg_source = msg_source_;
+            this.msgSource = msgSource;
+        }
+    }
+
+    static class Main extends Thread
+    {
+        private Ctx ctx;
+        private Selector selector;
+        Main(Ctx ctx)
+        {
+            this.ctx = ctx;
         }
 
-        
-    }
-    
-    static class Main extends Thread {
-        
-        Ctx ctx;
-        Selector selector;
-        Main(Ctx ctx_) {
-            ctx = ctx_;
-        }
-        
         @Override
-        public void run() {
-            boolean rc ;
-            SocketBase sa = ZMQ.zmq_socket (ctx, ZMQ.ZMQ_ROUTER);
-            assert (sa != null);
-            
+        public void run()
+        {
+            boolean rc;
+            SocketBase sa = ZMQ.zmq_socket(ctx, ZMQ.ZMQ_ROUTER);
+            assertThat(sa, notNullValue());
+
             sa.setsockopt(ZMQ.ZMQ_DECODER, ProxyDecoder.class);
             sa.setsockopt(ZMQ.ZMQ_ENCODER, ProxyEncoder.class);
-            
-            
-            rc = ZMQ.zmq_bind (sa, "tcp://127.0.0.1:6560");
-            assert (rc );
 
-            
-            SocketBase sb = ZMQ.zmq_socket (ctx, ZMQ.ZMQ_DEALER);
-            assert (sb != null);
-            rc = ZMQ.zmq_bind (sb, "tcp://127.0.0.1:6561");
-            assert (rc );
-            
-            ZMQ.zmq_proxy (sa, sb, null);
+            rc = ZMQ.zmq_bind(sa, "tcp://127.0.0.1:6560");
+            assertThat(rc, is(true));
 
-            ZMQ.zmq_close (sa);
-            ZMQ.zmq_close (sb);
+            SocketBase sb = ZMQ.zmq_socket(ctx, ZMQ.ZMQ_DEALER);
+            assertThat(sb, notNullValue());
+            rc = ZMQ.zmq_bind(sb, "tcp://127.0.0.1:6561");
+            assertThat(rc, is(true));
 
+            ZMQ.zmq_proxy(sa, sb, null);
+
+            ZMQ.zmq_close(sa);
+            ZMQ.zmq_close(sb);
         }
-        
     }
 
     @Test
-    public void testProxyTcp()  throws Exception {
-        Ctx ctx = ZMQ.zmq_init (1);
-        assert (ctx!= null);
+    public void testProxyTcp() throws Exception
+    {
+        Ctx ctx = ZMQ.zmq_init(1);
+        assertThat(ctx, notNullValue());
 
         Main mt = new Main(ctx);
         mt.start();
         new Dealer(ctx, "A").start();
         new Dealer(ctx, "B").start();
-        
+
         Thread.sleep(1000);
         Thread client = new Client();
         client.start();
 
         client.join();
-        
+
         ZMQ.zmq_term(ctx);
     }
 }

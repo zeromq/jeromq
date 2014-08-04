@@ -19,33 +19,34 @@
 
 package zmq;
 
-
 import org.junit.Test;
-import static org.junit.Assert.*;
-import static org.hamcrest.CoreMatchers.*;
+import static org.junit.Assert.assertThat;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 
-public class TestLastEndpoint {
-
-    static void do_bind_and_verify (SocketBase s, String endpoint)
+public class TestLastEndpoint
+{
+    static void do_bind_and_verify(SocketBase s, String endpoint)
     {
-        boolean brc = ZMQ.zmq_bind (s, endpoint);
-        assertThat (brc, is(true));
+        boolean brc = ZMQ.zmq_bind(s, endpoint);
+        assertThat(brc, is(true));
 
-        String stest = (String)ZMQ.zmq_getsockoptx (s, ZMQ.ZMQ_LAST_ENDPOINT);
-        assertThat (stest, is(endpoint));
+        String stest = (String) ZMQ.zmq_getsockoptx(s, ZMQ.ZMQ_LAST_ENDPOINT);
+        assertThat(stest, is(endpoint));
     }
 
     @Test
-    public void testLastEndpoint() {
+    public void testLastEndpoint()
+    {
         //  Create the infrastructure
-        Ctx ctx = ZMQ.zmq_init (1);
-        assertThat (ctx, notNullValue());
+        Ctx ctx = ZMQ.zmq_init(1);
+        assertThat(ctx, notNullValue());
 
-        SocketBase sb = ZMQ.zmq_socket (ctx, ZMQ.ZMQ_ROUTER);
-        assertThat (sb, notNullValue());
+        SocketBase sb = ZMQ.zmq_socket(ctx, ZMQ.ZMQ_ROUTER);
+        assertThat(sb, notNullValue());
 
-        do_bind_and_verify (sb, "tcp://127.0.0.1:5560");
-        do_bind_and_verify (sb, "tcp://127.0.0.1:5561");
-        do_bind_and_verify (sb, "ipc:///tmp/testep");
+        do_bind_and_verify(sb, "tcp://127.0.0.1:5560");
+        do_bind_and_verify(sb, "tcp://127.0.0.1:5561");
+        do_bind_and_verify(sb, "ipc:///tmp/testep");
     }
 }

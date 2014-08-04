@@ -24,12 +24,17 @@ import zmq.Msg;
 import zmq.SocketBase;
 import zmq.ZMQ;
 
-public class RemoteThr {
+public class RemoteThr
+{
+    private RemoteThr()
+    {
+    }
 
-    public static void main(String[] argv) {
-        String connect_to;
-        long message_count;
-        int  message_size;
+    public static void main(String[] argv)
+    {
+        String connectTo;
+        long messageCount;
+        int  messageSize;
         Ctx ctx;
         SocketBase s;
         boolean rc;
@@ -37,67 +42,65 @@ public class RemoteThr {
         Msg msg;
 
         if (argv.length != 3) {
-            printf ("usage: remote_thr <connect-to> <message-size> <message-count>\n");
-            return ;
+            printf("usage: remote_thr <connect-to> <message-size> <message-count>\n");
+            return;
         }
-        connect_to = argv [0];
-        message_size = atoi (argv [1]);
-        message_count = atol (argv [2]);
+        connectTo = argv[0];
+        messageSize = atoi(argv[1]);
+        messageCount = atol(argv[2]);
 
-        ctx = ZMQ.zmq_init (1);
+        ctx = ZMQ.zmq_init(1);
         if (ctx == null) {
-            printf ("error in zmq_init");
-            return ;
+            printf("error in zmq_init");
+            return;
         }
 
-        s = ZMQ.zmq_socket (ctx, ZMQ.ZMQ_PUSH);
-        if (s== null) {
-            printf ("error in zmq_socket");
+        s = ZMQ.zmq_socket(ctx, ZMQ.ZMQ_PUSH);
+        if (s == null) {
+            printf("error in zmq_socket");
         }
 
         //  Add your socket options here.
         //  For example ZMQ_RATE, ZMQ_RECOVERY_IVL and ZMQ_MCAST_LOOP for PGM.
 
-        rc = ZMQ.zmq_connect (s, connect_to);
+        rc = ZMQ.zmq_connect(s, connectTo);
         if (!rc) {
-            printf ("error in zmq_connect: %s\n");
+            printf("error in zmq_connect: %s\n");
             return;
         }
-        
-        
-        for (i = 0; i != message_count ; i++) {
-            
-            msg = ZMQ.zmq_msg_init_size (message_size);
-            if (msg == null ) {
-                printf ("error in zmq_msg_init: %s\n");
+
+        for (i = 0; i != messageCount; i++) {
+            msg = ZMQ.zmq_msg_init_size(messageSize);
+            if (msg == null) {
+                printf("error in zmq_msg_init: %s\n");
                 return;
             }
-            
-            int n = ZMQ.zmq_sendmsg (s, msg, 0);
+
+            int n = ZMQ.zmq_sendmsg(s, msg, 0);
             if (n < 0) {
-                printf ("error in zmq_sendmsg: %s\n");
-                return ;
+                printf("error in zmq_sendmsg: %s\n");
+                return;
             }
         }
 
-        ZMQ.zmq_close (s);
+        ZMQ.zmq_close(s);
 
-        ZMQ.zmq_term (ctx);
+        ZMQ.zmq_term(ctx);
 
     }
 
-
-
-    private static int atoi(String string) {
+    private static int atoi(String string)
+    {
         return Integer.valueOf(string);
     }
-    
-    private static long atol(String string) {
+
+    private static long atol(String string)
+    {
         return Long.valueOf(string);
     }
 
-    private static void printf(String string) {
+    private static void printf(String string)
+    {
         System.out.println(string);
     }
-
 }

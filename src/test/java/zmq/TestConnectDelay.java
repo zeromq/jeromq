@@ -19,14 +19,12 @@
 
 package zmq;
 
-
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 public class TestConnectDelay
 {
-
     @Test
     public void testConnectDelay1() throws Exception
     {
@@ -74,8 +72,9 @@ public class TestConnectDelay
         int seen = 0;
         for (int i = 0; i < 10; ++i) {
             Msg msg = ZMQ.zmq_recv(to, 0);
-            if (msg == null)
+            if (msg == null) {
                 break;
+            }
             seen++;
         }
         assertEquals(seen, 5);
@@ -139,8 +138,9 @@ public class TestConnectDelay
         int seen = 0;
         for (int i = 0; i < 10; ++i) {
             Msg msg = ZMQ.zmq_recv(to, 0);
-            if (msg == null)
+            if (msg == null) {
                 break;
+            }
             seen++;
         }
         assertEquals(seen, 10);

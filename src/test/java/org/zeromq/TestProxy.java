@@ -28,20 +28,22 @@ import static org.junit.Assert.assertNotNull;
 
 public class TestProxy
 {
-    static class Client extends Thread {
-
+    static class Client extends Thread
+    {
         private Socket s = null;
         private String name = null;
-        public Client (Context ctx, String name_) {
+        public Client(Context ctx, String name)
+        {
             s = ctx.socket(ZMQ.REQ);
-            name = name_;
+            this.name = name;
 
-            s.setIdentity(name.getBytes (ZMQ.CHARSET));
+            s.setIdentity(name.getBytes(ZMQ.CHARSET));
         }
 
         @Override
-        public void run () {
-            s.connect( "tcp://127.0.0.1:6660");
+        public void run()
+        {
+            s.connect("tcp://127.0.0.1:6660");
             s.send("hello", 0);
             String msg = s.recvStr(0);
             s.send("world", 0);
@@ -51,23 +53,24 @@ public class TestProxy
         }
     }
 
-    static class Dealer extends Thread {
-
+    static class Dealer extends Thread
+    {
         private Socket s = null;
         private String name = null;
-        public Dealer(Context ctx, String name_) {
+        public Dealer(Context ctx, String name)
+        {
             s = ctx.socket(ZMQ.DEALER);
-            name = name_;
+            this.name = name;
 
-            s.setIdentity(name.getBytes (ZMQ.CHARSET));
+            s.setIdentity(name.getBytes(ZMQ.CHARSET));
         }
 
         @Override
-        public void run () {
-
+        public void run()
+        {
             System.out.println("Start dealer " + name);
 
-            s.connect( "tcp://127.0.0.1:6661");
+            s.connect("tcp://127.0.0.1:6661");
             int count = 0;
             while (count < 2) {
                 String msg = s.recvStr(0);
@@ -101,29 +104,31 @@ public class TestProxy
             System.out.println("Stop dealer " + name);
         }
     }
-    static class Main extends Thread {
 
+    static class Main extends Thread
+    {
         Context ctx;
-        Main(Context ctx_) {
-            ctx = ctx_;
+        Main(Context ctx)
+        {
+            this.ctx = ctx;
         }
 
         @Override
-        public void run() {
+        public void run()
+        {
             int port;
             Socket frontend = ctx.socket(ZMQ.ROUTER);
 
-            assertNotNull (frontend);
-            port = frontend.bind ("tcp://127.0.0.1:6660");
-            assertEquals (port, 6660);
-
+            assertNotNull(frontend);
+            port = frontend.bind("tcp://127.0.0.1:6660");
+            assertEquals(port, 6660);
 
             Socket backend = ctx.socket(ZMQ.DEALER);
-            assertNotNull (backend);
-            port = backend.bind ("tcp://127.0.0.1:6661");
-            assertEquals (port, 6661);
+            assertNotNull(backend);
+            port = backend.bind("tcp://127.0.0.1:6661");
+            assertEquals(port, 6661);
 
-            ZMQ.proxy (frontend, backend, null);
+            ZMQ.proxy(frontend, backend, null);
 
             frontend.close();
             backend.close();
@@ -132,9 +137,10 @@ public class TestProxy
     }
 
     @Test
-    public void testProxy ()  throws Exception {
-        Context ctx = ZMQ.context (1);
-        assert (ctx!= null);
+    public void testProxy()  throws Exception
+    {
+        Context ctx = ZMQ.context(1);
+        assert (ctx != null);
 
         Main mt = new Main(ctx);
         mt.start();

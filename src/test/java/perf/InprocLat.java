@@ -24,132 +24,141 @@ import zmq.Msg;
 import zmq.SocketBase;
 import zmq.ZMQ;
 
-public class InprocLat {
+public class InprocLat
+{
+    private InprocLat()
+    {
+    }
 
-    static class Worker implements Runnable {
-        
-        private Ctx ctx_;
-        private int roundtrip_count;
-        Worker(Ctx ctx, int roundtrip_count) {
-            this.ctx_ = ctx;
-            this.roundtrip_count = roundtrip_count;
+    static class Worker implements Runnable
+    {
+        private Ctx ctx;
+        private int roundtripCount;
+        Worker(Ctx ctx, int roundtripCount)
+        {
+            this.ctx = ctx;
+            this.roundtripCount = roundtripCount;
         }
-        
+
         @Override
-        public void run() {
-            SocketBase s = ZMQ.zmq_socket (ctx_, ZMQ.ZMQ_REP);
+        public void run()
+        {
+            SocketBase s = ZMQ.zmq_socket(ctx, ZMQ.ZMQ_REP);
             if (s == null) {
-                printf ("error in zmq_socket: %s\n");
-                exit (1);
+                printf("error in zmq_socket: %s\n");
+                exit(1);
             }
-    
-            boolean rc = ZMQ.zmq_connect (s, "inproc://lat_test");
+
+            boolean rc = ZMQ.zmq_connect(s, "inproc://lat_test");
             if (!rc) {
-                printf ("error in zmq_connect: %s\n");
-                exit (1);
+                printf("error in zmq_connect: %s\n");
+                exit(1);
             }
-    
-            Msg msg ;
-    
-            for (int i = 0; i != roundtrip_count; i++) {
-                msg = ZMQ.zmq_recvmsg (s, 0);
+
+            Msg msg;
+
+            for (int i = 0; i != roundtripCount; i++) {
+                msg = ZMQ.zmq_recvmsg(s, 0);
                 if (msg == null) {
-                    printf ("error in zmq_recvmsg: %s\n");
-                    exit (1);
+                    printf("error in zmq_recvmsg: %s\n");
+                    exit(1);
                 }
-                int r = ZMQ.zmq_sendmsg (s, msg, 0);
+                int r = ZMQ.zmq_sendmsg(s, msg, 0);
                 if (r < 0) {
-                    printf ("error in zmq_sendmsg: %s\n");
-                    exit (1);
+                    printf("error in zmq_sendmsg: %s\n");
+                    exit(1);
                 }
             }
-    
-            ZMQ.zmq_close (s);
+
+            ZMQ.zmq_close(s);
         }
 
-        private void exit(int i) {
+        private void exit(int i)
+        {
             // TODO Auto-generated method stub
-            
         }
     }
-    
-    public static void main(String[] argv) throws Exception {
+
+    public static void main(String[] argv) throws Exception
+    {
         if (argv.length != 2) {
-            printf ("usage: inproc_lat <message-size> <roundtrip-count>\n");
+            printf("usage: inproc_lat <message-size> <roundtrip-count>\n");
             return;
         }
 
-        int message_size = atoi (argv [0]);
-        int roundtrip_count = atoi (argv [1]);
+        int messageSize = atoi(argv [0]);
+        int roundtripCount = atoi(argv [1]);
 
-        Ctx ctx = ZMQ.zmq_init (1);
+        Ctx ctx = ZMQ.zmq_init(1);
         if (ctx == null) {
-            printf ("error in zmq_init:");
+            printf("error in zmq_init:");
             return;
         }
 
-        SocketBase s = ZMQ.zmq_socket (ctx, ZMQ.ZMQ_REQ);
+        SocketBase s = ZMQ.zmq_socket(ctx, ZMQ.ZMQ_REQ);
         if (s == null) {
-            printf ("error in zmq_socket: ");
+            printf("error in zmq_socket: ");
             return;
         }
 
-        boolean rc = ZMQ.zmq_bind (s, "inproc://lat_test");
+        boolean rc = ZMQ.zmq_bind(s, "inproc://lat_test");
         if (!rc) {
-            printf ("error in zmq_bind: ");
+            printf("error in zmq_bind: ");
             return;
         }
 
-        Thread local_thread = new Thread(new Worker(ctx, roundtrip_count));
-        local_thread.start();
+        Thread localThread = new Thread(new Worker(ctx, roundtripCount));
+        localThread.start();
 
-        Msg smsg = ZMQ.zmq_msg_init_size ( message_size);
+        Msg smsg = ZMQ.zmq_msg_init_size(messageSize);
 
-        printf ("message size: %d [B]\n", (int) message_size);
-        printf ("roundtrip count: %d\n", (int) roundtrip_count);
+        printf("message size: %d [B]\n", (int) messageSize);
+        printf("roundtrip count: %d\n", (int) roundtripCount);
 
-        long watch = ZMQ.zmq_stopwatch_start ();
+        long watch = ZMQ.zmq_stopwatch_start();
 
-        for (int i = 0; i != roundtrip_count; i++) {
-            int r = ZMQ.zmq_sendmsg (s, smsg, 0);
+        for (int i = 0; i != roundtripCount; i++) {
+            int r = ZMQ.zmq_sendmsg(s, smsg, 0);
             if (r < 0) {
-                printf ("error in zmq_sendmsg: %s\n");
+                printf("error in zmq_sendmsg: %s\n");
                 return;
             }
-            Msg msg = ZMQ.zmq_recvmsg (s, 0);
+            Msg msg = ZMQ.zmq_recvmsg(s, 0);
             if (msg == null) {
-                printf ("error in zmq_recvmsg: %s\n");
-                return ;
+                printf("error in zmq_recvmsg: %s\n");
+                return;
             }
-            if (ZMQ.zmq_msg_size (msg) != message_size) {
-                printf ("message of incorrect size received\n");
-                return ;
+            if (ZMQ.zmq_msg_size(msg) != messageSize) {
+                printf("message of incorrect size received\n");
+                return;
             }
         }
 
-        long elapsed = ZMQ.zmq_stopwatch_stop (watch);
+        long elapsed = ZMQ.zmq_stopwatch_stop(watch);
 
-        double latency = (double) elapsed / (roundtrip_count * 2);
+        double latency = (double) elapsed / (roundtripCount * 2);
 
-        local_thread.join();
+        localThread.join();
 
-        printf ("average latency: %.3f [us]\n", (double) latency);
+        printf("average latency: %.3f [us]\n", (double) latency);
 
-        ZMQ.zmq_close (s);
+        ZMQ.zmq_close(s);
 
-        ZMQ.zmq_term (ctx);
+        ZMQ.zmq_term(ctx);
     }
 
-    private static int atoi(String string) {
+    private static int atoi(String string)
+    {
         return Integer.parseInt(string);
     }
 
-    private static void printf(String string) {
+    private static void printf(String string)
+    {
         System.out.println(string);
     }
-    
-    private static void printf(String string, Object ... args) {
+
+    private static void printf(String string, Object ... args)
+    {
         System.out.println(String.format(string, args));
     }
-
 }

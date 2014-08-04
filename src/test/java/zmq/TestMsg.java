@@ -19,20 +19,20 @@
 
 package zmq;
 
-import org.junit.*;
+import org.junit.Test;
 import java.nio.ByteBuffer;
 
-import static org.junit.Assert.assertEquals;
-
-public class TestMsg {
-
+public class TestMsg
+{
     @Test(expected = IllegalArgumentException.class)
-    public void shouldThrowForNullByteBuffer() {
-        new Msg((ByteBuffer)null);
+    public void shouldThrowForNullByteBuffer()
+    {
+        new Msg((ByteBuffer) null);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void shouldThrowForBufferWithWrongPosition() {
+    public void shouldThrowForBufferWithWrongPosition()
+    {
         ByteBuffer buffer = ByteBuffer.allocate(10);
         buffer.putChar('a');
         buffer.putChar('b');
@@ -41,7 +41,8 @@ public class TestMsg {
     }
 
     @Test
-    public void shouldWorkForFlippedBuffers() {
+    public void shouldWorkForFlippedBuffers()
+    {
         ByteBuffer buffer = ByteBuffer.allocate(10);
         buffer.putChar('a');
         buffer.putChar('b');
