@@ -633,7 +633,7 @@ public class ZMQ {
             throw new IllegalArgumentException();
         }
         if (count == 0) {
-            if (timeout_ == 0)
+            if (timeout_ <= 0)
                 return 0;
             try {
                 Thread.sleep (timeout_);
