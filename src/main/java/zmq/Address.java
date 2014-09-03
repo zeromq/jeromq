@@ -22,11 +22,12 @@ import java.net.InetSocketAddress;
 import java.net.Inet6Address;
 import java.net.SocketAddress;
 
-public class Address {
-
-    public static interface IZAddress {
+public class Address
+{
+    static interface IZAddress
+    {
         String toString();
-        void resolve(String name_, boolean ip4only_);
+        void resolve(String name, boolean ip4only);
         SocketAddress address();
     };
 
@@ -36,53 +37,62 @@ public class Address {
 
     private IZAddress resolved;
 
-    public Address(final String protocol_, final String address_, final boolean ipv4only_) {
-        protocol = protocol_;
-        address = address_;
-        ipv4only = ipv4only_;
+    public Address(final String protocol, final String address, final boolean ipv4only)
+    {
+        this.protocol = protocol;
+        this.address = address;
+        this.ipv4only = ipv4only;
         resolved = null;
     }
 
-    public Address(SocketAddress sockaddr_) {
-        InetSocketAddress sockaddr = (InetSocketAddress)sockaddr_;
-        address = sockaddr.getAddress().getHostAddress() + ":" + sockaddr.getPort();
+    public Address(SocketAddress socketAddress)
+    {
+        InetSocketAddress sockAddr = (InetSocketAddress) socketAddress;
+        this.address = sockAddr.getAddress().getHostAddress() + ":" + sockAddr.getPort();
         protocol = "tcp";
         resolved = null;
-        ipv4only = !(sockaddr.getAddress() instanceof Inet6Address);
+        ipv4only = !(sockAddr.getAddress() instanceof Inet6Address);
     }
 
     @Override
-    public String toString() {
+    public String toString()
+    {
         if (protocol.equals("tcp") && isResolved()) {
             return resolved.toString();
         }
         else if (protocol.equals("ipc") && isResolved()) {
             return resolved.toString();
         }
-        else if (!protocol.isEmpty() && !address.isEmpty ()) {
+        else if (!protocol.isEmpty() && !address.isEmpty()) {
             return protocol + "://" + address;
-        } else {
+        }
+        else {
             return "";
         }
     }
 
-    public String protocol() {
+    public String protocol()
+    {
         return protocol;
     }
 
-    public String address() {
+    public String address()
+    {
         return address;
     }
 
-    public IZAddress resolved() {
+    public IZAddress resolved()
+    {
         return resolved;
     }
 
-    public boolean isResolved() {
+    public boolean isResolved()
+    {
         return resolved != null;
     }
 
-    public boolean resolve() {
+    public boolean resolve()
+    {
        if (protocol.equals("tcp")) {
             resolved = new TcpAddress();
             resolved.resolve(address, ipv4only);

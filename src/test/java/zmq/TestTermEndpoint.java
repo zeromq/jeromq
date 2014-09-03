@@ -30,7 +30,7 @@ public class TestTermEndpoint
     public void testTermEndpoint() throws Exception
     {
         String ep = "tcp://127.0.0.1:7590";
-        Ctx ctx = ZMQ.zmq_init(1);
+        Ctx ctx = ZMQ.zmqInit(1);
         assertThat(ctx, notNullValue());
 
         SocketBase push = ZMQ.zmq_socket(ctx, ZMQ.ZMQ_PUSH);
@@ -68,7 +68,7 @@ public class TestTermEndpoint
         //  Now the other way round.
         System.out.println("disconnect endpoint test running...");
 
-        ctx = ZMQ.zmq_init(1);
+        ctx = ZMQ.zmqInit(1);
         assertThat(ctx, notNullValue());
 
         push = ZMQ.zmq_socket(ctx, ZMQ.ZMQ_PUSH);

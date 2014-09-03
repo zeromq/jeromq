@@ -19,8 +19,8 @@
 
 package zmq;
 
-public enum Config {
-	
+public enum Config
+{
     //  Number of new messages in message pipe needed to trigger new memory
     //  allocation. Setting this parameter to 256 decreases the impact of
     //  memory allocation by approximately 99.6%
@@ -73,16 +73,17 @@ public enum Config {
 
     //  On some OSes the signaler has to be emulated using a TCP
     //  connection. In such cases following port is used.
-    SIGNALER_PORT ( 5905);
-    
+    SIGNALER_PORT (5905);
+
     private final int value;
 
-    private Config(int value) {
-    	this.value = value;
-    }
-    
-    public int getValue() {
-    	return value;
+    private Config(int value)
+    {
+        this.value = value;
     }
 
+    public int getValue()
+    {
+        return value;
+    }
 }

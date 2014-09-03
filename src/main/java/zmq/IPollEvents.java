@@ -19,21 +19,20 @@
 
 package zmq;
 
-public interface IPollEvents {
+public interface IPollEvents
+{
     // Called by I/O thread when file descriptor is ready for reading.
-    void in_event () ;
+    void inEvent();
 
     // Called by I/O thread when file descriptor is ready for writing.
-    void out_event () ;
+    void outEvent();
 
     // Called by I/O thread when file descriptor might be ready for connecting.
-    void connect_event () ;
+    void connectEvent();
 
     // Called by I/O thread when file descriptor is ready for accept.
-    void accept_event();
-    
+    void acceptEvent();
+
     // Called when timer expires.
-    void timer_event (int id_) ;
-
-
+    void timerEvent(int id);
 }

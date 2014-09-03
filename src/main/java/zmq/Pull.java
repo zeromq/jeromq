@@ -19,42 +19,46 @@
 
 package zmq;
 
-public class Pull extends SocketBase {
-
-    public static class PullSession extends SessionBase {
-        public PullSession(IOThread io_thread_, boolean connect_,
-            SocketBase socket_, final Options options_,
-            final Address addr_) {
-            super(io_thread_, connect_, socket_, options_, addr_);
+class Pull extends SocketBase
+{
+    public static class PullSession extends SessionBase
+    {
+        public PullSession(IOThread ioThread, boolean connect,
+            SocketBase socket, final Options options,
+            final Address addr)
+        {
+            super(ioThread, connect, socket, options, addr);
         }
     }
-    
+
     //  Fair queueing object for inbound pipes.
     private final FQ fq;
-    
-    public Pull(Ctx parent_, int tid_, int sid_) {
-        super(parent_, tid_, sid_);
+
+    public Pull(Ctx parent, int tid, int sid)
+    {
+        super(parent, tid, sid);
         options.type = ZMQ.ZMQ_PULL;
-        
+
         fq = new FQ();
     }
 
     @Override
-    protected void xattach_pipe(Pipe pipe_, boolean icanhasall_) {
-        assert (pipe_!=null);
-        fq.attach (pipe_);
+    protected void xattachPipe(Pipe pipe, boolean icanhasall)
+    {
+        assert (pipe != null);
+        fq.attach(pipe);
     }
 
-    
     @Override
-    protected void xread_activated (Pipe pipe_)
-    {       
-        fq.activated (pipe_);
-    }   
+    protected void xreadActivated(Pipe pipe)
+    {
+        fq.activated(pipe);
+    }
 
     @Override
-    protected void xterminated(Pipe pipe_) {
-        fq.terminated (pipe_);
+    protected void xterminated(Pipe pipe)
+    {
+        fq.terminated(pipe);
     }
 
     @Override
@@ -62,12 +66,10 @@ public class Pull extends SocketBase {
     {
         return fq.recv(errno);
     }
-    
+
     @Override
-    protected boolean xhas_in ()
+    protected boolean xhasIn()
     {
-        return fq.has_in ();
-    }       
-
-
+        return fq.hasIn();
+    }
 }

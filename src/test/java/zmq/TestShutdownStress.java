@@ -53,7 +53,7 @@ public class TestShutdownStress
         Thread[] threads = new Thread[THREAD_COUNT];
 
         for (int j = 0; j != 10; j++) {
-            Ctx ctx = ZMQ.zmq_init(7);
+            Ctx ctx = ZMQ.zmqInit(7);
             assertThat(ctx, notNullValue());
 
             SocketBase s1 = ZMQ.zmq_socket(ctx, ZMQ.ZMQ_PUB);

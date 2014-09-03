@@ -22,12 +22,12 @@ package zmq;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
-abstract public class EncoderBase implements IEncoder {
-
+public abstract class EncoderBase implements IEncoder
+{
     //  Where to get the data to write from.
-    private byte[] write_buf;
-    private FileChannel write_channel;
-    private int write_pos;
+    private byte[] writeBuf;
+    private FileChannel writeChannel;
+    private int writePos;
 
     //  Next step. If set to -1, it means that associated data stream
     //  is dead.
@@ -37,21 +37,20 @@ abstract public class EncoderBase implements IEncoder {
     @SuppressWarnings("unused")
     private boolean beginning;
 
-
     //  How much data to write before next step should be executed.
-    private int to_write;
+    private int toWrite;
 
     //  The buffer for encoded data.
-    private ByteBuffer buf;
-    
-    private int buffersize;
+    private ByteBuffer buffer;
 
+    private int bufferSize;
 
     private boolean error;
-    
-    protected EncoderBase (int bufsize_) {
-        buffersize = bufsize_;
-        buf = ByteBuffer.allocateDirect(bufsize_);
+
+    protected EncoderBase(int bufferSize)
+    {
+        this.bufferSize = bufferSize;
+        buffer = ByteBuffer.allocateDirect(bufferSize);
         error = false;
     }
 
@@ -60,35 +59,36 @@ abstract public class EncoderBase implements IEncoder {
     //  points to NULL) decoder object will provide buffer of its own.
 
     @Override
-    public Transfer get_data (ByteBuffer buffer) 
+    public Transfer getData(ByteBuffer buffer)
     {
-        if (buffer == null)
-            buffer = buf;
-        
+        if (buffer == null) {
+            buffer = this.buffer;
+        }
+
         buffer.clear();
 
-        while (buffer.hasRemaining ()) {
-
+        while (buffer.hasRemaining()) {
             //  If there are no more data to return, run the state machine.
             //  If there are still no data, return what we already have
             //  in the buffer.
-            if (to_write == 0) {
+            if (toWrite == 0) {
                 //  If we are to encode the beginning of a new message,
                 //  adjust the message offset.
 
-                if (!next())
+                if (!next()) {
                     break;
+                }
             }
-            
-            //  If there is file channel to send, 
+
+            //  If there is file channel to send,
             //  send current buffer and the channel together
-            
-            if (write_channel != null) {
-                buffer.flip ();
-                Transfer t = new Transfer.FileChannelTransfer (buffer, write_channel,
-                                                    (long) write_pos, (long) to_write);
-                write_pos = 0;
-                to_write = 0;
+
+            if (writeChannel != null) {
+                buffer.flip();
+                Transfer t = new Transfer.FileChannelTransfer(buffer, writeChannel,
+                                                    (long) writePos, (long) toWrite);
+                writePos = 0;
+                toWrite = 0;
 
                 return t;
             }
@@ -102,84 +102,87 @@ abstract public class EncoderBase implements IEncoder {
             //  As a consequence, large messages being sent won't block
             //  other engines running in the same I/O thread for excessive
             //  amounts of time.
-            if (buf.position () == 0 && to_write >= buffersize) {
+            if (this.buffer.position() == 0 && toWrite >= bufferSize) {
                 Transfer t;
-                ByteBuffer b = ByteBuffer.wrap (write_buf);
-                b.position (write_pos);
-                t = new Transfer.ByteBufferTransfer (b);
-                write_pos = 0;
-                to_write = 0;
+                ByteBuffer b = ByteBuffer.wrap(writeBuf);
+                b.position(writePos);
+                t = new Transfer.ByteBufferTransfer(b);
+                writePos = 0;
+                toWrite = 0;
 
                 return t;
             }
 
             //  Copy data to the buffer. If the buffer is full, return.
-            int to_copy = Math.min (to_write, buffer.remaining ());
-            if (to_copy > 0) {
-                buffer.put (write_buf, write_pos, to_copy);
-                write_pos += to_copy;
-                to_write -= to_copy;
+            int toCopy = Math.min(toWrite, buffer.remaining());
+            if (toCopy > 0) {
+                buffer.put(writeBuf, writePos, toCopy);
+                writePos += toCopy;
+                toWrite -= toCopy;
             }
         }
 
-        buffer.flip ();
-        return new Transfer.ByteBufferTransfer (buffer);
-
+        buffer.flip();
+        return new Transfer.ByteBufferTransfer(buffer);
     }
 
     @Override
-    public boolean has_data ()
+    public boolean hasData()
     {
-        return to_write > 0;
+        return toWrite > 0;
     }
-    
-    protected int state () {
+
+    protected int state()
+    {
         return next;
     }
-    
-    protected void state (int state_) {
-        next = state_;
+
+    protected void state(int state)
+    {
+        next = state;
     }
-    
-    
-    protected void encoding_error ()
+
+    protected void encodingError()
     {
         error = true;
     }
-    
-    public final boolean is_error() {
+
+    public final boolean isError()
+    {
         return error;
     }
-    
-    abstract protected boolean next();
 
-    protected void next_step (Msg msg_, int state_, boolean beginning_) {
-        if (msg_ == null)
-            next_step(null, 0, state_, beginning_);
-        else
-            next_step(msg_.data(), msg_.size(), state_, beginning_);
-    }
-    
-    protected void next_step (byte[] buf_, int to_write_,
-            int next_, boolean beginning_)
+    protected abstract boolean next();
+
+    protected void nextStep(Msg msg, int state, boolean beginning)
     {
-        write_buf = buf_;
-        write_channel = null;
-        write_pos = 0;
-        to_write = to_write_;
-        next = next_;
-        beginning = beginning_;
+        if (msg == null) {
+            nextStep(null, 0, state, beginning);
+        }
+        else {
+            nextStep(msg.data(), msg.size(), state, beginning);
+        }
     }
-    
-    protected void next_step (FileChannel ch, long pos_, long to_write_,
-            int next_, boolean beginning_)
+
+    protected void nextStep(byte[] buf, int toWrite,
+                            int next, boolean beginning)
     {
-        write_buf = null;
-        write_channel = ch;
-        write_pos = (int) pos_;
-        to_write = (int) to_write_;
-        next = next_;
-        beginning = beginning_;
+        writeBuf = buf;
+        writeChannel = null;
+        writePos = 0;
+        this.toWrite = toWrite;
+        this.next = next;
+        this.beginning = beginning;
     }
-    
+
+    protected void nextStep(FileChannel ch, long pos, long toWrite,
+                            int next, boolean beginning)
+    {
+        writeBuf = null;
+        writeChannel = ch;
+        writePos = (int) pos;
+        this.toWrite = (int) toWrite;
+        this.next = next;
+        this.beginning = beginning;
+    }
 }

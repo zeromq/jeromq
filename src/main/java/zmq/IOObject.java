@@ -21,34 +21,36 @@ package zmq;
 
 import java.nio.channels.SelectableChannel;
 
-
 //  Simple base class for objects that live in I/O threads.
 //  It makes communication with the poller object easier and
 //  makes defining unneeded event handlers unnecessary.
 
-public class IOObject implements IPollEvents {
-
+public class IOObject implements IPollEvents
+{
     private Poller poller;
     private IPollEvents handler;
-    
-    public IOObject(IOThread io_thread_) {
-        if (io_thread_ != null) {
-            plug(io_thread_);
+
+    public IOObject(IOThread ioThread)
+    {
+        if (ioThread != null) {
+            plug(ioThread);
         }
     }
 
     //  When migrating an object from one I/O thread to another, first
     //  unplug it, then migrate it, then plug it to the new thread.
-    
-    public void plug(IOThread io_thread_) {
-        assert (io_thread_ != null);
+
+    public void plug(IOThread ioThread)
+    {
+        assert (ioThread != null);
         assert (poller == null);
 
         //  Retrieve the poller from the thread we are running in.
-        poller = io_thread_.get_poller ();    
+        poller = ioThread.getPoller();
     }
-    
-    public void unplug() {
+
+    public void unplug()
+    {
         assert (poller != null);
 
         //  Forget about old poller in preparation to be migrated
@@ -57,84 +59,88 @@ public class IOObject implements IPollEvents {
         handler = null;
     }
 
-    public final void add_fd (SelectableChannel fd_)
+    public final void addHandle(SelectableChannel handle)
     {
-        poller.add_fd (fd_, this);
+        poller.addHandle(handle, this);
     }
-    
-    public final void rm_fd(SelectableChannel handle) {
-        poller.rm_fd(handle);
-    }
-    
-    public final void set_pollin (SelectableChannel handle_)
+
+    public final void removeHandle(SelectableChannel handle)
     {
-        poller.set_pollin (handle_);
+        poller.removeHandle(handle);
     }
 
-    public final void set_pollout (SelectableChannel handle_)
+    public final void setPollIn(SelectableChannel handle)
     {
-        poller.set_pollout (handle_);
+        poller.setPollIn(handle);
     }
 
-    public final void set_pollconnect(SelectableChannel handle) {
-        poller.set_pollconnect(handle);
-    }
-    
-    public final void set_pollaccept(SelectableChannel handle) {
-        poller.set_pollaccept(handle);
-    }
-    
-    public final void reset_pollin(SelectableChannel handle) {
-        poller.reset_pollin (handle);
-    }
-
-
-    public final void reset_pollout(SelectableChannel handle) {
-        poller.reset_pollout (handle);
-    }
-
-    
-    @Override
-    public final void in_event() {
-        handler.in_event();
-    }
-
-    @Override
-    public final void out_event() {
-        handler.out_event();
-    }
-    
-    @Override
-    public final void connect_event() {
-        handler.connect_event();
-    }
-
-    @Override
-    public final void accept_event() {
-        handler.accept_event();
-    }
-    
-    @Override
-    public final void timer_event(int id_) {
-        handler.timer_event(id_);
-    }
-    
-    public final void add_timer (long timeout_, int id_)
+    public final void setPollOut(SelectableChannel handle)
     {
-        poller.add_timer (timeout_, this, id_);
+        poller.setPollOut(handle);
     }
 
-    public final void set_handler(IPollEvents handler) {
+    public final void setPollConnect(SelectableChannel handle)
+    {
+        poller.setPollConnect(handle);
+    }
+
+    public final void setPollAccept(SelectableChannel handle)
+    {
+        poller.setPollAccept(handle);
+    }
+
+    public final void resetPollIn(SelectableChannel handle)
+    {
+        poller.resetPollOn(handle);
+    }
+
+    public final void resetPollOut(SelectableChannel handle)
+    {
+        poller.resetPollOut(handle);
+    }
+
+    @Override
+    public final void inEvent()
+    {
+        handler.inEvent();
+    }
+
+    @Override
+    public final void outEvent()
+    {
+        handler.outEvent();
+    }
+
+    @Override
+    public final void connectEvent()
+    {
+        handler.connectEvent();
+    }
+
+    @Override
+    public final void acceptEvent()
+    {
+        handler.acceptEvent();
+    }
+
+    @Override
+    public final void timerEvent(int id)
+    {
+        handler.timerEvent(id);
+    }
+
+    public final void addTimer(long timeout, int id)
+    {
+        poller.addTimer(timeout, this, id);
+    }
+
+    public final void setHandler(IPollEvents handler)
+    {
         this.handler = handler;
     }
 
-
-
-
-    public void cancel_timer(int id_) {
-        poller.cancel_timer(this, id_);
+    public void cancelTimer(int id)
+    {
+        poller.cancelTimer(this, id);
     }
-
-
-
 }

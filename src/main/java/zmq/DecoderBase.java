@@ -32,37 +32,37 @@ import java.nio.ByteBuffer;
 //  This class implements the state machine that parses the incoming buffer.
 //  Derived class should implement individual state machine actions.
 
-abstract public class DecoderBase implements IDecoder {
-    
+public abstract class DecoderBase implements IDecoder
+{
     //  Where to store the read data.
-    private byte[] read_buf;
-    private int read_pos;
+    private byte[] readBuf;
+    private int readPos;
 
     //  How much data to read before taking next step.
-    protected int to_read;
+    protected int toRead;
 
     //  The buffer for data to decode.
     private int bufsize;
     private ByteBuffer buf;
-    
+
     private int state;
 
-    boolean zero_copy;
-    
-    public DecoderBase (int bufsize_)
+    boolean zeroCopy;
+
+    public DecoderBase(int bufsize)
     {
         state = -1;
-        to_read = 0;
-        bufsize = bufsize_;
-        if (bufsize_ > 0)
-            buf = ByteBuffer.allocateDirect (bufsize_);
-        read_buf = null;
-        zero_copy = false;
+        toRead = 0;
+        this.bufsize = bufsize;
+        if (bufsize > 0) {
+            buf = ByteBuffer.allocateDirect(bufsize);
+        }
+        readBuf = null;
+        zeroCopy = false;
     }
-    
-    
+
     //  Returns a buffer to be filled with binary data.
-    public ByteBuffer get_buffer () 
+    public ByteBuffer getBuffer()
     {
         //  If we are expected to read large message, we'll opt for zero-
         //  copy, i.e. we'll ask caller to fill the data directly to the
@@ -72,54 +72,56 @@ abstract public class DecoderBase implements IDecoder {
         //  As a consequence, large messages being received won't block
         //  other engines running in the same I/O thread for excessive
         //  amounts of time.
-        
+
         ByteBuffer b;
-        if (to_read >= bufsize) {
-            zero_copy = true;
-            b = ByteBuffer.wrap (read_buf);
-            b.position (read_pos);
-        } else {
-            zero_copy = false;
+        if (toRead >= bufsize) {
+            zeroCopy = true;
+            b = ByteBuffer.wrap(readBuf);
+            b.position(readPos);
+        }
+        else {
+            zeroCopy = false;
             b = buf;
             b.clear();
         }
         return b;
     }
-    
 
     //  Processes the data in the buffer previously allocated using
     //  get_buffer function. size_ argument specifies nemuber of bytes
     //  actually filled into the buffer. Function returns number of
     //  bytes actually processed.
-    public int process_buffer(ByteBuffer buf_, int size_) {
+    public int processBuffer(ByteBuffer buf, int size)
+    {
         //  Check if we had an error in previous attempt.
-        if (state() < 0)
+        if (state() < 0) {
             return -1;
+        }
 
         //  In case of zero-copy simply adjust the pointers, no copying
         //  is required. Also, run the state machine in case all the data
         //  were processed.
-        if (zero_copy) {
-            read_pos += size_;
-            to_read -= size_;
+        if (zeroCopy) {
+            readPos += size;
+            toRead -= size;
 
-            while (to_read == 0) {
+            while (toRead == 0) {
                 if (!next()) {
-                    if (state() < 0)
+                    if (state() < 0) {
                         return -1;
-                    return size_;
+                    }
+                    return size;
                 }
             }
-            return size_;
+            return size;
         }
 
         int pos = 0;
         while (true) {
-
             //  Try to get more space in the message to fill in.
             //  If none is available, return.
-            while (to_read == 0) {
-                if (!next ()) {
+            while (toRead == 0) {
+                if (!next()) {
                     if (state() < 0) {
                         return -1;
                     }
@@ -129,41 +131,43 @@ abstract public class DecoderBase implements IDecoder {
             }
 
             //  If there are no more data in the buffer, return.
-            if (pos == size_)
+            if (pos == size) {
                 return pos;
-            
+            }
+
             //  Copy the data from buffer to the message.
-            int to_copy = Math.min (to_read, size_ - pos);
-            buf_.get(read_buf, read_pos, to_copy);
-            read_pos += to_copy;
-            pos += to_copy;
-            to_read -= to_copy;
+            int toCopy = Math.min(toRead, size - pos);
+            buf.get(readBuf, readPos, toCopy);
+            readPos += toCopy;
+            pos += toCopy;
+            toRead -= toCopy;
         }
     }
-    
 
-    protected void next_step (Msg msg_, int state_) {
-        next_step(msg_.data(), msg_.size(), state_);
-    }
-    
-    protected void next_step (byte[] buf_, int to_read_, int state_)
+    protected void nextStep(Msg msg, int state)
     {
-        read_buf = buf_;
-        read_pos = 0;
-        to_read = to_read_;
-        state = state_;
+        nextStep(msg.data(), msg.size(), state);
     }
-    
-    protected int state () {
+
+    protected void nextStep(byte[] buf, int toRead, int state)
+    {
+        readBuf = buf;
+        readPos = 0;
+        this.toRead = toRead;
+        this.state = state;
+    }
+
+    protected int state()
+    {
         return state;
     }
-    
-    protected void state (int state_) {
-        state = state_;
+
+    protected void state(int state)
+    {
+        this.state = state;
     }
-    
-    
-    protected void decoding_error ()
+
+    protected void decodingError()
     {
         state(-1);
     }
@@ -172,24 +176,23 @@ abstract public class DecoderBase implements IDecoder {
     //  but cannot proceed with the next decoding step.
     //  False is returned if the decoder has encountered an error.
     @Override
-    public boolean stalled ()
+    public boolean stalled()
     {
         //  Check whether there was decoding error.
-        if (!next ())
+        if (!next()) {
             return false;
-        
-        while (to_read == 0) {
-            if (!next ()) {
-                if (!next ())
+        }
+
+        while (toRead == 0) {
+            if (!next()) {
+                if (!next()) {
                     return false;
+                }
                 return true;
             }
         }
         return false;
     }
 
-
-
-    abstract protected boolean next();
-    
+    protected abstract boolean next();
 }

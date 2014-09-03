@@ -19,55 +19,56 @@
 
 package zmq;
 
-public class Req extends Dealer {
-
-    
+public class Req extends Dealer
+{
     //  If true, request was already sent and reply wasn't received yet or
     //  was raceived partially.
-    private boolean receiving_reply;
+    private boolean receivingReply;
 
     //  If true, we are starting to send/recv a message. The first part
     //  of the message must be empty message part (backtrace stack bottom).
-    private boolean message_begins;
-    
-    
-    public Req(Ctx parent_, int tid_, int sid_) {
-        super(parent_, tid_, sid_);
-        
-        receiving_reply = false;
-        message_begins = true;
+    private boolean messageBegins;
+
+    public Req(Ctx parent, int tid, int sid)
+    {
+        super(parent, tid, sid);
+
+        receivingReply = false;
+        messageBegins = true;
         options.type = ZMQ.ZMQ_REQ;
     }
-    
+
     @Override
-    public boolean xsend(Msg msg_)
+    public boolean xsend(Msg msg)
     {
         //  If we've sent a request and we still haven't got the reply,
         //  we can't send another request.
-        if (receiving_reply) {
+        if (receivingReply) {
             throw new IllegalStateException("Cannot send another request");
         }
 
         //  First part of the request is the request identity.
-        if (message_begins) {
+        if (messageBegins) {
             Msg bottom = new Msg();
             bottom.setFlags(Msg.MORE);
             boolean rc = super.xsend(bottom);
-            if (!rc)
+            if (!rc) {
                 return rc;
-            message_begins = false;
+            }
+            messageBegins = false;
         }
 
-        boolean more = msg_.hasMore();
+        boolean more = msg.hasMore();
 
-        boolean rc = super.xsend(msg_);
-        if (!rc)
+        boolean rc = super.xsend(msg);
+        if (!rc) {
             return rc;
+        }
 
         //  If the request was fully sent, flip the FSM into reply-receiving state.
         if (!more) {
-            receiving_reply = true;
-            message_begins = true;
+            receivingReply = true;
+            messageBegins = true;
         }
 
         return true;
@@ -77,68 +78,71 @@ public class Req extends Dealer {
     protected Msg xrecv()
     {
         //  If request wasn't send, we can't wait for reply.
-        if (!receiving_reply) {
+        if (!receivingReply) {
             throw new IllegalStateException("Cannot wait before send");
         }
-        Msg msg_ = null;
+        Msg msg = null;
         //  First part of the reply should be the original request ID.
-        if (message_begins) {
-            msg_ = super.xrecv();
-            if (msg_ == null)
+        if (messageBegins) {
+            msg = super.xrecv();
+            if (msg == null) {
                 return null;
+            }
 
             // TODO: This should also close the connection with the peer!
-            if ( !msg_.hasMore() || msg_.size() != 0) {
+            if (!msg.hasMore() || msg.size() != 0) {
                 while (true) {
-                    msg_ = super.xrecv();
-                    assert (msg_ != null);
-                    if (!msg_.hasMore())
+                    msg = super.xrecv();
+                    assert (msg != null);
+                    if (!msg.hasMore()) {
                         break;
+                    }
                 }
                 errno.set(ZError.EAGAIN);
                 return null;
             }
 
-            message_begins = false;
+            messageBegins = false;
         }
 
-        msg_ = super.xrecv();
-        if (msg_ == null)
+        msg = super.xrecv();
+        if (msg == null) {
             return null;
+        }
 
         //  If the reply is fully received, flip the FSM into request-sending state.
-        if (!msg_.hasMore()) {
-            receiving_reply = false;
-            message_begins = true;
+        if (!msg.hasMore()) {
+            receivingReply = false;
+            messageBegins = true;
         }
 
-        return msg_;
+        return msg;
     }
-    
+
     @Override
-    public boolean xhas_in ()
+    public boolean xhasIn()
     {
         //  TODO: Duplicates should be removed here.
 
-        if (!receiving_reply)
+        if (!receivingReply) {
             return false;
+        }
 
-        return super.xhas_in ();
+        return super.xhasIn();
     }
 
     @Override
-    public boolean xhas_out ()
+    public boolean xhasOut()
     {
-        if (receiving_reply)
+        if (receivingReply) {
             return false;
+        }
 
-        return super.xhas_out ();
+        return super.xhasOut();
     }
 
-    
-    public static class ReqSession extends Dealer.DealerSession {
-        
-        
+    public static class ReqSession extends Dealer.DealerSession
+    {
         enum State {
             IDENTITY,
             BOTTOM,
@@ -146,47 +150,49 @@ public class Req extends Dealer {
         };
 
         private State state;
-        
-        public ReqSession(IOThread io_thread_, boolean connect_,
-            SocketBase socket_, final Options options_,
-            final Address addr_) {
-            super(io_thread_, connect_, socket_, options_, addr_);
-            
+
+        public ReqSession(IOThread ioThread, boolean connect,
+            SocketBase socket, final Options options,
+            final Address addr)
+        {
+            super(ioThread, connect, socket, options, addr);
+
             state = State.IDENTITY;
         }
-        
+
         @Override
-        public int push_msg (Msg msg_)
+        public int pushMsg(Msg msg)
         {
             switch (state) {
             case BOTTOM:
-                if (msg_.flags () == Msg.MORE && msg_.size () == 0) {
+                if (msg.flags() == Msg.MORE && msg.size() == 0) {
                     state = State.BODY;
-                    return super.push_msg (msg_);
+                    return super.pushMsg(msg);
                 }
                 break;
             case BODY:
-                if (msg_.flags () == Msg.MORE)
-                    return super.push_msg (msg_);
-                if (msg_.flags () == 0) {
+                if (msg.flags() == Msg.MORE) {
+                    return super.pushMsg(msg);
+                }
+                if (msg.flags() == 0) {
                     state = State.BOTTOM;
-                    return super.push_msg (msg_);
+                    return super.pushMsg(msg);
                 }
                 break;
             case IDENTITY:
-                if (msg_.flags () == 0) {
+                if (msg.flags() == 0) {
                     state = State.BOTTOM;
-                    return super.push_msg (msg_);
+                    return super.pushMsg(msg);
                 }
                 break;
             }
-            
+
             throw new IllegalStateException(state.toString());
         }
-        
-        public void reset ()
+
+        public void reset()
         {
-            super.reset ();
+            super.reset();
             state = State.IDENTITY;
         }
     }

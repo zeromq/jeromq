@@ -31,7 +31,7 @@ public class TestConnectResolve
     {
         System.out.println("test_connect_resolve running...\n");
 
-        Ctx ctx = ZMQ.zmq_init(1);
+        Ctx ctx = ZMQ.zmqInit(1);
         assertThat(ctx, notNullValue());
 
         //  Create pair of socket, each with high watermark of 2. Thus the total

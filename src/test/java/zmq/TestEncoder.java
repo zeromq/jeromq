@@ -40,7 +40,7 @@ public class TestEncoder
     {
         session = new DummySession();
         encoder = new Encoder(64);
-        encoder.set_msg_source(session);
+        encoder.setMsgSource(session);
         sock = new DummySocketChannel();
     }
     // as if it read data from socket
@@ -64,8 +64,8 @@ public class TestEncoder
     public void testReader()
     {
         Msg msg = read_short_message();
-        session.push_msg(msg);
-        Transfer out = encoder.get_data(null);
+        session.pushMsg(msg);
+        Transfer out = encoder.getData(null);
         int outsize = out.remaining();
 
         assertThat(outsize, is(7));
@@ -90,8 +90,8 @@ public class TestEncoder
     public void testReaderLong()
     {
         Msg msg = read_long_message1();
-        session.push_msg(msg);
-        Transfer out = encoder.get_data(null);
+        session.pushMsg(msg);
+        Transfer out = encoder.getData(null);
 
         int insize = out.remaining();
 
@@ -99,7 +99,7 @@ public class TestEncoder
         int written = write(out);
         assertThat(written, is(64));
 
-        out = encoder.get_data(null);
+        out = encoder.getData(null);
         int remaning = out.remaining();
         assertThat(remaning, is(138));
 
@@ -137,7 +137,7 @@ public class TestEncoder
         public CustomEncoder(int bufsize)
         {
             super(bufsize);
-            next_step(null, read_body, true);
+            nextStep(null, read_body, true);
         }
 
         @Override
@@ -154,14 +154,14 @@ public class TestEncoder
 
         private boolean read_header()
         {
-            next_step(msg.data(), msg.size(),
+            nextStep(msg.data(), msg.size(),
                     read_body, !msg.hasMore());
             return true;
         }
 
         private boolean read_body()
         {
-            msg = source.pull_msg();
+            msg = source.pullMsg();
 
             if (msg == null) {
                 return false;
@@ -170,12 +170,12 @@ public class TestEncoder
             header.put("HEADER".getBytes(ZMQ.CHARSET));
             header.putInt(msg.size());
             header.flip();
-            next_step(header.array(), 10, read_header, !msg.hasMore());
+            nextStep(header.array(), 10, read_header, !msg.hasMore());
             return true;
         }
 
         @Override
-        public void set_msg_source(IMsgSource msgSource)
+        public void setMsgSource(IMsgSource msgSource)
         {
             source = msgSource;
         }
@@ -185,11 +185,11 @@ public class TestEncoder
     public void testCustomDecoder()
     {
         CustomEncoder cencoder = new CustomEncoder(32);
-        cencoder.set_msg_source(session);
+        cencoder.setMsgSource(session);
         Msg msg = new Msg("12345678901234567890".getBytes(ZMQ.CHARSET));
-        session.push_msg(msg);
+        session.pushMsg(msg);
 
-        Transfer out = cencoder.get_data(null);
+        Transfer out = cencoder.getData(null);
         write(out);
         byte[] data = sock.data();
 

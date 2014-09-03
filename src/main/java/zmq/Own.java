@@ -25,19 +25,19 @@ import java.util.concurrent.atomic.AtomicLong;
 
 //  Base class for objects forming a part of ownership hierarchy.
 //  It handles initialisation and destruction of such objects.
-abstract public class Own extends ZObject {
+abstract class Own extends ZObject
+{
+    protected final Options options;
 
-	protected final Options options;
-	
     //  True if termination was already initiated. If so, we can destroy
     //  the object if there are no more child objects or pending term acks.
     private boolean terminating;
 
     //  Sequence number of the last command sent to this object.
-    private final AtomicLong sent_seqnum;
+    private final AtomicLong sendSeqnum;
 
     //  Sequence number of the last command processed by this object.
-    private long processed_seqnum;
+    private long processedSeqnum;
 
     //  Socket owning this object. It's responsible for shutting down
     //  this object.
@@ -49,152 +49,155 @@ abstract public class Own extends ZObject {
     private final Set<Own> owned;
 
     //  Number of events we have to get before we can destroy the object.
-    private int term_acks;
+    private int termAcks;
 
-    
     //  Note that the owner is unspecified in the constructor.
     //  It'll be supplied later on when the object is plugged in.
 
     //  The object is not living within an I/O thread. It has it's own
     //  thread outside of 0MQ infrastructure.
-	public Own(Ctx parent_, int tid_) {
-	    super (parent_, tid_);
-	    terminating = false;
-	    sent_seqnum = new AtomicLong(0);
-	    processed_seqnum = 0;
-	    owner = null;
-	    term_acks = 0 ;
-	    
-	    options = new Options();
-	    owned = new HashSet<Own>();
-	}
-
-	//  The object is living within I/O thread.
-	public Own(IOThread io_thread_, Options options_) {
-	    super (io_thread_);
-	    options = options_;
-	    terminating = false;
-        sent_seqnum = new AtomicLong(0);
-        processed_seqnum = 0;
+    public Own(Ctx parent, int tid)
+    {
+        super(parent, tid);
+        terminating = false;
+        sendSeqnum = new AtomicLong(0);
+        processedSeqnum = 0;
         owner = null;
-        term_acks = 0 ;
-        
+        termAcks = 0;
+
+        options = new Options();
         owned = new HashSet<Own>();
     }
-	
-	abstract public void destroy();
-	
+
+    //  The object is living within I/O thread.
+    public Own(IOThread ioThread, Options options)
+    {
+        super(ioThread);
+        this.options = options;
+        terminating = false;
+        sendSeqnum = new AtomicLong(0);
+        processedSeqnum = 0;
+        owner = null;
+        termAcks = 0;
+
+        owned = new HashSet<Own>();
+    }
+
+    public abstract void destroy();
+
     //  A place to hook in when phyicallal destruction of the object
     //  is to be delayed.
-    protected void process_destroy () {
+    protected void processDestroy()
+    {
         destroy();
     }
 
-    
-    private void set_owner (Own owner_)
+    private void setOwner(Own owner)
     {
-        assert (owner == null);
-        owner = owner_;
+        assert (this.owner == null);
+        this.owner = owner;
     }
 
-	//  When another owned object wants to send command to this object
+    //  When another owned object wants to send command to this object
     //  it calls this function to let it know it should not shut down
     //  before the command is delivered.
-    public void inc_seqnum ()
-	{
-	    //  This function may be called from a different thread!
-	    sent_seqnum.incrementAndGet();
-	}
-    
-    protected void process_seqnum ()
+    void incSeqnum()
+    {
+        //  This function may be called from a different thread!
+        sendSeqnum.incrementAndGet();
+    }
+
+    protected void processSeqnum()
     {
         //  Catch up with counter of processed commands.
-        processed_seqnum++;
+        processedSeqnum++;
 
         //  We may have catched up and still have pending terms acks.
-        check_term_acks ();
+        checkTermAcks();
     }
-    
+
     //  Launch the supplied object and become its owner.
-    protected void launch_child (Own object_)
+    protected void launchChild(Own object)
     {
         //  Specify the owner of the object.
-        object_.set_owner (this);
+        object.setOwner(this);
 
         //  Plug the object into the I/O thread.
-        send_plug (object_);
+        sendPlug(object);
 
         //  Take ownership of the object.
-        send_own (this, object_);
+        sendOwn(this, object);
     }
-    
-	//  Terminate owned object
-	protected void term_child (Own object_)
-	{
-	    process_term_req (object_);
-	}
 
-	@Override
-    protected void process_term_req (Own object_)
+    //  Terminate owned object
+    protected void term_child(Own object)
+    {
+        processTermReq(object);
+    }
+
+    @Override
+    protected void processTermReq(Own object)
     {
         //  When shutting down we can ignore termination requests from owned
         //  objects. The termination request was already sent to the object.
-        if (terminating)
+        if (terminating) {
             return;
+        }
 
         //  If I/O object is well and alive let's ask it to terminate.
 
         //  If not found, we assume that termination request was already sent to
         //  the object so we can safely ignore the request.
-        if (!owned.contains(object_))
+        if (!owned.contains(object)) {
             return;
+        }
 
-        owned.remove(object_);
-        register_term_acks (1);
+        owned.remove(object);
+        registerTermAcks(1);
 
         //  Note that this object is the root of the (partial shutdown) thus, its
         //  value of linger is used, rather than the value stored by the children.
-        send_term (object_, options.linger);
+        sendTerm(object, options.linger);
     }
 
+    protected void processOwn(Own object)
+    {
+        //  If the object is already being shut down, new owned objects are
+        //  immediately asked to terminate. Note that linger is set to zero.
+        if (terminating) {
+            registerTermAcks(1);
+            sendTerm(object, 0);
+            return;
+        }
 
-	protected void process_own (Own object_)
-	{
-	    //  If the object is already being shut down, new owned objects are
-	    //  immediately asked to terminate. Note that linger is set to zero.
-	    if (terminating) {
-	        register_term_acks (1);
-	        send_term (object_, 0);
-	        return;
-	    }
+        //  Store the reference to the owned object.
+        owned.add(object);
+    }
 
-	    //  Store the reference to the owned object.
-	    owned.add (object_);
-	}
-
-	//  Ask owner object to terminate this object. It may take a while
+    //  Ask owner object to terminate this object. It may take a while
     //  while actual termination is started. This function should not be
     //  called more than once.
-    protected void terminate ()
+    protected void terminate()
     {
         //  If termination is already underway, there's no point
         //  in starting it anew.
-        if (terminating)
+        if (terminating) {
             return;
+        }
 
         //  As for the root of the ownership tree, there's noone to terminate it,
         //  so it has to terminate itself.
         if (owner == null) {
-            process_term (options.linger);
+            processTerm(options.linger);
             return;
         }
 
         //  If I am an owned object, I'll ask my owner to terminate me.
-        send_term_req (owner, this);
+        sendTermReq(owner, this);
     }
-    
+
     //  Returns true if the object is in process of termination.
-    protected boolean is_terminating ()
+    protected boolean isTerminating()
     {
         return terminating;
     }
@@ -203,21 +206,22 @@ abstract public class Own extends ZObject {
     //  be intercepted by the derived class. This is useful to add custom
     //  steps to the beginning of the termination process.
     @Override
-    protected void process_term (int linger_)
+    protected void processTerm(int linger)
     {
         //  Double termination should never happen.
         assert (!terminating);
 
         //  Send termination request to all owned objects.
-        for (Own it : owned)
-            send_term (it, linger_);
-        register_term_acks (owned.size ());
-        owned.clear ();
+        for (Own it : owned) {
+            sendTerm(it, linger);
+        }
+        registerTermAcks(owned.size());
+        owned.clear();
 
         //  Start termination process and check whether by chance we cannot
         //  terminate immediately.
         terminating = true;
-        check_term_acks ();
+        checkTermAcks();
     }
 
     //  Use following two functions to wait for arbitrary events before
@@ -225,47 +229,41 @@ abstract public class Own extends ZObject {
     //  register_tem_acks functions. When event occurs, call
     //  remove_term_ack. When number of pending acks reaches zero
     //  object will be deallocated.
-    public void register_term_acks (int count_)
+    public void registerTermAcks(int count)
     {
-        term_acks += count_;
+        termAcks += count;
     }
-    
-    public void unregister_term_ack() {
-        assert (term_acks > 0);
-        term_acks--;
+
+    public void unregisterTermAck()
+    {
+        assert (termAcks > 0);
+        termAcks--;
 
         //  This may be a last ack we are waiting for before termination...
-        check_term_acks ();
+        checkTermAcks();
     }
-    
 
-	
-	@Override
-	protected void process_term_ack ()
-	{
-	    unregister_term_ack ();
-	    
-	}
-
-
-    private void check_term_acks ()
+    @Override
+    protected void processTermAck()
     {
-        if (terminating && processed_seqnum == sent_seqnum.get () &&
-              term_acks == 0) {
+        unregisterTermAck();
+    }
 
+    private void checkTermAcks()
+    {
+        if (terminating && processedSeqnum == sendSeqnum.get() &&
+              termAcks == 0) {
             //  Sanity check. There should be no active children at this point.
-            assert (owned.isEmpty ());
+            assert (owned.isEmpty());
 
             //  The root object has nobody to confirm the termination to.
             //  Other nodes will confirm the termination to the owner.
-            if (owner != null)
-                send_term_ack (owner);
+            if (owner != null) {
+                sendTermAck(owner);
+            }
 
             //  Deallocate the resources.
-            process_destroy ();
+            processDestroy();
         }
     }
-
-	
-
 }

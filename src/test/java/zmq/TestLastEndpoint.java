@@ -39,7 +39,7 @@ public class TestLastEndpoint
     public void testLastEndpoint()
     {
         //  Create the infrastructure
-        Ctx ctx = ZMQ.zmq_init(1);
+        Ctx ctx = ZMQ.zmqInit(1);
         assertThat(ctx, notNullValue());
 
         SocketBase sb = ZMQ.zmq_socket(ctx, ZMQ.ZMQ_ROUTER);

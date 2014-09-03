@@ -28,12 +28,12 @@ import java.nio.channels.SocketChannel;
 
 //  If 'delay' is true connecter first waits for a while, then starts
 //  connection process.
-public class TcpConnecter extends Own implements IPollEvents {
-
+public class TcpConnecter extends Own implements IPollEvents
+{
     //  ID of the timer used to delay the reconnection.
-    private final static int reconnect_timer_id = 1;
+    private static final int RECONNECT_TIMER_ID = 1;
 
-    private final IOObject io_object;
+    private final IOObject ioObject;
 
     //  Address to connect to. Owned by session_base_t.
     private final Address addr;
@@ -43,19 +43,19 @@ public class TcpConnecter extends Own implements IPollEvents {
 
     //  If true file descriptor is registered with the poller and 'handle'
     //  contains valid value.
-    private boolean handle_valid;
+    private boolean handleValid;
 
     //  If true, connecter is waiting a while before trying to connect.
-    private boolean delayed_start;
+    private boolean delayedStart;
 
     //  True iff a timer has been started.
-    private boolean timer_started;
+    private boolean timerStarted;
 
     //  Reference to the session we belong to.
     private SessionBase session;
 
     //  Current reconnect ivl, updated for backoff strategy
-    private int current_reconnect_ivl;
+    private int currentReconnectIvl;
 
     // String representation of endpoint to connect to
     private Address address;
@@ -63,217 +63,230 @@ public class TcpConnecter extends Own implements IPollEvents {
     // Socket
     private SocketBase socket;
 
-    public TcpConnecter (IOThread io_thread_,
-      SessionBase session_, final Options options_,
-      final Address addr_, boolean delayed_start_) {
-
-        super (io_thread_, options_);
-        io_object = new IOObject(io_thread_);
-        addr = addr_;
+    public TcpConnecter(IOThread ioThread,
+      SessionBase session, final Options options,
+      final Address addr, boolean delayedStart)
+    {
+        super(ioThread, options);
+        ioObject = new IOObject(ioThread);
+        this.addr = addr;
         handle = null;
-        handle_valid = false;
-        delayed_start = delayed_start_;
-        timer_started = false;
-        session = session_;
-        current_reconnect_ivl = options.reconnect_ivl;
+        handleValid = false;
+        this.delayedStart = delayedStart;
+        timerStarted = false;
+        this.session = session;
+        currentReconnectIvl = this.options.reconnectIvl;
 
-        assert (addr != null);
-        address = addr;
-        socket = session_.get_soket ();
+        assert (this.addr != null);
+        address = this.addr;
+        socket = session.getSocket();
     }
 
-    public void destroy ()
+    public void destroy()
     {
-        assert (!timer_started);
-        assert (!handle_valid);
+        assert (!timerStarted);
+        assert (!handleValid);
         assert (handle == null);
     }
 
     @Override
-    protected void process_plug ()
+    protected void processPlug()
     {
-        io_object.set_handler(this);
-        if (delayed_start)
-            add_reconnect_timer();
+        ioObject.setHandler(this);
+        if (delayedStart) {
+            addreconnectTimer();
+        }
         else {
-            start_connecting ();
+            startConnecting();
         }
     }
 
     @Override
-    public void process_term (int linger_)
+    public void processTerm(int linger)
     {
-        if (timer_started) {
-            io_object.cancel_timer (reconnect_timer_id);
-            timer_started = false;
+        if (timerStarted) {
+            ioObject.cancelTimer(RECONNECT_TIMER_ID);
+            timerStarted = false;
         }
 
-        if (handle_valid) {
-            io_object.rm_fd (handle);
-            handle_valid = false;
+        if (handleValid) {
+            ioObject.removeHandle(handle);
+            handleValid = false;
         }
 
-        if (handle != null)
-            close ();
+        if (handle != null) {
+            close();
+        }
 
-        super.process_term (linger_);
+        super.processTerm(linger);
     }
 
     @Override
-    public void in_event() {
+    public void inEvent()
+    {
         // connected but attaching to stream engine is not completed. do nothing
         return;
     }
 
     @Override
-    public void out_event() {
+    public void outEvent()
+    {
         // connected but attaching to stream engine is not completed. do nothing
         return;
     }
 
     @Override
-    public void accept_event() {
+    public void acceptEvent()
+    {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void connect_event ()
+    public void connectEvent()
     {
         boolean err = false;
         SocketChannel fd = null;
         try {
-            fd = connect ();
-        } catch (ConnectException e) {
+            fd = connect();
+        }
+        catch (ConnectException e) {
             err = true;
-        } catch (SocketException e) {
+        }
+        catch (SocketException e) {
             err = true;
-        } catch (SocketTimeoutException e) {
+        }
+        catch (SocketTimeoutException e) {
             err = true;
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             throw new ZError.IOException(e);
         }
 
-        io_object.rm_fd (handle);
-        handle_valid = false;
+        ioObject.removeHandle(handle);
+        handleValid = false;
 
         if (err) {
             //  Handle the error condition by attempt to reconnect.
-            close ();
-            add_reconnect_timer();
+            close();
+            addreconnectTimer();
             return;
         }
 
         handle = null;
 
         try {
-
-            Utils.tune_tcp_socket (fd);
-            Utils.tune_tcp_keepalives (fd, options.tcp_keepalive, options.tcp_keepalive_cnt, options.tcp_keepalive_idle, options.tcp_keepalive_intvl);
-        } catch (SocketException e) {
+            Utils.tuneTcpSocket(fd);
+            Utils.tuneTcpKeepalives(fd, options.tcpKeepAlive, options.tcpKeepAliveCnt, options.tcpKeepAliveIdle, options.tcpKeepAliveIntvl);
+        }
+        catch (SocketException e) {
             throw new RuntimeException(e);
         }
 
         //  Create the engine object for this connection.
         StreamEngine engine = null;
         try {
-            engine = new StreamEngine (fd, options, address.toString());
-        } catch (ZError.InstantiationException e) {
-            socket.event_connect_delayed (address.toString(), -1);
+            engine = new StreamEngine(fd, options, address.toString());
+        }
+        catch (ZError.InstantiationException e) {
+            socket.eventConnectDelayed(address.toString(), -1);
             return;
         }
 
         //  Attach the engine to the corresponding session object.
-        send_attach (session, engine);
+        send_attach(session, engine);
 
         //  Shut the connecter down.
-        terminate ();
+        terminate();
 
-        socket.event_connected (address.toString(), fd);
+        socket.event_connected(address.toString(), fd);
     }
 
     @Override
-    public void timer_event(int id_) {
-        timer_started = false;
-        start_connecting ();
+    public void timerEvent(int id)
+    {
+        timerStarted = false;
+        startConnecting();
     }
 
     //  Internal function to start the actual connection establishment.
-    private void start_connecting ()
+    private void startConnecting()
     {
         //  Open the connecting socket.
 
         try {
-            boolean rc = open ();
+            boolean rc = open();
 
             //  Connect may succeed in synchronous manner.
             if (rc) {
-                io_object.add_fd (handle);
-                handle_valid = true;
-                io_object.connect_event();
+                ioObject.addHandle(handle);
+                handleValid = true;
+                ioObject.connectEvent();
             }
 
             //  Connection establishment may be delayed. Poll for its completion.
             else {
-                io_object.add_fd (handle);
-                handle_valid = true;
-                io_object.set_pollconnect (handle);
-                socket.event_connect_delayed (address.toString(), -1);
+                ioObject.addHandle(handle);
+                handleValid = true;
+                ioObject.setPollConnect(handle);
+                socket.eventConnectDelayed(address.toString(), -1);
             }
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             //  Handle any other error condition by eventual reconnect.
-            if (handle != null)
-                close ();
-            add_reconnect_timer();
+            if (handle != null) {
+                close();
+            }
+            addreconnectTimer();
         }
     }
 
     //  Internal function to add a reconnect timer
-    private void add_reconnect_timer()
+    private void addreconnectTimer()
     {
-        int rc_ivl = get_new_reconnect_ivl();
-        io_object.add_timer(rc_ivl, reconnect_timer_id);
+        int rcIvl = getNewReconnectIvl();
+        ioObject.addTimer(rcIvl, RECONNECT_TIMER_ID);
 
         // resolve address again to take into account other addresses
         // besides the failing one (e.g. multiple dns entries).
         try {
             address.resolve();
-        } catch ( Exception ignored ) {
+        }
+        catch (Exception ignored) {
             // This will fail if the network goes away and the
             // address cannot be resolved for some reason. Try
             // not to fail as the event loop will quit
         }
 
-        socket.event_connect_retried(address.toString(), rc_ivl);
-        timer_started = true;
+        socket.eventConnectRetried(address.toString(), rcIvl);
+        timerStarted = true;
     }
 
     //  Internal function to return a reconnect backoff delay.
-    //  Will modify the current_reconnect_ivl used for next call
+    //  Will modify the currentReconnectIvl used for next call
     //  Returns the currently used interval
-    private int get_new_reconnect_ivl ()
+    private int getNewReconnectIvl()
     {
         //  The new interval is the current interval + random value.
-        int this_interval = current_reconnect_ivl +
-            (Utils.generate_random () % options.reconnect_ivl);
+        int thisInterval = currentReconnectIvl +
+            (Utils.generateRandom() % options.reconnectIvl);
 
         //  Only change the current reconnect interval  if the maximum reconnect
         //  interval was set and if it's larger than the reconnect interval.
-        if (options.reconnect_ivl_max > 0 &&
-            options.reconnect_ivl_max > options.reconnect_ivl) {
-
+        if (options.reconnectIvlMax > 0 &&
+            options.reconnectIvlMax > options.reconnectIvl) {
             //  Calculate the next interval
-            current_reconnect_ivl = current_reconnect_ivl * 2;
-            if(current_reconnect_ivl >= options.reconnect_ivl_max) {
-                current_reconnect_ivl = options.reconnect_ivl_max;
+            currentReconnectIvl = currentReconnectIvl * 2;
+            if (currentReconnectIvl >= options.reconnectIvlMax) {
+                currentReconnectIvl = options.reconnectIvlMax;
             }
         }
-        return this_interval;
+        return thisInterval;
     }
 
     //  Open TCP connecting socket. Returns -1 in case of error,
     //  true if connect was successfull immediately. Returns false with
     //  if async connect was launched.
-    private boolean open () throws IOException
+    private boolean open() throws IOException
     {
         assert (handle == null);
 
@@ -281,24 +294,28 @@ public class TcpConnecter extends Own implements IPollEvents {
         handle = SocketChannel.open();
 
         // Set the socket to non-blocking mode so that we get async connect().
-        Utils.unblock_socket(handle);
+        Utils.unblockSocket(handle);
 
         //  Connect to the remote peer.
         if (addr == null) {
             throw new IOException("Null address");
         }
+
         Address.IZAddress resolved = addr.resolved();
         if (resolved == null) {
             throw new IOException("Address not resolved");
         }
+
         SocketAddress sa = resolved.address();
         if (sa == null) {
             throw new IOException("Socket address not resolved");
         }
+
         boolean rc = false;
         try {
             rc = handle.connect(sa);
-        } catch (IllegalArgumentException e) {
+        }
+        catch (IllegalArgumentException e) {
             // this will happen if sa is bad.  Address validation is not documented but
             // I've found that IAE is thrown in openjdk as well as on android.
             throw new IOException(e.getMessage(), e);
@@ -310,7 +327,7 @@ public class TcpConnecter extends Own implements IPollEvents {
 
     //  Get the file descriptor of newly created connection. Returns
     //  retired_fd if the connection was unsuccessfull.
-    private SocketChannel connect () throws IOException
+    private SocketChannel connect() throws IOException
     {
         boolean finished = handle.finishConnect();
         assert finished;
@@ -320,13 +337,15 @@ public class TcpConnecter extends Own implements IPollEvents {
     }
 
     //  Close the connecting socket.
-    private void close() {
+    private void close()
+    {
         assert (handle != null);
         try {
             handle.close();
-            socket.event_closed (address.toString(), handle);
-        } catch (IOException e) {
-            socket.event_close_failed (address.toString(), ZError.exccode(e));
+            socket.eventClosed(address.toString(), handle);
+        }
+        catch (IOException e) {
+            socket.eventCloseFailed(address.toString(), ZError.exccode(e));
         }
         handle = null;
     }

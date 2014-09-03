@@ -32,7 +32,7 @@ public class TestRouterMandatory
         int rc;
         boolean brc;
 
-        Ctx ctx = ZMQ.zmq_init(1);
+        Ctx ctx = ZMQ.zmqInit(1);
         assertThat(ctx, notNullValue());
 
         SocketBase sa = ZMQ.zmq_socket(ctx, ZMQ.ZMQ_ROUTER);

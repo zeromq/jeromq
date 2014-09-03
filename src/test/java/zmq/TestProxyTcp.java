@@ -118,7 +118,7 @@ public class TestProxyTcp
         public ProxyDecoder(int bufsize, long maxmsgsize)
         {
             super(bufsize);
-            next_step(header, 4, READ_HEADER);
+            nextStep(header, 4, READ_HEADER);
 
             bottom = new Msg();
             bottom.setFlags(Msg.MORE);
@@ -141,7 +141,7 @@ public class TestProxyTcp
             size = Integer.parseInt(new String(header, ZMQ.CHARSET));
             System.out.println("Received " + size);
             msg = new Msg(size);
-            next_step(msg, READ_BODY);
+            nextStep(msg, READ_BODY);
 
             return true;
         }
@@ -156,14 +156,14 @@ public class TestProxyTcp
 
             if (!identitySent) {
                 Msg identity = new Msg();
-                msgSink.push_msg(identity);
+                msgSink.pushMsg(identity);
                 identitySent = true;
             }
 
-            msgSink.push_msg(bottom);
-            msgSink.push_msg(msg);
+            msgSink.pushMsg(bottom);
+            msgSink.pushMsg(msg);
 
-            next_step(header, 4, READ_HEADER);
+            nextStep(header, 4, READ_HEADER);
             return true;
         }
 
@@ -174,7 +174,7 @@ public class TestProxyTcp
         }
 
         @Override
-        public void set_msg_sink(IMsgSink msgSink)
+        public void setMsgSink(IMsgSink msgSink)
         {
             this.msgSink = msgSink;
         }
@@ -196,7 +196,7 @@ public class TestProxyTcp
         public ProxyEncoder(int bufsize)
         {
             super(bufsize);
-            next_step(null, WRITE_HEADER, true);
+            nextStep(null, WRITE_HEADER, true);
             messageReady = false;
             identityRecieved = false;
         }
@@ -216,7 +216,7 @@ public class TestProxyTcp
         private boolean write_body()
         {
             System.out.println("writer body ");
-            next_step(msg, WRITE_HEADER, !msg.hasMore());
+            nextStep(msg, WRITE_HEADER, !msg.hasMore());
 
             return true;
         }
@@ -227,20 +227,20 @@ public class TestProxyTcp
                 return false;
             }
 
-            msg = msgSource.pull_msg();
+            msg = msgSource.pullMsg();
 
             if (msg == null) {
                 return false;
             }
             if (!identityRecieved) {
                 identityRecieved = true;
-                next_step(header.array(), msg.size() < 255 ? 2 : 10, WRITE_BODY, false);
+                nextStep(header.array(), msg.size() < 255 ? 2 : 10, WRITE_BODY, false);
                 return true;
             }
             else
             if (!messageReady) {
                 messageReady = true;
-                msg = msgSource.pull_msg();
+                msg = msgSource.pullMsg();
 
                 if (msg == null) {
                     return false;
@@ -252,12 +252,12 @@ public class TestProxyTcp
             header.clear();
             header.put(String.format("%04d", msg.size()).getBytes(ZMQ.CHARSET));
             header.flip();
-            next_step(header.array(), 4, WRITE_BODY, false);
+            nextStep(header.array(), 4, WRITE_BODY, false);
             return true;
         }
 
         @Override
-        public void set_msg_source(IMsgSource msgSource)
+        public void setMsgSource(IMsgSource msgSource)
         {
             this.msgSource = msgSource;
         }
@@ -279,8 +279,8 @@ public class TestProxyTcp
             SocketBase sa = ZMQ.zmq_socket(ctx, ZMQ.ZMQ_ROUTER);
             assertThat(sa, notNullValue());
 
-            sa.setsockopt(ZMQ.ZMQ_DECODER, ProxyDecoder.class);
-            sa.setsockopt(ZMQ.ZMQ_ENCODER, ProxyEncoder.class);
+            sa.setSocketOpt(ZMQ.ZMQ_DECODER, ProxyDecoder.class);
+            sa.setSocketOpt(ZMQ.ZMQ_ENCODER, ProxyEncoder.class);
 
             rc = ZMQ.zmq_bind(sa, "tcp://127.0.0.1:6560");
             assertThat(rc, is(true));
@@ -300,7 +300,7 @@ public class TestProxyTcp
     @Test
     public void testProxyTcp() throws Exception
     {
-        Ctx ctx = ZMQ.zmq_init(1);
+        Ctx ctx = ZMQ.zmqInit(1);
         assertThat(ctx, notNullValue());
 
         Main mt = new Main(ctx);

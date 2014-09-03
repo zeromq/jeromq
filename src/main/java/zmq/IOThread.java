@@ -21,109 +21,110 @@ package zmq;
 
 import java.nio.channels.SelectableChannel;
 
-
-public class IOThread extends ZObject implements IPollEvents {
-
+public class IOThread extends ZObject implements IPollEvents
+{
     //  I/O thread accesses incoming commands via this mailbox.
-    final private Mailbox mailbox;
+    private final Mailbox mailbox;
 
     //  Handle associated with mailbox' file descriptor.
-    final private SelectableChannel mailbox_handle;
+    private final SelectableChannel mailboxHandle;
 
     //  I/O multiplexing is performed using a poller object.
-    final private Poller poller;
-    
+    private final Poller poller;
+
     final String name;
-    
-    public IOThread(Ctx ctx_, int tid_) {
-        super(ctx_, tid_);
-        name = "iothread-" + tid_;
+
+    public IOThread(Ctx ctx, int tid)
+    {
+        super(ctx, tid);
+        name = "iothread-" + tid;
         poller = new Poller(name);
 
         mailbox = new Mailbox(name);
-        mailbox_handle = mailbox.get_fd();
-        poller.add_fd (mailbox_handle, this);
-        poller.set_pollin (mailbox_handle);
-        
+        mailboxHandle = mailbox.getFd();
+        poller.addHandle(mailboxHandle, this);
+        poller.setPollIn(mailboxHandle);
     }
-    
-    public void start() {
+
+    public void start()
+    {
         poller.start();
     }
-    
-    public void destroy() {
+
+    public void destroy()
+    {
         poller.destroy();
         mailbox.close();
     }
-    public void stop ()
+
+    public void stop()
     {
-        send_stop ();
+        sendStop();
     }
 
-    public Mailbox get_mailbox() {
+    public Mailbox getMailbox()
+    {
         return mailbox;
     }
 
-    
-    public int get_load ()
+    public int getLoad()
     {
-        return poller.get_load ();
+        return poller.getLoad();
     }
 
-
     @Override
-    public void in_event() {
+    public void inEvent()
+    {
         //  TODO: Do we want to limit number of commands I/O thread can
         //  process in a single go?
 
         while (true) {
-
             //  Get the next command. If there is none, exit.
-            Command cmd = mailbox.recv (0);
-            if (cmd == null)
+            Command cmd = mailbox.recv(0);
+            if (cmd == null) {
                 break;
+            }
 
             //  Process the command.
-            
-            cmd.destination().process_command (cmd);
+
+            cmd.destination().processCommand(cmd);
         }
-
     }
 
     @Override
-    public void out_event() {
-        throw new UnsupportedOperationException();
-    }
-    
-    @Override
-    public void connect_event() {
+    public void outEvent()
+    {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void accept_event() {
+    public void connectEvent()
+    {
         throw new UnsupportedOperationException();
     }
-    
+
     @Override
-    public void timer_event(int id_) {
+    public void acceptEvent()
+    {
         throw new UnsupportedOperationException();
     }
 
+    @Override
+    public void timerEvent(int id)
+    {
+        throw new UnsupportedOperationException();
+    }
 
-    public Poller get_poller() {
-        
+    public Poller getPoller()
+    {
         assert (poller != null);
         return poller;
     }
-    
-    protected void process_stop ()
+
+    protected void processStop()
     {
-        poller.rm_fd (mailbox_handle);
-        
-        poller.stop ();
+        poller.removeHandle(mailboxHandle);
 
+        poller.stop();
     }
-
-
 }

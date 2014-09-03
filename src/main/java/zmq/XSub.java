@@ -19,17 +19,17 @@
 
 package zmq;
 
-public class XSub extends SocketBase {
-    
-    public static class XSubSession extends SessionBase {
-
-        public XSubSession(IOThread io_thread_, boolean connect_,
-                SocketBase socket_, Options options_, Address addr_) {
-            super(io_thread_, connect_, socket_, options_, addr_);
+public class XSub extends SocketBase
+{
+    public static class XSubSession extends SessionBase
+    {
+        public XSubSession(IOThread ioThread, boolean connect,
+                SocketBase socket, Options options, Address addr)
+        {
+            super(ioThread, connect, socket, options, addr);
         }
-        
     }
-    
+
     //  Fair queueing object for inbound pipes.
     private final FQ fq;
 
@@ -41,103 +41,101 @@ public class XSub extends SocketBase {
 
     //  If true, 'message' contains a matching message to return on the
     //  next recv call.
-    private boolean has_message;
+    private boolean hashMessage;
     private Msg message;
 
     //  If true, part of a multipart message was already received, but
     //  there are following parts still waiting.
     private boolean more;
-    private static Trie.ITrieHandler send_subscription;
+    private static Trie.ITrieHandler sendSubscription;
 
     static {
-        send_subscription = new Trie.ITrieHandler() {
-            
+        sendSubscription = new Trie.ITrieHandler()
+        {
             @Override
-            public void added(byte[] data_, int size, Object arg_) {
-                
-                Pipe pipe = (Pipe) arg_;
+            public void added(byte[] data, int size, Object arg)
+            {
+                Pipe pipe = (Pipe) arg;
 
                 //  Create the subsctription message.
                 Msg msg = new Msg(size + 1);
-                msg.put((byte) 1).put(data_, 0, size);
-                
+                msg.put((byte) 1).put(data, 0, size);
+
                 //  Send it to the pipe.
-                boolean sent = pipe.write (msg);
+                boolean sent = pipe.write(msg);
                 //  If we reached the SNDHWM, and thus cannot send the subscription, drop
                 //  the subscription message instead. This matches the behaviour of
                 //  zmq_setsockopt(ZMQ_SUBSCRIBE, ...), which also drops subscriptions
                 //  when the SNDHWM is reached.
-//                if (!sent)
-//                    msg.close ();
+                //  if (!sent)
+                //    msg.close ();
 
             }
         };
     }
-    
-    public XSub (Ctx parent_, int tid_, int sid_) {
-        super (parent_, tid_, sid_);
-        
+
+    public XSub(Ctx parent, int tid, int sid)
+    {
+        super(parent, tid, sid);
+
         options.type = ZMQ.ZMQ_XSUB;
-        has_message = false;
+        hashMessage = false;
         more = false;
-        
+
         options.linger = 0;
         fq = new FQ();
         dist = new Dist();
         subscriptions = new Trie();
-        
-        
     }
-    
+
     @Override
-    protected void xattach_pipe (Pipe pipe_, boolean icanhasall_)
+    protected void xattachPipe(Pipe pipe, boolean icanhasall)
     {
-        assert (pipe_ != null);
-        fq.attach (pipe_);
-        dist.attach (pipe_);
+        assert (pipe != null);
+        fq.attach(pipe);
+        dist.attach(pipe);
 
         //  Send all the cached subscriptions to the new upstream peer.
-        subscriptions.apply (send_subscription, pipe_);
-        pipe_.flush ();
+        subscriptions.apply(sendSubscription, pipe);
+        pipe.flush();
     }
-    
-    
+
     @Override
-    protected void xread_activated (Pipe pipe_) {
-        fq.activated (pipe_);
-    }
-    
-    @Override
-    protected void xwrite_activated (Pipe pipe_)
+    protected void xreadActivated(Pipe pipe)
     {
-        dist.activated (pipe_);
+        fq.activated(pipe);
     }
-    
+
     @Override
-    protected void xterminated (Pipe pipe_)
+    protected void xwriteActivated(Pipe pipe)
     {
-        fq.terminated (pipe_);
-        dist.terminated (pipe_);
+        dist.activated(pipe);
     }
-    
+
     @Override
-    protected void xhiccuped (Pipe pipe_)
+    protected void xterminated(Pipe pipe)
+    {
+        fq.terminated(pipe);
+        dist.terminated(pipe);
+    }
+
+    @Override
+    protected void xhiccuped(Pipe pipe)
     {
         //  Send all the cached subscriptions to the hiccuped pipe.
-        subscriptions.apply (send_subscription, pipe_);
-        pipe_.flush ();
+        subscriptions.apply(sendSubscription, pipe);
+        pipe.flush();
     }
 
-
     @Override
-    protected boolean xsend(Msg msg_)
-    {   
-        byte[] data = msg_.data(); 
+    protected boolean xsend(Msg msg)
+    {
+        byte[] data = msg.data();
         // Malformed subscriptions.
         if (data.length < 1 || (data[0] != 0 && data[0] != 1)) {
             throw new IllegalArgumentException("subscription flag");
         }
-        
+
         // Process the subscription.
         if (data[0] == 1) {
             // this used to filter out duplicate subscriptions,
@@ -146,81 +144,84 @@ public class XSub extends SocketBase {
             // when there are forwarding devices involved
             //
             subscriptions.add(data , 1);
-            return dist.send_to_all(msg_);
+            return dist.send_to_all(msg);
         }
         else {
-            if (subscriptions.rm (data, 1))
-                return dist.send_to_all (msg_);
+            if (subscriptions.rm(data, 1)) {
+                return dist.send_to_all(msg);
+            }
         }
 
         return true;
     }
-    
+
     @Override
-    protected boolean xhas_out () {
+    protected boolean xhasOut()
+    {
         //  Subscription can be added/removed anytime.
         return true;
     }
 
     @Override
-    protected Msg xrecv() {
-
-        Msg msg_ = null;
+    protected Msg xrecv()
+    {
+        Msg msg = null;
 
         //  If there's already a message prepared by a previous call to zmq_poll,
         //  return it straight ahead.
-        if (has_message) {
-            msg_ = message;
-            has_message = false;
-            more = msg_.hasMore();
-            return msg_;
+        if (hashMessage) {
+            msg = message;
+            hashMessage = false;
+            more = msg.hasMore();
+            return msg;
         }
 
         //  TODO: This can result in infinite loop in the case of continuous
         //  stream of non-matching messages which breaks the non-blocking recv
         //  semantics.
         while (true) {
-
             //  Get a message using fair queueing algorithm.
-            msg_ = fq.recv(errno);
+            msg = fq.recv(errno);
 
             //  If there's no message available, return immediately.
             //  The same when error occurs.
-            if (msg_ == null) {
+            if (msg == null) {
                 return null;
             }
 
             //  Check whether the message matches at least one subscription.
-            //  Non-initial parts of the message are passed 
-            if (more || !options.filter || match(msg_)) {
-                more = msg_.hasMore();
-                return msg_;
+            //  Non-initial parts of the message are passed
+            if (more || !options.filter || match(msg)) {
+                more = msg.hasMore();
+                return msg;
             }
 
             //  Message doesn't match. Pop any remaining parts of the message
             //  from the pipe.
-            while (msg_.hasMore()) {
-                msg_ = fq.recv(errno);
-                assert (msg_ != null);
+            while (msg.hasMore()) {
+                msg = fq.recv(errno);
+                assert (msg != null);
             }
         }
     }
 
     @Override
-    protected boolean xhas_in () {
+    protected boolean xhasIn()
+    {
         //  There are subsequent parts of the partly-read message available.
-        if (more)
+        if (more) {
             return true;
+        }
 
         //  If there's already a message prepared by a previous call to zmq_poll,
         //  return straight ahead.
-        if (has_message)
+        if (hashMessage) {
             return true;
+        }
 
         //  TODO: This can result in infinite loop in the case of continuous
         //  stream of non-matching messages.
         while (true) {
-
             //  Get a message using fair queueing algorithm.
             message = fq.recv(errno);
 
@@ -231,8 +232,8 @@ public class XSub extends SocketBase {
             }
 
             //  Check whether the message matches at least one subscription.
-            if (!options.filter || match (message)) {
-                has_message = true;
+            if (!options.filter || match(message)) {
+                hashMessage = true;
                 return true;
             }
 
@@ -243,11 +244,10 @@ public class XSub extends SocketBase {
                 assert (message != null);
             }
         }
-
-    }
-    private boolean match(Msg msg_) {
-        return subscriptions.check ( msg_.data() );
     }
 
-    
+    private boolean match(Msg msg)
+    {
+        return subscriptions.check(msg.data());
+    }
 }

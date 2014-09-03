@@ -29,7 +29,7 @@ public class TestPubsubTcp
     @Test
     public void testPubsubTcp() throws Exception
     {
-        Ctx ctx = ZMQ.zmq_init(1);
+        Ctx ctx = ZMQ.zmqInit(1);
         assertThat(ctx, notNullValue());
 
         SocketBase sb = ZMQ.zmq_socket(ctx, ZMQ.ZMQ_PUB);
@@ -40,7 +40,7 @@ public class TestPubsubTcp
         SocketBase sc = ZMQ.zmq_socket(ctx, ZMQ.ZMQ_SUB);
         assertThat(sc, notNullValue());
 
-        sc.setsockopt(ZMQ.ZMQ_SUBSCRIBE, "topic");
+        sc.setSocketOpt(ZMQ.ZMQ_SUBSCRIBE, "topic");
 
         rc = ZMQ.zmq_connect(sc, "tcp://127.0.0.1:7660");
         assertThat(rc, is(true));

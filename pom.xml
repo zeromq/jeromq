@@ -123,7 +123,8 @@
                 <consoleOutput>true</consoleOutput>
                 <includeTestSourceDirectory>true</includeTestSourceDirectory>
                 <configLocation>${project.basedir}/src/checkstyle/checks.xml</configLocation>
-                <failOnViolation>false</failOnViolation> <!-- will be turned on -->
+                <failOnViolation>true</failOnViolation>
+                <excludes>**/guide/*</excludes>
             </configuration>
           </execution>
         </executions>

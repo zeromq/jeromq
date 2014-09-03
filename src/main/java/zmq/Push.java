@@ -19,54 +19,57 @@
 
 package zmq;
 
-public class Push extends SocketBase {
-
-    public static class PushSession extends SessionBase {
-        public PushSession(IOThread io_thread_, boolean connect_,
-            SocketBase socket_, final Options options_,
-            final Address addr_) {
-            super(io_thread_, connect_, socket_, options_, addr_);
+public class Push extends SocketBase
+{
+    public static class PushSession extends SessionBase
+    {
+        public PushSession(IOThread ioThread, boolean connect,
+            SocketBase socket, final Options options,
+            final Address addr)
+        {
+            super(ioThread, connect, socket, options, addr);
         }
     }
-    
+
     //  Load balancer managing the outbound pipes.
     private final LB lb;
-    
-    public Push(Ctx parent_, int tid_, int sid_) {
-        super(parent_, tid_, sid_);
+
+    public Push(Ctx parent, int tid, int sid)
+    {
+        super(parent, tid, sid);
         options.type = ZMQ.ZMQ_PUSH;
-        
+
         lb = new LB();
     }
 
     @Override
-    protected void xattach_pipe(Pipe pipe_, boolean icanhasall_) {
-        assert (pipe_ != null);
-        lb.attach (pipe_);
-    }
-    
-    @Override
-    protected void xwrite_activated (Pipe pipe_)
+    protected void xattachPipe(Pipe pipe, boolean icanhasall)
     {
-        lb.activated (pipe_);
-    }
-
-
-    @Override
-    protected void xterminated(Pipe pipe_) {
-        lb.terminated (pipe_);
+        assert (pipe != null);
+        lb.attach(pipe);
     }
 
     @Override
-    public boolean xsend(Msg msg_)
+    protected void xwriteActivated(Pipe pipe)
     {
-        return lb.send(msg_, errno);
-    }
-    
-    @Override
-    protected boolean xhas_out ()
-    {
-        return lb.has_out ();
+        lb.activated(pipe);
     }
 
+    @Override
+    protected void xterminated(Pipe pipe)
+    {
+        lb.terminated(pipe);
+    }
+
+    @Override
+    public boolean xsend(Msg msg)
+    {
+        return lb.send(msg, errno);
+    }
+
+    @Override
+    protected boolean xhasOut()
+    {
+        return lb.hasOut();
+    }
 }

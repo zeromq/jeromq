@@ -22,7 +22,8 @@ package zmq;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Dist {
+class Dist
+{
     //  List of outbound pipes.
     //typedef array_t <zmq::pipe_t, 2> pipes_t;
     private final List<Pipe> pipes;
@@ -44,158 +45,161 @@ public class Dist {
 
     //  True if last we are in the middle of a multipart message.
     private boolean more;
-    
-    public Dist() {
-    	matching = 0;
-    	active = 0;
-    	eligible = 0;
-    	more = false;
-    	pipes = new ArrayList<Pipe>();
+
+    public Dist()
+    {
+        matching = 0;
+        active = 0;
+        eligible = 0;
+        more = false;
+        pipes = new ArrayList<Pipe>();
     }
-    
+
     //  Adds the pipe to the distributor object.
-    public void attach (Pipe pipe_)
-    {   
+    public void attach(Pipe pipe)
+    {
         //  If we are in the middle of sending a message, we'll add new pipe
         //  into the list of eligible pipes. Otherwise we add it to the list
-        //  of active pipes. 
+        //  of active pipes.
         if (more) {
-            pipes.add (pipe_); 
-            //pipes.swap (eligible, pipes.size () - 1);
-            Utils.swap(pipes, eligible, pipes.size () - 1);
+            pipes.add(pipe);
+            //pipes.swap (eligible, pipes.size() - 1);
+            Utils.swap(pipes, eligible, pipes.size() - 1);
             eligible++;
         }
         else {
-            pipes.add (pipe_);
-            //pipes.swap (active, pipes.size () - 1);
-            Utils.swap(pipes, active, pipes.size () - 1);
+            pipes.add(pipe);
+            //pipes.swap (active, pipes.size() - 1);
+            Utils.swap(pipes, active, pipes.size() - 1);
             active++;
             eligible++;
         }
     }
-    
-    //  Mark the pipe as matching. Subsequent call to send_to_matching
+
+    //  Mark the pipe as matching. Subsequent call to sendToMatching
     //  will send message also to this pipe.
-    public void match(Pipe pipe_) {
-        
-        int idx = pipes.indexOf (pipe_);
+    public void match(Pipe pipe)
+    {
+        int idx = pipes.indexOf(pipe);
         //  If pipe is already matching do nothing.
-        if (idx < matching)
+        if (idx < matching) {
             return;
+        }
 
         //  If the pipe isn't eligible, ignore it.
-        if (idx >= eligible)
+        if (idx >= eligible) {
             return;
+        }
 
         //  Mark the pipe as matching.
-        Utils.swap( pipes, idx, matching);
+        Utils.swap(pipes, idx, matching);
         matching++;
-
     }
-    
 
     //  Mark all pipes as non-matching.
-    public void unmatch() {
+    public void unmatch()
+    {
         matching = 0;
     }
 
-
     //  Removes the pipe from the distributor object.
-    public void terminated(Pipe pipe_) {
+    public void terminated(Pipe pipe)
+    {
         //  Remove the pipe from the list; adjust number of matching, active and/or
         //  eligible pipes accordingly.
-        if (pipes.indexOf(pipe_) < matching) {
-            Utils.swap(pipes, pipes.indexOf(pipe_), matching - 1);
+        if (pipes.indexOf(pipe) < matching) {
+            Utils.swap(pipes, pipes.indexOf(pipe), matching - 1);
             matching--;
         }
-        if (pipes.indexOf(pipe_) < active) {
-            Utils.swap(pipes, pipes.indexOf(pipe_), active - 1);
+        if (pipes.indexOf(pipe) < active) {
+            Utils.swap(pipes, pipes.indexOf(pipe), active - 1);
             active--;
         }
-        if (pipes.indexOf(pipe_) < eligible) {
-            Utils.swap(pipes, pipes.indexOf(pipe_), eligible - 1);
+        if (pipes.indexOf(pipe) < eligible) {
+            Utils.swap(pipes, pipes.indexOf(pipe), eligible - 1);
             eligible--;
         }
-        pipes.remove(pipe_);
+        pipes.remove(pipe);
     }
 
     //  Activates pipe that have previously reached high watermark.
-    public void activated(Pipe pipe_) {
+    public void activated(Pipe pipe)
+    {
         //  Move the pipe from passive to eligible state.
-        Utils.swap (pipes, pipes.indexOf (pipe_), eligible);
+        Utils.swap(pipes, pipes.indexOf(pipe), eligible);
         eligible++;
 
         //  If there's no message being sent at the moment, move it to
         //  the active state.
         if (!more) {
-            Utils.swap (pipes, eligible - 1, active);
+            Utils.swap(pipes, eligible - 1, active);
             active++;
         }
-
     }
 
     //  Send the message to all the outbound pipes.
-    public boolean send_to_all(Msg msg_) {
+    public boolean send_to_all(Msg msg)
+    {
         matching = active;
-        return send_to_matching (msg_);
+        return sendToMatching(msg);
     }
 
     //  Send the message to the matching outbound pipes.
-    public boolean send_to_matching(Msg msg_) {
+    public boolean sendToMatching(Msg msg)
+    {
         //  Is this end of a multipart message?
-        boolean msg_more = msg_.hasMore();
+        boolean msgMore = msg.hasMore();
 
         //  Push the message to matching pipes.
-        distribute (msg_);
+        distribute(msg);
 
         //  If mutlipart message is fully sent, activate all the eligible pipes.
-        if (!msg_more)
+        if (!msgMore) {
             active = eligible;
+        }
 
-        more = msg_more;
+        more = msgMore;
 
         return true;
-
     }
 
     //  Put the message to all active pipes.
-    private void distribute(Msg msg_) {
+    private void distribute(Msg msg)
+    {
         //  If there are no matching pipes available, simply drop the message.
         if (matching == 0) {
             return;
         }
-        
-        for (int i = 0; i < matching; ++i)
-            if(!write (pipes.get(i), msg_))
+
+        for (int i = 0; i < matching; ++i) {
+            if (!write(pipes.get(i), msg)) {
                 --i; //  Retry last write because index will have been swapped
+            }
+        }
         return;
-        
     }
-    
-    public boolean has_out ()
+
+    public boolean hasOut()
     {
         return true;
     }
 
     //  Write the message to the pipe. Make the pipe inactive if writing
     //  fails. In such a case false is returned.
-    private boolean write (Pipe pipe_, Msg msg_)
+    private boolean write(Pipe pipe, Msg msg)
     {
-        if (!pipe_.write (msg_)) {
-            Utils.swap(pipes, pipes.indexOf (pipe_), matching - 1);
+        if (!pipe.write(msg)) {
+            Utils.swap(pipes, pipes.indexOf(pipe), matching - 1);
             matching--;
-            Utils.swap(pipes, pipes.indexOf (pipe_), active - 1);
+            Utils.swap(pipes, pipes.indexOf(pipe), active - 1);
             active--;
             Utils.swap(pipes, active, eligible - 1);
             eligible--;
             return false;
         }
-        if (!msg_.hasMore())
-            pipe_.flush ();
+        if (!msg.hasMore()) {
+            pipe.flush();
+        }
         return true;
     }
-
-
-
-
 }

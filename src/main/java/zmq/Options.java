@@ -25,29 +25,30 @@ import java.util.List;
 
 import zmq.TcpAddress.TcpAddressMask;
 
-public class Options {
+public class Options
+{
     //  High-water marks for message pipes.
-    int sndhwm;
-    int rcvhwm;
+    int sendHwm;
+    int recvHwm;
 
     //  I/O thread affinity.
     long affinity;
 
     //  Socket identity
-    byte identity_size;
+    byte identitySize;
     byte[] identity; // [256];
 
     // Last socket endpoint resolved URI
-    String last_endpoint;
+    String lastEndpoint;
 
     //  Maximum tranfer rate [kb/s]. Default 100kb/s.
     int rate;
 
     //  Reliability time interval [ms]. Default 10 seconds.
-    int recovery_ivl;
+    int recoveryIvl;
 
     // Sets the time-to-live field in every multicast packet sent.
-    int multicast_hops;
+    int multicastHops;
 
     // SO_SNDBUF and SO_RCVBUF to be passed to underlying transport sockets.
     int sndbuf;
@@ -61,20 +62,20 @@ public class Options {
 
     //  Minimum interval between attempts to reconnect, in milliseconds.
     //  Default 100ms
-    int reconnect_ivl;
+    int reconnectIvl;
     //  Maximum interval between attempts to reconnect, in milliseconds.
     //  Default 0 (unused)
-    int reconnect_ivl_max;
+    int reconnectIvlMax;
 
     //  Maximum backlog for pending connections.
     int backlog;
 
     //  Maximal size of message to handle.
-    long maxmsgsize;
+    long maxMsgSize;
 
     // The timeout for send/recv operations for this socket.
-    int rcvtimeo;
-    int sndtimeo;
+    int recvTimeout;
+    int sendTimeout;
 
     //  If 1, indicates the use of IPv4 sockets only, it will not be
     //  possible to communicate with IPv6-only hosts. If 0, the socket can
@@ -83,325 +84,333 @@ public class Options {
 
     //  If 1, connecting pipes are not attached immediately, meaning a send()
     //  on a socket with only connecting pipes would block
-    int delay_attach_on_connect;
-    
+    int delayAttachOnConnect;
+
     //  If true, session reads all the pending messages from the pipe and
     //  sends them to the network when socket is closed.
-    boolean delay_on_close;
+    boolean delayOnClose;
 
     //  If true, socket reads all the messages from the pipe and delivers
     //  them to the user when the peer terminates.
-    boolean delay_on_disconnect;
+    boolean delayOnDisconnect;
 
     //  If 1, (X)SUB socket should filter the messages. If 0, it should not.
     boolean filter;
 
     //  If true, the identity message is forwarded to the socket.
-    boolean recv_identity;
+    boolean recvIdentity;
 
     //  TCP keep-alive settings.
     //  Defaults to -1 = do not change socket options
-    int tcp_keepalive;
-    int tcp_keepalive_cnt;
-    int tcp_keepalive_idle;
-    int tcp_keepalive_intvl;
+    int tcpKeepAlive;
+    int tcpKeepAliveCnt;
+    int tcpKeepAliveIdle;
+    int tcpKeepAliveIntvl;
 
     // TCP accept() filters
     //typedef std::vector <tcp_address_mask_t> tcp_accept_filters_t;
-    final List<TcpAddress.TcpAddressMask> tcp_accept_filters;
-    
+    final List<TcpAddress.TcpAddressMask> tcpAcceptFilters;
+
     //  ID of the socket.
-    int socket_id;
+    int socketId;
     Class<? extends DecoderBase> decoder;
     Class<? extends EncoderBase> encoder;
 
-    public Options() {
-        sndhwm = 1000;
-        rcvhwm = 1000;
+    public Options()
+    {
+        sendHwm = 1000;
+        recvHwm = 1000;
         affinity = 0;
-        identity_size = 0;
+        identitySize = 0;
         rate = 100;
-        recovery_ivl = 10000;
-        multicast_hops = 1;
+        recoveryIvl = 10000;
+        multicastHops = 1;
         sndbuf = 0;
         rcvbuf = 0;
         type = -1;
         linger = -1;
-        reconnect_ivl = 100;
-        reconnect_ivl_max = 0;
+        reconnectIvl = 100;
+        reconnectIvlMax = 0;
         backlog = 100;
-        maxmsgsize = -1;
-        rcvtimeo = -1;
-        sndtimeo = -1;
+        maxMsgSize = -1;
+        recvTimeout = -1;
+        sendTimeout = -1;
         ipv4only = 1;
-        delay_attach_on_connect =  0;
-        delay_on_close = true;
-        delay_on_disconnect = true;
+        delayAttachOnConnect =  0;
+        delayOnClose = true;
+        delayOnDisconnect = true;
         filter = false;
-        recv_identity = false;
-        tcp_keepalive = -1;
-        tcp_keepalive_cnt = -1;
-        tcp_keepalive_idle = -1;
-        tcp_keepalive_intvl = -1;
-        socket_id = 0;
-        
-    	identity = null;
-    	tcp_accept_filters = new ArrayList<TcpAddress.TcpAddressMask>();
-    	decoder = null;
-    	encoder = null;
+        recvIdentity = false;
+        tcpKeepAlive = -1;
+        tcpKeepAliveCnt = -1;
+        tcpKeepAliveIdle = -1;
+        tcpKeepAliveIntvl = -1;
+        socketId = 0;
+
+        identity = null;
+        tcpAcceptFilters = new ArrayList<TcpAddress.TcpAddressMask>();
+        decoder = null;
+        encoder = null;
     }
-    
+
     @SuppressWarnings("unchecked")
-    public void setsockopt(int option_, Object optval_) {
-        switch (option_) {
-        
+    public void setSocketOpt(int option, Object optval)
+    {
+        switch (option) {
         case ZMQ.ZMQ_SNDHWM:
-            sndhwm = (Integer)optval_;
-            if (sndhwm < 0) {
-                throw new IllegalArgumentException("sndhwm " + optval_);
+            sendHwm = (Integer) optval;
+            if (sendHwm < 0) {
+                throw new IllegalArgumentException("sendHwm " + optval);
             }
             return;
-            
+
         case ZMQ.ZMQ_RCVHWM:
-            rcvhwm = (Integer)optval_;
-            if (rcvhwm < 0) {
-                throw new IllegalArgumentException("rcvhwm " + optval_);
+            recvHwm = (Integer) optval;
+            if (recvHwm < 0) {
+                throw new IllegalArgumentException("recvHwm " + optval);
             }
-            return ;
+            return;
 
         case ZMQ.ZMQ_AFFINITY:
-            affinity = (Long)optval_;
+            affinity = (Long) optval;
             return;
-            
+
         case ZMQ.ZMQ_IDENTITY:
             byte[] val;
-            
-            if (optval_ instanceof String)
-                val = ((String) optval_).getBytes(ZMQ.CHARSET);
-            else if (optval_ instanceof byte[])
-                val = (byte[]) optval_;
-            else {
-                throw new IllegalArgumentException("identity " + optval_);
+
+            if (optval instanceof String) {
+                val = ((String) optval).getBytes(ZMQ.CHARSET);
             }
-            
+            else if (optval instanceof byte[]) {
+                val = (byte[]) optval;
+            }
+            else {
+                throw new IllegalArgumentException("identity " + optval);
+            }
+
             if (val == null || val.length > 255) {
-                throw new IllegalArgumentException("identity must not be null or less than 255 " + optval_);
+                throw new IllegalArgumentException("identity must not be null or less than 255 " + optval);
             }
             identity = Arrays.copyOf(val, val.length);
-            identity_size = (byte)identity.length;
+            identitySize = (byte) identity.length;
             return;
-            
+
         case ZMQ.ZMQ_RATE:
-            rate = (Integer)optval_;
+            rate = (Integer) optval;
             return;
-            
+
         case ZMQ.ZMQ_RECOVERY_IVL:
-            recovery_ivl = (Integer)optval_;
+            recoveryIvl = (Integer) optval;
             return;
-            
+
         case ZMQ.ZMQ_SNDBUF:
-            sndbuf = (Integer)optval_;
+            sndbuf = (Integer) optval;
             return;
-           
+
         case ZMQ.ZMQ_RCVBUF:
-            rcvbuf = (Integer)optval_;
+            rcvbuf = (Integer) optval;
             return;
-           
+
         case ZMQ.ZMQ_LINGER:
-            linger = (Integer)optval_;
+            linger = (Integer) optval;
             return;
-            
+
         case ZMQ.ZMQ_RECONNECT_IVL:
-            reconnect_ivl = (Integer)optval_;
-            
-            if (reconnect_ivl < -1) {
-                throw new IllegalArgumentException("reconnect_ivl " + optval_);
+            reconnectIvl = (Integer) optval;
+
+            if (reconnectIvl < -1) {
+                throw new IllegalArgumentException("reconnectIvl " + optval);
             }
-            
+
             return;
-            
+
         case ZMQ.ZMQ_RECONNECT_IVL_MAX:
-            reconnect_ivl_max = (Integer)optval_;
-            
-            if (reconnect_ivl_max < 0) {
-                throw new IllegalArgumentException("reconnect_ivl_max " + optval_);
+            reconnectIvlMax = (Integer) optval;
+
+            if (reconnectIvlMax < 0) {
+                throw new IllegalArgumentException("reconnectIvlMax " + optval);
             }
-            
+
             return;
 
         case ZMQ.ZMQ_BACKLOG:
-            backlog = (Integer)optval_;
+            backlog = (Integer) optval;
             return;
 
         case ZMQ.ZMQ_MAXMSGSIZE:
-            maxmsgsize = (Long)optval_;
+            maxMsgSize = (Long) optval;
             return;
-            
+
         case ZMQ.ZMQ_MULTICAST_HOPS:
-            multicast_hops = (Integer)optval_;
+            multicastHops = (Integer) optval;
             return;
-            
+
         case ZMQ.ZMQ_RCVTIMEO:
-            rcvtimeo = (Integer)optval_;
+            recvTimeout = (Integer) optval;
             return;
-            
+
         case ZMQ.ZMQ_SNDTIMEO:
-            sndtimeo = (Integer)optval_;
+            sendTimeout = (Integer) optval;
             return;
-            
+
         case ZMQ.ZMQ_IPV4ONLY:
-            
-            ipv4only = (Integer)optval_;
+
+            ipv4only = (Integer) optval;
             if (ipv4only != 0 && ipv4only != 1) {
-                throw new IllegalArgumentException("ipv4only only accepts 0 or 1 " + optval_);
+                throw new IllegalArgumentException("ipv4only only accepts 0 or 1 " + optval);
             }
             return;
-            
+
         case ZMQ.ZMQ_TCP_KEEPALIVE:
-            
-            tcp_keepalive = (Integer)optval_;
-            if (tcp_keepalive != -1 && tcp_keepalive != 0 && tcp_keepalive != 1) {
-                throw new IllegalArgumentException("tcp_keepalive only accepts one of -1,0,1 " + optval_);
+
+            tcpKeepAlive = (Integer) optval;
+            if (tcpKeepAlive != -1 && tcpKeepAlive != 0 && tcpKeepAlive != 1) {
+                throw new IllegalArgumentException("tcpKeepAlive only accepts one of -1,0,1 " + optval);
             }
             return;
-            
+
         case ZMQ.ZMQ_DELAY_ATTACH_ON_CONNECT:
-            
-            delay_attach_on_connect = (Integer) optval_;
-            if (delay_attach_on_connect !=0 && delay_attach_on_connect != 1) {
-                throw new IllegalArgumentException("delay_attach_on_connect only accept 0 or 1 " + optval_);
+
+            delayAttachOnConnect = (Integer) optval;
+            if (delayAttachOnConnect != 0 && delayAttachOnConnect != 1) {
+                throw new IllegalArgumentException("delayAttachOnConnect only accept 0 or 1 " + optval);
             }
             return;
-            
+
         case ZMQ.ZMQ_TCP_KEEPALIVE_CNT:
         case ZMQ.ZMQ_TCP_KEEPALIVE_IDLE:
         case ZMQ.ZMQ_TCP_KEEPALIVE_INTVL:
             // not supported
             return;
-            
+
         case ZMQ.ZMQ_TCP_ACCEPT_FILTER:
-            String filter_str = (String) optval_;
-            if (filter_str == null) {
-                tcp_accept_filters.clear();
-            } else if (filter_str.length() == 0 || filter_str.length() > 255) {
-                throw new IllegalArgumentException("tcp_accept_filter " + optval_);
-            } else {
+            String filterStr = (String) optval;
+            if (filterStr == null) {
+                tcpAcceptFilters.clear();
+            }
+            else if (filterStr.length() == 0 || filterStr.length() > 255) {
+                throw new IllegalArgumentException("tcp_accept_filter " + optval);
+            }
+            else {
                 TcpAddressMask filter = new TcpAddressMask();
-                filter.resolve (filter_str, ipv4only==1 ? true : false);
-                tcp_accept_filters.add(filter);
+                filter.resolve(filterStr, ipv4only == 1 ? true : false);
+                tcpAcceptFilters.add(filter);
             }
             return;
-            
+
         case ZMQ.ZMQ_ENCODER:
-            if (optval_ instanceof String) {
+            if (optval instanceof String) {
                 try {
-                    encoder = Class.forName((String) optval_).asSubclass(EncoderBase.class);
-                } catch (ClassNotFoundException e) {
+                    encoder = Class.forName((String) optval).asSubclass(EncoderBase.class);
+                }
+                catch (ClassNotFoundException e) {
                     throw new IllegalArgumentException(e);
                 }
-            } else if (optval_ instanceof Class) {
-                encoder = (Class<? extends EncoderBase>) optval_;
-            } else {
-                throw new IllegalArgumentException("encoder " + optval_);
+            }
+            else if (optval instanceof Class) {
+                encoder = (Class<? extends EncoderBase>) optval;
+            }
+            else {
+                throw new IllegalArgumentException("encoder " + optval);
             }
             return;
-            
+
         case ZMQ.ZMQ_DECODER:
-            if (optval_ instanceof String) {
+            if (optval instanceof String) {
                 try {
-                    decoder = Class.forName((String) optval_).asSubclass(DecoderBase.class);
-                } catch (ClassNotFoundException e) {
+                    decoder = Class.forName((String) optval).asSubclass(DecoderBase.class);
+                }
+                catch (ClassNotFoundException e) {
                     throw new IllegalArgumentException(e);
                 }
-            } else if (optval_ instanceof Class) {
-                decoder = (Class<? extends DecoderBase>) optval_;
-            } else {
-                throw new IllegalArgumentException("decoder " + optval_);
+            }
+            else if (optval instanceof Class) {
+                decoder = (Class<? extends DecoderBase>) optval;
+            }
+            else {
+                throw new IllegalArgumentException("decoder " + optval);
             }
             return;
 
         default:
-            throw new IllegalArgumentException("Unknown Option " + option_);
+            throw new IllegalArgumentException("Unknown Option " + option);
         }
     }
 
-    
-    public Object getsockopt(int option_) {
-        
-        switch (option_) {
-        
+    public Object getsockopt(int option)
+    {
+        switch (option) {
         case ZMQ.ZMQ_SNDHWM:
-            return sndhwm;
-            
+            return sendHwm;
+
         case ZMQ.ZMQ_RCVHWM:
-            return rcvhwm;            
+            return recvHwm;
 
         case ZMQ.ZMQ_AFFINITY:
             return affinity;
-            
+
         case ZMQ.ZMQ_IDENTITY:
             return identity;
-            
+
         case ZMQ.ZMQ_RATE:
-            return rate; 
-            
+            return rate;
+
         case ZMQ.ZMQ_RECOVERY_IVL:
-            return recovery_ivl;
-            
+            return recoveryIvl;
+
         case ZMQ.ZMQ_SNDBUF:
            return sndbuf;
-           
+
         case ZMQ.ZMQ_RCVBUF:
            return rcvbuf;
-           
+
         case ZMQ.ZMQ_TYPE:
             return type;
-           
+
         case ZMQ.ZMQ_LINGER:
             return linger;
-            
+
         case ZMQ.ZMQ_RECONNECT_IVL:
-            return reconnect_ivl;
-            
+            return reconnectIvl;
+
         case ZMQ.ZMQ_RECONNECT_IVL_MAX:
-            return reconnect_ivl_max; 
+            return reconnectIvlMax;
 
         case ZMQ.ZMQ_BACKLOG:
-            return backlog; 
-          
+            return backlog;
+
         case ZMQ.ZMQ_MAXMSGSIZE:
-            return maxmsgsize;
-            
+            return maxMsgSize;
+
         case ZMQ.ZMQ_MULTICAST_HOPS:
-            return multicast_hops;
-            
+            return multicastHops;
+
         case ZMQ.ZMQ_RCVTIMEO:
-            return rcvtimeo;
-            
+            return recvTimeout;
+
         case ZMQ.ZMQ_SNDTIMEO:
-            return sndtimeo;
-            
+            return sendTimeout;
+
         case ZMQ.ZMQ_IPV4ONLY:
             return ipv4only;
-            
+
         case ZMQ.ZMQ_TCP_KEEPALIVE:
-            return tcp_keepalive; 
-            
+            return tcpKeepAlive;
+
         case ZMQ.ZMQ_DELAY_ATTACH_ON_CONNECT:
-            return delay_attach_on_connect;
-                    
+            return delayAttachOnConnect;
+
         case ZMQ.ZMQ_TCP_KEEPALIVE_CNT:
         case ZMQ.ZMQ_TCP_KEEPALIVE_IDLE:
         case ZMQ.ZMQ_TCP_KEEPALIVE_INTVL:
             // not supported
             return 0;
-            
+
         case ZMQ.ZMQ_LAST_ENDPOINT:
-            return last_endpoint;
-            
+            return lastEndpoint;
+
         default:
-            throw new IllegalArgumentException("option=" + option_);
+            throw new IllegalArgumentException("option=" + option);
         }
     }
-    
 }

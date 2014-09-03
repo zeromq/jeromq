@@ -19,121 +19,128 @@
 
 package zmq;
 
-public class Rep extends Router {
-
-    public static class RepSession extends Router.RouterSession {
-        public RepSession(IOThread io_thread_, boolean connect_,
-            SocketBase socket_, final Options options_,
-            final Address addr_) {
-            super(io_thread_, connect_, socket_, options_, addr_);
+public class Rep extends Router
+{
+    public static class RepSession extends Router.RouterSession
+    {
+        public RepSession(IOThread ioThread, boolean connect,
+            SocketBase socket, final Options options,
+            final Address addr)
+        {
+            super(ioThread, connect, socket, options, addr);
         }
     }
     //  If true, we are in process of sending the reply. If false we are
     //  in process of receiving a request.
-    private boolean sending_reply;
+    private boolean sendingReply;
 
     //  If true, we are starting to receive a request. The beginning
     //  of the request is the backtrace stack.
-    private boolean request_begins;
-    
-    
-    public Rep(Ctx parent_, int tid_, int sid_) {
-        super(parent_, tid_, sid_);
-        sending_reply = false;
-        request_begins = true;
-        
+    private boolean requestBegins;
+
+    public Rep(Ctx parent, int tid, int sid)
+    {
+        super(parent, tid, sid);
+        sendingReply = false;
+        requestBegins = true;
+
         options.type = ZMQ.ZMQ_REP;
     }
-    
+
     @Override
-    protected boolean xsend(Msg msg_)
+    protected boolean xsend(Msg msg)
     {
         //  If we are in the middle of receiving a request, we cannot send reply.
-        if (!sending_reply) {
+        if (!sendingReply) {
             throw new IllegalStateException("Cannot send another reply");
         }
 
-        boolean more = msg_.hasMore();
+        boolean more = msg.hasMore();
 
         //  Push message to the reply pipe.
-        boolean rc = super.xsend(msg_);
-        if (!rc)
+        boolean rc = super.xsend(msg);
+        if (!rc) {
             return rc;
+        }
 
         //  If the reply is complete flip the FSM back to request receiving state.
-        if (!more)
-            sending_reply = false;
+        if (!more) {
+            sendingReply = false;
+        }
 
         return true;
     }
-    
+
     @Override
     protected Msg xrecv()
     {
         //  If we are in middle of sending a reply, we cannot receive next request.
-        if (sending_reply) {
+        if (sendingReply) {
             throw new IllegalStateException("Cannot receive another request");
         }
 
-        Msg msg_ = null;
+        Msg msg = null;
         //  First thing to do when receiving a request is to copy all the labels
         //  to the reply pipe.
-        if (request_begins) {
+        if (requestBegins) {
             while (true) {
-                msg_ = super.xrecv();
-                if (msg_ == null)
+                msg = super.xrecv();
+                if (msg == null) {
                     return null;
-                
-                if (msg_.hasMore()) {
+                }
+
+                if (msg.hasMore()) {
                     //  Empty message part delimits the traceback stack.
-                    boolean bottom = (msg_.size() == 0);
-                    
+                    boolean bottom = (msg.size() == 0);
+
                     //  Push it to the reply pipe.
-                    boolean rc = super.xsend(msg_);
+                    boolean rc = super.xsend(msg);
                     assert (rc);
-                    if (bottom)
+                    if (bottom) {
                         break;
-                } else {
+                    }
+                }
+                else {
                     //  If the traceback stack is malformed, discard anything
                     //  already sent to pipe (we're at end of invalid message).
                     super.rollback();
                 }
             }
-            request_begins = false;
+            requestBegins = false;
         }
 
         //  Get next message part to return to the user.
-        msg_ = super.xrecv();
-        if (msg_ == null)
-           return null;
-
-        //  If whole request is read, flip the FSM to reply-sending state.
-        if (!msg_.hasMore()) {
-            sending_reply = true;
-            request_begins = true;
+        msg = super.xrecv();
+        if (msg == null) {
+            return null;
         }
 
-        return msg_;
+        //  If whole request is read, flip the FSM to reply-sending state.
+        if (!msg.hasMore()) {
+            sendingReply = true;
+            requestBegins = true;
+        }
+
+        return msg;
     }
 
     @Override
-    protected boolean xhas_in ()
+    protected boolean xhasIn()
     {
-        if (sending_reply)
+        if (sendingReply) {
             return false;
+        }
 
-        return super.xhas_in ();
+        return super.xhasIn();
     }
-    
+
     @Override
-    protected boolean xhas_out ()
+    protected boolean xhasOut()
     {
-        if (!sending_reply)
+        if (!sendingReply) {
             return false;
+        }
 
-        return super.xhas_out ();
+        return super.xhasOut();
     }
-
-
-
 }

@@ -32,7 +32,7 @@ public class TestReqrepDevice
     public void testReprepDevice()
     {
         boolean brc;
-        Ctx ctx = ZMQ.zmq_init(1);
+        Ctx ctx = ZMQ.zmqInit(1);
         assertThat(ctx, notNullValue());
 
         //  Create a req/rep device.

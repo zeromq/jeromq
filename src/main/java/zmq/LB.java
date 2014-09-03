@@ -22,11 +22,11 @@ package zmq;
 import java.util.ArrayList;
 import java.util.List;
 
-public class LB {
-
+public class LB
+{
     //  List of outbound pipes.
     private final List<Pipe> pipes;
-    
+
     //  Number of active pipes. All the active pipes are located at the
     //  beginning of the pipes array.
     private int active;
@@ -39,54 +39,58 @@ public class LB {
 
     //  True if we are dropping current message.
     private boolean dropping;
-    
-    public LB() {
+
+    public LB()
+    {
         active = 0;
         current = 0;
         more = false;
         dropping = false;
-        
+
         pipes = new ArrayList<Pipe>();
     }
 
-    public void attach (Pipe pipe_) 
+    public void attach(Pipe pipe)
     {
-        pipes.add (pipe_);
-        activated (pipe_);
+        pipes.add(pipe);
+        activated(pipe);
     }
 
-    public void terminated(Pipe pipe_) {
-        int index = pipes.indexOf (pipe_);
+    public void terminated(Pipe pipe)
+    {
+        int index = pipes.indexOf(pipe);
 
         //  If we are in the middle of multipart message and current pipe
         //  have disconnected, we have to drop the remainder of the message.
-        if (index == current && more)
+        if (index == current && more) {
             dropping = true;
+        }
 
         //  Remove the pipe from the list; adjust number of active pipes
         //  accordingly.
         if (index < active) {
             active--;
-            Utils.swap (pipes, index, active);
-            if (current == active)
+            Utils.swap(pipes, index, active);
+            if (current == active) {
                 current = 0;
+            }
         }
-        pipes.remove (pipe_);
-
+        pipes.remove(pipe);
     }
 
-    public void activated(Pipe pipe_) {
+    public void activated(Pipe pipe)
+    {
         //  Move the pipe to the list of active pipes.
-        Utils.swap (pipes, pipes.indexOf (pipe_), active);
+        Utils.swap(pipes, pipes.indexOf(pipe), active);
         active++;
     }
 
-    public boolean send(Msg msg_, ValueReference<Integer> errno) {
+    public boolean send(Msg msg, ValueReference<Integer> errno)
+    {
         //  Drop the message if required. If we are at the end of the message
         //  switch back to non-dropping mode.
         if (dropping) {
-
-            more = msg_.hasMore();
+            more = msg.hasMore();
             dropping = more;
 
             // msg_.close();
@@ -94,15 +98,18 @@ public class LB {
         }
 
         while (active > 0) {
-            if (pipes.get(current).write (msg_))
+            if (pipes.get(current).write(msg)) {
                 break;
+            }
 
             assert (!more);
             active--;
-            if (current < active)
-                Utils.swap (pipes, current, active);
-            else
+            if (current < active) {
+                Utils.swap(pipes, current, active);
+            }
+            else {
                 current = 0;
+            }
         }
 
         //  If there are no pipes we cannot send the message.
@@ -113,33 +120,37 @@ public class LB {
 
         //  If it's final part of the message we can fluch it downstream and
         //  continue round-robinning (load balance).
-        more = msg_.hasMore();
+        more = msg.hasMore();
         if (!more) {
-            pipes.get(current).flush ();
-            if (active > 1)
+            pipes.get(current).flush();
+            if (active > 1) {
                 current = (current + 1) % active;
+            }
         }
 
         return true;
     }
 
-    public boolean has_out() {
+    public boolean hasOut()
+    {
         //  If one part of the message was already written we can definitely
         //  write the rest of the message.
-        if (more)
+        if (more) {
             return true;
+        }
 
         while (active > 0) {
-
             //  Check whether a pipe has room for another message.
-            if (pipes.get(current).check_write ())
+            if (pipes.get(current).checkWrite()) {
                 return true;
+            }
 
             //  Deactivate the pipe.
             active--;
-            Utils.swap (pipes, current, active);
-            if (current == active)
+            Utils.swap(pipes, current, active);
+            if (current == active) {
                 current = 0;
+            }
         }
 
         return false;

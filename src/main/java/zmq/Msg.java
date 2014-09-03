@@ -22,7 +22,8 @@ package zmq;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-public class Msg {
+public class Msg
+{
     private static final int MAX_VSM_SIZE = 29;
 
     private static final byte TYPE_MIN = 101;
@@ -44,7 +45,8 @@ public class Msg {
     private byte[] data;
     private ByteBuffer buf;
 
-    public Msg() {
+    public Msg()
+    {
         this.type = TYPE_VSM;
         this.flags = 0;
         this.size = 0;
@@ -52,24 +54,29 @@ public class Msg {
         this.data = buf.array();
     }
 
-    public Msg(int capacity) {
-        if (capacity <= MAX_VSM_SIZE)
+    public Msg(int capacity)
+    {
+        if (capacity <= MAX_VSM_SIZE) {
             this.type = TYPE_VSM;
-        else
+        }
+        else {
             this.type = TYPE_LMSG;
+        }
         this.flags = 0;
         this.size = capacity;
         this.buf = ByteBuffer.wrap(new byte[capacity]).order(ByteOrder.BIG_ENDIAN);
         this.data = buf.array();
     }
 
-    public Msg(byte[] src) {
+    public Msg(byte[] src)
+    {
         if (src == null) {
             src = new byte[0];
         }
         if (src.length <= MAX_VSM_SIZE) {
             this.type = TYPE_VSM;
-        } else {
+        }
+        else {
             this.type = TYPE_LMSG;
         }
         this.flags = 0;
@@ -78,7 +85,8 @@ public class Msg {
         this.buf = ByteBuffer.wrap(src).order(ByteOrder.BIG_ENDIAN);
     }
 
-    public Msg(final ByteBuffer src) {
+    public Msg(final ByteBuffer src)
+    {
         if (src == null) {
             throw new IllegalArgumentException("ByteBuffer cannot be null");
         }
@@ -88,16 +96,20 @@ public class Msg {
         this.type = TYPE_LMSG;
         this.flags = 0;
         this.buf = src.duplicate();
-        if (buf.hasArray())
+        if (buf.hasArray()) {
             this.data = buf.array();
-        else
+        }
+        else {
             this.data = null;
+        }
         this.size = buf.remaining();
     }
 
-    public Msg(final Msg m) {
-        if (m == null)
+    public Msg(final Msg m)
+    {
+        if (m == null) {
             throw new IllegalArgumentException("Msg cannot be null");
+        }
         this.type = m.type;
         this.flags = m.flags;
         this.size = m.size;
@@ -106,48 +118,59 @@ public class Msg {
         System.arraycopy(m.data, 0, this.data, 0, m.size);
     }
 
-    public boolean isIdentity() {
+    public boolean isIdentity()
+    {
         return (flags & IDENTITY) == IDENTITY;
     }
 
-    public boolean isDelimiter() {
+    public boolean isDelimiter()
+    {
         return type == TYPE_DELIMITER;
     }
 
-    public boolean isVSM() {
+    public boolean isVSM()
+    {
         return type == TYPE_VSM;
     }
 
-    public boolean isCMSG() {
+    public boolean isCMSG()
+    {
         return type == TYPE_CMSG;
     }
 
-    public boolean check() {
+    public boolean check()
+    {
         return type >= TYPE_MIN && type <= TYPE_MAX;
     }
 
-    public int flags() {
+    public int flags()
+    {
         return flags;
     }
 
-    public boolean hasMore() {
+    public boolean hasMore()
+    {
         return (flags & MORE) > 0;
     }
 
-    public byte type() {
+    public byte type()
+    {
         return type;
     }
 
-    public void setFlags(int flags_) {
-        flags |= flags_;
+    public void setFlags(int flags)
+    {
+        this.flags |= flags;
     }
 
-    public void initDelimiter() {
+    public void initDelimiter()
+    {
         type = TYPE_DELIMITER;
         flags = 0;
     }
 
-    public byte[] data() {
+    public byte[] data()
+    {
         if (buf.isDirect()) {
             int length = buf.remaining();
             byte[] bytes = new byte[length];
@@ -157,53 +180,65 @@ public class Msg {
         return data;
     }
 
-    public ByteBuffer buf() {
+    public ByteBuffer buf()
+    {
         return buf.duplicate();
     }
 
-    public int size() {
+    public int size()
+    {
         return size;
     }
 
-    public void resetFlags(int f) {
+    public void resetFlags(int f)
+    {
         flags = flags & ~f;
     }
 
-    public byte get() {
+    public byte get()
+    {
         return buf.get();
     }
 
-    public byte get(int index) {
+    public byte get(int index)
+    {
         return buf.get(index);
     }
 
-    public Msg put(byte b) {
+    public Msg put(byte b)
+    {
         buf.put(b);
         return this;
     }
 
-    public Msg put(int index, byte b) {
+    public Msg put(int index, byte b)
+    {
         buf.put(index, b);
         return this;
     }
 
-    public Msg put(byte[] src) {
+    public Msg put(byte[] src)
+    {
         return put(src, 0, src.length);
     }
 
-    public Msg put(byte[] src, int off, int len) {
-        if (src == null)
+    public Msg put(byte[] src, int off, int len)
+    {
+        if (src == null) {
             return this;
+        }
         buf.put(src, off, len);
         return this;
     }
 
-    public Msg put(ByteBuffer src) {
+    public Msg put(ByteBuffer src)
+    {
         buf.put(src);
         return this;
     }
 
-    public int getBytes(int index, byte[] dst, int off, int len) {
+    public int getBytes(int index, byte[] dst, int off, int len)
+    {
         int count = Math.min(len, size);
         if (buf.isDirect()) {
             ByteBuffer dup = buf.duplicate();
@@ -215,7 +250,8 @@ public class Msg {
         return count;
     }
 
-    public int getBytes(int index, ByteBuffer bb, int len) {
+    public int getBytes(int index, ByteBuffer bb, int len)
+    {
         int count = Math.min(bb.remaining(), size - index);
         count = Math.min(count, len);
         bb.put(buf);
@@ -223,7 +259,8 @@ public class Msg {
     }
 
     @Override
-    public String toString() {
+    public String toString()
+    {
         return String.format("#zmq.Msg{type=%s, size=%s, flags=%s}", type, size, flags);
     }
 }
