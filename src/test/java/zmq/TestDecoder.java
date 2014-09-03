@@ -38,7 +38,7 @@ public class TestDecoder
     {
         session = new DummySession();
         decoder = new Decoder(64, 256);
-        decoder.set_msg_sink(session);
+        decoder.setMsgSink(session);
     }
 
     // as if it read data from socket
@@ -75,34 +75,34 @@ public class TestDecoder
     @Test
     public void testReader()
     {
-        ByteBuffer in = decoder.get_buffer();
+        ByteBuffer in = decoder.getBuffer();
         int insize = read_short_message(in);
 
         assertThat(insize, is(7));
         in.flip();
-        int process = decoder.process_buffer(in, insize);
+        int process = decoder.processBuffer(in, insize);
         assertThat(process, is(7));
     }
 
     @Test
     public void testReaderLong()
     {
-        ByteBuffer in = decoder.get_buffer();
+        ByteBuffer in = decoder.getBuffer();
         int insize = read_long_message1(in);
 
         assertThat(insize, is(64));
         in.flip();
-        int process = decoder.process_buffer(in, insize);
+        int process = decoder.processBuffer(in, insize);
         assertThat(process, is(64));
 
-        in = decoder.get_buffer();
+        in = decoder.getBuffer();
         assertThat(in.capacity(), is(200));
         assertThat(in.position(), is(62));
 
         insize = read_long_message2(in);
 
         assertThat(insize, is(200));
-        process = decoder.process_buffer(in, 138);
+        process = decoder.processBuffer(in, 138);
         assertThat(process, is(138));
         assertThat(in.array()[199], is((byte) '9'));
     }
@@ -110,13 +110,13 @@ public class TestDecoder
     @Test
     public void testReaderMultipleMsg()
     {
-        ByteBuffer in = decoder.get_buffer();
+        ByteBuffer in = decoder.getBuffer();
         int insize = read_short_message(in);
         assertThat(insize, is(7));
         read_short_message(in);
 
         in.flip();
-        int processed = decoder.process_buffer(in, 14);
+        int processed = decoder.processBuffer(in, 14);
         assertThat(processed, is(14));
         assertThat(in.position(), is(14));
 
@@ -125,10 +125,10 @@ public class TestDecoder
 
     static class CustomDecoder extends DecoderBase
     {
-        private static final int read_header = 0;
-        private static final int read_body = 1;
+        private static final int READ_HEADER = 0;
+        private static final int READ_BODY = 1;
 
-        byte [] header = new byte [10];
+        byte[] header = new byte[10];
         Msg msg;
         int size = -1;
         IMsgSink sink;
@@ -136,48 +136,48 @@ public class TestDecoder
         public CustomDecoder(int bufsize, long maxmsgsize)
         {
             super(bufsize);
-            next_step(header, 10, read_header);
+            nextStep(header, 10, READ_HEADER);
         }
 
         @Override
         protected boolean next()
         {
             switch (state()) {
-            case read_header:
-                return read_header();
-            case read_body:
-                return read_body();
+            case READ_HEADER:
+                return readHeader();
+            case READ_BODY:
+                return readBody();
             }
             return false;
         }
 
-        private boolean read_header()
+        private boolean readHeader()
         {
             assertThat(new String(header, 0, 6, ZMQ.CHARSET), is("HEADER"));
             ByteBuffer b = ByteBuffer.wrap(header, 6, 4);
             size = b.getInt();
 
             msg = new Msg(size);
-            next_step(msg, read_body);
+            nextStep(msg, READ_BODY);
 
             return true;
         }
 
-        private boolean read_body()
+        private boolean readBody()
         {
-            sink.push_msg(msg);
-            next_step(header, 10, read_header);
+            sink.pushMsg(msg);
+            nextStep(header, 10, READ_HEADER);
             return true;
         }
 
         @Override
         public boolean stalled()
         {
-            return state() == read_body;
+            return state() == READ_BODY;
         }
 
         @Override
-        public void set_msg_sink(IMsgSink msgSink)
+        public void setMsgSink(IMsgSink msgSink)
         {
             sink = msgSink;
         }
@@ -187,25 +187,27 @@ public class TestDecoder
     public void testCustomDecoder()
     {
         CustomDecoder cdecoder = new CustomDecoder(32, 64);
-        cdecoder.set_msg_sink(session);
+        cdecoder.setMsgSink(session);
 
-        ByteBuffer in = cdecoder.get_buffer();
-        int insize = read_header(in);
+        ByteBuffer in = cdecoder.getBuffer();
+        int insize = readHeader(in);
         assertThat(insize, is(10));
-        read_body(in);
+        readBody(in);
 
         in.flip();
-        int processed = cdecoder.process_buffer(in, 30);
+        int processed = cdecoder.processBuffer(in, 30);
         assertThat(processed, is(30));
         assertThat(cdecoder.size, is(20));
         assertThat(session.out.size(), is(1));
     }
-    private void read_body(ByteBuffer in)
+
+    private void readBody(ByteBuffer in)
     {
         in.put("1234567890".getBytes(ZMQ.CHARSET));
         in.put("1234567890".getBytes(ZMQ.CHARSET));
     }
-    private int read_header(ByteBuffer in)
+
+    private int readHeader(ByteBuffer in)
     {
         in.put("HEADER".getBytes(ZMQ.CHARSET));
         in.putInt(20);

@@ -108,7 +108,7 @@ public class Helper
         }
 
         @Override
-        protected void xattach_pipe(Pipe pipe, boolean icanhasall)
+        protected void xattachPipe(Pipe pipe, boolean icanhasall)
         {
         }
 
@@ -135,7 +135,7 @@ public class Helper
         }
 
         @Override
-        public int push_msg(Msg msg)
+        public int pushMsg(Msg msg)
         {
             System.out.println("session.write " + msg);
             out.add(msg);
@@ -143,7 +143,7 @@ public class Helper
         }
 
         @Override
-        public Msg pull_msg()
+        public Msg pullMsg()
         {
             System.out.println("session.read " + out);
             if (out.size() == 0) {
@@ -217,7 +217,7 @@ public class Helper
             rc = in.read(buf, read, toRead);
             read += rc;
             toRead -= rc;
-            System.out.println("read " + rc + " total_read " + read + " to_read " + toRead);
+            System.out.println("read " + rc + " total_read " + read + " toRead " + toRead);
         }
         System.out.println(String.format("%02x %02x %02x %02x", buf[0], buf[1], buf[2], buf[3]));
         try {

@@ -30,7 +30,7 @@ public class TestInvalidRep
     @Test
     public void testInvalidRep()
     {
-        Ctx ctx = ZMQ.zmq_init(1);
+        Ctx ctx = ZMQ.zmqInit(1);
         assertThat(ctx, notNullValue());
         SocketBase routerSocket = ZMQ.zmq_socket(ctx, ZMQ.ZMQ_ROUTER);
         assertThat(routerSocket, notNullValue());

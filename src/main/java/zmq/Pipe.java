@@ -22,24 +22,23 @@ package zmq;
 //  Note that pipe can be stored in three different arrays.
 //  The array of inbound pipes (1), the array of outbound pipes (2) and
 //  the generic array of pipes to deallocate (3).
-public class Pipe extends ZObject {
-
-    public interface IPipeEvents {
-
-        void read_activated(Pipe pipe);
-        void write_activated(Pipe pipe);
+class Pipe extends ZObject
+{
+    interface IPipeEvents
+    {
+        void readActivated(Pipe pipe);
+        void writeActivated(Pipe pipe);
         void hiccuped(Pipe pipe);
         void terminated(Pipe pipe);
-        
-
     }
+
     //  Underlying pipes for both directions.
     private YPipe<Msg> inpipe;
     private YPipe<Msg> outpipe;
 
     //  Can the pipe be read from / written to?
-    private boolean in_active;
-    private boolean out_active;
+    private boolean inActive;
+    private boolean outActive;
 
     //  High watermark for the outbound pipe.
     private int hwm;
@@ -48,19 +47,19 @@ public class Pipe extends ZObject {
     private int lwm;
 
     //  Number of messages read and written so far.
-    private long msgs_read;
-    private long msgs_written;
+    private long msgsRead;
+    private long msgsWritten;
 
-    //  Last received peer's msgs_read. The actual number in the peer
+    //  Last received peer's msgsRead. The actual number in the peer
     //  can be higher at the moment.
-    private long peers_msgs_read;
+    private long peersMsgsRead;
 
     //  The pipe object on the other side of the pipepair.
     private Pipe peer;
 
     //  Sink to send events to.
     private IPipeEvents sink;
-    
+
     //  State of the pipe endpoint. Active is common state before any
     //  termination begins. Delimited means that delimiter was read from
     //  pipe before term command was received. Pending means that term
@@ -87,145 +86,153 @@ public class Pipe extends ZObject {
 
     //  Identity of the writer. Used uniquely by the reader side.
     private Blob identity;
-    
+
     // JeroMQ only
     private ZObject parent;
-    
+
     //  Constructor is private. Pipe can only be created using
     //  pipepair function.
-	private Pipe (ZObject parent_, YPipe<Msg> inpipe_, YPipe<Msg> outpipe_,
-		      int inhwm_, int outhwm_, boolean delay_) {
-		super(parent_);
-		inpipe = inpipe_;
-		outpipe = outpipe_;
-		in_active = true;
-		out_active = true;
-		hwm = outhwm_;
-		lwm = compute_lwm (inhwm_);
-		msgs_read = 0;
-		msgs_written = 0;
-		peers_msgs_read = 0;
-		peer = null ;
-		sink = null ;
-		state = State.ACTIVE;
-		delay = delay_;
-		
-		parent = parent_;
-	}
-	
-	//  Create a pipepair for bi-directional transfer of messages.
+    private Pipe(ZObject parent, YPipe<Msg> inpipe, YPipe<Msg> outpipe,
+              int inhwm, int outhwm, boolean delay)
+    {
+        super(parent);
+        this.inpipe = inpipe;
+        this.outpipe = outpipe;
+        inActive = true;
+        outActive = true;
+        hwm = outhwm;
+        lwm = computeLwm(inhwm);
+        msgsRead = 0;
+        msgsWritten = 0;
+        peersMsgsRead = 0;
+        peer = null;
+        sink = null;
+        state = State.ACTIVE;
+        this.delay = delay;
+
+        this.parent = parent;
+    }
+
+    //  Create a pipepair for bi-directional transfer of messages.
     //  First HWM is for messages passed from first pipe to the second pipe.
     //  Second HWM is for messages passed from second pipe to the first pipe.
     //  Delay specifies how the pipe behaves when the peer terminates. If true
     //  pipe receives all the pending messages before terminating, otherwise it
     //  terminates straight away.
-	public static void pipepair(ZObject[] parents_, Pipe[] pipes_, int[] hwms_,
-			boolean[] delays_) {
-		
-	    //   Creates two pipe objects. These objects are connected by two ypipes,
-	    //   each to pass messages in one direction.
-	            
-		YPipe<Msg> upipe1 = new YPipe<Msg>(Config.MESSAGE_PIPE_GRANULARITY.getValue());
-		YPipe<Msg> upipe2 = new YPipe<Msg>(Config.MESSAGE_PIPE_GRANULARITY.getValue());
-	            
-	    pipes_ [0] = new Pipe(parents_ [0], upipe1, upipe2,
-	        hwms_ [1], hwms_ [0], delays_ [0]);
-	    pipes_ [1] = new Pipe(parents_ [1], upipe2, upipe1,
-	        hwms_ [0], hwms_ [1], delays_ [1]);
-	            
-	    pipes_ [0].set_peer (pipes_ [1]);
-	    pipes_ [1].set_peer (pipes_ [0]);
+    public static void pipepair(ZObject[] parents, Pipe[] pipes, int[] hwms,
+            boolean[] delays)
+    {
+        //   Creates two pipe objects. These objects are connected by two ypipes,
+        //   each to pass messages in one direction.
 
-	}
-	
-	//  Pipepair uses this function to let us know about
+        YPipe<Msg> upipe1 = new YPipe<Msg>(Config.MESSAGE_PIPE_GRANULARITY.getValue());
+        YPipe<Msg> upipe2 = new YPipe<Msg>(Config.MESSAGE_PIPE_GRANULARITY.getValue());
+
+        pipes[0] = new Pipe(parents[0], upipe1, upipe2,
+            hwms[1], hwms[0], delays[0]);
+        pipes[1] = new Pipe(parents[1], upipe2, upipe1,
+            hwms[0], hwms[1], delays[1]);
+
+        pipes[0].setPeer(pipes[1]);
+        pipes[1].setPeer(pipes[0]);
+
+    }
+
+    //  Pipepair uses this function to let us know about
     //  the peer pipe object.
-    private void set_peer (Pipe peer_)
+    private void setPeer(Pipe peer)
     {
         //  Peer can be set once only.
-        assert (peer_ != null);
-        peer = peer_;
+        assert (peer != null);
+        this.peer = peer;
     }
-    
+
     //  Specifies the object to send events to.
-    public void set_event_sink(IPipeEvents sink_) {
-        assert (sink == null);
-        sink = sink_;
+    public void setEventSink(IPipeEvents sink)
+    {
+        assert (this.sink == null);
+        this.sink = sink;
     }
-    
+
     //  Pipe endpoint can store an opaque ID to be used by its clients.
-    public void set_identity(Blob identity_) {
-        identity = identity_;
+    public void setIdentity(Blob identity)
+    {
+        this.identity = identity;
     }
-    
-    public Blob get_identity() {
+
+    public Blob getIdentity()
+    {
         return identity;
     }
 
-
     //  Returns true if there is at least one message to read in the pipe.
-    public boolean check_read() {
-        if (!in_active || (state != State.ACTIVE && state != State.PENDING))
+    public boolean checkRead()
+    {
+        if (!inActive || (state != State.ACTIVE && state != State.PENDING)) {
             return false;
+        }
 
         //  Check if there's an item in the pipe.
-        if (!inpipe.check_read ()) {
-            in_active = false;
+        if (!inpipe.checkRead()) {
+            inActive = false;
             return false;
         }
 
         //  If the next item in the pipe is message delimiter,
         //  initiate termination process.
-        if (is_delimiter(inpipe.probe ())) {
-            Msg msg = inpipe.read ();
+        if (isDelimiter(inpipe.probe())) {
+            Msg msg = inpipe.read();
             assert (msg != null);
-            delimit ();
+            delimit();
             return false;
         }
 
         return true;
     }
-    
 
     //  Reads a message to the underlying pipe.
     public Msg read()
     {
-        if (!in_active || (state != State.ACTIVE && state != State.PENDING))
+        if (!inActive || (state != State.ACTIVE && state != State.PENDING)) {
             return null;
+        }
 
-        Msg msg_ = inpipe.read();
+        Msg msg = inpipe.read();
 
-        if (msg_ == null) {
-            in_active = false;
+        if (msg == null) {
+            inActive = false;
             return null;
         }
 
         //  If delimiter was read, start termination process of the pipe.
-        if (msg_.isDelimiter()) {
-            delimit ();
+        if (msg.isDelimiter()) {
+            delimit();
             return null;
         }
 
-        if (!msg_.hasMore())
-            msgs_read++;
+        if (!msg.hasMore()) {
+            msgsRead++;
+        }
 
-        if (lwm > 0 && msgs_read % lwm == 0)
-            send_activate_write(peer, msgs_read);
+        if (lwm > 0 && msgsRead % lwm == 0) {
+            sendActivateWrite(peer, msgsRead);
+        }
 
-        return msg_;
+        return msg;
     }
-    
+
     //  Checks whether messages can be written to the pipe. If writing
     //  the message would cause high watermark the function returns false.
-    public boolean check_write ()
+    public boolean checkWrite()
     {
-        if (!out_active || state != State.ACTIVE)
+        if (!outActive || state != State.ACTIVE) {
             return false;
+        }
 
-        boolean full = hwm > 0 && msgs_written - peers_msgs_read == (long) (hwm);
+        boolean full = hwm > 0 && msgsWritten - peersMsgsRead == (long) (hwm);
 
         if (full) {
-            out_active = false;
+            outActive = false;
             return false;
         }
 
@@ -234,90 +241,93 @@ public class Pipe extends ZObject {
 
     //  Writes a message to the underlying pipe. Returns false if the
     //  message cannot be written because high watermark was reached.
-    public boolean write (Msg msg_)
+    public boolean write(Msg msg)
     {
-        if (!check_write ())
+        if (!checkWrite()) {
             return false;
+        }
 
-        boolean more = msg_.hasMore();
-        outpipe.write (msg_, more);
+        boolean more = msg.hasMore();
+        outpipe.write(msg, more);
 
-        if (!more)
-            msgs_written++;
+        if (!more) {
+            msgsWritten++;
+        }
 
         return true;
     }
 
-
     //  Remove unfinished parts of the outbound message from the pipe.
-    public void rollback ()
+    public void rollback()
     {
         //  Remove incomplete message from the outbound pipe.
         Msg msg;
-        if (outpipe!= null) {
-            while ((msg = outpipe.unwrite ()) != null) {
-                assert ((msg.flags () & Msg.MORE) > 0);
-                //msg.close ();
+        if (outpipe != null) {
+            while ((msg = outpipe.unwrite()) != null) {
+                assert ((msg.flags() & Msg.MORE) > 0);
             }
         }
     }
-    
+
     //  Flush the messages downsteam.
-    public void flush ()
+    public void flush()
     {
         //  The peer does not exist anymore at this point.
-        if (state == State.TERMINATING)
+        if (state == State.TERMINATING) {
             return;
+        }
 
-        if (outpipe != null && !outpipe.flush ()) {
-            send_activate_read (peer);
-        } 
-    }
-
-
-    @Override
-    protected void process_activate_read ()
-    {
-        if (!in_active && (state == State.ACTIVE || state == State.PENDING)) {
-            in_active = true;
-            sink.read_activated (this);
+        if (outpipe != null && !outpipe.flush()) {
+            sendActivateRead(peer);
         }
     }
 
     @Override
-    protected void process_activate_write (long msgs_read_)
+    protected void process_activate_read()
+    {
+        if (!inActive && (state == State.ACTIVE || state == State.PENDING)) {
+            inActive = true;
+            sink.readActivated(this);
+        }
+    }
+
+    @Override
+    protected void process_activate_write(long msgsRead)
     {
         //  Remember the peers's message sequence number.
-        peers_msgs_read = msgs_read_;
+        peersMsgsRead = msgsRead;
 
-        if (!out_active && state == State.ACTIVE) {
-            out_active = true;
-            sink.write_activated (this);
+        if (!outActive && state == State.ACTIVE) {
+            outActive = true;
+            sink.writeActivated(this);
         }
     }
-    
+
     @SuppressWarnings("unchecked")
     @Override
-    protected void process_hiccup (Object pipe_) {
+    protected void process_hiccup(Object pipe)
+    {
         //  Destroy old outpipe. Note that the read end of the pipe was already
         //  migrated to this thread.
         assert (outpipe != null);
-        outpipe.flush ();
-        while (outpipe.read () !=null) {
+        outpipe.flush();
+        while (outpipe.read() != null) {
+            // do nothing
         }
 
         //  Plug in the new outpipe.
-        assert (pipe_ != null);
-        outpipe = (YPipe<Msg>) pipe_;
-        out_active = true;
+        assert (pipe != null);
+        outpipe = (YPipe<Msg>) pipe;
+        outActive = true;
 
         //  If appropriate, notify the user about the hiccup.
-        if (state == State.ACTIVE)
-            sink.hiccuped (this);
+        if (state == State.ACTIVE) {
+            sink.hiccuped(this);
+        }
     }
-    
+
     @Override
-    protected void process_pipe_term ()
+    protected void processPipeTerm()
     {
         //  This is the simple case of peer-induced termination. If there are no
         //  more pending messages to read, or if the pipe was configured to drop
@@ -328,10 +338,11 @@ public class Pipe extends ZObject {
             if (!delay) {
                 state = State.TERMINATING;
                 outpipe = null;
-                send_pipe_term_ack (peer);
+                sendPipeTermAck(peer);
             }
-            else
+            else {
                 state = State.PENDING;
+            }
             return;
         }
 
@@ -340,7 +351,7 @@ public class Pipe extends ZObject {
         if (state == State.DELIMITED) {
             state = State.TERMINATING;
             outpipe = null;
-            send_pipe_term_ack (peer);
+            sendPipeTermAck(peer);
             return;
         }
 
@@ -350,20 +361,20 @@ public class Pipe extends ZObject {
         if (state == State.TERMINATED) {
             state = State.DOUBLE_TERMINATED;
             outpipe = null;
-            send_pipe_term_ack (peer);
+            sendPipeTermAck(peer);
             return;
         }
 
         //  pipe_term is invalid in other states.
         assert (false);
     }
-    
+
     @Override
-    protected void process_pipe_term_ack ()
+    protected void processPipeTermAck()
     {
         //  Notify the user that all the references to the pipe should be dropped.
-        assert (sink!=null);
-        sink.terminated (this);
+        assert (sink != null);
+        sink.terminated(this);
 
         //  In terminating and double_terminated states there's nothing to do.
         //  Simply deallocate the pipe. In terminated state we have to ack the
@@ -371,19 +382,21 @@ public class Pipe extends ZObject {
         //  are invalid.
         if (state == State.TERMINATED) {
             outpipe = null;
-            send_pipe_term_ack (peer);
+            sendPipeTermAck(peer);
         }
-        else
+        else {
             assert (state == State.TERMINATING || state == State.DOUBLE_TERMINATED);
+        }
 
         //  We'll deallocate the inbound pipe, the peer will deallocate the outbound
         //  pipe (which is an inbound pipe from its point of view).
         //  First, delete all the unread messages in the pipe. We have to do it by
         //  hand because msg_t doesn't have automatic destructor. Then deallocate
         //  the ypipe itself.
-        while (inpipe.read () != null) {
+        while (inpipe.read() != null) {
+            // do nothing
         }
-        
+
         inpipe = null;
 
         //  Deallocate the pipe object
@@ -393,133 +406,129 @@ public class Pipe extends ZObject {
     //  and user will be notified about actual deallocation by 'terminated'
     //  event. If delay is true, the pending messages will be processed
     //  before actual shutdown.
-    public void terminate (boolean delay_)
+    public void terminate(boolean delay)
     {
         //  Overload the value specified at pipe creation.
-        delay = delay_;
+        this.delay = delay;
 
         //  If terminate was already called, we can ignore the duplicit invocation.
-        if (state == State.TERMINATED || state == State.DOUBLE_TERMINATED)
+        if (state == State.TERMINATED || state == State.DOUBLE_TERMINATED) {
             return;
-
+        }
         //  If the pipe is in the final phase of async termination, it's going to
         //  closed anyway. No need to do anything special here.
-        else if (state == State.TERMINATING)
+        else if (state == State.TERMINATING) {
             return;
-
+        }
         //  The simple sync termination case. Ask the peer to terminate and wait
         //  for the ack.
         else if (state == State.ACTIVE) {
-            send_pipe_term (peer);
+            sendPipeTerm(peer);
             state = State.TERMINATED;
         }
-
         //  There are still pending messages available, but the user calls
         //  'terminate'. We can act as if all the pending messages were read.
-        else if (state == State.PENDING && !delay) {
+        else if (state == State.PENDING && !this.delay) {
             outpipe = null;
-            send_pipe_term_ack (peer);
+            sendPipeTermAck(peer);
             state = State.TERMINATING;
         }
-
-        //  If there are pending messages still availabe, do nothing.
+        //  If there are pending messages still available, do nothing.
         else if (state == State.PENDING) {
+            // do nothing
         }
-
         //  We've already got delimiter, but not term command yet. We can ignore
         //  the delimiter and ack synchronously terminate as if we were in
         //  active state.
         else if (state == State.DELIMITED) {
-            send_pipe_term (peer);
+            sendPipeTerm(peer);
             state = State.TERMINATED;
         }
-
         //  There are no other states.
-        else
+        else {
             assert (false);
+        }
 
         //  Stop outbound flow of messages.
-        out_active = false;
+        outActive = false;
 
         if (outpipe != null) {
-
             //  Drop any unfinished outbound messages.
-            rollback ();
+            rollback();
 
             //  Write the delimiter into the pipe. Note that watermarks are not
             //  checked; thus the delimiter can be written even when the pipe is full.
-            
+
             Msg msg = new Msg();
-            msg.initDelimiter ();
-            outpipe.write (msg, false);
-            flush ();
-            
+            msg.initDelimiter();
+            outpipe.write(msg, false);
+            flush();
         }
     }
-    
 
     //  Returns true if the message is delimiter; false otherwise.
-    private static boolean is_delimiter(Msg msg_) {
-        return msg_.isDelimiter ();
+    private static boolean isDelimiter(Msg msg)
+    {
+        return msg.isDelimiter();
     }
 
-	//  Computes appropriate low watermark from the given high watermark.
-	private static int compute_lwm (int hwm_)
-	{
-	    //  Compute the low water mark. Following point should be taken
-	    //  into consideration:
-	    //
-	    //  1. LWM has to be less than HWM.
-	    //  2. LWM cannot be set to very low value (such as zero) as after filling
-	    //     the queue it would start to refill only after all the messages are
-	    //     read from it and thus unnecessarily hold the progress back.
-	    //  3. LWM cannot be set to very high value (such as HWM-1) as it would
-	    //     result in lock-step filling of the queue - if a single message is
-	    //     read from a full queue, writer thread is resumed to write exactly one
-	    //     message to the queue and go back to sleep immediately. This would
-	    //     result in low performance.
-	    //
-	    //  Given the 3. it would be good to keep HWM and LWM as far apart as
-	    //  possible to reduce the thread switching overhead to almost zero,
-	    //  say HWM-LWM should be max_wm_delta.
-	    //
-	    //  That done, we still we have to account for the cases where
-	    //  HWM < max_wm_delta thus driving LWM to negative numbers.
-	    //  Let's make LWM 1/2 of HWM in such cases.
-	    int result = (hwm_ > Config.MAX_WM_DELTA.getValue() * 2) ?
-	        hwm_ - Config.MAX_WM_DELTA.getValue() : (hwm_ + 1) / 2;
+    //  Computes appropriate low watermark from the given high watermark.
+    private static int computeLwm(int hwm)
+    {
+        //  Compute the low water mark. Following point should be taken
+        //  into consideration:
+        //
+        //  1. LWM has to be less than HWM.
+        //  2. LWM cannot be set to very low value (such as zero) as after filling
+        //     the queue it would start to refill only after all the messages are
+        //     read from it and thus unnecessarily hold the progress back.
+        //  3. LWM cannot be set to very high value (such as HWM-1) as it would
+        //     result in lock-step filling of the queue - if a single message is
+        //     read from a full queue, writer thread is resumed to write exactly one
+        //     message to the queue and go back to sleep immediately. This would
+        //     result in low performance.
+        //
+        //  Given the 3. it would be good to keep HWM and LWM as far apart as
+        //  possible to reduce the thread switching overhead to almost zero,
+        //  say HWM-LWM should be max_wm_delta.
+        //
+        //  That done, we still we have to account for the cases where
+        //  HWM < max_wm_delta thus driving LWM to negative numbers.
+        //  Let's make LWM 1/2 of HWM in such cases.
+        int result = (hwm > Config.MAX_WM_DELTA.getValue() * 2) ?
+            hwm - Config.MAX_WM_DELTA.getValue() : (hwm + 1) / 2;
 
-	    return result;
-	}
-	
+        return result;
+    }
 
     //  Handler for delimiter read from the pipe.
-	private void delimit ()
-	{
-	    if (state == State.ACTIVE) {
-	        state = State.DELIMITED;
-	        return;
-	    }
+    private void delimit()
+    {
+        if (state == State.ACTIVE) {
+            state = State.DELIMITED;
+            return;
+        }
 
-	    if (state == State.PENDING) {
-	        outpipe = null;
-	        send_pipe_term_ack (peer);
-	        state = State.TERMINATING;
-	        return;
-	    }
+        if (state == State.PENDING) {
+            outpipe = null;
+            sendPipeTermAck(peer);
+            state = State.TERMINATING;
+            return;
+        }
 
-	    //  Delimiter in any other state is invalid.
-	    assert (false);
-	}
+        //  Delimiter in any other state is invalid.
+        assert (false);
+    }
 
- 
     //  Temporaraily disconnects the inbound message stream and drops
     //  all the messages on the fly. Causes 'hiccuped' event to be generated
     //  in the peer.
-    public void hiccup() {
+    public void hiccup()
+    {
         //  If termination is already under way do nothing.
-        if (state != State.ACTIVE)
+        if (state != State.ACTIVE) {
             return;
+        }
 
         //  We'll drop the pointer to the inpipe. From now on, the peer is
         //  responsible for deallocating it.
@@ -527,19 +536,15 @@ public class Pipe extends ZObject {
 
         //  Create new inpipe.
         inpipe = new YPipe<Msg>(Config.MESSAGE_PIPE_GRANULARITY.getValue());
-        in_active = true;
+        inActive = true;
 
         //  Notify the peer about the hiccup.
-        send_hiccup (peer, inpipe);
-
+        sendHiccup(peer, inpipe);
     }
-
-
 
     @Override
-    public String toString() {
+    public String toString()
+    {
         return super.toString() + "[" + parent + "]";
     }
-
-
 }

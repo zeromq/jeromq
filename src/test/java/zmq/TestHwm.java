@@ -29,7 +29,7 @@ public class TestHwm
     @Test
     public void testHwm()
     {
-        Ctx ctx = ZMQ.zmq_init(1);
+        Ctx ctx = ZMQ.zmqInit(1);
         assertThat(ctx, notNullValue());
 
         int rc = 0;

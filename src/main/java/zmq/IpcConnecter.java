@@ -19,12 +19,12 @@
 
 package zmq;
 
-public class IpcConnecter extends TcpConnecter {
-    
-    public IpcConnecter (IOThread io_thread_,
-            SessionBase session_, final Options options_,
-            final Address addr_, boolean wait_)  {
-        
-        super (io_thread_, session_, options_, addr_, wait_);
+public class IpcConnecter extends TcpConnecter
+{
+    public IpcConnecter(IOThread ioThread,
+            SessionBase session, final Options options,
+            final Address addr, boolean wait)
+    {
+        super(ioThread, session, options, addr, wait);
     }
 }

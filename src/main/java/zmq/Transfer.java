@@ -24,72 +24,78 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.WritableByteChannel;
 
-public interface Transfer {
+public interface Transfer
+{
+    public int transferTo(WritableByteChannel s) throws IOException;
+    public int remaining();
 
-    public int transferTo (WritableByteChannel s) throws IOException;
-    public int remaining ();
-    
-    public static class ByteBufferTransfer implements Transfer {
-
+    public static class ByteBufferTransfer implements Transfer
+    {
         private ByteBuffer buf;
-        
-        public ByteBufferTransfer (ByteBuffer buf_) {
-            buf = buf_;
-        }
-        
-        @Override
-        public final int transferTo (WritableByteChannel s) throws IOException {
-            return s.write (buf);
+
+        public ByteBufferTransfer(ByteBuffer buf)
+        {
+            this.buf = buf;
         }
 
         @Override
-        public final int remaining () {
-            return buf.remaining ();
+        public final int transferTo(WritableByteChannel s) throws IOException
+        {
+            return s.write(buf);
         }
-        
+
+        @Override
+        public final int remaining()
+        {
+            return buf.remaining();
+        }
     }
-    
-    public static class FileChannelTransfer implements Transfer {
+
+    public static class FileChannelTransfer implements Transfer
+    {
         private Transfer parent;
-        private FileChannel ch;
+        private FileChannel channel;
         private long position;
         private long count;
         private int remaining;
-        
-        public FileChannelTransfer (ByteBuffer buf_, FileChannel ch_, long position_, long count_) {
-            parent = new ByteBufferTransfer (buf_);
-            ch = ch_;
-            position = position_;
-            count = count_;
-            remaining = parent.remaining () + (int) count;
+
+        public FileChannelTransfer(ByteBuffer buf, FileChannel channel, long position, long count)
+        {
+            parent = new ByteBufferTransfer(buf);
+            this.channel = channel;
+            this.position = position;
+            this.count = count;
+            remaining = parent.remaining() + (int) this.count;
         }
-        
+
         @Override
-        public final int transferTo(WritableByteChannel s) throws IOException {
+        public final int transferTo(WritableByteChannel s) throws IOException
+        {
             int sent = 0;
-            if (parent.remaining () > 0)
-                sent = parent.transferTo (s);
-            
-            if (parent.remaining () == 0) {
-                long fileSent = ch.transferTo (position, count, s);
+            if (parent.remaining() > 0) {
+                sent = parent.transferTo(s);
+            }
+
+            if (parent.remaining() == 0) {
+                long fileSent = channel.transferTo(position, count, s);
                 position += fileSent;
                 count -= fileSent;
                 sent += fileSent;
             }
-            
+
             remaining -= sent;
-            
-            if (remaining == 0)
-                ch.close ();
-            
+
+            if (remaining == 0) {
+                channel.close();
+            }
+
             return sent;
         }
 
         @Override
-        public final int remaining () {
+        public final int remaining()
+        {
             return remaining;
         }
     }
-
-    
 }

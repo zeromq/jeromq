@@ -51,9 +51,9 @@ public class LocalLat
         messageSize = atoi(args [1]);
         roundtripCount = atoi(args [2]);
 
-        ctx = ZMQ.zmq_init(1);
+        ctx = ZMQ.zmqInit(1);
         if (ctx == null) {
-            printf("error in zmq_init: %s\n");
+            printf("error in zmqInit: %s\n");
             return;
         }
 

@@ -29,7 +29,7 @@ public class TestReqrepIpc
     @Test
     public void testReqrepIpc()
     {
-        Ctx ctx = ZMQ.zmq_init(1);
+        Ctx ctx = ZMQ.zmqInit(1);
         assertThat(ctx, notNullValue());
         SocketBase sb = ZMQ.zmq_socket(ctx, ZMQ.ZMQ_REP);
         assertThat(sb, notNullValue());

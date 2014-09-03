@@ -19,16 +19,18 @@
 
 package zmq;
 
-public class Dealer extends SocketBase {
-    
-    public static class DealerSession extends SessionBase {
-        public DealerSession(IOThread io_thread_, boolean connect_,
-            SocketBase socket_, final Options options_,
-            final Address addr_) {
-            super(io_thread_, connect_, socket_, options_, addr_);
+public class Dealer extends SocketBase
+{
+    public static class DealerSession extends SessionBase
+    {
+        public DealerSession(IOThread ioThread, boolean connect,
+            SocketBase socket, final Options options,
+            final Address addr)
+        {
+            super(ioThread, connect, socket, options, addr);
         }
     }
-    
+
     //  Messages are fair-queued from inbound pipes. And load-balanced to
     //  the outbound pipes.
     private final FQ fq;
@@ -36,39 +38,40 @@ public class Dealer extends SocketBase {
 
     //  Have we prefetched a message.
     private boolean prefetched;
-    
-    private Msg prefetched_msg;
+
+    private Msg prefetchedMsg;
 
     //  Holds the prefetched message.
-    public Dealer(Ctx parent_, int tid_, int sid_) {
-        super(parent_, tid_, sid_);
-        
+    public Dealer(Ctx parent, int tid, int sid)
+    {
+        super(parent, tid, sid);
+
         prefetched = false;
         options.type = ZMQ.ZMQ_DEALER;
-        
+
         fq = new FQ();
         lb = new LB();
         //  TODO: Uncomment the following line when DEALER will become true DEALER
         //  rather than generic dealer socket.
         //  If the socket is closing we can drop all the outbound requests. There'll
         //  be noone to receive the replies anyway.
-        //  options.delay_on_close = false;
-            
-        options.recv_identity = true;
+        //  options.delayOnClose = false;
+
+        options.recvIdentity = true;
     }
 
-
     @Override
-    protected void xattach_pipe(Pipe pipe_, boolean icanhasall_) {
-        assert (pipe_ != null);
-        fq.attach (pipe_);
-        lb.attach (pipe_);
-    }
-    
-    @Override
-    protected boolean xsend(Msg msg_)
+    protected void xattachPipe(Pipe pipe, boolean icanhasall)
     {
-        return lb.send(msg_, errno);
+        assert (pipe != null);
+        fq.attach(pipe);
+        lb.attach(pipe);
+    }
+
+    @Override
+    protected boolean xsend(Msg msg)
+    {
+        return lb.send(msg, errno);
     }
 
     @Override
@@ -79,64 +82,67 @@ public class Dealer extends SocketBase {
 
     private Msg xxrecv()
     {
-        Msg msg_ = null;
+        Msg msg = null;
         //  If there is a prefetched message, return it.
         if (prefetched) {
-            msg_ = prefetched_msg;
+            msg = prefetchedMsg;
             prefetched = false;
-            prefetched_msg = null;
-            return msg_;
+            prefetchedMsg = null;
+            return msg;
         }
 
-        //  DEALER socket doesn't use identities. We can safely drop it and 
+        //  DEALER socket doesn't use identities. We can safely drop it and
         while (true) {
-            msg_ = fq.recv(errno);
-            if (msg_ == null)
+            msg = fq.recv(errno);
+            if (msg == null) {
                 return null;
-            if ((msg_.flags() & Msg.IDENTITY) == 0)
+            }
+            if ((msg.flags() & Msg.IDENTITY) == 0) {
                 break;
+            }
         }
-        return msg_;
+        return msg;
     }
 
     @Override
-    protected boolean xhas_in ()
+    protected boolean xhasIn()
     {
         //  We may already have a message pre-fetched.
-        if (prefetched)
+        if (prefetched) {
             return true;
+        }
 
         //  Try to read the next message to the pre-fetch buffer.
-        prefetched_msg = xxrecv();
-        if (prefetched_msg == null)
+        prefetchedMsg = xxrecv();
+        if (prefetchedMsg == null) {
             return false;
+        }
         prefetched = true;
         return true;
     }
 
     @Override
-    protected boolean xhas_out ()
+    protected boolean xhasOut()
     {
-        return lb.has_out ();
+        return lb.hasOut();
     }
 
     @Override
-    protected void xread_activated (Pipe pipe_)
+    protected void xreadActivated(Pipe pipe)
     {
-        fq.activated (pipe_);
+        fq.activated(pipe);
     }
 
     @Override
-    protected void xwrite_activated (Pipe pipe_)
+    protected void xwriteActivated(Pipe pipe)
     {
-        lb.activated (pipe_);
+        lb.activated(pipe);
     }
-
 
     @Override
-    protected void xterminated(Pipe pipe_) {
-        fq.terminated (pipe_);
-        lb.terminated (pipe_);
+    protected void xterminated(Pipe pipe)
+    {
+        fq.terminated(pipe);
+        lb.terminated(pipe);
     }
-
 }

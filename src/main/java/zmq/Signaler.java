@@ -32,71 +32,78 @@ import java.util.concurrent.atomic.AtomicInteger;
 //  given moment. Attempt to send a signal before receiving the previous
 //  one will result in undefined behaviour.
 
-public class Signaler {
+public class Signaler
+{
     //  Underlying write & read file descriptor.
     private Pipe.SinkChannel w;
     private Pipe.SourceChannel r;
     private Selector selector;
     private ByteBuffer rdummy;
- 
+
     // Selector.selectNow at every sending message doesn't show enough performance
     private final AtomicInteger wcursor = new AtomicInteger(0);
     private int rcursor = 0;
-    
-    public Signaler() {
+
+    public Signaler()
+    {
         //  Create the socketpair for signaling.
-        make_fdpair ();
+        makeFdPair();
 
         //  Set both fds to non-blocking mode.
         try {
-            Utils.unblock_socket (w);
-            Utils.unblock_socket (r);
-        } catch (IOException e) {
+            Utils.unblockSocket(w);
+            Utils.unblockSocket(r);
+        }
+        catch (IOException e) {
             throw new ZError.IOException(e);
         }
-        
+
         try {
             selector = Selector.open();
             r.register(selector, SelectionKey.OP_READ);
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             throw new ZError.IOException(e);
         }
-        
-        rdummy = ByteBuffer.allocate(1);
 
+        rdummy = ByteBuffer.allocate(1);
     }
-    
-    public void close() {
+
+    public void close()
+    {
         try {
             r.close();
             w.close();
             selector.close();
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             e.printStackTrace();
         }
     }
 
     //  Creates a pair of filedescriptors that will be used
     //  to pass the signals.
-    private void make_fdpair() {
+    private void makeFdPair()
+    {
         Pipe pipe;
-        
+
         try {
             pipe = Pipe.open();
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             throw new ZError.IOException(e);
         }
         r = pipe.source();
         w = pipe.sink();
     }
 
-    public SelectableChannel get_fd() {
+    public SelectableChannel getFd()
+    {
         return r;
     }
-    
-    public void send ()
+
+    public void send()
     {
-        
         int nbytes = 0;
         ByteBuffer dummy = ByteBuffer.allocate(1);
         dummy.limit(1);
@@ -104,7 +111,8 @@ public class Signaler {
         while (true) {
             try {
                 nbytes = w.write(dummy);
-            } catch (IOException e) {
+            }
+            catch (IOException e) {
                 throw new ZError.IOException(e);
             }
             if (nbytes == 0) {
@@ -116,57 +124,53 @@ public class Signaler {
         }
     }
 
-    public boolean wait_event (long timeout_) {
-        
+    public boolean waitEvent(long timeout)
+    {
         int rc = 0;
-        
+
         try {
-            
-            if (timeout_ == 0) {
-                // wait_event(0) is called every read/send of SocketBase
+            if (timeout == 0) {
+                // waitEvent(0) is called every read/send of SocketBase
                 // instant readiness is not strictly required
                 // On the other hand, we can save lots of system call and increase performance
                 if (rcursor < wcursor.get()) {
                     return true;
                 }
-                
+
                 return false;
-            } else if (timeout_ < 0 ) {
-                rc = selector.select(0);
-            } else {
-                rc = selector.select(timeout_);
             }
-        } catch (IOException e) {
+            else if (timeout < 0) {
+                rc = selector.select(0);
+            }
+            else {
+                rc = selector.select(timeout);
+            }
+        }
+        catch (IOException e) {
             throw new ZError.IOException(e);
         }
-
 
         if (rc == 0) {
             return false;
         }
-        
-        selector.selectedKeys().clear();
-        
-        return true;
 
+        selector.selectedKeys().clear();
+
+        return true;
     }
 
-
-    public void recv ()
+    public void recv()
     {
         int nbytes = 0;
         while (nbytes == 0) {
             try {
                 nbytes = r.read(rdummy);
                 rdummy.rewind();
-            } catch (IOException e) {
+            }
+            catch (IOException e) {
                 throw new ZError.IOException(e);
-            } 
+            }
         }
-        rcursor ++;
+        rcursor++;
     }
-    
-    
-
-
 }

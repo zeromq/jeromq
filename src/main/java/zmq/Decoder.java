@@ -32,159 +32,157 @@ import java.nio.ByteBuffer;
 //  This class implements the state machine that parses the incoming buffer.
 //  Derived class should implement individual state machine actions.
 
-public class Decoder extends DecoderBase {
-    
-    private final static int one_byte_size_ready = 0;
-    private final static int eight_byte_size_ready = 1;
-    private final static int flags_ready = 2;
-    private final static int message_ready = 3;
-    
-    private final byte[] tmpbuf;
-    private Msg in_progress;
-    private final long maxmsgsize;
-    private IMsgSink msg_sink;
+public class Decoder extends DecoderBase
+{
+    private static final int ONE_BYTE_SIZE_READY = 0;
+    private static final int EIGHT_BYTE_SIZE_READY = 1;
+    private static final int FLAGS_READY = 2;
+    private static final int MESSAGE_READY = 3;
 
-    public Decoder (int bufsize_, long maxmsgsize_)
+    private final byte[] tmpbuf;
+    private Msg inProgress;
+    private final long maxmsgsize;
+    private IMsgSink msgSink;
+
+    public Decoder(int bufsize, long maxmsgsize)
     {
-        super(bufsize_);
-        maxmsgsize = maxmsgsize_;
+        super(bufsize);
+        this.maxmsgsize = maxmsgsize;
         tmpbuf = new byte[8];
-        
-    
-        //  At the beginning, read one byte and go to one_byte_size_ready state.
-        next_step (tmpbuf, 1, one_byte_size_ready);
+
+        //  At the beginning, read one byte and go to oneByteSizeReady state.
+        nextStep(tmpbuf, 1, ONE_BYTE_SIZE_READY);
     }
-    
 
     //  Set the receiver of decoded messages.
     @Override
-    public void set_msg_sink (IMsgSink msg_sink_) 
+    public void setMsgSink(IMsgSink msgSink)
     {
-        msg_sink = msg_sink_;
+        this.msgSink = msgSink;
     }
 
     @Override
-    protected boolean next() {
+    protected boolean next()
+    {
         switch(state()) {
-        case one_byte_size_ready:
-            return one_byte_size_ready ();
-        case eight_byte_size_ready:
-            return eight_byte_size_ready ();
-        case flags_ready:
-            return flags_ready ();
-        case message_ready:
-            return message_ready ();
+        case ONE_BYTE_SIZE_READY:
+            return oneByteSizeReady();
+        case EIGHT_BYTE_SIZE_READY:
+            return eightByteSizeReady();
+        case FLAGS_READY:
+            return flagsReady();
+        case MESSAGE_READY:
+            return messageReady();
         default:
             return false;
         }
     }
 
-
-
-    private boolean one_byte_size_ready() {
+    private boolean oneByteSizeReady()
+    {
         //  First byte of size is read. If it is 0xff(-1 for java byte) read 8-byte size.
         //  Otherwise allocate the buffer for message data and read the
         //  message data into it.
         byte first = tmpbuf[0];
         if (first == -1) {
-            next_step (tmpbuf, 8, eight_byte_size_ready);
-        } else {
-
+            nextStep(tmpbuf, 8, EIGHT_BYTE_SIZE_READY);
+        }
+        else {
             //  There has to be at least one byte (the flags) in the message).
             if (first == 0) {
-                decoding_error ();
+                decodingError();
                 return false;
             }
-            
+
             int size = (int) first;
             if (size < 0) {
                 size = (0xFF) & first;
             }
 
-            //  in_progress is initialised at this point so in theory we should
+            //  inProgress is initialised at this point so in theory we should
             //  close it before calling zmq_msg_init_size, however, it's a 0-byte
             //  message and thus we can treat it as uninitialised...
             if (maxmsgsize >= 0 && (long) (size - 1) > maxmsgsize) {
-                decoding_error ();
+                decodingError();
                 return false;
 
             }
             else {
-                in_progress = new Msg(size-1);
+                inProgress = new Msg(size - 1);
             }
 
-            next_step (tmpbuf, 1, flags_ready);
+            nextStep(tmpbuf, 1, FLAGS_READY);
         }
         return true;
 
     }
-    
-    private boolean eight_byte_size_ready() {
+
+    private boolean eightByteSizeReady()
+    {
         //  8-byte payload length is read. Allocate the buffer
         //  for message body and read the message data into it.
-        final long payload_length = ByteBuffer.wrap(tmpbuf).getLong();
+        final long payloadLength = ByteBuffer.wrap(tmpbuf).getLong();
 
         //  There has to be at least one byte (the flags) in the message).
-        if (payload_length <= 0) {
-            decoding_error ();
+        if (payloadLength <= 0) {
+            decodingError();
             return false;
         }
 
         //  Message size must not exceed the maximum allowed size.
-        if (maxmsgsize >= 0 && payload_length - 1 > maxmsgsize) {
-            decoding_error ();
+        if (maxmsgsize >= 0 && payloadLength - 1 > maxmsgsize) {
+            decodingError();
             return false;
         }
 
         //  Message size must fit within range of size_t data type.
-        if (payload_length - 1 > Integer.MAX_VALUE) {
-            decoding_error ();
+        if (payloadLength - 1 > Integer.MAX_VALUE) {
+            decodingError();
             return false;
         }
 
-        final int msg_size =  (int)(payload_length - 1);
-        //  in_progress is initialized at this point so in theory we should
+        final int msgSize = (int) (payloadLength - 1);
+        //  inProgress is initialized at this point so in theory we should
         //  close it before calling init_size, however, it's a 0-byte
         //  message and thus we can treat it as uninitialized...
-        in_progress = new Msg(msg_size);
-        
-        next_step (tmpbuf, 1, flags_ready);
-        
+        inProgress = new Msg(msgSize);
+
+        nextStep(tmpbuf, 1, FLAGS_READY);
+
         return true;
-
     }
-    
-    private boolean flags_ready() {
 
+    private boolean flagsReady()
+    {
         //  Store the flags from the wire into the message structure.
-        
-        int first = tmpbuf[0];
-        
-        in_progress.setFlags (first & Msg.MORE);
 
-        next_step (in_progress,
-            message_ready);
+        int first = tmpbuf[0];
+
+        inProgress.setFlags(first & Msg.MORE);
+
+        nextStep(inProgress,
+                MESSAGE_READY);
 
         return true;
 
     }
-    
-    private boolean message_ready() {
+
+    private boolean messageReady()
+    {
         //  Message is completely read. Push it further and start reading
-        //  new message. (in_progress is a 0-byte message after this point.)
-        
-        if (msg_sink == null)
+        //  new message. (inProgress is a 0-byte message after this point.)
+
+        if (msgSink == null) {
             return false;
-        
-        int rc = msg_sink.push_msg (in_progress);
+        }
+
+        int rc = msgSink.pushMsg(inProgress);
         if (rc != 0) {
             return false;
         }
-        
-        next_step (tmpbuf, 1, one_byte_size_ready);
-        
+
+        nextStep(tmpbuf, 1, ONE_BYTE_SIZE_READY);
+
         return true;
     }
-
-
 }

@@ -30,113 +30,134 @@ import java.nio.channels.SocketChannel;
 import java.security.SecureRandom;
 import java.util.List;
 
-public class Utils {
+class Utils
+{
+    private Utils()
+    {
+    }
 
     private static SecureRandom random = new SecureRandom();
-    
-    public static int generate_random() {
+
+    public static int generateRandom()
+    {
         return random.nextInt();
     }
 
-    public static void tune_tcp_socket(SocketChannel ch) throws SocketException {
-        tune_tcp_socket(ch.socket());
+    public static void tuneTcpSocket(SocketChannel ch) throws SocketException
+    {
+        tuneTcpSocket(ch.socket());
     }
-    
-    public static void tune_tcp_socket(Socket fd) throws SocketException 
+
+    public static void tuneTcpSocket(Socket fd) throws SocketException
     {
         //  Disable Nagle's algorithm. We are doing data batching on 0MQ level,
         //  so using Nagle wouldn't improve throughput in anyway, but it would
         //  hurt latency.
         try {
-            fd.setTcpNoDelay (true);
-        } catch (SocketException e) {
+            fd.setTcpNoDelay(true);
+        }
+        catch (SocketException e) {
         }
     }
 
-    
-    public static void tune_tcp_keepalives(SocketChannel ch, int tcp_keepalive,
-            int tcp_keepalive_cnt, int tcp_keepalive_idle,
-            int tcp_keepalive_intvl) throws SocketException {
-
-        tune_tcp_keepalives(ch.socket(), tcp_keepalive, tcp_keepalive_cnt,
-                tcp_keepalive_idle, tcp_keepalive_intvl);
+    public static void tuneTcpKeepalives(SocketChannel ch, int tcpKeepalive,
+                                         int tcpKeepaliveCnt, int tcpKeepaliveIdle,
+                                         int tcpKeepaliveIntvl) throws SocketException
+    {
+        tune_tcp_keepalives(ch.socket(), tcpKeepalive, tcpKeepaliveCnt,
+                tcpKeepaliveIdle, tcpKeepaliveIntvl);
     }
-    
-    public static void tune_tcp_keepalives(Socket fd, int tcp_keepalive,
-            int tcp_keepalive_cnt, int tcp_keepalive_idle,
-            int tcp_keepalive_intvl) throws SocketException {
 
-        if (tcp_keepalive == 1) {
+    public static void tune_tcp_keepalives(Socket fd, int tcpKeepalive,
+            int tcpKeepaliveCnt, int tcpKeepaliveIdle,
+            int tcpKeepaliveIntvl) throws SocketException
+    {
+        if (tcpKeepalive == 1) {
             fd.setKeepAlive(true);
-        } else if (tcp_keepalive == 0) {
+        }
+        else if (tcpKeepalive == 0) {
             fd.setKeepAlive(false);
         }
     }
-    
-    public static void unblock_socket(SelectableChannel s) throws IOException {
+
+    public static void unblockSocket(SelectableChannel s) throws IOException
+    {
         s.configureBlocking(false);
     }
-    
-    @SuppressWarnings("unchecked")
-    public static <T> T[] realloc(Class<T> klass, T[] src, int size, boolean ended) {
-        T[] dest;
-        
-        if (size > src.length) {
-            dest = (T[])(Array.newInstance(klass, size));
-            if (ended)
-                System.arraycopy(src, 0, dest, 0, src.length);
-            else
-                System.arraycopy(src, 0, dest, size-src.length, src.length);
-        } else if (size < src.length) {
-            dest = (T[])(Array.newInstance(klass, size));
-            if (ended)
-                System.arraycopy(src, src.length - size, dest, 0, size);
-            else
-                System.arraycopy(src, 0, dest, 0, size);
 
-        } else {
+    @SuppressWarnings("unchecked")
+    public static <T> T[] realloc(Class<T> klass, T[] src, int size, boolean ended)
+    {
+        T[] dest;
+
+        if (size > src.length) {
+            dest = (T[]) Array.newInstance(klass, size);
+            if (ended) {
+                System.arraycopy(src, 0, dest, 0, src.length);
+            }
+            else {
+                System.arraycopy(src, 0, dest, size - src.length, src.length);
+            }
+        }
+        else if (size < src.length) {
+            dest = (T[]) Array.newInstance(klass, size);
+            if (ended) {
+                System.arraycopy(src, src.length - size, dest, 0, size);
+            }
+            else {
+                System.arraycopy(src, 0, dest, 0, size);
+            }
+        }
+        else {
             dest = src;
         }
         return dest;
     }
-    
-    public static <T> void swap(List<T> items, int index1_, int index2_) {
-        if (index1_ == index2_) 
+
+    public static <T> void swap(List<T> items, int index1, int index2)
+    {
+        if (index1 == index2) {
             return;
-                    
-        T item1 = items.get(index1_);
-        T item2 = items.get(index2_);
-        if (item1 != null)
-            items.set(index2_, item1);
-        if (item2 != null)
-            items.set(index1_, item2);
+        }
+
+        T item1 = items.get(index1);
+        T item2 = items.get(index2);
+        if (item1 != null) {
+            items.set(index2, item1);
+        }
+        if (item2 != null) {
+            items.set(index1, item2);
+        }
     }
 
-    public static byte[] bytes(ByteBuffer buf) {
+    public static byte[] bytes(ByteBuffer buf)
+    {
         byte[] d = new byte[buf.limit()];
         buf.get(d);
         return d;
     }
 
-    public static byte[] realloc(byte[] src, int size) {
-
+    public static byte[] realloc(byte[] src, int size)
+    {
         byte[] dest = new byte[size];
-        if (src != null)
+        if (src != null) {
             System.arraycopy(src, 0, dest, 0, src.length);
-        
+        }
+
         return dest;
     }
 
-    public static boolean delete(File path) {
-        if (!path.exists())
-            return false; 
+    public static boolean delete(File path)
+    {
+        if (!path.exists()) {
+            return false;
+        }
         boolean ret = true;
-        if (path.isDirectory()){
-            for (File f : path.listFiles()){
+        if (path.isDirectory()) {
+            for (File f : path.listFiles()) {
                 ret = ret && delete(f);
             }
         }
         return ret && path.delete();
     }
-
 }

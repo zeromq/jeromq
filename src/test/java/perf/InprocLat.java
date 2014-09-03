@@ -89,9 +89,9 @@ public class InprocLat
         int messageSize = atoi(argv [0]);
         int roundtripCount = atoi(argv [1]);
 
-        Ctx ctx = ZMQ.zmq_init(1);
+        Ctx ctx = ZMQ.zmqInit(1);
         if (ctx == null) {
-            printf("error in zmq_init:");
+            printf("error in zmqInit:");
             return;
         }
 

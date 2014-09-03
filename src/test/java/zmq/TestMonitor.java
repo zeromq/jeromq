@@ -94,7 +94,7 @@ public class TestMonitor
         String addr = "tcp://127.0.0.1:5590";
         SocketMonitor [] threads = new SocketMonitor [3];
         //  Create the infrastructure
-        Ctx ctx = ZMQ.zmq_init(1);
+        Ctx ctx = ZMQ.zmqInit(1);
         assertThat(ctx, notNullValue());
         // set socket monitor
         SocketBase rep = ZMQ.zmq_socket(ctx, ZMQ.ZMQ_REP);

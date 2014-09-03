@@ -32,7 +32,7 @@ public class TestSubForward
     @Test
     public void testSubForward()
     {
-        Ctx ctx = ZMQ.zmq_init(1);
+        Ctx ctx = ZMQ.zmqInit(1);
         assertThat(ctx, notNullValue());
         SocketBase xpub = ZMQ.zmq_socket(ctx, ZMQ.ZMQ_XPUB);
         assertThat(xpub, notNullValue());

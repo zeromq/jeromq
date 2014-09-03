@@ -31,7 +31,7 @@ public class TestPairTcp
     @Test
     public void testPairTpc()
     {
-        Ctx ctx = ZMQ.zmq_init(1);
+        Ctx ctx = ZMQ.zmqInit(1);
         assertThat(ctx, notNullValue());
         SocketBase sb = ZMQ.zmq_socket(ctx, ZMQ.ZMQ_PAIR);
         assertThat(sb, notNullValue());

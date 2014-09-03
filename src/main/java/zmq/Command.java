@@ -20,12 +20,12 @@
 package zmq;
 
 //  This structure defines the commands that can be sent between threads.
-public class Command {
-
+class Command
+{
     //  Object to process the command.
     private final ZObject destination;
     private final Type type;
-    
+
     public enum Type {
         //  Sent to I/O thread to let it know that it should
         //  terminate itself.
@@ -72,29 +72,34 @@ public class Command {
         //  are successfully deallocated.
         DONE
     }
-    
+
     Object arg;
 
-    public Command (ZObject destination, Type type) {
+    public Command(ZObject destination, Type type)
+    {
         this(destination, type, null);
     }
-    
-    public Command (ZObject destination, Type type, Object arg) {
+
+    public Command(ZObject destination, Type type, Object arg)
+    {
         this.destination = destination;
         this.type = type;
         this.arg = arg;
     }
-    
-    public ZObject destination() {
+
+    public ZObject destination()
+    {
         return destination;
     }
 
-    public Type type() {
+    public Type type()
+    {
         return type;
     }
-    
+
     @Override
-    public String toString() {
+    public String toString()
+    {
         return super.toString() + "[" + type + ", " + destination + "]";
     }
 }
