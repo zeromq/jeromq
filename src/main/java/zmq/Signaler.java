@@ -106,7 +106,6 @@ public class Signaler
     {
         int nbytes = 0;
         ByteBuffer dummy = ByteBuffer.allocate(1);
-        dummy.limit(1);
 
         while (true) {
             try {
