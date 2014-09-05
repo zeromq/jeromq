@@ -117,8 +117,8 @@ public class Signaler
             if (nbytes == 0) {
                 continue;
             }
-            wcursor.incrementAndGet();
             assert (nbytes == 1);
+            wcursor.incrementAndGet();
             break;
         }
     }
