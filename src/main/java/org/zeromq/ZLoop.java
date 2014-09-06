@@ -19,12 +19,12 @@
 
 package org.zeromq;
 
-import org.zeromq.ZMQ.PollItem;
-import org.zeromq.ZMQ.Poller;
-
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+
+import org.zeromq.ZMQ.PollItem;
+import org.zeromq.ZMQ.Poller;
 
 /**
  * The ZLoop class provides an event-driven reactor pattern. The reactor

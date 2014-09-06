@@ -19,13 +19,14 @@
 
 package org.zeromq;
 
-import zmq.ZError;
-import org.zeromq.ZMQ.Context;
-import org.zeromq.ZMQ.Socket;
-
 import java.io.Closeable;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+
+import org.zeromq.ZMQ.Context;
+import org.zeromq.ZMQ.Socket;
+
+import zmq.ZError;
 
 /**
  * ZContext provides a high-level ZeroMQ context management class
