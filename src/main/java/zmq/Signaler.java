@@ -21,10 +21,10 @@ package zmq;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.channels.Pipe;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
-import java.nio.channels.Pipe;
 import java.util.concurrent.atomic.AtomicInteger;
 
 //  This is a cross-platform equivalent to signal_fd. However, as opposed
@@ -106,7 +106,6 @@ public class Signaler
     {
         int nbytes = 0;
         ByteBuffer dummy = ByteBuffer.allocate(1);
-        dummy.limit(1);
 
         while (true) {
             try {
@@ -118,8 +117,8 @@ public class Signaler
             if (nbytes == 0) {
                 continue;
             }
-            wcursor.incrementAndGet();
             assert (nbytes == 1);
+            wcursor.incrementAndGet();
             break;
         }
     }

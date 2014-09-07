@@ -19,8 +19,6 @@
 
 package org.zeromq;
 
-import org.zeromq.ZMQ.Socket;
-
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -31,6 +29,8 @@ import java.util.Collection;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+
+import org.zeromq.ZMQ.Socket;
 
 /**
  * The ZMsg class provides methods to send and receive multipart messages
