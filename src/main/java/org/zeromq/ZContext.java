@@ -92,7 +92,12 @@ public class ZContext implements Closeable
     public void destroy()
     {
         for (Socket socket : sockets) {
-            destroySocket(socket);
+            try {
+                socket.setLinger(linger);
+            }
+            catch (ZError.CtxTerminatedException e) {
+            }
+            socket.close();
         }
         sockets.clear();
 
