@@ -118,13 +118,13 @@ public class LB
             return false;
         }
 
-        //  If it's final part of the message we can fluch it downstream and
-        //  continue round-robinning (load balance).
+        //  If it's final part of the message we can flush it downstream and
+        //  continue round-robining (load balance).
         more = msg.hasMore();
         if (!more) {
             pipes.get(current).flush();
-            if (active > 1) {
-                current = (current + 1) % active;
+            if (++current >= active) {
+                current = 0;
             }
         }
 

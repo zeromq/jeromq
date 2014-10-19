@@ -71,7 +71,6 @@ public class StreamEngine implements IEngine, IPollEvents, IMsgSink
     private String endpoint;
 
     private boolean plugged;
-    private boolean terminating;
 
     // Socket
     private SocketBase socket;
@@ -90,7 +89,6 @@ public class StreamEngine implements IEngine, IPollEvents, IMsgSink
         session = null;
         this.options = options;
         plugged = false;
-        terminating = false;
         this.endpoint = endpoint;
         socket = null;
         greeting = ByteBuffer.allocate(GREETING_SIZE).order(ByteOrder.BIG_ENDIAN);
@@ -278,10 +276,6 @@ public class StreamEngine implements IEngine, IPollEvents, IMsgSink
     @Override
     public void terminate()
     {
-        if (!terminating && encoder != null && encoder.hasData()) {
-            terminating = true;
-            return;
-        }
         unplug();
         destroy();
     }
@@ -390,11 +384,6 @@ public class StreamEngine implements IEngine, IPollEvents, IMsgSink
         //  this is necessary to prevent losing incomming messages.
         if (nbytes == -1) {
             ioObject.resetPollOut(handle);
-
-            if (terminating) {
-                terminate();
-            }
-
             return;
         }
 
@@ -413,9 +402,6 @@ public class StreamEngine implements IEngine, IPollEvents, IMsgSink
             if (encoder != null && encoder.isError()) {
                 error();
                 return;
-            }
-            if (terminating) {
-                terminate();
             }
         }
     }
