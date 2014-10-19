@@ -6,7 +6,7 @@ Pure Java implementation of libzmq (http://zeromq.org)
 
 ## Features
 
-* based on libzmq 3.2.4
+* based on libzmq 3.2.5
 * ZMTP/2.0 (http://rfc.zeromq.org/spec:15)
 * tcp:// protocol and inproc:// is compatible with zeromq
 * ipc:// protocol works only between jeromq (uses tcp://127.0.0.1:port internally)
