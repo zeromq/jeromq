@@ -26,8 +26,8 @@ import java.nio.channels.WritableByteChannel;
 
 public interface Transfer
 {
-    public int transferTo(WritableByteChannel s) throws IOException;
-    public int remaining();
+    int transferTo(WritableByteChannel s) throws IOException;
+    int remaining();
 
     public static class ByteBufferTransfer implements Transfer
     {
