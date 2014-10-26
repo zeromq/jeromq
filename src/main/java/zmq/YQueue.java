@@ -22,14 +22,15 @@ package zmq;
 public class YQueue<T>
 {
     //  Individual memory chunk to hold N elements.
-    private class Chunk<T>
+    private static class Chunk<T>
     {
         final T[] values;
         final int[] pos;
-        Chunk prev;
-        Chunk next;
+        Chunk<T> prev;
+        Chunk<T> next;
 
-        protected Chunk(int size, int memoryPtr)
+        @SuppressWarnings("unchecked")
+        public Chunk(int size, int memoryPtr)
         {
             values = (T[]) new Object[size];
             pos = new int[size];
@@ -58,11 +59,11 @@ public class YQueue<T>
     //  us from having to call malloc/free.
     private int memoryPtr;
 
-    YQueue(int size)
+    public YQueue(int size)
     {
         this.size = size;
         memoryPtr = 0;
-        beginChunk = new Chunk(size, memoryPtr);
+        beginChunk = new Chunk<T>(size, memoryPtr);
         memoryPtr += size;
         beginPos = 0;
         backPos = 0;
@@ -72,31 +73,31 @@ public class YQueue<T>
         endPos = 1;
     }
 
-    final int front_pos()
+    public int front_pos()
     {
         return beginChunk.pos[beginPos];
     }
 
     //  Returns reference to the front element of the queue.
     //  If the queue is empty, behaviour is undefined.
-    final T front()
+    public T front()
     {
         return beginChunk.values[beginPos];
     }
 
-    final int back_pos()
+    public int back_pos()
     {
         return backChunk.pos[backPos];
     }
 
     //  Returns reference to the back element of the queue.
     //  If the queue is empty, behaviour is undefined.
-    final T back()
+    public T back()
     {
         return backChunk.values[backPos];
     }
 
-    final T pop()
+    public T pop()
     {
         T val = beginChunk.values[beginPos];
         beginChunk.values[beginPos] = null;
@@ -110,7 +111,7 @@ public class YQueue<T>
     }
 
     //  Adds an element to the back end of the queue.
-    final void push(T val)
+    public void push(T val)
     {
         backChunk.values[backPos] = val;
         backChunk = endChunk;
@@ -121,14 +122,14 @@ public class YQueue<T>
             return;
         }
 
-        Chunk sc = spareChunk;
+        Chunk<T> sc = spareChunk;
         if (sc != beginChunk) {
             spareChunk = spareChunk.next;
             endChunk.next = sc;
             sc.prev = endChunk;
         }
         else {
-            endChunk.next = new Chunk(size, memoryPtr);
+            endChunk.next = new Chunk<T>(size, memoryPtr);
             memoryPtr += size;
             endChunk.next.prev = endChunk;
         }
@@ -143,7 +144,7 @@ public class YQueue<T>
     //  unpush is called. It cannot be done automatically as the read
     //  side of the queue can be managed by different, completely
     //  unsynchronised thread.
-    final void unpush()
+    public void unpush()
     {
         //  First, move 'back' one position backwards.
         if (backPos > 0) {
