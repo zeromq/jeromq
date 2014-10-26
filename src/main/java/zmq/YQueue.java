@@ -22,7 +22,7 @@ package zmq;
 public class YQueue<T>
 {
     //  Individual memory chunk to hold N elements.
-    private class Chunk<T>
+    private static class Chunk<T>
     {
         final T[] values;
         final int[] pos;
