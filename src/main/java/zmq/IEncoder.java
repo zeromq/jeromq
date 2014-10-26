@@ -24,12 +24,12 @@ import java.nio.ByteBuffer;
 public interface IEncoder
 {
     //  Set message producer.
-    void setMsgSource(IMsgSource msgSource);
+    public void setMsgSource(IMsgSource msgSource);
 
     //  The function returns a batch of binary data. The data
     //  are filled to a supplied buffer. If no buffer is supplied (data_
     //  is null) encoder will provide buffer of its own.
-    Transfer getData(ByteBuffer buffer);
+    public Transfer getData(ByteBuffer buffer);
 
-    boolean hasData();
+    public boolean hasData();
 }
