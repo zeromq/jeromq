@@ -303,14 +303,8 @@ public class ZFrame
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-
         ZFrame zFrame = (ZFrame) o;
-
-        if (!Arrays.equals(data, zFrame.data)) {
-            return false;
-        }
-
-        return true;
+        return Arrays.equals(data, zFrame.data);
     }
 
     @Override
