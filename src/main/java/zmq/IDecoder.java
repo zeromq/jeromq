@@ -23,11 +23,11 @@ import java.nio.ByteBuffer;
 
 public interface IDecoder
 {
-    void setMsgSink(IMsgSink msgSink);
+    public void setMsgSink(IMsgSink msgSink);
 
-    ByteBuffer getBuffer();
+    public ByteBuffer getBuffer();
 
-    int processBuffer(ByteBuffer buffer, int size);
+    public int processBuffer(ByteBuffer buffer, int size);
 
-    boolean stalled();
+    public boolean stalled();
 }
