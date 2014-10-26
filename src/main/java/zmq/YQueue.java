@@ -26,10 +26,11 @@ public class YQueue<T>
     {
         final T[] values;
         final int[] pos;
-        Chunk prev;
-        Chunk next;
+        Chunk<T> prev;
+        Chunk<T> next;
 
-        protected Chunk(int size, int memoryPtr)
+        @SuppressWarnings("unchecked")
+        public Chunk(int size, int memoryPtr)
         {
             values = (T[]) new Object[size];
             pos = new int[size];
@@ -62,7 +63,7 @@ public class YQueue<T>
     {
         this.size = size;
         memoryPtr = 0;
-        beginChunk = new Chunk(size, memoryPtr);
+        beginChunk = new Chunk<T>(size, memoryPtr);
         memoryPtr += size;
         beginPos = 0;
         backPos = 0;
@@ -121,14 +122,14 @@ public class YQueue<T>
             return;
         }
 
-        Chunk sc = spareChunk;
+        Chunk<T> sc = spareChunk;
         if (sc != beginChunk) {
             spareChunk = spareChunk.next;
             endChunk.next = sc;
             sc.prev = endChunk;
         }
         else {
-            endChunk.next = new Chunk(size, memoryPtr);
+            endChunk.next = new Chunk<T>(size, memoryPtr);
             memoryPtr += size;
             endChunk.next.prev = endChunk;
         }
