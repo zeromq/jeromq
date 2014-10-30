@@ -33,6 +33,19 @@ public class IOThread extends ZObject implements IPollEvents
     private final Poller poller;
 
     final String name;
+    
+    // Constructor with UncaughtExceptionHandler
+    public IOThread(Ctx ctx, int tid, Thread.UncaughtExceptionHandler eh)
+    {
+        super(ctx, tid);
+        name = "iothread-" + tid;
+        poller = new Poller(name, eh);
+
+        mailbox = new Mailbox(name);
+        mailboxHandle = mailbox.getFd();
+        poller.addHandle(mailboxHandle, this);
+        poller.setPollIn(mailboxHandle);
+    }
 
     public IOThread(Ctx ctx, int tid)
     {
