@@ -21,17 +21,13 @@ package org.zeromq;
 
 import java.io.IOException;
 import java.net.DatagramSocket;
-import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.NetworkInterface;
 import java.net.SocketAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.Enumeration;
 
 public class ZBeacon
 {
@@ -40,8 +36,8 @@ public class ZBeacon
 
     private final int port;
     private InetAddress broadcastInetAddress;
-    private BroadcastClient broadcastClient;
-    private BroadcastServer broadcastServer;
+    private final BroadcastClient broadcastClient;
+    private final BroadcastServer broadcastServer;
     private final byte[] beacon;
     private byte[] prefix = {};
     private long broadcastInterval = DEFAULT_BROADCAST_INTERVAL;
@@ -54,6 +50,11 @@ public class ZBeacon
 
     public ZBeacon(String host, int port, byte[] beacon)
     {
+        this(host, port, beacon, true);
+    }
+
+    public ZBeacon(String host, int port, byte[] beacon, boolean ignoreLocalAddress)
+    {
         this.port = port;
         this.beacon = beacon;
         try {
@@ -62,15 +63,16 @@ public class ZBeacon
         catch (UnknownHostException unknownHostException) {
             throw new RuntimeException(unknownHostException);
         }
+
+        broadcastServer = new BroadcastServer(ignoreLocalAddress);
+        broadcastClient = new BroadcastClient();
     }
 
     public void start()
     {
         if (listener != null) {
-            broadcastServer = new BroadcastServer();
             broadcastServer.start();
         }
-        broadcastClient = new BroadcastClient();
         broadcastClient.start();
     }
 
@@ -79,12 +81,10 @@ public class ZBeacon
         if (broadcastClient != null) {
             broadcastClient.interrupt();
             broadcastClient.join();
-            broadcastClient = null;
         }
         if (broadcastServer != null) {
             broadcastServer.interrupt();
             broadcastServer.join();
-            broadcastServer = null;
         }
     }
 
@@ -169,28 +169,17 @@ public class ZBeacon
     private class BroadcastServer extends Thread
     {
         private DatagramChannel handle; // Socket for send/recv
-        private InetAddress address; // Own address
+        private final boolean ignoreLocalAddress;
 
-        public BroadcastServer()
+        public BroadcastServer(boolean ignoreLocalAddress)
         {
+            this.ignoreLocalAddress = ignoreLocalAddress;
             try {
                 // Create UDP socket
                 handle = DatagramChannel.open();
                 handle.configureBlocking(false);
                 DatagramSocket sock = handle.socket();
                 sock.setReuseAddress(true);
-                Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
-                for (NetworkInterface netint : Collections.list(interfaces)) {
-                    if (netint.isLoopback()) {
-                        continue;
-                    }
-                    Enumeration<InetAddress> inetAddresses = netint.getInetAddresses();
-                    for (InetAddress addr : Collections.list(inetAddresses)) {
-                        if (addr instanceof Inet4Address) {
-                            address = addr;
-                        }
-                    }
-                }
                 sock.bind(new InetSocketAddress(InetAddress.getByAddress(new byte[] { 0, 0, 0, 0 }), port));
             }
             catch (IOException ioException) {
@@ -215,9 +204,13 @@ public class ZBeacon
 
                     InetAddress senderAddress = ((InetSocketAddress) sender).getAddress();
 
-                    if (address.equals(senderAddress)) {
+                    if (ignoreLocalAddress &&
+                                (InetAddress.getLocalHost().getHostAddress().equals(senderAddress.getHostAddress())
+                                         || senderAddress.isAnyLocalAddress()
+                                         || senderAddress.isLoopbackAddress())) {
                         continue;
                     }
+
                     size = read - buffer.remaining();
                     handleMessage(buffer, size, senderAddress);
                 }
