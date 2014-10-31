@@ -24,24 +24,25 @@ import java.net.InetAddress;
 import org.junit.Test;
 import org.zeromq.ZBeacon.Listener;
 
-public class ZBeaconTest {
-
+public class ZBeaconTest
+{
     @Test
-    public void test() throws InterruptedException {
+    public void test() throws InterruptedException
+    {
         byte[] beacon = new byte[] { 'H', 'Y', 'D', 'R', 'A', 0x01, 0x12, 0x34 };
         byte[] prefix = new byte[] { 'H', 'Y', 'D', 'R', 'A', 0x01 };
         ZBeacon zbeacon = new ZBeacon(5670, beacon);
         zbeacon.setPrefix(prefix);
-        zbeacon.setListener(new Listener() {
-
-            public void onBeacon(InetAddress sender, byte[] beacon) {
+        zbeacon.setListener(new Listener()
+        {
+            @Override
+            public void onBeacon(InetAddress sender, byte[] beacon)
+            {
                 System.out.println("Got beacon from: " + sender.getHostAddress());
             }
-
         });
         zbeacon.start();
         Thread.sleep(2000);
         zbeacon.stop();
     }
-
 }
