@@ -165,13 +165,13 @@ public class Req extends Dealer
         {
             switch (state) {
             case BOTTOM:
-                if (msg.flags() == Msg.MORE && msg.size() == 0) {
+                if (msg.hasMore() && msg.size() == 0) {
                     state = State.BODY;
                     return super.pushMsg(msg);
                 }
                 break;
             case BODY:
-                if (msg.flags() == Msg.MORE) {
+                if (msg.hasMore()) {
                     return super.pushMsg(msg);
                 }
                 if (msg.flags() == 0) {

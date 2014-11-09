@@ -24,7 +24,7 @@ import java.net.SocketAddress;
 
 public class Address
 {
-    static interface IZAddress
+    public interface IZAddress
     {
         String toString();
         void resolve(String name, boolean ip4only);
