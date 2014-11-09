@@ -46,7 +46,7 @@ public class YPipe<T>
     //  atomic operations.
     private final AtomicInteger c;
 
-    YPipe(int qsize)
+    public YPipe(int qsize)
     {
         queue = new YQueue<T>(qsize);
         int pos = queue.back_pos();
@@ -60,7 +60,7 @@ public class YPipe<T>
     //  set to true the item is assumed to be continued by items
     //  subsequently written to the pipe. Incomplete items are never
     //  flushed down the stream.
-    final void write(final T value, boolean incomplete)
+    public void write(final T value, boolean incomplete)
     {
         //  Place the value to the queue, add new terminator element.
         queue.push(value);
@@ -73,7 +73,7 @@ public class YPipe<T>
 
     //  Pop an incomplete item from the pipe. Returns true is such
     //  item exists, false otherwise.
-    T unwrite()
+    public T unwrite()
     {
         if (f == queue.back_pos()) {
             return null;
@@ -85,7 +85,7 @@ public class YPipe<T>
     //  Flush all the completed items into the pipe. Returns false if
     //  the reader thread is sleeping. In that case, caller is obliged to
     //  wake the reader up before using the pipe again.
-    final boolean flush()
+    public boolean flush()
     {
         //  If there are no un-flushed items, do nothing.
         if (w == f) {
@@ -111,7 +111,7 @@ public class YPipe<T>
     }
 
     //  Check whether item is available for reading.
-    final boolean checkRead()
+    public boolean checkRead()
     {
         //  Was the value prefetched already? If so, return.
         int h = queue.front_pos();
@@ -145,7 +145,7 @@ public class YPipe<T>
 
     //  Reads an item from the pipe. Returns false if there is no value.
     //  available.
-    final T read()
+    public T read()
     {
         //  Try to prefetch a value.
         if (!checkRead()) {
@@ -162,7 +162,7 @@ public class YPipe<T>
     //  Applies the function fn to the first elemenent in the pipe
     //  and returns the value returned by the fn.
     //  The pipe mustn't be empty or the function crashes.
-    final T probe()
+    public T probe()
     {
         boolean rc = checkRead();
         assert (rc);

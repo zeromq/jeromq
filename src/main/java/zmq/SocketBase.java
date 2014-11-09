@@ -25,19 +25,17 @@ import java.nio.channels.SelectableChannel;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
-
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.Multimap;
 
 public abstract class SocketBase extends Own
     implements IPollEvents, Pipe.IPipeEvents
 {
     //  Map of open endpoints.
-    private final Multimap<String, Own> endpoints;
+    private final Map<String, Own> endpoints;
 
     //  Map of open inproc endpoints.
-    private final Multimap<String, Pipe> inprocs;
+    private final Map<String, Pipe> inprocs;
 
     //  Used to check whether the object is a socket.
     private int tag;
@@ -91,8 +89,8 @@ public abstract class SocketBase extends Own
 
         options.socketId = sid;
 
-        endpoints = ArrayListMultimap.create();
-        inprocs = ArrayListMultimap.create();
+        endpoints = new MultiMap<String, Own>();
+        inprocs = new MultiMap<String, Pipe>();
         pipes = new ArrayList<Pipe>();
 
         mailbox = new Mailbox("socket-" + sid);
@@ -577,7 +575,7 @@ public abstract class SocketBase extends Own
                 return false;
             }
 
-            Iterator<Entry<String, Pipe>> it = inprocs.entries().iterator();
+            Iterator<Entry<String, Pipe>> it = inprocs.entrySet().iterator();
             while (it.hasNext()) {
                 it.next().getValue().terminate(true);
                 it.remove();
@@ -589,7 +587,7 @@ public abstract class SocketBase extends Own
             return false;
         }
         //  Find the endpoints range (if any) corresponding to the addr_ string.
-        Iterator<Entry<String, Own>> it = endpoints.entries().iterator();
+        Iterator<Entry<String, Own>> it = endpoints.entrySet().iterator();
 
         while (it.hasNext()) {
             Entry<String, Own> e = it.next();
@@ -1040,7 +1038,7 @@ public abstract class SocketBase extends Own
         xterminated(pipe);
 
         // Remove pipe from inproc pipes
-        Iterator<Entry<String, Pipe>> it = inprocs.entries().iterator();
+        Iterator<Entry<String, Pipe>> it = inprocs.entrySet().iterator();
         while (it.hasNext()) {
             if (it.next().getValue() == pipe) {
                 it.remove();
