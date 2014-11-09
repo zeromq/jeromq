@@ -77,11 +77,6 @@ public class Dealer extends SocketBase
     @Override
     protected Msg xrecv()
     {
-        return xxrecv();
-    }
-
-    private Msg xxrecv()
-    {
         Msg msg = null;
         //  If there is a prefetched message, return it.
         if (prefetched) {
@@ -113,7 +108,7 @@ public class Dealer extends SocketBase
         }
 
         //  Try to read the next message to the pre-fetch buffer.
-        prefetchedMsg = xxrecv();
+        prefetchedMsg = xrecv();
         if (prefetchedMsg == null) {
             return false;
         }
