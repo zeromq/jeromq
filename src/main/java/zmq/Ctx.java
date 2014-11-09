@@ -256,7 +256,7 @@ public class Ctx
         slotSync.lock();
         try {
             if (starting.compareAndSet(true, false)) {
-                //  Initialise the array of mailboxes. Additional three slots are for
+                //  Initialize the array of mailboxes. Additional three slots are for
                 //  zmq_term thread and reaper thread.
                 int mazmq;
                 int ios;
@@ -272,7 +272,7 @@ public class Ctx
                 slots = new Mailbox[slotCount];
                 //alloc_assert (slots);
 
-                //  Initialise the infrastructure for zmq_term thread.
+                //  Initialize the infrastructure for zmq_term thread.
                 slots[TERM_TID] = termMailbox;
 
                 //  Create the reaper thread.
