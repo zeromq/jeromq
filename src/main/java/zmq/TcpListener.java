@@ -26,6 +26,13 @@ import java.nio.channels.SocketChannel;
 
 public class TcpListener extends Own implements IPollEvents
 {
+    private static boolean isWindows;
+    static
+    {
+        String os = System.getProperty("os.name").toLowerCase();
+        isWindows = os.indexOf("win") >= 0;
+    }
+
     //  Address to listen on.
     private final TcpAddress address;
 
@@ -143,7 +150,9 @@ public class TcpListener extends Own implements IPollEvents
         try {
             handle = ServerSocketChannel.open();
             handle.configureBlocking(false);
-            handle.socket().setReuseAddress(true);
+            if (!isWindows) {
+                handle.socket().setReuseAddress(true);
+            }
             handle.socket().bind(address.address(), options.backlog);
             if (address.getPort() == 0) {
                 address.updatePort(handle.socket().getLocalPort());
