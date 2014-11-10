@@ -38,7 +38,7 @@ public class ZMQ
     /*  Version macros for compile-time API version detection                     */
     public static final int ZMQ_VERSION_MAJOR = 3;
     public static final int ZMQ_VERSION_MINOR = 2;
-    public static final int ZMQ_VERSION_PATCH = 2;
+    public static final int ZMQ_VERSION_PATCH = 5;
 
     /*  Context options  */
     public static final int ZMQ_IO_THREADS = 1;
