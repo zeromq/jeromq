@@ -44,7 +44,8 @@ public class Req extends Dealer
         //  If we've sent a request and we still haven't got the reply,
         //  we can't send another request.
         if (receivingReply) {
-            throw new IllegalStateException("Cannot send another request");
+            errno.set(ZError.EFSM);
+            return false;
         }
 
         //  First part of the request is the request identity.
@@ -79,7 +80,8 @@ public class Req extends Dealer
     {
         //  If request wasn't send, we can't wait for reply.
         if (!receivingReply) {
-            throw new IllegalStateException("Cannot wait before send");
+            errno.set(ZError.EFSM);
+            return null;
         }
         Msg msg = null;
         //  First part of the reply should be the original request ID.
@@ -186,8 +188,8 @@ public class Req extends Dealer
                 }
                 break;
             }
-
-            throw new IllegalStateException(state.toString());
+            socket.errno.set(ZError.EFAULT);
+            return -1;
         }
 
         public void reset()
