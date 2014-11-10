@@ -48,7 +48,7 @@ class SessionBase extends Own implements
     private IEngine engine;
 
     //  The socket the session belongs to.
-    private SocketBase socket;
+    protected SocketBase socket;
 
     //  I/O thread the session is living in. It will be used to plug in
     //  the engines into the same thread.
