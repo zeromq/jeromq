@@ -19,6 +19,7 @@
 
 package zmq;
 
+import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
@@ -133,17 +134,17 @@ public class Ctx
         endpoints = new HashMap<String, Endpoint>();
     }
 
-    protected void destroy()
+    private void destroy() throws IOException
     {
         for (IOThread it : ioThreads) {
             it.stop();
         }
         for (IOThread it : ioThreads) {
-            it.destroy();
+            it.close();
         }
 
         if (reaper != null) {
-            reaper.destroy();
+            reaper.close();
         }
         termMailbox.close();
 
@@ -205,7 +206,12 @@ public class Ctx
         }
 
         //  Deallocate the resources.
-        destroy();
+        try {
+            destroy();
+        }
+        catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public boolean set(int option, int optval)
@@ -349,6 +355,9 @@ public class Ctx
             if (terminating && sockets.isEmpty()) {
                 reaper.stop();
             }
+        }
+        catch (IOException e) {
+            throw new RuntimeException(e);
         }
         finally {
             slotSync.unlock();

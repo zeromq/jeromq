@@ -19,6 +19,7 @@
 
 package zmq;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.Pipe;
@@ -33,12 +34,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 //  one will result in undefined behaviour.
 
 public class Signaler
+        implements Closeable
 {
     //  Underlying write & read file descriptor.
     private Pipe.SinkChannel w;
     private Pipe.SourceChannel r;
     private Selector selector;
-    private ByteBuffer rdummy;
 
     // Selector.selectNow at every sending message doesn't show enough performance
     private final AtomicInteger wcursor = new AtomicInteger(0);
@@ -66,19 +67,14 @@ public class Signaler
             throw new ZError.IOException(e);
         }
 
-        rdummy = ByteBuffer.allocate(1);
     }
 
-    public void close()
+    @Override
+    public void close() throws IOException
     {
-        try {
-            r.close();
-            w.close();
-            selector.close();
-        }
-        catch (IOException e) {
-            e.printStackTrace();
-        }
+        r.close();
+        w.close();
+        selector.close();
     }
 
     //  Creates a pair of filedescriptors that will be used
@@ -161,14 +157,13 @@ public class Signaler
     public void recv()
     {
         int nbytes = 0;
-        while (nbytes == 0) {
-            try {
-                nbytes = r.read(rdummy);
-                rdummy.rewind();
-            }
-            catch (IOException e) {
-                throw new ZError.IOException(e);
-            }
+        try {
+            ByteBuffer dummy = ByteBuffer.allocate(1);
+            nbytes = r.read(dummy);
+            assert nbytes == 1;
+        }
+        catch (IOException e) {
+            throw new ZError.IOException(e);
         }
         rcursor++;
     }

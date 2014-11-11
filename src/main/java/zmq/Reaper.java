@@ -19,9 +19,11 @@
 
 package zmq;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.nio.channels.SelectableChannel;
 
-public class Reaper extends ZObject implements IPollEvents
+public class Reaper extends ZObject implements IPollEvents, Closeable
 {
     //  Reaper thread accesses incoming commands via this mailbox.
     private final Mailbox mailbox;
@@ -55,7 +57,8 @@ public class Reaper extends ZObject implements IPollEvents
         poller.setPollIn(mailboxHandle);
     }
 
-    public void destroy()
+    @Override
+    public void close() throws IOException
     {
         poller.destroy();
         mailbox.close();

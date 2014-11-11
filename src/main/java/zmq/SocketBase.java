@@ -335,7 +335,7 @@ public abstract class SocketBase extends Own
 
         if (protocol.equals("inproc")) {
             Ctx.Endpoint endpoint = new Ctx.Endpoint(this, options);
-            boolean rc = register_endpoint(addr, endpoint);
+            boolean rc = registerEndpoint(addr, endpoint);
             if (rc) {
                 // Save last endpoint URI
                 options.lastEndpoint = addr;
@@ -875,7 +875,7 @@ public abstract class SocketBase extends Own
     }
 
     @Override
-    protected void process_bind(Pipe pipe)
+    protected void processBind(Pipe pipe)
     {
         attachPipe(pipe);
     }
@@ -886,7 +886,7 @@ public abstract class SocketBase extends Own
         //  Unregister all inproc endpoints associated with this socket.
         //  Doing this we make sure that no new pipes from other sockets (inproc)
         //  will be initiated.
-        unregister_endpoints(this);
+        unregisterEndpoints(this);
 
         //  Ask all attached pipes to terminate.
         for (int i = 0; i != pipes.size(); ++i) {

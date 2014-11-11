@@ -283,7 +283,7 @@ class Pipe extends ZObject
     }
 
     @Override
-    protected void process_activate_read()
+    protected void processActivateRead()
     {
         if (!inActive && (state == State.ACTIVE || state == State.PENDING)) {
             inActive = true;
@@ -292,7 +292,7 @@ class Pipe extends ZObject
     }
 
     @Override
-    protected void process_activate_write(long msgsRead)
+    protected void processActivateWrite(long msgsRead)
     {
         //  Remember the peers's message sequence number.
         peersMsgsRead = msgsRead;
@@ -305,7 +305,7 @@ class Pipe extends ZObject
 
     @SuppressWarnings("unchecked")
     @Override
-    protected void process_hiccup(Object pipe)
+    protected void processHiccup(Object pipe)
     {
         //  Destroy old outpipe. Note that the read end of the pipe was already
         //  migrated to this thread.

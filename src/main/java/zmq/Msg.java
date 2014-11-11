@@ -24,14 +24,10 @@ import java.nio.ByteOrder;
 
 public class Msg
 {
-    private static final int MAX_VSM_SIZE = 29;
-
-    private static final byte TYPE_MIN = 101;
-    private static final byte TYPE_VSM = 101;
-    private static final byte TYPE_LMSG = 102;
-    private static final byte TYPE_DELIMITER = 103;
-    private static final byte TYPE_CMSG = 104;
-    private static final byte TYPE_MAX = 104;
+    enum Type {
+        DATA,
+        DELIMITER
+    }
 
     public static final int MORE = 1;
     public static final int COMMAND = 2;
@@ -39,7 +35,7 @@ public class Msg
     public static final int SHARED = 128;
 
     private int flags;
-    private byte type;
+    private Type type;
 
     private int size;
     private byte[] data;
@@ -47,7 +43,7 @@ public class Msg
 
     public Msg()
     {
-        this.type = TYPE_VSM;
+        this.type = Type.DATA;
         this.flags = 0;
         this.size = 0;
         this.buf = ByteBuffer.wrap(new byte[0]).order(ByteOrder.BIG_ENDIAN);
@@ -56,12 +52,7 @@ public class Msg
 
     public Msg(int capacity)
     {
-        if (capacity <= MAX_VSM_SIZE) {
-            this.type = TYPE_VSM;
-        }
-        else {
-            this.type = TYPE_LMSG;
-        }
+        this.type = Type.DATA;
         this.flags = 0;
         this.size = capacity;
         this.buf = ByteBuffer.wrap(new byte[capacity]).order(ByteOrder.BIG_ENDIAN);
@@ -73,12 +64,7 @@ public class Msg
         if (src == null) {
             src = new byte[0];
         }
-        if (src.length <= MAX_VSM_SIZE) {
-            this.type = TYPE_VSM;
-        }
-        else {
-            this.type = TYPE_LMSG;
-        }
+        this.type = Type.DATA;
         this.flags = 0;
         this.size = src.length;
         this.data = src;
@@ -93,7 +79,7 @@ public class Msg
         if (src.position() > 0) {
             throw new IllegalArgumentException("ByteBuffer position is not zero, did you forget to flip it?");
         }
-        this.type = TYPE_LMSG;
+        this.type = Type.DATA;
         this.flags = 0;
         this.buf = src.duplicate();
         if (buf.hasArray()) {
@@ -125,22 +111,12 @@ public class Msg
 
     public boolean isDelimiter()
     {
-        return type == TYPE_DELIMITER;
-    }
-
-    public boolean isVSM()
-    {
-        return type == TYPE_VSM;
-    }
-
-    public boolean isCMSG()
-    {
-        return type == TYPE_CMSG;
+        return type == Type.DELIMITER;
     }
 
     public boolean check()
     {
-        return type >= TYPE_MIN && type <= TYPE_MAX;
+        return true; // type >= TYPE_MIN && type <= TYPE_MAX;
     }
 
     public int flags()
@@ -153,11 +129,6 @@ public class Msg
         return (flags & MORE) > 0;
     }
 
-    public byte type()
-    {
-        return type;
-    }
-
     public void setFlags(int flags)
     {
         this.flags |= flags;
@@ -165,7 +136,7 @@ public class Msg
 
     public void initDelimiter()
     {
-        type = TYPE_DELIMITER;
+        type = Type.DELIMITER;
         flags = 0;
     }
 
