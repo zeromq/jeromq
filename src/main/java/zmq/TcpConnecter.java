@@ -193,7 +193,7 @@ public class TcpConnecter extends Own implements IPollEvents
         }
 
         //  Attach the engine to the corresponding session object.
-        send_attach(session, engine);
+        sendAttach(session, engine);
 
         //  Shut the connecter down.
         terminate();

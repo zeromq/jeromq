@@ -55,7 +55,7 @@ public class Pair extends SocketBase
     }
 
     @Override
-    protected void xterminated(Pipe pipe)
+    protected void xpipeTerminated(Pipe pipe)
     {
         if (this.pipe == pipe) {
             this.pipe = null;

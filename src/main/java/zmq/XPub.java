@@ -168,7 +168,7 @@ class XPub extends SocketBase
     }
 
     @Override
-    protected void xterminated(Pipe pipe)
+    protected void xpipeTerminated(Pipe pipe)
     {
         //  Remove the pipe from the trie. If there are topics that nobody
         //  is interested in anymore, send corresponding unsubscriptions

@@ -19,11 +19,14 @@
 
 package zmq;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.nio.channels.SelectableChannel;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class Mailbox
+        implements Closeable
 {
     //  The pipe to store actual commands.
     private final YPipe<Command> cpipe;
@@ -114,7 +117,8 @@ public class Mailbox
         return cmd;
     }
 
-    public void close()
+    @Override
+    public void close() throws IOException
     {
         //  TODO: Retrieve and deallocate commands inside the cpipe.
 

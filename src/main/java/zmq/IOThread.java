@@ -19,9 +19,11 @@
 
 package zmq;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.nio.channels.SelectableChannel;
 
-public class IOThread extends ZObject implements IPollEvents
+public class IOThread extends ZObject implements IPollEvents, Closeable
 {
     //  I/O thread accesses incoming commands via this mailbox.
     private final Mailbox mailbox;
@@ -51,7 +53,8 @@ public class IOThread extends ZObject implements IPollEvents
         poller.start();
     }
 
-    public void destroy()
+    @Override
+    public void close() throws IOException
     {
         poller.destroy();
         mailbox.close();

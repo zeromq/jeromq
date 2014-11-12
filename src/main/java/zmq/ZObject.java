@@ -54,11 +54,11 @@ public abstract class ZObject
     {
         switch (cmd.type()) {
         case ACTIVATE_READ:
-            process_activate_read();
+            processActivateRead();
             break;
 
         case ACTIVATE_WRITE:
-            process_activate_write((Long) cmd.arg);
+            processActivateWrite((Long) cmd.arg);
             break;
 
         case STOP:
@@ -81,12 +81,12 @@ public abstract class ZObject
             break;
 
         case BIND:
-            process_bind((Pipe) cmd.arg);
+            processBind((Pipe) cmd.arg);
             processSeqnum();
             break;
 
         case HICCUP:
-            process_hiccup(cmd.arg);
+            processHiccup(cmd.arg);
             break;
 
         case PIPE_TERM:
@@ -122,12 +122,12 @@ public abstract class ZObject
         }
     }
 
-    protected boolean register_endpoint(String addr, Ctx.Endpoint endpoint)
+    protected boolean registerEndpoint(String addr, Ctx.Endpoint endpoint)
     {
         return ctx.register_endpoint(addr, endpoint);
     }
 
-    protected void unregister_endpoints(SocketBase socket)
+    protected void unregisterEndpoints(SocketBase socket)
     {
         ctx.unregisterEndpoints(socket);
     }
@@ -158,10 +158,10 @@ public abstract class ZObject
 
     protected void sendPlug(Own destination)
     {
-        send_plug(destination, true);
+        sendPlug(destination, true);
     }
 
-    protected void send_plug(Own destination, boolean incSeqnum)
+    protected void sendPlug(Own destination, boolean incSeqnum)
     {
         if (incSeqnum) {
             destination.incSeqnum();
@@ -178,12 +178,12 @@ public abstract class ZObject
         sendCommand(cmd);
     }
 
-    protected void send_attach(SessionBase destination, IEngine engine)
+    protected void sendAttach(SessionBase destination, IEngine engine)
     {
-        send_attach(destination, engine, true);
+        sendAttach(destination, engine, true);
     }
 
-    protected void send_attach(SessionBase destination, IEngine engine, boolean incSeqnum)
+    protected void sendAttach(SessionBase destination, IEngine engine, boolean incSeqnum)
     {
         if (incSeqnum) {
             destination.incSeqnum();
@@ -294,22 +294,22 @@ public abstract class ZObject
         throw new UnsupportedOperationException();
     }
 
-    protected void process_bind(Pipe pipe)
+    protected void processBind(Pipe pipe)
     {
         throw new UnsupportedOperationException();
     }
 
-    protected void process_activate_read()
+    protected void processActivateRead()
     {
         throw new UnsupportedOperationException();
     }
 
-    protected void process_activate_write(long msgsRead)
+    protected void processActivateWrite(long msgsRead)
     {
         throw new UnsupportedOperationException();
     }
 
-    protected void process_hiccup(Object hiccupPipe)
+    protected void processHiccup(Object hiccupPipe)
     {
         throw new UnsupportedOperationException();
     }

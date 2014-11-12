@@ -56,7 +56,7 @@ public class Push extends SocketBase
     }
 
     @Override
-    protected void xterminated(Pipe pipe)
+    protected void xpipeTerminated(Pipe pipe)
     {
         lb.terminated(pipe);
     }
