@@ -89,6 +89,8 @@ public class Router extends SocketBase
     // the message targeting an unknown peer.
     private boolean mandatory;
 
+    private boolean handover;
+
     public Router(Ctx parent, int tid, int sid)
     {
         super(parent, tid, sid);
@@ -99,6 +101,7 @@ public class Router extends SocketBase
         moreOut = false;
         nextPeerId = Utils.generateRandom();
         mandatory = false;
+        handover = false;
 
         options.type = ZMQ.ZMQ_ROUTER;
 
@@ -135,11 +138,15 @@ public class Router extends SocketBase
     @Override
     public boolean xsetsockopt(int option, Object optval)
     {
-        if (option != ZMQ.ZMQ_ROUTER_MANDATORY) {
-            return false;
+        if (option == ZMQ.ZMQ_ROUTER_MANDATORY) {
+            mandatory = (Integer) optval == 1;
+            return true;
         }
-        mandatory = (Integer) optval == 1;
-        return true;
+        if (option == ZMQ.ZMQ_ROUTER_HANDOVER) {
+            handover = (Integer) optval == 1;
+            return true;
+        }
+        return false;
     }
 
     @Override
@@ -381,9 +388,26 @@ public class Router extends SocketBase
         else {
             identity = Blob.createBlob(msg.data(), true);
 
-            //  Ignore peers with duplicate ID.
             if (outpipes.containsKey(identity)) {
-                return false;
+                if (!handover) {
+                    return false;
+                }
+                //  We will allow the new connection to take over this
+                //  identity. Temporarily assign a new identity to the
+                //  existing pipe so we can terminate it asynchronously.
+                ByteBuffer buf = ByteBuffer.allocate(5);
+                buf.put((byte) 0);
+                buf.putInt(nextPeerId++);
+                Blob newIdentity = Blob.createBlob(buf.array(), false);
+
+                //  Remove the existing identity entry to allow the new
+                //  connection to take the identity.
+                Outpipe existingOutpipe = outpipes.remove(identity);
+                existingOutpipe.pipe.setIdentity(newIdentity);
+
+                outpipes.put(newIdentity, existingOutpipe);
+
+                existingOutpipe.pipe.terminate(true);
             }
         }
 
