@@ -101,7 +101,7 @@ public abstract class SocketBase extends Own
     //  Concrete algorithms for the x- methods are to be defined by
     //  individual socket types.
     protected abstract void xattachPipe(Pipe pipe, boolean icanhasall);
-    protected abstract void xterminated(Pipe pipe);
+    protected abstract void xpipeTerminated(Pipe pipe);
 
     //  Returns false if object is not a socket.
     public boolean checkTag()
@@ -1032,10 +1032,10 @@ public abstract class SocketBase extends Own
     }
 
     @Override
-    public void terminated(Pipe pipe)
+    public void pipeTerminated(Pipe pipe)
     {
         //  Notify the specific socket type about the pipe termination.
-        xterminated(pipe);
+        xpipeTerminated(pipe);
 
         // Remove pipe from inproc pipes
         Iterator<Entry<String, Pipe>> it = inprocs.entrySet().iterator();

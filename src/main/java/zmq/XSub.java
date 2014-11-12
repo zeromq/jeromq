@@ -113,7 +113,7 @@ public class XSub extends SocketBase
     }
 
     @Override
-    protected void xterminated(Pipe pipe)
+    protected void xpipeTerminated(Pipe pipe)
     {
         fq.terminated(pipe);
         dist.terminated(pipe);

@@ -150,7 +150,7 @@ public class Router extends SocketBase
     }
 
     @Override
-    public void xterminated(Pipe pipe)
+    public void xpipeTerminated(Pipe pipe)
     {
         if (!anonymousPipes.remove(pipe)) {
             Outpipe old = outpipes.remove(pipe.getIdentity());

@@ -56,7 +56,7 @@ class Pull extends SocketBase
     }
 
     @Override
-    protected void xterminated(Pipe pipe)
+    protected void xpipeTerminated(Pipe pipe)
     {
         fq.terminated(pipe);
     }

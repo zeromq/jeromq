@@ -255,7 +255,7 @@ class SessionBase extends Own implements
     }
 
     @Override
-    public void terminated(Pipe pipe)
+    public void pipeTerminated(Pipe pipe)
     {
         //  Drop the reference to the deallocated pipe.
         assert (this.pipe == pipe || terminatingPipes.contains(pipe));
@@ -263,6 +263,10 @@ class SessionBase extends Own implements
         if (this.pipe == pipe) {
             // If this is our current pipe, remove it
             this.pipe = null;
+            if (hasLingerTimer) {
+                ioObject.cancelTimer(LINGER_TIMER_ID);
+                hasLingerTimer = false;
+            }
         }
         else {
             // Remove the pipe from the detached pipes set
@@ -272,8 +276,9 @@ class SessionBase extends Own implements
         //  If we are waiting for pending messages to be sent, at this point
         //  we are sure that there will be no more messages and we can proceed
         //  with termination safely.
-        if (pending && this.pipe == null && terminatingPipes.size() == 0) {
-            proceedWithTerm();
+        if (pending && this.pipe == null && terminatingPipes.isEmpty()) {
+            pending = false;
+            super.processTerm(0);
         }
     }
 
@@ -385,8 +390,8 @@ class SessionBase extends Own implements
         //  If the termination of the pipe happens before the term command is
         //  delivered there's nothing much to do. We can proceed with the
         //  stadard termination immediately.
-        if (pipe == null) {
-            proceedWithTerm();
+        if (pipe == null && terminatingPipes.isEmpty()) {
+            super.processTerm(0);
             return;
         }
 
@@ -409,16 +414,6 @@ class SessionBase extends Own implements
         //  In case there's no engine and there's only delimiter in the
         //  pipe it wouldn't be ever read. Thus we check for it explicitly.
         pipe.checkRead();
-    }
-
-    //  Call this function to move on with the delayed processTerm.
-    private void proceedWithTerm()
-    {
-        //  The pending phase have just ended.
-        pending = false;
-
-        //  Continue with standard termination.
-        super.processTerm(0);
     }
 
     @Override

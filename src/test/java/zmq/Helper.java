@@ -113,7 +113,7 @@ public class Helper
         }
 
         @Override
-        protected void xterminated(Pipe pipe)
+        protected void xpipeTerminated(Pipe pipe)
         {
         }
 
