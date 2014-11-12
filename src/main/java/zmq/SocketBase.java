@@ -339,6 +339,8 @@ public abstract class SocketBase extends Own
             if (rc) {
                 // Save last endpoint URI
                 options.lastEndpoint = addr;
+            }
+            else {
                 errno.set(ZError.EADDRINUSE);
             }
             return rc;

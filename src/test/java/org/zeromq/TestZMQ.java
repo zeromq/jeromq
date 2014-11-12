@@ -187,6 +187,30 @@ public class TestZMQ
         }
     }
 
+    @Test(expected = ZMQException.class)
+    public void testBindInprocSameAddress()
+    {
+        ZMQ.Context context = ZMQ.context(1);
+
+        ZMQ.Socket socket1 = context.socket(ZMQ.REQ);
+        ZMQ.Socket socket2 = context.socket(ZMQ.REQ);
+        socket1.bind("inproc://address.already.in.use");
+        try {
+            socket2.bind("inproc://address.already.in.use");
+            fail("Exception not thrown");
+        }
+        catch (ZMQException e) {
+            assertEquals(e.getErrorCode(), ZMQ.Error.EADDRINUSE.getCode());
+            throw e;
+        }
+        finally {
+            socket1.close();
+            socket2.close();
+
+            context.term();
+        }
+    }
+
     @Test
     public void testEventConnected()
     {
