@@ -35,7 +35,7 @@ import org.zeromq.ZMQ.Poller;
 
 public class ZLoop
 {
-    public static interface IZLoopHandler
+    public interface IZLoopHandler
     {
         public int handle(ZLoop loop, PollItem item, Object arg);
     }

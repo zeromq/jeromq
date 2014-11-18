@@ -27,7 +27,7 @@ public class Trie
     private int count;
     private int liveNodes;
 
-    public static interface ITrieHandler
+    public interface ITrieHandler
     {
         void added(byte[] data, int size, Object arg);
     }

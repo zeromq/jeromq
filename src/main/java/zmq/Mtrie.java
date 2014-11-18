@@ -32,7 +32,7 @@ public class Mtrie
     private int liveNodes;
     private Mtrie[] next;
 
-    public static interface IMtrieHandler
+    public interface IMtrieHandler
     {
         void invoke(Pipe pipe, byte[] data, int size, Object arg);
     }
