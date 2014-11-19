@@ -8,3 +8,4 @@ target
 maven-build.properties
 maven-build.xml
 build.xml
+.checkstyle

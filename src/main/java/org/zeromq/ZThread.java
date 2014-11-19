@@ -27,12 +27,12 @@ public class ZThread
     {
     }
 
-    public static interface IAttachedRunnable
+    public interface IAttachedRunnable
     {
         public void run(Object[] args, ZContext ctx, Socket pipe);
     }
 
-    public static interface IDetachedRunnable
+    public interface IDetachedRunnable
     {
         public void run(Object[] args);
     }
