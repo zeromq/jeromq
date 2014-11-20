@@ -56,7 +56,7 @@ public class flserver3
             ZFrame identity = request.pop();
             ZFrame control = request.pop();
             ZMsg reply = new ZMsg();
-            if (control.equals("PING"))
+            if (control.equals(new ZFrame("PING")))
                 reply.add("PONG");
             else {
                 reply.add(control);

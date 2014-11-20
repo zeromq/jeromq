@@ -370,7 +370,7 @@ public class clonesrv6
     {
         Iterator<kvmsg> it = pending.iterator();
         while (it.hasNext()) {
-            if (msg.UUID().equals(it.next().UUID())) {
+            if(java.util.Arrays.equals(msg.UUID(), it.next().UUID())){
                 it.remove();
                 return true;
             }
