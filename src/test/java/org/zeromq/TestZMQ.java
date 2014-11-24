@@ -465,4 +465,20 @@ public class TestZMQ
         pull.close();
         context.term();
     }
+
+    @Test
+    public void testContextBlocky()
+    {
+       Context ctx = ZMQ.context(1);
+       Socket router = ctx.socket(ZMQ.ROUTER);
+       long rc = router.getLinger();
+       assertEquals(-1, rc);
+       router.close();
+       ctx.setBlocky(false);
+       router = ctx.socket(ZMQ.ROUTER);
+       rc = router.getLinger();
+       assertEquals(0, rc);
+       router.close();
+       ctx.term();
+    }
 }

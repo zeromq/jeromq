@@ -88,6 +88,7 @@ public abstract class SocketBase extends Own
         monitorEvents = 0;
 
         options.socketId = sid;
+        options.linger = parent.get(ZMQ.ZMQ_BLOCKY) != 0 ? -1 : 0;
 
         endpoints = new MultiMap<String, Own>();
         inprocs = new MultiMap<String, Pipe>();
