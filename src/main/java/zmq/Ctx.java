@@ -344,6 +344,7 @@ public class Ctx
         try {
             int tid = socket.getTid();
             emptySlots.add(tid);
+            slots[tid].close();
             slots[tid] = null;
 
             //  Remove the socket from the list of sockets.
@@ -354,6 +355,9 @@ public class Ctx
             if (terminating && sockets.isEmpty()) {
                 reaper.stop();
             }
+        }
+        catch (IOException e) {
+            throw new RuntimeException(e);
         }
         finally {
             slotSync.unlock();
