@@ -149,6 +149,8 @@ public class Ctx
         termMailbox.close();
 
         tag = 0xdeadbeef;
+
+        zmq.ZMQ.closePollSelector();
     }
 
     //  Returns false if object is not a context.

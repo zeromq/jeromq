@@ -813,6 +813,18 @@ public class ZMQ
 
     private static final ThreadLocal<PollSelector> POLL_SELECTOR = new ThreadLocal<PollSelector>();
 
+    /**
+     * Closes the poll selector on the current thread.
+     */
+    public static void closePollSelector()
+    {
+        PollSelector selector = POLL_SELECTOR.get();
+        if (selector != null) {
+            selector.close();
+        }
+        POLL_SELECTOR.remove();
+    }
+
     // GC closes selector handle
     private static class PollSelector
     {
@@ -850,14 +862,23 @@ public class ZMQ
             return selector;
         }
 
+        void close()
+        {
+            if (selector != null) {
+                try {
+                    selector.close();
+                    selector = null;
+                }
+                catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
         @Override
         public void finalize()
         {
-            try {
-                selector.close();
-            }
-            catch (IOException e) {
-            }
+            close();
             try {
                 super.finalize();
             }
