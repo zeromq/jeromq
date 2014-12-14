@@ -148,16 +148,19 @@ public class TestZMQ
                 push.close();
             }
             catch (Exception ignore) {
+                ignore.printStackTrace();
             }
             try {
                 pull.close();
             }
             catch (Exception ignore) {
+                ignore.printStackTrace();
             }
             try {
                 context.term();
             }
             catch (Exception ignore) {
+                ignore.printStackTrace();
             }
         }
 

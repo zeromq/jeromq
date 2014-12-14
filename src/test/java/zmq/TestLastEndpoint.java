@@ -48,5 +48,8 @@ public class TestLastEndpoint
         do_bind_and_verify(sb, "tcp://127.0.0.1:5560");
         do_bind_and_verify(sb, "tcp://127.0.0.1:5561");
         do_bind_and_verify(sb, "ipc:///tmp/testep");
+
+        sb.close();
+        ctx.terminate();
     }
 }

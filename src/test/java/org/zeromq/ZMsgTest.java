@@ -35,6 +35,9 @@ public class ZMsgTest
 
         ZFrame f = ZFrame.recvFrame(socket, ZMQ.NOBLOCK);
         Assert.assertNull(f);
+
+        socket.close();
+        ctx.close();
     }
 
     @Test
@@ -45,6 +48,9 @@ public class ZMsgTest
 
         ZMsg msg = ZMsg.recvMsg(socket, ZMQ.NOBLOCK);
         Assert.assertNull(msg);
+
+        socket.close();
+        ctx.close();
     }
 
     @Test
@@ -60,5 +66,9 @@ public class ZMsgTest
         sender.send(new byte[0]);
         ZMsg msg = ZMsg.recvMsg(receiver, ZMQ.NOBLOCK);
         Assert.assertNotNull(msg);
+
+        sender.close();
+        receiver.close();
+        ctx.close();
     }
 }
