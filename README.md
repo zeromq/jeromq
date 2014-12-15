@@ -13,7 +13,7 @@ Pure Java implementation of libzmq (http://zeromq.org)
 * not too bad performance compared to zeromq
  * 4.5M messages (100B) per sec
  * [Performance](https://github.com/zeromq/jeromq/wiki/Performance)
-* exactly same develope experience with zeromq and jzmq
+* Exactly same developer experience with zeromq and jzmq.
 
 ## Not supported Features
 
