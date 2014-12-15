@@ -1,28 +1,28 @@
 #JeroMQ
 
-Pure Java implementation of libzmq (http://zeromq.org)
+Pure Java implementation of libzmq (http://zeromq.org).
 
 [![Build Status](https://travis-ci.org/zeromq/jeromq.png)](https://travis-ci.org/zeromq/jeromq)
 
 ## Features
 
-* based on libzmq 3.2.5
-* ZMTP/2.0 (http://rfc.zeromq.org/spec:15)
-* tcp:// protocol and inproc:// is compatible with zeromq
-* ipc:// protocol works only between jeromq (uses tcp://127.0.0.1:port internally)
-* not too bad performance compared to zeromq
- * 4.5M messages (100B) per sec
- * [Performance](https://github.com/zeromq/jeromq/wiki/Performance)
+* Based on libzmq 3.2.5.
+* ZMTP/2.0 (http://rfc.zeromq.org/spec:15).
+* tcp:// protocol and inproc:// is compatible with zeromq.
+* ipc:// protocol works only between jeromq (uses tcp://127.0.0.1:port internally).
+* Not too bad performance compared to zeromq.
+ * 4.5M messages (100B) per sec.
+ * [Performance](https://github.com/zeromq/jeromq/wiki/Performance).
 * Exactly same developer experience with zeromq and jzmq.
 
 ## Not supported Features
 
 * ipc:// protocol with zeromq. Java doesn't support UNIX domain socket.
-* pgm:// protocol. Cannot find a pgm Java implementation
+* pgm:// protocol. Cannot find a pgm Java implementation.
 
 ## Extended Features
 
-* build your own StreamEngine's Decoder/Encoder
+* Build your own StreamEngine's Decoder/Encoder:
  * [TestProxyTcp](https://github.com/zeromq/jeromq/blob/master/src/test/java/zmq/TestProxyTcp.java)
  * [Proxy](https://github.com/zeromq/jeromq/blob/master/src/main/java/org/jeromq/codec/Proxy.java)
 
@@ -73,4 +73,4 @@ To generate an ant build file from `pom.xml`, issue the following command:
 mvn ant:ant
 ```
 
-Also please refer the [Wiki](https://github.com/zeromq/jeromq/wiki)
+Also please refer the [Wiki](https://github.com/zeromq/jeromq/wiki).
