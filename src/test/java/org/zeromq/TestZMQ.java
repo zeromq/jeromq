@@ -148,16 +148,19 @@ public class TestZMQ
                 push.close();
             }
             catch (Exception ignore) {
+                ignore.printStackTrace();
             }
             try {
                 pull.close();
             }
             catch (Exception ignore) {
+                ignore.printStackTrace();
             }
             try {
                 context.term();
             }
             catch (Exception ignore) {
+                ignore.printStackTrace();
             }
         }
 
@@ -464,5 +467,21 @@ public class TestZMQ
         push.close();
         pull.close();
         context.term();
+    }
+
+    @Test
+    public void testContextBlocky()
+    {
+       Context ctx = ZMQ.context(1);
+       Socket router = ctx.socket(ZMQ.ROUTER);
+       long rc = router.getLinger();
+       assertEquals(-1, rc);
+       router.close();
+       ctx.setBlocky(false);
+       router = ctx.socket(ZMQ.ROUTER);
+       rc = router.getLinger();
+       assertEquals(0, rc);
+       router.close();
+       ctx.term();
     }
 }

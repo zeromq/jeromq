@@ -301,6 +301,16 @@ public class ZMQ
             return ctx.set(zmq.ZMQ.ZMQ_MAX_SOCKETS, maxSockets);
         }
 
+        public boolean getBlocky()
+        {
+            return ctx.get(zmq.ZMQ.ZMQ_BLOCKY) != 0;
+        }
+
+        public boolean setBlocky(boolean block)
+        {
+            return ctx.set(zmq.ZMQ.ZMQ_BLOCKY, block ? 1 : 0);
+        }
+
         /**
          * This is an explicit "destructor". It can be called to ensure the corresponding 0MQ
          * Context has been disposed of.

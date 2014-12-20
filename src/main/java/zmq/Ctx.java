@@ -106,6 +106,9 @@ public class Ctx
     //  Number of I/O threads to launch.
     private int ioThreadCount;
 
+    //  Does context wait (possibly forever) on termination?
+    private boolean blocky;
+
     //  Synchronisation of access to context options.
     private final Lock optSync;
 
@@ -121,7 +124,7 @@ public class Ctx
         slots = null;
         maxSockets = ZMQ.ZMQ_MAX_SOCKETS_DFLT;
         ioThreadCount = ZMQ.ZMQ_IO_THREADS_DFLT;
-
+        blocky = true;
         slotSync = new ReentrantLock();
         endpointsSync = new ReentrantLock();
         optSync = new ReentrantLock();
@@ -235,6 +238,16 @@ public class Ctx
                 optSync.unlock();
             }
         }
+        else
+        if (option == ZMQ.ZMQ_BLOCKY && optval >= 0) {
+            optSync.lock();
+            try {
+                blocky = (optval != 0);
+            }
+            finally {
+                optSync.unlock();
+            }
+        }
         else {
             return false;
         }
@@ -249,6 +262,9 @@ public class Ctx
         }
         else if (option == ZMQ.ZMQ_IO_THREADS) {
             rc = ioThreadCount;
+        }
+        else if (option == ZMQ.ZMQ_BLOCKY) {
+            rc = blocky ? 1 : 0;
         }
         else {
             throw new IllegalArgumentException("option = " + option);
