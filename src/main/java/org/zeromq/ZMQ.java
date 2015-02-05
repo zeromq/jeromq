@@ -1158,9 +1158,9 @@ public class ZMQ
          * @param addr
          *            the endpoint to bind to.
          */
-        public final int bind(String addr)
+        public final void bind(String addr)
         {
-            return bind(addr, DYNFROM, DYNTO);
+            bind(addr, DYNFROM, DYNTO);
         }
 
         /**
