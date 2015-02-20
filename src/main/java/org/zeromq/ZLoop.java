@@ -151,8 +151,7 @@ public class ZLoop
 
     public int addPoller(PollItem pollItem, IZLoopHandler handler, Object arg)
     {
-        PollItem item = pollItem;
-        if (item.getRawSocket() == null && item.getSocket() == null) {
+        if (pollItem.getRawSocket() == null && pollItem.getSocket() == null) {
             return -1;
         }
 
@@ -162,8 +161,8 @@ public class ZLoop
         dirty = true;
         if (verbose) {
             System.out.printf("I: zloop: register %s poller (%s, %s)\n",
-                    item.getSocket() != null ? item.getSocket().getType() : "RAW",
-                    item.getSocket(), item.getRawSocket());
+                    pollItem.getSocket() != null ? pollItem.getSocket().getType() : "RAW",
+                    pollItem.getSocket(), pollItem.getRawSocket());
         }
         return 0;
     }
@@ -175,20 +174,18 @@ public class ZLoop
 
     public void removePoller(PollItem pollItem)
     {
-        PollItem item = pollItem;
-
         Iterator<SPoller> it = pollers.iterator();
         while (it.hasNext()) {
             SPoller p = it.next();
-            if (item.equals(p.item)) {
+            if (pollItem.equals(p.item)) {
                 it.remove();
                 dirty = true;
             }
         }
         if (verbose) {
             System.out.printf("I: zloop: cancel %s poller (%s, %s)",
-                    item.getSocket() != null ? item.getSocket().getType() : "RAW",
-                    item.getSocket(), item.getRawSocket());
+                    pollItem.getSocket() != null ? pollItem.getSocket().getType() : "RAW",
+                    pollItem.getSocket(), pollItem.getRawSocket());
         }
 
     }

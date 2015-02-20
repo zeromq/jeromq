@@ -107,20 +107,12 @@ public class Pair extends SocketBase
     @Override
     protected boolean xhasIn()
     {
-        if (pipe == null) {
-            return false;
-        }
-
-        return pipe.checkRead();
+        return pipe != null && pipe.checkRead();
     }
 
     @Override
     protected boolean xhasOut()
     {
-        if (pipe == null) {
-            return false;
-        }
-
-        return pipe.checkWrite();
+        return pipe != null && pipe.checkWrite();
     }
 }

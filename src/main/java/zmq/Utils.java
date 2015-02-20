@@ -154,8 +154,11 @@ class Utils
         }
         boolean ret = true;
         if (path.isDirectory()) {
-            for (File f : path.listFiles()) {
-                ret = ret && delete(f);
+            File[] files = path.listFiles();
+            if (files != null) {
+                for (File f : files) {
+                    ret = ret && delete(f);
+                }
             }
         }
         return ret && path.delete();

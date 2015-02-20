@@ -125,14 +125,12 @@ public class TcpConnecter extends Own implements IPollEvents
     public void inEvent()
     {
         // connected but attaching to stream engine is not completed. do nothing
-        return;
     }
 
     @Override
     public void outEvent()
     {
         // connected but attaching to stream engine is not completed. do nothing
-        return;
     }
 
     @Override

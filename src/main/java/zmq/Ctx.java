@@ -441,7 +441,6 @@ public class Ctx
                 Entry<String, Endpoint> e = it.next();
                 if (e.getValue().socket == socket) {
                     it.remove();
-                    continue;
                 }
             }
         }

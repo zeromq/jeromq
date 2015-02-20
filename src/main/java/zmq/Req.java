@@ -126,21 +126,13 @@ public class Req extends Dealer
     {
         //  TODO: Duplicates should be removed here.
 
-        if (!receivingReply) {
-            return false;
-        }
-
-        return super.xhasIn();
+        return receivingReply && super.xhasIn();
     }
 
     @Override
     public boolean xhasOut()
     {
-        if (receivingReply) {
-            return false;
-        }
-
-        return super.xhasOut();
+        return !receivingReply && super.xhasOut();
     }
 
     public static class ReqSession extends Dealer.DealerSession

@@ -78,7 +78,7 @@ public interface ZAgent
     /**
      * Sends a control message from the Corbeille to the Plateau side.
      *
-     * @param msg    the message to send
+     * @param word    the message to send
      * @return true if the message was sent, otherwise false (if the distant Star is dead for example)
      */
     boolean send(String word);
@@ -86,7 +86,7 @@ public interface ZAgent
     /**
      * Sends a control message from the Corbeille to the Plateau side.
      *
-     * @param msg    the message to send
+     * @param word    the message to send
      * @param more   true to send more strings in a single message
      * @return true if the message was sent, otherwise false (if the distant Star is dead for example)
      */
@@ -168,7 +168,7 @@ public interface ZAgent
             }
             ZMsg msg = ZMsg.recvMsg(pipe, wait ? 0 : ZMQ.DONTWAIT);
             if (msg == null) {
-                return msg;
+                return null;
             }
 
             final ZFrame frame = msg.peek();

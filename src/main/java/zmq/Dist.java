@@ -176,7 +176,6 @@ class Dist
                 --i; //  Retry last write because index will have been swapped
             }
         }
-        return;
     }
 
     public boolean hasOut()

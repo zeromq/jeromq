@@ -496,7 +496,7 @@ public abstract class SocketBase extends Own
         if (ioThread == null) {
             throw new IllegalStateException("Empty IO Thread");
         }
-        boolean ipv4only = options.ipv4only != 0 ? true : false;
+        boolean ipv4only = options.ipv4only != 0;
         Address paddr = new Address(protocol, address, ipv4only);
 
         //  Resolve address (if needed by the protocol)
@@ -559,7 +559,7 @@ public abstract class SocketBase extends Own
         //  (from launchChild() for example) we're asked to terminate now.
         boolean rc = processCommands(0, false);
         if (!rc) {
-            return rc;
+            return false;
         }
 
         //  Parse addr_ string.
@@ -816,7 +816,6 @@ public abstract class SocketBase extends Own
     private boolean processCommands(int timeout, boolean throttle)
     {
         Command cmd;
-        boolean ret = true;
         if (timeout != 0) {
             //  If we are asked to wait, simply ask mailbox to wait.
             cmd = mailbox.recv(timeout);
@@ -862,7 +861,7 @@ public abstract class SocketBase extends Own
             return false;
         }
 
-        return ret;
+        return true;
     }
 
     @Override

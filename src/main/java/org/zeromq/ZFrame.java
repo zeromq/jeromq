@@ -269,9 +269,9 @@ public class ZFrame
         String hexChar = "0123456789ABCDEF";
 
         StringBuilder b = new StringBuilder();
-        for (int nbr = 0; nbr < data.length; nbr++) {
-            int b1 = data[nbr] >>> 4 & 0xf;
-            int b2 = data[nbr] & 0xf;
+        for (byte aData : data) {
+            int b1 = aData >>> 4 & 0xf;
+            int b2 = aData & 0xf;
             b.append(hexChar.charAt(b1));
             b.append(hexChar.charAt(b2));
         }
@@ -325,8 +325,8 @@ public class ZFrame
         }
         // Dump message as text or hex-encoded string
         boolean isText = true;
-        for (int i = 0; i < data.length; i++) {
-            if (data[i] < 32 || data[i] > 127) {
+        for (byte aData : data) {
+            if (aData < 32) {
                 isText = false;
             }
         }

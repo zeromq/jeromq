@@ -154,9 +154,8 @@ public class YPipe<T>
 
         //  There was at least one value prefetched.
         //  Return it to the caller.
-        T value = queue.pop();
 
-        return value;
+        return queue.pop();
     }
 
     //  Applies the function fn to the first elemenent in the pipe
@@ -167,7 +166,6 @@ public class YPipe<T>
         boolean rc = checkRead();
         assert (rc);
 
-        T value = queue.front();
-        return value;
+        return queue.front();
     }
 }

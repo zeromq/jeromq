@@ -173,7 +173,7 @@ public class ZProxy
          * Performs a hot restart of the given socket.
          * Usually an unbind/bind but you can use whatever method you like.
          *
-         * @param ctx the context used for eventual initialization.
+         * @param cfg      the custom configuration message sent by the control.
          * @param socket   the socket to hot restart
          * @param place    the position for the socket in the proxy
          * @param args     the optional array of arguments that has been passed at the creation of the ZProxy.
@@ -242,7 +242,7 @@ public class ZProxy
     /**
      * Creates a new proxy in a ZeroMQ way.
      * This proxy will be less efficient than the
-     * {@link #newProxy(ZContext, String, SelectorCreator, Proxy, Object...) low-level one}.
+     * {@link #newZProxy(ZContext, String, org.zeromq.ZProxy.Proxy, String, Object...) low-level one}.
      *
      * @param ctx        the context used for the proxy.
      * Possibly null, in this case a new context will be created and automatically destroyed afterwards.
@@ -337,12 +337,12 @@ public class ZProxy
      */
     public String command(String command, boolean sync)
     {
-        assert (command != CONFIG);
-        assert (command != RESTART);
-        if (command == STATUS) {
+        assert (!command.equals(CONFIG));
+        assert (!command.equals(RESTART));
+        if (command.equals(STATUS)) {
             return status(sync);
         }
-        if (command == EXIT) {
+        if (command.equals(EXIT)) {
             return exit(sync);
         }
         // consume the status in the pipe
@@ -351,7 +351,7 @@ public class ZProxy
         if (agent.send(command)) {
             // the pipe is refilled
             if (sync) {
-                status(sync);
+                status(true);
             }
         }
         return status;
@@ -590,8 +590,6 @@ public class ZProxy
     public static final String ALIVE    = State.ALIVE.name();
 
     private static final AtomicInteger counter = new AtomicInteger();
-    // unique id of the proxy
-    private final int id = counter.incrementAndGet();
 
     // the endpoint to the distant proxy actor
     private final ZAgent agent;
@@ -660,6 +658,7 @@ public class ZProxy
         }
 
         // handle the actor
+        int id = counter.incrementAndGet();
         Actor actor = new ProxyActor(name, pump, id);
         if (shadow != null) {
             actor = new ZActor.Duo(actor, shadow);
@@ -939,9 +938,9 @@ public class ZProxy
                 state.hot = null;
                 state.restart = false;
 
-                boolean cold = false;
+                boolean cold;
                 ZMsg dup = cfg.duplicate();
-                cold |= provider.restart(dup, frontend, Plug.FRONT,   this.args);
+                cold = provider.restart(dup, frontend, Plug.FRONT, this.args);
                 dup.destroy();
                 dup = cfg.duplicate();
                 cold |= provider.restart(dup, backend,  Plug.BACK,    this.args);
@@ -1067,7 +1066,7 @@ public class ZProxy
         public boolean flow(Plug splug, Socket source, Socket capture,
                 Plug dplug, Socket destination)
         {
-            boolean rc = true;
+            boolean rc;
 
             SocketBase src = source.base();
             SocketBase dst = destination.base();
@@ -1107,7 +1106,7 @@ public class ZProxy
                     break;
                 }
             }
-            return rc;
+            return true;
         }
     }
 }
