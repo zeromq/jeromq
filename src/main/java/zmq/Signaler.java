@@ -128,11 +128,8 @@ public class Signaler
                 // waitEvent(0) is called every read/send of SocketBase
                 // instant readiness is not strictly required
                 // On the other hand, we can save lots of system call and increase performance
-                if (rcursor < wcursor.get()) {
-                    return true;
-                }
+                return rcursor < wcursor.get();
 
-                return false;
             }
             else if (timeout < 0) {
                 rc = selector.select(0);

@@ -62,7 +62,7 @@ import org.zeromq.ZMQ.Socket;
 <p>
  * The motivations of this rewriting are:
  * <br/>
- * - the bare poller use {@link zmq.ZMQ#zmq_poll(PollItem[], int, long) this method} who does not allow
+ * - the bare poller use {@link zmq.ZMQ#zmq_poll(zmq.PollItem[], int, long) this method} who does not allow
  * to choose the selector used for polling, relying on a ThreadLocal, which is dangerous.
  * <br/>
  * - the bare poller use algorithms tailored for languages with manual allocation.
@@ -355,7 +355,7 @@ public class ZPoller implements Closeable
     /**
      * Register a SelectableChannel for polling on specified events.
      *
-     * @param socket    the registering socket.
+     * @param channel   the registering channel.
      * @param handler   the events handler for this socket
      * @param events    the events to listen to, as a mask composed by XORing POLLIN, POLLOUT and POLLERR.
      * @return true if registered, otherwise false
@@ -597,7 +597,7 @@ public class ZPoller implements Closeable
     /**
      * Tells if a socket is writable from this poller.
      *
-     * @param channel     the socket to ask for.
+     * @param socket     the socket to ask for.
      * @return true if writable, otherwise false
      */
     public boolean isWritable(final Socket socket)

@@ -495,10 +495,9 @@ class Pipe extends ZObject
         //  That done, we still we have to account for the cases where
         //  HWM < max_wm_delta thus driving LWM to negative numbers.
         //  Let's make LWM 1/2 of HWM in such cases.
-        int result = (hwm > Config.MAX_WM_DELTA.getValue() * 2) ?
-            hwm - Config.MAX_WM_DELTA.getValue() : (hwm + 1) / 2;
 
-        return result;
+        return (hwm > Config.MAX_WM_DELTA.getValue() * 2) ?
+            hwm - Config.MAX_WM_DELTA.getValue() : (hwm + 1) / 2;
     }
 
     //  Handler for delimiter read from the pipe.

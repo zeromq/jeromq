@@ -1173,7 +1173,7 @@ public class ZMQ
          * @param max
          *            The maximum port in the range of ports to try.
          */
-        private final int bind(String addr, int min, int max)
+        private int bind(String addr, int min, int max)
         {
             if (addr.endsWith(":*")) {
                 int port = min;
@@ -1382,8 +1382,7 @@ public class ZMQ
             zmq.Msg msg = base.recv(flags);
 
             if (msg != null) {
-                int size = msg.getBytes(0, buffer, offset, len);
-                return size;
+                return msg.getBytes(0, buffer, offset, len);
             }
 
             return -1;
