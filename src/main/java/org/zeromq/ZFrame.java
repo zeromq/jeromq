@@ -328,6 +328,7 @@ public class ZFrame
         for (byte aData : data) {
             if (aData < 32) {
                 isText = false;
+                break;
             }
         }
         if (isText) {
