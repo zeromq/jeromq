@@ -23,6 +23,7 @@ import java.io.Closeable;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectableChannel;
 import java.nio.charset.Charset;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import zmq.Ctx;
 import zmq.DecoderBase;
@@ -373,6 +374,7 @@ public class ZMQ
 
         private final Ctx ctx;
         private final SocketBase base;
+        private final AtomicBoolean isClosed = new AtomicBoolean(false);
 
         /**
          * Class constructor.
@@ -411,7 +413,9 @@ public class ZMQ
         @Override
         public void close()
         {
-            base.close();
+            if (isClosed.compareAndSet(false, true)) {
+                base.close();
+            }
         }
 
         /**
