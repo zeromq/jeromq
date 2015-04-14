@@ -254,6 +254,20 @@ public class ZMQ
     {
         return new Context(ioThreads);
     }
+    
+    /**
+     * Create a new Context with UncaughtExceptionHandler.
+     *
+     * @param ioThreads
+     *            Number of threads to use, usually 1 is sufficient for most use cases.
+     * @param eh
+     *            UncaughtExceptionHandler for the worker threads
+     * @return the Context
+     */
+    public static Context context(int ioThreads, Thread.UncaughtExceptionHandler eh)
+    {
+        return new Context(ioThreads, eh);
+    }
 
     public static class Context implements Closeable
     {
@@ -268,6 +282,19 @@ public class ZMQ
         protected Context(int ioThreads)
         {
             ctx = zmq.ZMQ.zmqInit(ioThreads);
+        }
+        
+        /**
+         * Class constructor with UncaughtExceptionHandler.
+         *
+         * @param ioThreads
+         *            size of the threads pool to handle I/O operations.
+         * @param eh
+         *            UncaughtExceptionHandler for the worker threads
+         */
+        protected Context(int ioThreads, Thread.UncaughtExceptionHandler eh)
+        {
+            ctx = zmq.ZMQ.zmqInit(ioThreads, eh);
         }
 
         /**

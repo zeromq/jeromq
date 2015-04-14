@@ -69,6 +69,9 @@ public class ZContext implements Closeable
      * (useful for multi-threaded applications)
      */
     private boolean main;
+    
+    // UncaughtExceptionHandler for handling uncaught exceptions outside of JeroMQ
+    private Thread.UncaughtExceptionHandler eh;
 
     /**
      * Class Constructor
@@ -76,6 +79,17 @@ public class ZContext implements Closeable
     public ZContext()
     {
         this(1);
+    }
+    
+    public ZContext(Thread.UncaughtExceptionHandler eh)
+    {
+        this(1, eh);
+    }
+    
+    public ZContext(int ioThreads, Thread.UncaughtExceptionHandler eh)
+    {
+        this(ioThreads);
+        this.eh = eh;
     }
 
     public ZContext(int ioThreads)
@@ -85,7 +99,7 @@ public class ZContext implements Closeable
         linger = 0;
         main = true;
     }
-
+    
     /**
      * Destructor.  Call this to gracefully terminate context and close any managed 0MQ sockets
      */
@@ -238,7 +252,13 @@ public class ZContext implements Closeable
             synchronized (this) {
                 result = context;
                 if (result == null) {
-                    result = ZMQ.context(ioThreads);
+                    if(this.eh == null)
+                    {
+                        result = ZMQ.context(ioThreads);
+                    }else
+                    {
+                        result = ZMQ.context(ioThreads, this.eh);
+                    }
                     context = result;
                 }
             }

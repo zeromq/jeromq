@@ -59,10 +59,24 @@ public class Poller extends PollerBase implements Runnable
     private Thread worker;
     private Selector selector;
     private final String name;
+    
+    // UncaughtExceptionHandler, optionally sent when creating context
+    private Thread.UncaughtExceptionHandler eh;
 
     public Poller()
     {
         this("poller");
+    }
+    
+    public Poller(Thread.UncaughtExceptionHandler eh)
+    {
+        this("poller", eh);
+    }
+    
+    public Poller(String name, Thread.UncaughtExceptionHandler eh)
+    {
+        this(name);
+        this.eh = eh;
     }
 
     public Poller(String name)
@@ -167,6 +181,9 @@ public class Poller extends PollerBase implements Runnable
     public void start()
     {
         worker = new Thread(this, name);
+        if(this.eh != null){
+            worker.setUncaughtExceptionHandler(this.eh);
+        }
         worker.start();
     }
 

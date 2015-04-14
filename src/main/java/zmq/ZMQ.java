@@ -247,6 +247,14 @@ public class ZMQ
         Ctx ctx = new Ctx();
         return ctx;
     }
+    
+    //  New context API with UncaughtExceptionHandler
+    public static Ctx zmq_ctx_new(Thread.UncaughtExceptionHandler eh)
+    {
+        //  Create 0MQ context.
+        Ctx ctx = new Ctx(eh);
+        return ctx;
+    }
 
     private static void zmq_ctx_destroy(Ctx ctx)
     {
@@ -278,6 +286,17 @@ public class ZMQ
     {
         if (ioThreads >= 0) {
             Ctx ctx = zmq_ctx_new();
+            zmq_ctx_set(ctx, ZMQ_IO_THREADS, ioThreads);
+            return ctx;
+        }
+        throw new IllegalArgumentException("io_threds must not be negative");
+    }
+    
+    //  Stable/legacy context API with UncaughtExceptionHandler
+    public static Ctx zmqInit(int ioThreads, Thread.UncaughtExceptionHandler eh)
+    {
+        if (ioThreads >= 0) {
+            Ctx ctx = zmq_ctx_new(eh);
             zmq_ctx_set(ctx, ZMQ_IO_THREADS, ioThreads);
             return ctx;
         }

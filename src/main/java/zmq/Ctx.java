@@ -114,6 +114,15 @@ public class Ctx
 
     public static final int TERM_TID = 0;
     public static final int REAPER_TID = 1;
+    
+    // UncaughtExceptionHandler, optionally sent when creating context
+    private Thread.UncaughtExceptionHandler eh;
+    
+    public Ctx(Thread.UncaughtExceptionHandler eh)
+    {
+        this();
+        this.eh = eh;
+    }
 
     public Ctx()
     {
@@ -305,7 +314,14 @@ public class Ctx
 
                 //  Create I/O thread objects and launch them.
                 for (int i = 2; i != ios + 2; i++) {
-                    IOThread ioThread = new IOThread(this, i);
+                    IOThread ioThread;
+                    if(this.eh == null)
+                    {
+                        ioThread = new IOThread(this, i);
+                    }else
+                    {
+                        ioThread = new IOThread(this, i, this.eh);
+                    }
                     //alloc_assert (io_thread);
                     ioThreads.add(ioThread);
                     slots[i] = ioThread.getMailbox();
