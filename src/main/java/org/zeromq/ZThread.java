@@ -86,6 +86,7 @@ public class ZThread
     {
         //  Prepare child thread
         Thread shim = new ShimThread(runnable, args);
+        shim.setDaemon(true);
         shim.start();
     }
 

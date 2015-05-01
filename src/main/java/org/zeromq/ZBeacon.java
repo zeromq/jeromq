@@ -65,7 +65,9 @@ public class ZBeacon
         }
 
         broadcastServer = new BroadcastServer(ignoreLocalAddress);
+        broadcastServer.setDaemon(true);
         broadcastClient = new BroadcastClient();
+        broadcastClient.setDaemon(true);
     }
 
     public void start()
