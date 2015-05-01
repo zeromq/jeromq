@@ -167,6 +167,7 @@ public class Poller extends PollerBase implements Runnable
     public void start()
     {
         worker = new Thread(this, name);
+        worker.setDaemon(true);
         worker.start();
     }
 
