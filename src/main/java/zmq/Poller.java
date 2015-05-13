@@ -28,6 +28,7 @@ import java.nio.channels.Selector;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Poller extends PollerBase implements Runnable
 {
@@ -50,7 +51,7 @@ public class Poller extends PollerBase implements Runnable
     private final Map<SelectableChannel, PollSet> fdTable;
 
     //  If true, there's at least one retired event source.
-    private boolean retired;
+    private final AtomicBoolean retired = new AtomicBoolean(false);
 
     //  If true, thread is in the process of shutting down.
     private volatile boolean stopping;
@@ -68,7 +69,6 @@ public class Poller extends PollerBase implements Runnable
     public Poller(String name)
     {
         this.name = name;
-        retired = false;
         stopping = false;
         stopped = false;
 
@@ -109,7 +109,7 @@ public class Poller extends PollerBase implements Runnable
     public final void removeHandle(SelectableChannel handle)
     {
         fdTable.get(handle).cancelled = true;
-        retired = true;
+        retired.set(true);
 
         //  Decrease the load metric of the thread.
         adjustLoad(-1);
@@ -160,7 +160,7 @@ public class Poller extends PollerBase implements Runnable
             pollset.key.interestOps(pollset.ops);
         }
         else {
-            retired = true;
+            retired.set(true);
         }
     }
 
@@ -186,7 +186,7 @@ public class Poller extends PollerBase implements Runnable
             //  Execute any due timers.
             long timeout = executeTimers();
 
-            if (retired) {
+            while (retired.compareAndSet(true, false)) {
                 Iterator<Map.Entry<SelectableChannel, PollSet>> it = fdTable.entrySet().iterator();
                 while (it.hasNext()) {
                     Map.Entry<SelectableChannel, PollSet> entry = it.next();
@@ -207,7 +207,6 @@ public class Poller extends PollerBase implements Runnable
                         it.remove();
                     }
                 }
-                retired = false;
             }
 
             //  Wait for events.
@@ -289,6 +288,6 @@ public class Poller extends PollerBase implements Runnable
             pollSet.key = null;
         }
 
-        retired = true;
+        retired.set(true);
     }
 }
