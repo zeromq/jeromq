@@ -105,6 +105,7 @@ public class Signaler
 
         while (true) {
             try {
+                Thread.interrupted();
                 nbytes = w.write(dummy);
             }
             catch (IOException e) {
