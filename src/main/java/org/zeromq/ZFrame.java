@@ -370,9 +370,7 @@ public class ZFrame
      */
     public static ZFrame recvFrame(Socket socket)
     {
-        ZFrame f = new ZFrame();
-        f.recv(socket, 0);
-        return f;
+        return ZFrame.recvFrame(socket, 0);
     }
 
     /**
