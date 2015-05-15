@@ -77,6 +77,7 @@ public class ZError
 
     private static final int ZMQ_HAUSNUMERO = 156384712;
 
+    public static final int ENOTSOCK = ZMQ_HAUSNUMERO + 5;
     public static final int EFSM = ZMQ_HAUSNUMERO + 51;
     public static final int ENOCOMPATPROTO = ZMQ_HAUSNUMERO + 52;
     public static final int ETERM = ZMQ_HAUSNUMERO + 53;
