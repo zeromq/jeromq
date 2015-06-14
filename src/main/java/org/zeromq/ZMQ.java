@@ -1878,7 +1878,9 @@ public class ZMQ
         EMTHREAD(ZError.EMTHREAD),
         EFSM(ZError.EFSM),
         ENOCOMPATPROTO(ZError.ENOCOMPATPROTO),
-        ETERM(ZError.ETERM);
+        ETERM(ZError.ETERM),
+        ENOTSOCK(ZError.ENOTSOCK),
+        EAGAIN(ZError.EAGAIN);
 
         private final int code;
 
