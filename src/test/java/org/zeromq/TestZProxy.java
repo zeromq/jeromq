@@ -27,12 +27,11 @@ public class TestZProxy
 
             public void configure(Socket socket, ZProxy.Plug place, Object[] extrArgs)
             {
-                int port = -1;
                 if (place == ZProxy.Plug.FRONT) {
-                    port = socket.bind("tcp://127.0.0.1:6660");
+                    socket.bind("tcp://127.0.0.1:6660");
                 }
                 if (place == ZProxy.Plug.BACK) {
-                    port = socket.bind("tcp://127.0.0.1:6661");
+                    socket.bind("tcp://127.0.0.1:6661");
                 }
                 if (place == ZProxy.Plug.CAPTURE && socket != null) {
                     socket.bind("tcp://127.0.0.1:4263");
@@ -42,19 +41,17 @@ public class TestZProxy
             @Override
             public boolean restart(ZMsg cfg, Socket socket, ZProxy.Plug place, Object[] extraArgs)
             {
-                boolean rc = false;
-                int port = -1;
                 if (place == ZProxy.Plug.FRONT) {
-                    rc = socket.unbind("tcp://127.0.0.1:6660");
-                    port = socket.bind("tcp://127.0.0.1:6660");
+                    socket.unbind("tcp://127.0.0.1:6660");
+                    socket.bind("tcp://127.0.0.1:6660");
                 }
                 if (place == ZProxy.Plug.BACK) {
-                    rc = socket.unbind("tcp://127.0.0.1:6661");
-                    port = socket.bind("tcp://127.0.0.1:6661");
+                    socket.unbind("tcp://127.0.0.1:6661");
+                    socket.bind("tcp://127.0.0.1:6661");
                 }
                 if (place == ZProxy.Plug.CAPTURE && socket != null) {
-                    rc = socket.unbind("tcp://127.0.0.1:4263");
-                    port = socket.bind("tcp://127.0.0.1:5347");
+                    socket.unbind("tcp://127.0.0.1:4263");
+                    socket.bind("tcp://127.0.0.1:5347");
                 }
                 return false;
             }
