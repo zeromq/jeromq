@@ -24,6 +24,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectableChannel;
 import java.nio.charset.Charset;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.ArrayDeque;
 
 import zmq.Ctx;
 import zmq.DecoderBase;
@@ -1472,7 +1473,7 @@ public class ZMQ
 
         private PollItem[] items;
         private long timeout;
-        private int next;
+        private ArrayDeque<Integer> nexts;
 
         public Poller(int size)
         {
@@ -1490,8 +1491,11 @@ public class ZMQ
         protected Poller(Context context, int size)
         {
             items = new PollItem[size];
+            nexts = new ArrayDeque(size);
             timeout = -1L;
-            next = 0;
+            for (int i = 0; i < size; i++) {
+                nexts.add(i);
+            }
         }
 
         /**
@@ -1565,11 +1569,15 @@ public class ZMQ
 
         private int insert(PollItem item)
         {
-            int pos = next++;
-            if (pos == items.length) {
+            Integer pos = nexts.pollFirst();
+            if (pos == null) {
                 PollItem[] nitems = new PollItem[items.length + SIZE_INCREMENT];
                 System.arraycopy(items, 0, nitems, 0, items.length);
+                for (int i = items.length; i < items.length + SIZE_INCREMENT; i++) {
+                    nexts.add(i);
+                }
                 items = nitems;
+                pos = nexts.pollFirst();
             }
             items[pos] = item;
             return pos;
@@ -1585,7 +1593,7 @@ public class ZMQ
         {
             for (int pos = 0; pos < items.length; pos++) {
                 PollItem item = items[pos];
-                if (item.getSocket() == socket) {
+                if ((item != null) && (item.getSocket() == socket)) {
                     remove(pos);
                     break;
                 }
@@ -1611,11 +1619,8 @@ public class ZMQ
 
         private void remove(int pos)
         {
-            next--;
-            if (pos != next) {
-                items[pos] = items[next];
-            }
-            items [next] = null;
+            nexts.add(pos);
+            items [pos] = null;
         }
 
         /**
@@ -1627,7 +1632,7 @@ public class ZMQ
          */
         public PollItem getItem(int index)
         {
-            if (index < 0 || index >= this.next) {
+            if (index < 0 || index >= this.items.length) {
                 return null;
             }
             return this.items[index];
@@ -1642,7 +1647,7 @@ public class ZMQ
          */
         public Socket getSocket(int index)
         {
-            if (index < 0 || index >= this.next) {
+            if (index < 0 || index >= this.items.length) {
                 return null;
             }
             return items[index].getSocket();
@@ -1686,16 +1691,6 @@ public class ZMQ
         }
 
         /**
-         * Get the index for the next position in the poll set size.
-         *
-         * @return the index for the next position in the poll set size.
-         */
-        public int getNext()
-        {
-            return this.next;
-        }
-
-        /**
          * Issue a poll call. If the poller's internal timeout value
          * has been set, use that value as timeout; otherwise, block
          * indefinitely.
@@ -1730,12 +1725,15 @@ public class ZMQ
          */
         public int poll(long tout)
         {
-            zmq.PollItem[] pollItems = new zmq.PollItem[next];
-            for (int i = 0; i < next; i++) {
-                pollItems[i] = items[i].base();
+            zmq.PollItem[] pollItems = new zmq.PollItem[items.length];
+            int nbItems = 0;
+            for (int i = 0; i < items.length; i++) {
+                if (items[i] != null) {
+                    pollItems[nbItems] = items[i].base();
+                    nbItems++;
+                }
             }
-
-            return zmq.ZMQ.poll(pollItems, next, tout);
+            return zmq.ZMQ.poll(pollItems, items.length, tout);
         }
 
         /**
@@ -1747,7 +1745,7 @@ public class ZMQ
          */
         public boolean pollin(int index)
         {
-            if (index < 0 || index >= this.next) {
+            if (index < 0 || index >= this.items.length) {
                 return false;
             }
 
@@ -1763,7 +1761,7 @@ public class ZMQ
          */
         public boolean pollout(int index)
         {
-            if (index < 0 || index >= this.next) {
+            if (index < 0 || index >= this.items.length) {
                 return false;
             }
 
@@ -1779,7 +1777,7 @@ public class ZMQ
          */
         public boolean pollerr(int index)
         {
-            if (index < 0 || index >= this.next) {
+            if (index < 0 || index >= this.items.length) {
                 return false;
             }
 
