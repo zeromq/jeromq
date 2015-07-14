@@ -65,7 +65,7 @@ public class XSub extends SocketBase
                 boolean sent = pipe.write(msg);
                 //  If we reached the SNDHWM, and thus cannot send the subscription, drop
                 //  the subscription message instead. This matches the behaviour of
-                //  zmq_setsockopt(ZMQ_SUBSCRIBE, ...), which also drops subscriptions
+                //  setSocketOption(ZMQ_SUBSCRIBE, ...), which also drops subscriptions
                 //  when the SNDHWM is reached.
                 //  if (!sent)
                 //    msg.close ();
@@ -144,11 +144,11 @@ public class XSub extends SocketBase
             // when there are forwarding devices involved
             //
             subscriptions.add(data , 1);
-            return dist.send_to_all(msg);
+            return dist.sendToAll(msg);
         }
         else {
             if (subscriptions.rm(data, 1)) {
-                return dist.send_to_all(msg);
+                return dist.sendToAll(msg);
             }
         }
 

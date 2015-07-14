@@ -30,59 +30,59 @@ public class TestInvalidRep
     @Test
     public void testInvalidRep()
     {
-        Ctx ctx = ZMQ.zmqInit(1);
+        Ctx ctx = ZMQ.init(1);
         assertThat(ctx, notNullValue());
-        SocketBase routerSocket = ZMQ.zmq_socket(ctx, ZMQ.ZMQ_ROUTER);
+        SocketBase routerSocket = ZMQ.socket(ctx, ZMQ.ZMQ_ROUTER);
         assertThat(routerSocket, notNullValue());
 
-        SocketBase reqSocket = ZMQ.zmq_socket(ctx, ZMQ.ZMQ_REQ);
+        SocketBase reqSocket = ZMQ.socket(ctx, ZMQ.ZMQ_REQ);
         assertThat(reqSocket, notNullValue());
         int linger = 0;
         int rc;
-        ZMQ.zmq_setsockopt(routerSocket, ZMQ.ZMQ_LINGER, linger);
-        ZMQ.zmq_setsockopt(reqSocket, ZMQ.ZMQ_LINGER, linger);
-        boolean brc = ZMQ.zmq_bind(routerSocket, "inproc://hi");
+        ZMQ.setSocketOption(routerSocket, ZMQ.ZMQ_LINGER, linger);
+        ZMQ.setSocketOption(reqSocket, ZMQ.ZMQ_LINGER, linger);
+        boolean brc = ZMQ.bind(routerSocket, "inproc://hi");
         assertThat(brc, is(true));
-        brc = ZMQ.zmq_connect(reqSocket, "inproc://hi");
+        brc = ZMQ.connect(reqSocket, "inproc://hi");
         assertThat(brc, is(true));
 
         //  Initial request.
-        rc = ZMQ.zmq_send(reqSocket, "r", 0);
+        rc = ZMQ.send(reqSocket, "r", 0);
         assertThat(rc, is(1));
 
         //  Receive the request.
         Msg addr;
         Msg bottom;
         Msg body;
-        addr = ZMQ.zmq_recv(routerSocket, 0);
+        addr = ZMQ.recv(routerSocket, 0);
         int addrSize = addr.size();
         System.out.println("addrSize: " + addr.size());
         assertThat(addr.size() > 0, is(true));
-        bottom = ZMQ.zmq_recv(routerSocket,  0);
+        bottom = ZMQ.recv(routerSocket,  0);
         assertThat(bottom.size(), is(0));
-        body = ZMQ.zmq_recv(routerSocket,  0);
+        body = ZMQ.recv(routerSocket,  0);
         assertThat(body.size(), is(1));
         assertThat(body.data()[0], is((byte) 'r'));
 
         //  Send invalid reply.
-        rc = ZMQ.zmq_send(routerSocket, addr, 0);
+        rc = ZMQ.send(routerSocket, addr, 0);
         assertThat(rc, is(addrSize));
         //  Send valid reply.
-        rc = ZMQ.zmq_send(routerSocket, addr, ZMQ.ZMQ_SNDMORE);
+        rc = ZMQ.send(routerSocket, addr, ZMQ.ZMQ_SNDMORE);
         assertThat(rc, is(addrSize));
-        rc = ZMQ.zmq_send(routerSocket, bottom, ZMQ.ZMQ_SNDMORE);
+        rc = ZMQ.send(routerSocket, bottom, ZMQ.ZMQ_SNDMORE);
         assertThat(rc, is(0));
-        rc = ZMQ.zmq_send(routerSocket, "b", 0);
+        rc = ZMQ.send(routerSocket, "b", 0);
         assertThat(rc, is(1));
 
         //  Check whether we've got the valid reply.
-        body = ZMQ.zmq_recv(reqSocket, 0);
+        body = ZMQ.recv(reqSocket, 0);
         assertThat(body.size(), is(1));
         assertThat(body.data()[0] , is((byte) 'b'));
 
         //  Tear down the wiring.
-        ZMQ.zmq_close(routerSocket);
-        ZMQ.zmq_close(reqSocket);
-        ZMQ.zmq_term(ctx);
+        ZMQ.close(routerSocket);
+        ZMQ.close(reqSocket);
+        ZMQ.term(ctx);
     }
 }

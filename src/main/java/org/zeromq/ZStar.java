@@ -41,7 +41,7 @@ import org.zeromq.ZThread.IAttachedRunnable;
  * <br/>
  * - the Corbeille side, or control side
  * <br/>
- * This is where one can {@link Agent#send(ZMsg) send} and {@link Agent#recv() receive} control messages to the underneath star via the ZStar agent.
+ * This is where one can {@link ZAgent#send(ZMsg) send} and {@link ZAgent#recv() receive} control messages to the underneath star via the ZStar agent.
  * <br/>
  * The ZStar lives on this side and is a way to safely communicate with the distant provided star.
  * <br/>

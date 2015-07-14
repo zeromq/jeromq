@@ -83,6 +83,7 @@
         <module name="HideUtilityClassConstructor"/>
 
         <module name="MemberName"/>
+        <module name="MethodName"/>
         <module name="LocalVariableName"/>
         <module name="LocalFinalVariableName"/>
         <module name="TypeName"/>

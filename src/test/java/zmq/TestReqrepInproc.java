@@ -31,23 +31,23 @@ public class TestReqrepInproc
     @Test
     public void testReqrepInproc()
     {
-        Ctx ctx = ZMQ.zmqInit(1);
+        Ctx ctx = ZMQ.init(1);
         assertThat(ctx, notNullValue());
-        SocketBase sb = ZMQ.zmq_socket(ctx, ZMQ.ZMQ_REP);
+        SocketBase sb = ZMQ.socket(ctx, ZMQ.ZMQ_REP);
         assertThat(sb, notNullValue());
-        boolean brc = ZMQ.zmq_bind(sb, "inproc://a");
+        boolean brc = ZMQ.bind(sb, "inproc://a");
         assertThat(brc , is(true));
 
-        SocketBase sc = ZMQ.zmq_socket(ctx, ZMQ.ZMQ_REQ);
+        SocketBase sc = ZMQ.socket(ctx, ZMQ.ZMQ_REQ);
         assertThat(sc, notNullValue());
-        brc = ZMQ.zmq_connect(sc, "inproc://a");
+        brc = ZMQ.connect(sc, "inproc://a");
         assertThat(brc , is(true));
 
         Helper.bounce(sb, sc);
 
         //  Tear down the wiring.
-        ZMQ.zmq_close(sb);
-        ZMQ.zmq_close(sc);
-        ZMQ.zmq_term(ctx);
+        ZMQ.close(sb);
+        ZMQ.close(sc);
+        ZMQ.term(ctx);
     }
 }

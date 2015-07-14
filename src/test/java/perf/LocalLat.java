@@ -51,46 +51,46 @@ public class LocalLat
         messageSize = atoi(args [1]);
         roundtripCount = atoi(args [2]);
 
-        ctx = ZMQ.zmqInit(1);
+        ctx = ZMQ.init(1);
         if (ctx == null) {
-            printf("error in zmqInit: %s\n");
+            printf("error in init: %s\n");
             return;
         }
 
-        s = ZMQ.zmq_socket(ctx, ZMQ.ZMQ_REP);
+        s = ZMQ.socket(ctx, ZMQ.ZMQ_REP);
         if (s == null) {
-            printf("error in zmq_socket: %s\n", ZMQ.zmq_strerror(s.errno()));
+            printf("error in socket: %s\n", ZMQ.strerror(s.errno()));
             return;
         }
 
-        rc = ZMQ.zmq_bind(s, bindTo);
+        rc = ZMQ.bind(s, bindTo);
         if (!rc) {
-            printf("error in zmq_bind: %s\n", ZMQ.zmq_strerror(s.errno()));
+            printf("error in bind: %s\n", ZMQ.strerror(s.errno()));
             return;
         }
 
         for (i = 0; i != roundtripCount; i++) {
-            msg = ZMQ.zmq_recvmsg(s, 0);
+            msg = ZMQ.recvMsg(s, 0);
             if (msg == null) {
-                printf("error in zmq_recvmsg: %s\n", ZMQ.zmq_strerror(s.errno()));
+                printf("error in recvmsg: %s\n", ZMQ.strerror(s.errno()));
                 return;
             }
-            if (ZMQ.zmq_msg_size(msg) != messageSize) {
+            if (ZMQ.msgSize(msg) != messageSize) {
                 printf("message of incorrect size received\n");
                 return;
             }
-            n = ZMQ.zmq_sendmsg(s, msg, 0);
+            n = ZMQ.sendMsg(s, msg, 0);
             if (n < 0) {
-                printf("error in zmq_sendmsg: %s\n", ZMQ.zmq_strerror(s.errno()));
+                printf("error in sendmsg: %s\n", ZMQ.strerror(s.errno()));
                 return;
             }
         }
 
-        ZMQ.zmq_sleep(1);
+        ZMQ.sleep(1000);
 
-        ZMQ.zmq_close(s);
+        ZMQ.close(s);
 
-        ZMQ.zmq_term(ctx);
+        ZMQ.term(ctx);
     }
 
     private static int atoi(String string)

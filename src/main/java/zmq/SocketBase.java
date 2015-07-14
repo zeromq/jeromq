@@ -19,6 +19,7 @@
 
 package zmq;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.channels.SelectableChannel;
@@ -159,6 +160,12 @@ public abstract class SocketBase extends Own
 
     public void destroy()
     {
+        try {
+            mailbox.close();
+        }
+        catch (IOException ignore) {
+        }
+
         stopMonitor();
         assert (destroyed);
     }
@@ -364,7 +371,7 @@ public abstract class SocketBase extends Own
             int rc = listener.setAddress(address);
             if (rc != 0) {
                 listener.destroy();
-                event_bind_failed(address, rc);
+                eventBindFailed(address, rc);
                 errno.set(rc);
                 return false;
             }
@@ -381,7 +388,7 @@ public abstract class SocketBase extends Own
             int rc = listener.setAddress(address);
             if (rc != 0) {
                 listener.destroy();
-                event_bind_failed(address, rc);
+                eventBindFailed(address, rc);
                 errno.set(rc);
                 return false;
             }
@@ -597,7 +604,7 @@ public abstract class SocketBase extends Own
             if (!e.getKey().equals(addr)) {
                 continue;
             }
-            term_child(e.getValue());
+            termChild(e.getValue());
             it.remove();
         }
         return true;
@@ -1131,7 +1138,7 @@ public abstract class SocketBase extends Own
         return rc;
     }
 
-    public void event_connected(String addr, SelectableChannel ch)
+    public void eventConnected(String addr, SelectableChannel ch)
     {
         if ((monitorEvents & ZMQ.ZMQ_EVENT_CONNECTED) == 0) {
             return;
@@ -1158,7 +1165,7 @@ public abstract class SocketBase extends Own
         monitorEvent(new ZMQ.Event(ZMQ.ZMQ_EVENT_CONNECT_RETRIED, addr, interval));
     }
 
-    public void event_listening(String addr, SelectableChannel ch)
+    public void eventListening(String addr, SelectableChannel ch)
     {
         if ((monitorEvents & ZMQ.ZMQ_EVENT_LISTENING) == 0) {
             return;
@@ -1167,7 +1174,7 @@ public abstract class SocketBase extends Own
         monitorEvent(new ZMQ.Event(ZMQ.ZMQ_EVENT_LISTENING, addr, ch));
     }
 
-    public void event_bind_failed(String addr, int errno)
+    public void eventBindFailed(String addr, int errno)
     {
         if ((monitorEvents & ZMQ.ZMQ_EVENT_BIND_FAILED) == 0) {
             return;

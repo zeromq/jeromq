@@ -62,7 +62,7 @@ import org.zeromq.ZMQ.Socket;
 <p>
  * The motivations of this rewriting are:
  * <br/>
- * - the bare poller use {@link zmq.ZMQ#zmq_poll(zmq.PollItem[], int, long) this method} who does not allow
+ * - the bare poller use {@link zmq.ZMQ#poll(zmq.PollItem[], int, long) this method} who does not allow
  * to choose the selector used for polling, relying on a ThreadLocal, which is dangerous.
  * <br/>
  * - the bare poller use algorithms tailored for languages with manual allocation.
@@ -473,7 +473,7 @@ public class ZPoller implements Closeable
             final Collection<zmq.PollItem> items)
     {
         final int size = items.size();
-        return zmq.ZMQ.zmq_poll(selector,
+        return zmq.ZMQ.poll(selector,
                 items.toArray(new zmq.PollItem[size]), size,
                 tout);
     }

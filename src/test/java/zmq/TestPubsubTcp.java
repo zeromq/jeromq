@@ -29,23 +29,23 @@ public class TestPubsubTcp
     @Test
     public void testPubsubTcp() throws Exception
     {
-        Ctx ctx = ZMQ.zmqInit(1);
+        Ctx ctx = ZMQ.init(1);
         assertThat(ctx, notNullValue());
 
-        SocketBase sb = ZMQ.zmq_socket(ctx, ZMQ.ZMQ_PUB);
+        SocketBase sb = ZMQ.socket(ctx, ZMQ.ZMQ_PUB);
         assertThat(sb, notNullValue());
-        boolean rc = ZMQ.zmq_bind(sb, "tcp://127.0.0.1:7660");
+        boolean rc = ZMQ.bind(sb, "tcp://127.0.0.1:7660");
         assertThat(rc, is(true));
 
-        SocketBase sc = ZMQ.zmq_socket(ctx, ZMQ.ZMQ_SUB);
+        SocketBase sc = ZMQ.socket(ctx, ZMQ.ZMQ_SUB);
         assertThat(sc, notNullValue());
 
         sc.setSocketOpt(ZMQ.ZMQ_SUBSCRIBE, "topic");
 
-        rc = ZMQ.zmq_connect(sc, "tcp://127.0.0.1:7660");
+        rc = ZMQ.connect(sc, "tcp://127.0.0.1:7660");
         assertThat(rc, is(true));
 
-        ZMQ.zmq_sleep(2);
+        ZMQ.sleep(2);
 
         sb.send(new Msg("topic abc".getBytes(ZMQ.CHARSET)), 0);
         sb.send(new Msg("topix defg".getBytes(ZMQ.CHARSET)), 0);
@@ -57,8 +57,8 @@ public class TestPubsubTcp
         msg = sc.recv(0);
         assertThat(msg.size(), is(11));
 
-        ZMQ.zmq_close(sc);
-        ZMQ.zmq_close(sb);
-        ZMQ.zmq_term(ctx);
+        ZMQ.close(sc);
+        ZMQ.close(sb);
+        ZMQ.term(ctx);
     }
 }

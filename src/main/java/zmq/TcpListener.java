@@ -163,7 +163,7 @@ public class TcpListener extends Own implements IPollEvents
             return ZError.EADDRINUSE;
         }
         endpoint = address.toString();
-        socket.event_listening(endpoint, handle);
+        socket.eventListening(endpoint, handle);
         return 0;
     }
 

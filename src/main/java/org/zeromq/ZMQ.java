@@ -267,7 +267,7 @@ public class ZMQ
          */
         protected Context(int ioThreads)
         {
-            ctx = zmq.ZMQ.zmqInit(ioThreads);
+            ctx = zmq.ZMQ.init(ioThreads);
         }
 
         /**
@@ -644,7 +644,7 @@ public class ZMQ
          * bit to thread 2 and so on. For example, a value of 3 specifies that subsequent
          * connections on 'socket' shall be handled exclusively by I/O threads 1 and 2.
          *
-         * See also  in the man page of zmqInit[3] for details on allocating the number of I/O threads for a
+         * See also  in the man page of init[3] for details on allocating the number of I/O threads for a
          * specific _context_.
          *
          * @param value
@@ -1735,7 +1735,7 @@ public class ZMQ
                 pollItems[i] = items[i].base();
             }
 
-            return zmq.ZMQ.zmq_poll(pollItems, next, tout);
+            return zmq.ZMQ.poll(pollItems, next, tout);
         }
 
         /**
@@ -1908,7 +1908,7 @@ public class ZMQ
     @Deprecated
     public static boolean device(int type, Socket frontend, Socket backend)
     {
-        return zmq.ZMQ.zmq_proxy(frontend.base, backend.base, null);
+        return zmq.ZMQ.proxy(frontend.base, backend.base, null);
     }
 
     /**
@@ -1929,7 +1929,7 @@ public class ZMQ
      */
     public static boolean proxy(Socket frontend, Socket backend, Socket capture)
     {
-        return zmq.ZMQ.zmq_proxy(frontend.base, backend.base, capture != null ? capture.base : null);
+        return zmq.ZMQ.proxy(frontend.base, backend.base, capture != null ? capture.base : null);
     }
 
     public static int poll(PollItem[] items, long timeout)
@@ -1944,7 +1944,7 @@ public class ZMQ
             pollItems[i] = items[i].base;
         }
 
-        return zmq.ZMQ.zmq_poll(pollItems, count, timeout);
+        return zmq.ZMQ.poll(pollItems, count, timeout);
     }
 
     /**
@@ -1976,7 +1976,7 @@ public class ZMQ
      */
     public static int getFullVersion()
     {
-        return zmq.ZMQ.ZMQ_MAKE_VERSION(zmq.ZMQ.ZMQ_VERSION_MAJOR,
+        return zmq.ZMQ.makeVersion(zmq.ZMQ.ZMQ_VERSION_MAJOR,
                 zmq.ZMQ.ZMQ_VERSION_MINOR,
                 zmq.ZMQ.ZMQ_VERSION_PATCH);
     }
@@ -1992,7 +1992,7 @@ public class ZMQ
                                     final int minor,
                                     final int patch)
     {
-      return zmq.ZMQ.ZMQ_MAKE_VERSION(major, minor, patch);
+      return zmq.ZMQ.makeVersion(major, minor, patch);
     }
 
     /**

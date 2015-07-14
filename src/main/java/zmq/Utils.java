@@ -64,11 +64,11 @@ class Utils
                                          int tcpKeepaliveCnt, int tcpKeepaliveIdle,
                                          int tcpKeepaliveIntvl) throws SocketException
     {
-        tune_tcp_keepalives(ch.socket(), tcpKeepalive, tcpKeepaliveCnt,
+        tuneTcpKeepalives(ch.socket(), tcpKeepalive, tcpKeepaliveCnt,
                 tcpKeepaliveIdle, tcpKeepaliveIntvl);
     }
 
-    public static void tune_tcp_keepalives(Socket fd, int tcpKeepalive,
+    public static void tuneTcpKeepalives(Socket fd, int tcpKeepalive,
             int tcpKeepaliveCnt, int tcpKeepaliveIdle,
             int tcpKeepaliveIntvl) throws SocketException
     {

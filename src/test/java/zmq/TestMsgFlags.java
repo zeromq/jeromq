@@ -31,45 +31,45 @@ public class TestMsgFlags
     @Test
     public void testMsgFlags()
     {
-        Ctx ctx = ZMQ.zmqInit(1);
+        Ctx ctx = ZMQ.init(1);
         assertThat(ctx, notNullValue());
-        SocketBase sb = ZMQ.zmq_socket(ctx, ZMQ.ZMQ_ROUTER);
+        SocketBase sb = ZMQ.socket(ctx, ZMQ.ZMQ_ROUTER);
         assertThat(sb, notNullValue());
-        boolean brc = ZMQ.zmq_bind(sb, "inproc://a");
+        boolean brc = ZMQ.bind(sb, "inproc://a");
         assertThat(brc, is(true));
 
-        SocketBase sc = ZMQ.zmq_socket(ctx, ZMQ.ZMQ_DEALER);
+        SocketBase sc = ZMQ.socket(ctx, ZMQ.ZMQ_DEALER);
         assertThat(sc, notNullValue());
-        brc = ZMQ.zmq_connect(sc, "inproc://a");
+        brc = ZMQ.connect(sc, "inproc://a");
         assertThat(brc, is(true));
 
         int rc;
         //  Send 2-part message.
-        rc = ZMQ.zmq_send(sc, "A", ZMQ.ZMQ_SNDMORE);
+        rc = ZMQ.send(sc, "A", ZMQ.ZMQ_SNDMORE);
         assertThat(rc, is(1));
-        rc = ZMQ.zmq_send(sc, "B", 0);
+        rc = ZMQ.send(sc, "B", 0);
         assertThat(rc, is(1));
 
         //  Identity comes first.
-        Msg msg = ZMQ.zmq_recvmsg(sb, 0);
-        int more = ZMQ.zmq_msg_get(msg, ZMQ.ZMQ_MORE);
+        Msg msg = ZMQ.recvMsg(sb, 0);
+        int more = ZMQ.getMessageOption(msg, ZMQ.ZMQ_MORE);
         assertThat(more, is(1));
 
         //  Then the first part of the message body.
-        msg = ZMQ.zmq_recvmsg(sb, 0);
+        msg = ZMQ.recvMsg(sb, 0);
         assertThat(rc, is(1));
-        more = ZMQ.zmq_msg_get(msg, ZMQ.ZMQ_MORE);
+        more = ZMQ.getMessageOption(msg, ZMQ.ZMQ_MORE);
         assertThat(more, is(1));
 
         //  And finally, the second part of the message body.
-        msg = ZMQ.zmq_recvmsg(sb,  0);
+        msg = ZMQ.recvMsg(sb, 0);
         assertThat(rc, is(1));
-        more = ZMQ.zmq_msg_get(msg, ZMQ.ZMQ_MORE);
+        more = ZMQ.getMessageOption(msg, ZMQ.ZMQ_MORE);
         assertThat(more, is(0));
 
         //  Tear down the wiring.
-        ZMQ.zmq_close(sb);
-        ZMQ.zmq_close(sc);
-        ZMQ.zmq_term(ctx);
+        ZMQ.close(sb);
+        ZMQ.close(sc);
+        ZMQ.term(ctx);
     }
 }

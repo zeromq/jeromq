@@ -43,7 +43,7 @@ public class TestMonitor
         @Override
         public void run()
         {
-            SocketBase s = ZMQ.zmq_socket(ctx, ZMQ.ZMQ_PAIR);
+            SocketBase s = ZMQ.socket(ctx, ZMQ.ZMQ_PAIR);
             boolean rc = s.connect(monitorAddr);
             assertThat(rc, is(true));
             // Only some of the exceptional events could fire
@@ -94,74 +94,74 @@ public class TestMonitor
         String addr = "tcp://127.0.0.1:5590";
         SocketMonitor [] threads = new SocketMonitor [3];
         //  Create the infrastructure
-        Ctx ctx = ZMQ.zmqInit(1);
+        Ctx ctx = ZMQ.init(1);
         assertThat(ctx, notNullValue());
         // set socket monitor
-        SocketBase rep = ZMQ.zmq_socket(ctx, ZMQ.ZMQ_REP);
+        SocketBase rep = ZMQ.socket(ctx, ZMQ.ZMQ_REP);
         assertThat(rep, notNullValue());
         try {
-            ZMQ.zmq_socket_monitor(rep, addr, 0);
+            ZMQ.monitorSocket(rep, addr, 0);
             assertTrue(false);
         }
         catch (IllegalArgumentException e) {
         }
 
         // REP socket monitor, all events
-        boolean rc = ZMQ.zmq_socket_monitor(rep, "inproc://monitor.rep", ZMQ.ZMQ_EVENT_ALL);
+        boolean rc = ZMQ.monitorSocket(rep, "inproc://monitor.rep", ZMQ.ZMQ_EVENT_ALL);
         assertThat(rc, is(true));
 
         threads [0] = new SocketMonitor(ctx, "inproc://monitor.rep");
         threads [0].start();
 
-        rc = ZMQ.zmq_bind(rep, addr);
+        rc = ZMQ.bind(rep, addr);
         assertThat(rc, is(true));
 
-        SocketBase req = ZMQ.zmq_socket(ctx, ZMQ.ZMQ_REQ);
+        SocketBase req = ZMQ.socket(ctx, ZMQ.ZMQ_REQ);
         assertThat(req, notNullValue());
 
         // REQ socket monitor, all events
-        rc = ZMQ.zmq_socket_monitor(req, "inproc://monitor.req", ZMQ.ZMQ_EVENT_ALL);
+        rc = ZMQ.monitorSocket(req, "inproc://monitor.req", ZMQ.ZMQ_EVENT_ALL);
         assertThat(rc, is(true));
 
         threads [1] = new SocketMonitor(ctx, "inproc://monitor.req");
         threads [1].start();
 
-        rc = ZMQ.zmq_connect(req, addr);
+        rc = ZMQ.connect(req, addr);
         assertThat(rc, is(true));
 
         // 2nd REQ socket
-        SocketBase req2 = ZMQ.zmq_socket(ctx, ZMQ.ZMQ_REQ);
+        SocketBase req2 = ZMQ.socket(ctx, ZMQ.ZMQ_REQ);
         assertThat(req2, notNullValue());
 
         // 2nd REQ socket monitor, connected event only
-        rc = ZMQ.zmq_socket_monitor(req2, "inproc://monitor.req2", ZMQ.ZMQ_EVENT_CONNECTED);
+        rc = ZMQ.monitorSocket(req2, "inproc://monitor.req2", ZMQ.ZMQ_EVENT_CONNECTED);
         assertThat(rc, is(true));
 
         threads [2] = new SocketMonitor(ctx, "inproc://monitor.req2");
         threads [2].start();
 
-        rc = ZMQ.zmq_connect(req2, addr);
+        rc = ZMQ.connect(req2, addr);
         assertThat(rc, is(true));
 
         Helper.bounce(rep, req);
 
         // Allow a window for socket events as connect can be async
-        ZMQ.zmq_sleep(1);
+        ZMQ.sleep(1);
 
         // Close the REP socket
-        ZMQ.zmq_close(rep);
+        ZMQ.close(rep);
 
         // Allow some time for detecting error states
-        ZMQ.zmq_sleep(1);
+        ZMQ.sleep(1);
         // Close the REQ socket
-        ZMQ.zmq_close(req);
+        ZMQ.close(req);
         // Close the 2nd REQ socket
-        ZMQ.zmq_close(req2);
+        ZMQ.close(req2);
 
         // Allow for closed or disconnected events to bubble up
-        ZMQ.zmq_sleep(1);
+        ZMQ.sleep(1);
 
-        ZMQ.zmq_term(ctx);
+        ZMQ.term(ctx);
 
         // Expected REP socket events
         // We expect to at least observe these events

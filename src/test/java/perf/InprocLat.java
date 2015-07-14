@@ -43,34 +43,34 @@ public class InprocLat
         @Override
         public void run()
         {
-            SocketBase s = ZMQ.zmq_socket(ctx, ZMQ.ZMQ_REP);
+            SocketBase s = ZMQ.socket(ctx, ZMQ.ZMQ_REP);
             if (s == null) {
-                printf("error in zmq_socket: %s\n");
+                printf("error in socket: %s\n");
                 exit(1);
             }
 
-            boolean rc = ZMQ.zmq_connect(s, "inproc://lat_test");
+            boolean rc = ZMQ.connect(s, "inproc://lat_test");
             if (!rc) {
-                printf("error in zmq_connect: %s\n");
+                printf("error in connect: %s\n");
                 exit(1);
             }
 
             Msg msg;
 
             for (int i = 0; i != roundtripCount; i++) {
-                msg = ZMQ.zmq_recvmsg(s, 0);
+                msg = ZMQ.recvMsg(s, 0);
                 if (msg == null) {
-                    printf("error in zmq_recvmsg: %s\n");
+                    printf("error in recvmsg: %s\n");
                     exit(1);
                 }
-                int r = ZMQ.zmq_sendmsg(s, msg, 0);
+                int r = ZMQ.sendMsg(s, msg, 0);
                 if (r < 0) {
-                    printf("error in zmq_sendmsg: %s\n");
+                    printf("error in sendmsg: %s\n");
                     exit(1);
                 }
             }
 
-            ZMQ.zmq_close(s);
+            ZMQ.close(s);
         }
 
         private void exit(int i)
@@ -89,52 +89,52 @@ public class InprocLat
         int messageSize = atoi(argv [0]);
         int roundtripCount = atoi(argv [1]);
 
-        Ctx ctx = ZMQ.zmqInit(1);
+        Ctx ctx = ZMQ.init(1);
         if (ctx == null) {
-            printf("error in zmqInit:");
+            printf("error in init:");
             return;
         }
 
-        SocketBase s = ZMQ.zmq_socket(ctx, ZMQ.ZMQ_REQ);
+        SocketBase s = ZMQ.socket(ctx, ZMQ.ZMQ_REQ);
         if (s == null) {
-            printf("error in zmq_socket: ");
+            printf("error in socket: ");
             return;
         }
 
-        boolean rc = ZMQ.zmq_bind(s, "inproc://lat_test");
+        boolean rc = ZMQ.bind(s, "inproc://lat_test");
         if (!rc) {
-            printf("error in zmq_bind: ");
+            printf("error in bind: ");
             return;
         }
 
         Thread localThread = new Thread(new Worker(ctx, roundtripCount));
         localThread.start();
 
-        Msg smsg = ZMQ.zmq_msg_init_size(messageSize);
+        Msg smsg = ZMQ.msgInitWithSize(messageSize);
 
         printf("message size: %d [B]\n", (int) messageSize);
         printf("roundtrip count: %d\n", (int) roundtripCount);
 
-        long watch = ZMQ.zmq_stopwatch_start();
+        long watch = ZMQ.startStopwatch();
 
         for (int i = 0; i != roundtripCount; i++) {
-            int r = ZMQ.zmq_sendmsg(s, smsg, 0);
+            int r = ZMQ.sendMsg(s, smsg, 0);
             if (r < 0) {
-                printf("error in zmq_sendmsg: %s\n");
+                printf("error in sendmsg: %s\n");
                 return;
             }
-            Msg msg = ZMQ.zmq_recvmsg(s, 0);
+            Msg msg = ZMQ.recvMsg(s, 0);
             if (msg == null) {
-                printf("error in zmq_recvmsg: %s\n");
+                printf("error in recvmsg: %s\n");
                 return;
             }
-            if (ZMQ.zmq_msg_size(msg) != messageSize) {
+            if (ZMQ.msgSize(msg) != messageSize) {
                 printf("message of incorrect size received\n");
                 return;
             }
         }
 
-        long elapsed = ZMQ.zmq_stopwatch_stop(watch);
+        long elapsed = ZMQ.stopStopwatch(watch);
 
         double latency = (double) elapsed / (roundtripCount * 2);
 
@@ -142,9 +142,9 @@ public class InprocLat
 
         printf("average latency: %.3f [us]\n", (double) latency);
 
-        ZMQ.zmq_close(s);
+        ZMQ.close(s);
 
-        ZMQ.zmq_term(ctx);
+        ZMQ.term(ctx);
     }
 
     private static int atoi(String string)

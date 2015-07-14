@@ -63,7 +63,7 @@ public class TestProxyTcp
 
         public Dealer(Ctx ctx, String name)
         {
-            this.s = ZMQ.zmq_socket(ctx, ZMQ.ZMQ_DEALER);
+            this.s = ZMQ.socket(ctx, ZMQ.ZMQ_DEALER);
             this.name = name;
         }
 
@@ -72,7 +72,7 @@ public class TestProxyTcp
         {
             System.out.println("Start dealer " + name);
 
-            ZMQ.zmq_connect(s, "tcp://127.0.0.1:6561");
+            ZMQ.connect(s, "tcp://127.0.0.1:6561");
             int i = 0;
             while (true) {
                 Msg msg = s.recv(0);
@@ -129,14 +129,14 @@ public class TestProxyTcp
         {
             switch (state()) {
             case READ_HEADER:
-                return read_header();
+                return readHeader();
             case READ_BODY:
-                return read_body();
+                return readBody();
             }
             return false;
         }
 
-        private boolean read_header()
+        private boolean readHeader()
         {
             size = Integer.parseInt(new String(header, ZMQ.CHARSET));
             System.out.println("Received " + size);
@@ -146,7 +146,7 @@ public class TestProxyTcp
             return true;
         }
 
-        private boolean read_body()
+        private boolean readBody()
         {
             if (msgSink == null) {
                 return false;
@@ -206,14 +206,14 @@ public class TestProxyTcp
         {
             switch (state()) {
             case WRITE_HEADER:
-                return write_header();
+                return writeHeader();
             case WRITE_BODY:
-                return write_body();
+                return writeBody();
             }
             return false;
         }
 
-        private boolean write_body()
+        private boolean writeBody()
         {
             System.out.println("writer body ");
             nextStep(msg, WRITE_HEADER, !msg.hasMore());
@@ -221,7 +221,7 @@ public class TestProxyTcp
             return true;
         }
 
-        private boolean write_header()
+        private boolean writeHeader()
         {
             if (msgSource == null) {
                 return false;
@@ -276,31 +276,31 @@ public class TestProxyTcp
         public void run()
         {
             boolean rc;
-            SocketBase sa = ZMQ.zmq_socket(ctx, ZMQ.ZMQ_ROUTER);
+            SocketBase sa = ZMQ.socket(ctx, ZMQ.ZMQ_ROUTER);
             assertThat(sa, notNullValue());
 
             sa.setSocketOpt(ZMQ.ZMQ_DECODER, ProxyDecoder.class);
             sa.setSocketOpt(ZMQ.ZMQ_ENCODER, ProxyEncoder.class);
 
-            rc = ZMQ.zmq_bind(sa, "tcp://127.0.0.1:6560");
+            rc = ZMQ.bind(sa, "tcp://127.0.0.1:6560");
             assertThat(rc, is(true));
 
-            SocketBase sb = ZMQ.zmq_socket(ctx, ZMQ.ZMQ_DEALER);
+            SocketBase sb = ZMQ.socket(ctx, ZMQ.ZMQ_DEALER);
             assertThat(sb, notNullValue());
-            rc = ZMQ.zmq_bind(sb, "tcp://127.0.0.1:6561");
+            rc = ZMQ.bind(sb, "tcp://127.0.0.1:6561");
             assertThat(rc, is(true));
 
-            ZMQ.zmq_proxy(sa, sb, null);
+            ZMQ.proxy(sa, sb, null);
 
-            ZMQ.zmq_close(sa);
-            ZMQ.zmq_close(sb);
+            ZMQ.close(sa);
+            ZMQ.close(sb);
         }
     }
 
     @Test
     public void testProxyTcp() throws Exception
     {
-        Ctx ctx = ZMQ.zmqInit(1);
+        Ctx ctx = ZMQ.init(1);
         assertThat(ctx, notNullValue());
 
         Main mt = new Main(ctx);
@@ -314,6 +314,6 @@ public class TestProxyTcp
 
         client.join();
 
-        ZMQ.zmq_term(ctx);
+        ZMQ.term(ctx);
     }
 }

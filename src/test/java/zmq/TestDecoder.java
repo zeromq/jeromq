@@ -42,7 +42,7 @@ public class TestDecoder
     }
 
     // as if it read data from socket
-    private int read_short_message(ByteBuffer buf)
+    private int readShortMessage(ByteBuffer buf)
     {
         buf.put((byte) 6);
         buf.put((byte) 0); // flag
@@ -52,7 +52,7 @@ public class TestDecoder
     }
 
     // as if it read data from socket
-    private int read_long_message1(ByteBuffer buf)
+    private int readLongMessage1(ByteBuffer buf)
     {
         buf.put((byte) 201);
         buf.put((byte) 0); // flag
@@ -63,7 +63,7 @@ public class TestDecoder
         return buf.position();
     }
 
-    private int read_long_message2(ByteBuffer buf)
+    private int readLongMessage2(ByteBuffer buf)
     {
         buf.put("23456789".getBytes(ZMQ.CHARSET));
         for (int i = 0; i < 13; i++) {
@@ -76,7 +76,7 @@ public class TestDecoder
     public void testReader()
     {
         ByteBuffer in = decoder.getBuffer();
-        int insize = read_short_message(in);
+        int insize = readShortMessage(in);
 
         assertThat(insize, is(7));
         in.flip();
@@ -88,7 +88,7 @@ public class TestDecoder
     public void testReaderLong()
     {
         ByteBuffer in = decoder.getBuffer();
-        int insize = read_long_message1(in);
+        int insize = readLongMessage1(in);
 
         assertThat(insize, is(64));
         in.flip();
@@ -99,7 +99,7 @@ public class TestDecoder
         assertThat(in.capacity(), is(200));
         assertThat(in.position(), is(62));
 
-        insize = read_long_message2(in);
+        insize = readLongMessage2(in);
 
         assertThat(insize, is(200));
         process = decoder.processBuffer(in, 138);
@@ -111,9 +111,9 @@ public class TestDecoder
     public void testReaderMultipleMsg()
     {
         ByteBuffer in = decoder.getBuffer();
-        int insize = read_short_message(in);
+        int insize = readShortMessage(in);
         assertThat(insize, is(7));
-        read_short_message(in);
+        readShortMessage(in);
 
         in.flip();
         int processed = decoder.processBuffer(in, 14);

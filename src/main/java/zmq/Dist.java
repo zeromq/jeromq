@@ -138,7 +138,7 @@ class Dist
     }
 
     //  Send the message to all the outbound pipes.
-    public boolean send_to_all(Msg msg)
+    public boolean sendToAll(Msg msg)
     {
         matching = active;
         return sendToMatching(msg);

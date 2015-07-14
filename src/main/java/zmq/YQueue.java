@@ -73,7 +73,7 @@ public class YQueue<T>
         endPos = 1;
     }
 
-    public int front_pos()
+    public int frontPos()
     {
         return beginChunk.pos[beginPos];
     }
@@ -85,7 +85,7 @@ public class YQueue<T>
         return beginChunk.values[beginPos];
     }
 
-    public int back_pos()
+    public int backPos()
     {
         return backChunk.pos[backPos];
     }
