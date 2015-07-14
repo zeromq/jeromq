@@ -19,6 +19,7 @@
 
 package zmq;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.channels.SelectableChannel;
@@ -159,6 +160,12 @@ public abstract class SocketBase extends Own
 
     public void destroy()
     {
+        try {
+            mailbox.close();
+        }
+        catch (IOException ignore) {
+        }
+
         stopMonitor();
         assert (destroyed);
     }

@@ -37,9 +37,9 @@ public class Signaler
         implements Closeable
 {
     //  Underlying write & read file descriptor.
-    private Pipe.SinkChannel w;
-    private Pipe.SourceChannel r;
-    private Selector selector;
+    private final Pipe.SinkChannel w;
+    private final Pipe.SourceChannel r;
+    private final Selector selector;
 
     // Selector.selectNow at every sending message doesn't show enough performance
     private final AtomicInteger wcursor = new AtomicInteger(0);
@@ -48,7 +48,16 @@ public class Signaler
     public Signaler()
     {
         //  Create the socketpair for signaling.
-        makeFdPair();
+        Pipe pipe;
+
+        try {
+            pipe = Pipe.open();
+        }
+        catch (IOException e) {
+            throw new ZError.IOException(e);
+        }
+        r = pipe.source();
+        w = pipe.sink();
 
         //  Set both fds to non-blocking mode.
         try {
@@ -72,25 +81,28 @@ public class Signaler
     @Override
     public void close() throws IOException
     {
-        r.close();
-        w.close();
-        selector.close();
-    }
-
-    //  Creates a pair of filedescriptors that will be used
-    //  to pass the signals.
-    private void makeFdPair()
-    {
-        Pipe pipe;
-
+        IOException exception = null;
         try {
-            pipe = Pipe.open();
+            r.close();
         }
         catch (IOException e) {
-            throw new ZError.IOException(e);
+            exception = e;
         }
-        r = pipe.source();
-        w = pipe.sink();
+        try {
+            w.close();
+        }
+        catch (IOException e) {
+            exception = e;
+        }
+        try {
+            selector.close();
+        }
+        catch (IOException e) {
+            exception = e;
+        }
+        if (exception != null) {
+            throw exception;
+        }
     }
 
     public SelectableChannel getFd()
