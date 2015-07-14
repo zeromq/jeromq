@@ -196,7 +196,7 @@ public class TcpConnecter extends Own implements IPollEvents
         //  Shut the connecter down.
         terminate();
 
-        socket.event_connected(address.toString(), fd);
+        socket.eventConnected(address.toString(), fd);
     }
 
     @Override

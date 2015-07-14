@@ -53,47 +53,47 @@ public class LocalThr
         messageSize = atoi(argv [1]);
         messageCount = atol(argv [2]);
 
-        ctx = ZMQ.zmqInit(1);
+        ctx = ZMQ.init(1);
         if (ctx == null) {
-            printf("error in zmqInit");
+            printf("error in init");
             return;
         }
 
-        s = ZMQ.zmq_socket(ctx, ZMQ.ZMQ_PULL);
+        s = ZMQ.socket(ctx, ZMQ.ZMQ_PULL);
         if (s == null) {
-            printf("error in zmq_socket");
+            printf("error in socket");
         }
 
         //  Add your socket options here.
         //  For example ZMQ_RATE, ZMQ_RECOVERY_IVL and ZMQ_MCAST_LOOP for PGM.
 
-        rc = ZMQ.zmq_bind(s, bindTo);
+        rc = ZMQ.bind(s, bindTo);
         if (!rc) {
-            printf("error in zmq_bind: %s\n");
+            printf("error in bind: %s\n");
             return;
         }
 
-        msg = ZMQ.zmq_recvmsg(s, 0);
+        msg = ZMQ.recvMsg(s, 0);
         if (msg == null) {
-            printf("error in zmq_recvmsg: %s\n");
+            printf("error in recvmsg: %s\n");
             return;
         }
 
-        watch = ZMQ.zmq_stopwatch_start();
+        watch = ZMQ.startStopwatch();
 
         for (i = 0; i != messageCount - 1; i++) {
-            msg = ZMQ.zmq_recvmsg(s, 0);
+            msg = ZMQ.recvMsg(s, 0);
             if (msg == null) {
-                printf("error in zmq_recvmsg: %s\n");
+                printf("error in recvmsg: %s\n");
                 return;
             }
-            if (ZMQ.zmq_msg_size(msg) != messageSize) {
-                printf("message of incorrect size received " + ZMQ.zmq_msg_size(msg));
+            if (ZMQ.msgSize(msg) != messageSize) {
+                printf("message of incorrect size received " + ZMQ.msgSize(msg));
                 return;
             }
         }
 
-        elapsed = ZMQ.zmq_stopwatch_stop(watch);
+        elapsed = ZMQ.stopStopwatch(watch);
         if (elapsed == 0) {
             elapsed = 1;
         }
@@ -108,9 +108,9 @@ public class LocalThr
         printf("mean throughput: %d [msg/s]\n", (int) throughput);
         printf("mean throughput: %.3f [Mb/s]\n", (double) megabits);
 
-        ZMQ.zmq_close(s);
+        ZMQ.close(s);
 
-        ZMQ.zmq_term(ctx);
+        ZMQ.term(ctx);
     }
 
     private static void printf(String str, Object ... args)

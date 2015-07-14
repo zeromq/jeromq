@@ -39,11 +39,11 @@ public class TestShutdownStress
         @Override
         public void run()
         {
-            boolean rc = ZMQ.zmq_connect(s, "tcp://127.0.0.1:5560");
+            boolean rc = ZMQ.connect(s, "tcp://127.0.0.1:5560");
             assertThat(rc, is(true));
 
             //  Start closing the socket while the connecting process is underway.
-            ZMQ.zmq_close(s);
+            ZMQ.close(s);
         }
     }
 
@@ -53,17 +53,17 @@ public class TestShutdownStress
         Thread[] threads = new Thread[THREAD_COUNT];
 
         for (int j = 0; j != 10; j++) {
-            Ctx ctx = ZMQ.zmqInit(7);
+            Ctx ctx = ZMQ.init(7);
             assertThat(ctx, notNullValue());
 
-            SocketBase s1 = ZMQ.zmq_socket(ctx, ZMQ.ZMQ_PUB);
+            SocketBase s1 = ZMQ.socket(ctx, ZMQ.ZMQ_PUB);
             assertThat(s1, notNullValue());
 
-            boolean rc = ZMQ.zmq_bind(s1, "tcp://127.0.0.1:7570");
+            boolean rc = ZMQ.bind(s1, "tcp://127.0.0.1:7570");
             assertThat(rc, is(true));
 
             for (int i = 0; i != THREAD_COUNT; i++) {
-                SocketBase s2 = ZMQ.zmq_socket(ctx, ZMQ.ZMQ_SUB);
+                SocketBase s2 = ZMQ.socket(ctx, ZMQ.ZMQ_SUB);
                 assert (s2 != null);
                 threads[i] = new Thread(new Worker(s2));
                 threads[i].start();
@@ -73,8 +73,8 @@ public class TestShutdownStress
                 threads[i].join();
             }
 
-            ZMQ.zmq_close(s1);
-            ZMQ.zmq_term(ctx);
+            ZMQ.close(s1);
+            ZMQ.term(ctx);
         }
     }
 }

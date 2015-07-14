@@ -29,32 +29,32 @@ public class TestHwm
     @Test
     public void testHwm()
     {
-        Ctx ctx = ZMQ.zmqInit(1);
+        Ctx ctx = ZMQ.init(1);
         assertThat(ctx, notNullValue());
 
         int rc = 0;
         boolean brc = false;
         //  Create pair of socket, each with high watermark of 2. Thus the total
         //  buffer space should be 4 messages.
-        SocketBase sb = ZMQ.zmq_socket(ctx, ZMQ.ZMQ_PULL);
+        SocketBase sb = ZMQ.socket(ctx, ZMQ.ZMQ_PULL);
         assertThat(sb, notNullValue());
         int hwm = 2;
-        ZMQ.zmq_setsockopt(sb, ZMQ.ZMQ_RCVHWM, hwm);
+        ZMQ.setSocketOption(sb, ZMQ.ZMQ_RCVHWM, hwm);
 
-        brc = ZMQ.zmq_bind(sb, "inproc://a");
+        brc = ZMQ.bind(sb, "inproc://a");
         assertThat(brc, is(true));
 
-        SocketBase sc = ZMQ.zmq_socket(ctx, ZMQ.ZMQ_PUSH);
+        SocketBase sc = ZMQ.socket(ctx, ZMQ.ZMQ_PUSH);
         assertThat(sc, notNullValue());
 
-        ZMQ.zmq_setsockopt(sc, ZMQ.ZMQ_SNDHWM, hwm);
+        ZMQ.setSocketOption(sc, ZMQ.ZMQ_SNDHWM, hwm);
 
-        brc = ZMQ.zmq_connect(sc, "inproc://a");
+        brc = ZMQ.connect(sc, "inproc://a");
         assertThat(brc, is(true));
 
         //  Try to send 10 messages. Only 4 should succeed.
         for (int i = 0; i < 10; i++) {
-            rc = ZMQ.zmq_send(sc, null, 0, ZMQ.ZMQ_DONTWAIT);
+            rc = ZMQ.send(sc, null, 0, ZMQ.ZMQ_DONTWAIT);
             if (i < 4) {
                 assertThat(rc, is(0));
             }
@@ -66,22 +66,22 @@ public class TestHwm
         Msg m;
         // There should be now 4 messages pending, consume them.
         for (int i = 0; i != 4; i++) {
-            m = ZMQ.zmq_recv(sb, 0);
+            m = ZMQ.recv(sb, 0);
             assertThat(m, notNullValue());
             assertThat(m.size(), is(0));
         }
 
         // Now it should be possible to send one more.
-        rc = ZMQ.zmq_send(sc, null, 0, 0);
+        rc = ZMQ.send(sc, null, 0, 0);
         assertThat(rc, is(0));
 
         //  Consume the remaining message.
-        m = ZMQ.zmq_recv(sb, 0);
+        m = ZMQ.recv(sb, 0);
         assertThat(rc, notNullValue());
         assertThat(m.size(), is(0));
 
-        ZMQ.zmq_close(sc);
-        ZMQ.zmq_close(sb);
-        ZMQ.zmq_term(ctx);
+        ZMQ.close(sc);
+        ZMQ.close(sb);
+        ZMQ.term(ctx);
     }
 }

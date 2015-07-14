@@ -130,7 +130,7 @@ abstract class Own extends ZObject
     }
 
     //  Terminate owned object
-    protected void term_child(Own object)
+    protected void termChild(Own object)
     {
         processTermReq(object);
     }

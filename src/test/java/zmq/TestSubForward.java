@@ -32,52 +32,52 @@ public class TestSubForward
     @Test
     public void testSubForward()
     {
-        Ctx ctx = ZMQ.zmqInit(1);
+        Ctx ctx = ZMQ.init(1);
         assertThat(ctx, notNullValue());
-        SocketBase xpub = ZMQ.zmq_socket(ctx, ZMQ.ZMQ_XPUB);
+        SocketBase xpub = ZMQ.socket(ctx, ZMQ.ZMQ_XPUB);
         assertThat(xpub, notNullValue());
-        boolean rc = ZMQ.zmq_bind(xpub, "tcp://127.0.0.1:5570");
+        boolean rc = ZMQ.bind(xpub, "tcp://127.0.0.1:5570");
 
-        SocketBase xsub = ZMQ.zmq_socket(ctx, ZMQ.ZMQ_XSUB);
+        SocketBase xsub = ZMQ.socket(ctx, ZMQ.ZMQ_XSUB);
         assertThat(xsub, notNullValue());
-        rc = ZMQ.zmq_bind(xsub, "tcp://127.0.0.1:5571");
+        rc = ZMQ.bind(xsub, "tcp://127.0.0.1:5571");
         assertThat(rc, is(true));
 
-        SocketBase pub = ZMQ.zmq_socket(ctx, ZMQ.ZMQ_PUB);
+        SocketBase pub = ZMQ.socket(ctx, ZMQ.ZMQ_PUB);
         assertThat(pub, notNullValue());
-        rc = ZMQ.zmq_connect(pub, "tcp://127.0.0.1:5571");
+        rc = ZMQ.connect(pub, "tcp://127.0.0.1:5571");
         assertThat(rc, is(true));
 
-        SocketBase sub = ZMQ.zmq_socket(ctx, ZMQ.ZMQ_SUB);
+        SocketBase sub = ZMQ.socket(ctx, ZMQ.ZMQ_SUB);
         assertThat(sub, notNullValue());
-        rc = ZMQ.zmq_connect(sub, "tcp://127.0.0.1:5570");
+        rc = ZMQ.connect(sub, "tcp://127.0.0.1:5570");
         assertThat(rc, is(true));
 
-        ZMQ.zmq_setsockopt(sub, ZMQ.ZMQ_SUBSCRIBE, "");
-        Msg msg = ZMQ.zmq_recv(xpub, 0);
+        ZMQ.setSocketOption(sub, ZMQ.ZMQ_SUBSCRIBE, "");
+        Msg msg = ZMQ.recv(xpub, 0);
         assertThat(msg, notNullValue());
-        int n = ZMQ.zmq_send(xsub, msg, 0);
+        int n = ZMQ.send(xsub, msg, 0);
         assertThat(n, not(0));
 
-        ZMQ.zmq_sleep(1);
+        ZMQ.sleep(1);
 
-        n = ZMQ.zmq_send(pub, null, 0, 0);
+        n = ZMQ.send(pub, null, 0, 0);
         assertThat(n, is(0));
 
-        msg = ZMQ.zmq_recv(xsub, 0);
+        msg = ZMQ.recv(xsub, 0);
         assertThat(msg, notNullValue());
 
-        n = ZMQ.zmq_send(xpub, msg, 0);
+        n = ZMQ.send(xpub, msg, 0);
         assertThat(n, is(0));
 
-        msg = ZMQ.zmq_recv(sub, 0);
+        msg = ZMQ.recv(sub, 0);
         assertThat(msg, notNullValue());
 
         //  Tear down the wiring.
-        ZMQ.zmq_close(xpub);
-        ZMQ.zmq_close(xsub);
-        ZMQ.zmq_close(pub);
-        ZMQ.zmq_close(sub);
-        ZMQ.zmq_term(ctx);
+        ZMQ.close(xpub);
+        ZMQ.close(xsub);
+        ZMQ.close(pub);
+        ZMQ.close(sub);
+        ZMQ.term(ctx);
     }
 }

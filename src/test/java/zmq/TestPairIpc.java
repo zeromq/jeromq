@@ -31,23 +31,23 @@ public class TestPairIpc
     @Test
     public void testPairIpc()
     {
-        Ctx ctx = ZMQ.zmqInit(1);
+        Ctx ctx = ZMQ.init(1);
         assertThat(ctx, notNullValue());
-        SocketBase sb = ZMQ.zmq_socket(ctx, ZMQ.ZMQ_PAIR);
+        SocketBase sb = ZMQ.socket(ctx, ZMQ.ZMQ_PAIR);
         assertThat(sb, notNullValue());
-        boolean brc = ZMQ.zmq_bind(sb, "ipc:///tmp/tester");
+        boolean brc = ZMQ.bind(sb, "ipc:///tmp/tester");
         assertThat(brc, is(true));
 
-        SocketBase sc = ZMQ.zmq_socket(ctx, ZMQ.ZMQ_PAIR);
+        SocketBase sc = ZMQ.socket(ctx, ZMQ.ZMQ_PAIR);
         assertThat(sc, notNullValue());
-        brc = ZMQ.zmq_connect(sc, "ipc:///tmp/tester");
+        brc = ZMQ.connect(sc, "ipc:///tmp/tester");
         assertThat(brc, is(true));
 
         Helper.bounce(sb, sc);
 
         //  Tear down the wiring.
-        ZMQ.zmq_close(sb);
-        ZMQ.zmq_close(sc);
-        ZMQ.zmq_term(ctx);
+        ZMQ.close(sb);
+        ZMQ.close(sc);
+        ZMQ.term(ctx);
     }
 }

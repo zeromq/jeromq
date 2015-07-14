@@ -44,14 +44,14 @@ public class TestEncoder
         sock = new DummySocketChannel();
     }
     // as if it read data from socket
-    private Msg read_short_message()
+    private Msg readShortMessage()
     {
         Msg msg = new Msg("hello".getBytes(ZMQ.CHARSET));
         return msg;
     }
 
     // as if it read data from socket
-    private Msg read_long_message1()
+    private Msg readLongMessage1()
     {
         Msg msg = new Msg(200);
         for (int i = 0; i < 20; i++) {
@@ -63,7 +63,7 @@ public class TestEncoder
     @Test
     public void testReader()
     {
-        Msg msg = read_short_message();
+        Msg msg = readShortMessage();
         session.pushMsg(msg);
         Transfer out = encoder.getData(null);
         int outsize = out.remaining();
@@ -89,7 +89,7 @@ public class TestEncoder
     @Test
     public void testReaderLong()
     {
-        Msg msg = read_long_message1();
+        Msg msg = readLongMessage1();
         session.pushMsg(msg);
         Transfer out = encoder.getData(null);
 
@@ -145,21 +145,21 @@ public class TestEncoder
         {
             switch (state()) {
             case read_header:
-                return read_header();
+                return readHeader();
             case read_body:
-                return read_body();
+                return readBody();
             }
             return false;
         }
 
-        private boolean read_header()
+        private boolean readHeader()
         {
             nextStep(msg.data(), msg.size(),
                     read_body, !msg.hasMore());
             return true;
         }
 
-        private boolean read_body()
+        private boolean readBody()
         {
             msg = source.pullMsg();
 

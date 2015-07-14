@@ -100,7 +100,7 @@ public class Decoder extends DecoderBase
             }
 
             //  inProgress is initialised at this point so in theory we should
-            //  close it before calling zmq_msg_init_size, however, it's a 0-byte
+            //  close it before calling msgInitWithSize, however, it's a 0-byte
             //  message and thus we can treat it as uninitialised...
             if (maxmsgsize >= 0 && (long) (size - 1) > maxmsgsize) {
                 decodingError();

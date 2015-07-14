@@ -65,7 +65,7 @@ public class Ctx
     //  List of unused thread slots.
     private final Deque<Integer> emptySlots;
 
-    //  If true, zmqInit has been called but no socket has been created
+    //  If true, init has been called but no socket has been created
     //  yet. Launching of I/O threads is delayed.
     private AtomicBoolean starting = new AtomicBoolean(true);
 
@@ -377,7 +377,7 @@ public class Ctx
     }
 
     //  Returns reaper thread object.
-    public ZObject getReaper()
+    ZObject getReaper()
     {
         return reaper;
     }
@@ -391,7 +391,7 @@ public class Ctx
     //  Returns the I/O thread that is the least busy at the moment.
     //  Affinity specifies which I/O threads are eligible (0 = all).
     //  Returns NULL if no I/O thread is available.
-    public IOThread chooseIoThread(long affinity)
+    IOThread chooseIoThread(long affinity)
     {
         if (ioThreads.isEmpty()) {
             return null;
@@ -414,7 +414,7 @@ public class Ctx
     }
 
     //  Management of inproc endpoints.
-    public boolean register_endpoint(String addr, Endpoint endpoint)
+    boolean registerEndpoint(String addr, Endpoint endpoint)
     {
         endpointsSync.lock();
 
@@ -431,7 +431,7 @@ public class Ctx
         return true;
     }
 
-    public void unregisterEndpoints(SocketBase socket)
+    void unregisterEndpoints(SocketBase socket)
     {
         endpointsSync.lock();
 
@@ -449,7 +449,7 @@ public class Ctx
         }
     }
 
-    public Endpoint findEndpoint(String addr)
+    Endpoint findEndpoint(String addr)
     {
         Endpoint endpoint = null;
         endpointsSync.lock();
