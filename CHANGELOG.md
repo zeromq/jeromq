@@ -1,5 +1,87 @@
 # Changelog
 
+## v0.3.6
+
+## v0.3.5
+
+ * Capitalize constants
+ * Use for each style
+ * Issue #152 - Add unit test to test ZContext.close
+ * Fix mislabeling issue
+ * remove me from the AUTHORS file
+ * Sometimes hostname resolution will fail.  Make sure that, if it does, we don't break the ioloop.
+ * Narrowed exception handling a bit.  Makes me kind of nervous because the exceptions thrown are not documented.
+ * remove email addresses
+ * Fix issue #166 - Able to build using java 8
+ * Fix issue #166 - Fix building project in a backwards compatible way
+ * Replace home grown Multimap with guava
+ * Update README.md
+ * Normalize license header preamble that mirrors libzmq
+ * Add Trevor Bernard as a contributor and sort authors
+ * typo readme
+ * Fix issue #176 - Remove auto-generated ant build files
+ * Overload Socket send
+ * Fix style violation of unittests
+ * fix bug where poll does not accept -1 as argument
+ * Issue #176 - Remove build.xml ant file
+ * Fix all style violations
+ * Remove superfluous limit
+ * Move the wcursor increment after the assert
+ * Improve imports
+ * Issue #191 - Generates excess garbage on close
+ * Port JeroMQ to be based on libzmq 3.2.5
+ * Remove public method declaration in interfaces
+ * Revert "Remove public method declaration in interfaces"
+ * Change Chunk<T> to be a static inner class
+ * Fix raw type parameterized warnings
+ * Change constructor and method declarations to be public
+ * Update plugins
+ * Fix issue where project wasn't correctly importing using new m2eclipse plugin
+ * Remove redundant if
+ * Revert checkstyle plugin update to fix build error
+ * Add ZBeacon implementation
+ * Fix checkstyle errors
+ * Problem: beacon messages are not always filtered out for local addresses
+ * Problem: current ZBeacon tests are not testing whether messages are received.
+ * Fix typo
+ * Revert "Replace home grown Multimap with guava"
+ * Remove redundant static modifier
+ * Remove redundant encoding entry
+ * Fix java6 build problem where req was failing with BOTTOM illegalstateexception
+ * Remove redundant method
+ * Fix #209 - Set errno on SocketBase instead of throwing IllegalArgumentException
+ * Fix issue #197 - Don't call setReuseAddress on windows
+ * Change version to 3.2.5
+ * Make Mailbox,Thread and Reaper closeable
+ * Router Handover
+ * Rename xterminated into xpipeTerminated to follow libzmq
+ * Fix exception for inproc bind fail
+ * Fix issue #200
+ * Remove redundant nested static modifer from interfaces
+ * Ignore .checkstyle file
+ * Fixed two bugs in test path. In flserver3.java ZFrame.equals(string) will always return false. and in cloneserv6.java equals method is called on an Array.
+ * Revert "Remove redundant method"
+ * Test receiving correctly a prefetched message when using a poller
+ * Fix issue #228 - Add ZMQ_BLOCKY to Context to get a less surprising behaviour on context termination
+ * Implementation proposal for Z-Components: ZPoller, ZAgent, ZStar, ZActor, ZProxy
+ * Fixed typo in Features section.
+ * Aligned punctuation and capitalized first letter in sentences.
+ * pom.xml: missing bracket
+ * Change ZMQ.bind() method to return void.
+ * Fixed minor issues - documentation (javadoc links, ..) - possible NPEs - simplified some statements, removed unnecessary variables, ...
+ * Break loop on finding the first non-printable character
+ * Fix issue #243 - Add a copy section in the README specifying the license
+ * Fix issue #245 - Double socket close no longer hangs
+ * Set daemon flag on poller threads.
+ * Set daemon flag on beacon and zthread threads.
+ * Fix Spinning in Reaper Thread
+ * Added constructors to ZMQException
+ * Changed ZFrame.recvFrame to return null in non-overloaded method
+ * Added ENOTSOCK error code
+ * Added EAGAIN error (code already present)
+ * Fix resource leak at socket close
+ * Fix c-style method name
+
 ## v0.3.4
 
 * Various code improvements
