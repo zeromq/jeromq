@@ -399,6 +399,9 @@ public class ZMsg implements Iterable<ZFrame>, Deque<ZFrame>
      **/
     public void dump(Appendable out)
     {
+        if (frames == null) {
+            return;
+        }
         try {
             StringWriter sw = new StringWriter();
             PrintWriter pw = new PrintWriter(sw);
