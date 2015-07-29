@@ -26,6 +26,7 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.DatagramChannel;
 import java.util.Arrays;
 
@@ -65,7 +66,9 @@ public class ZBeacon
         }
 
         broadcastServer = new BroadcastServer(ignoreLocalAddress);
+        broadcastServer.setDaemon(true);
         broadcastClient = new BroadcastClient();
+        broadcastClient.setDaemon(true);
     }
 
     public void start()
@@ -213,6 +216,9 @@ public class ZBeacon
 
                     size = read - buffer.remaining();
                     handleMessage(buffer, size, senderAddress);
+                }
+                catch (ClosedChannelException ioException) {
+                    break;
                 }
                 catch (IOException ioException) {
                     throw new RuntimeException(ioException);

@@ -57,7 +57,7 @@ public class Proxy
         try {
             while (!Thread.currentThread().isInterrupted()) {
                 //  Wait while there are either requests or replies to process.
-                rc = ZMQ.zmq_poll(selector, items, -1);
+                rc = ZMQ.poll(selector, items, -1);
                 if (rc < 0) {
                     return false;
                 }

@@ -43,6 +43,18 @@ public class ZMQException extends RuntimeException
         code = errno;
     }
 
+    public ZMQException(String message, int errno)
+    {
+        super(message);
+        code = errno;
+    }
+
+    public ZMQException(ZMQException cause)
+    {
+        super(cause.getMessage(), cause);
+        code = cause.code;
+    }
+
     public int getErrorCode()
     {
         return code;

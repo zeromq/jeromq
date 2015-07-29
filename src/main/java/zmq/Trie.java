@@ -254,11 +254,11 @@ public class Trie
     //  Apply the function supplied to each subscription in the trie.
     public void apply(ITrieHandler func, Object arg)
     {
-        apply_helper(null, 0, 0, func, arg);
+        applyHelper(null, 0, 0, func, arg);
     }
 
-    private void apply_helper(byte[] buff, int buffsize, int maxBuffsize, ITrieHandler func,
-            Object arg)
+    private void applyHelper(byte[] buff, int buffsize, int maxBuffsize, ITrieHandler func,
+                             Object arg)
     {
         //  If this node is a subscription, apply the function.
         if (refcnt > 0) {
@@ -281,7 +281,7 @@ public class Trie
         if (count == 1) {
             buff [buffsize] = min;
             buffsize++;
-            next[0].apply_helper(buff, buffsize, maxBuffsize, func, arg);
+            next[0].applyHelper(buff, buffsize, maxBuffsize, func, arg);
             return;
         }
 
@@ -289,7 +289,7 @@ public class Trie
         for (int c = 0; c != count; c++) {
             buff [buffsize] = (byte) (min + c);
             if (next[c] != null) {
-                next[c].apply_helper(buff, buffsize + 1, maxBuffsize,
+                next[c].applyHelper(buff, buffsize + 1, maxBuffsize,
                         func, arg);
             }
         }

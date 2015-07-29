@@ -46,6 +46,6 @@ public class ZMQQueue implements Runnable
     @Override
     public void run()
     {
-        zmq.ZMQ.zmq_proxy(inSocket.base(), outSocket.base(), null);
+        zmq.ZMQ.proxy(inSocket.base(), outSocket.base(), null);
     }
 }

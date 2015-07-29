@@ -27,7 +27,7 @@ import static org.hamcrest.CoreMatchers.is;
 public class TestAddress
 {
     @Test
-    public void ToNotResolvedToString()
+    public void testToNotResolvedToString()
     {
         Address addr = new Address("tcp", "google.com:90", false);
         String saddr = addr.toString();

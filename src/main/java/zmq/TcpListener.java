@@ -145,7 +145,7 @@ public class TcpListener extends Own implements IPollEvents
     //  Set address to listen on.
     public int setAddress(final String addr)
     {
-        address.resolve(addr, options.ipv4only > 0 ? true : false);
+        address.resolve(addr, options.ipv4only > 0);
 
         try {
             handle = ServerSocketChannel.open();
@@ -163,7 +163,7 @@ public class TcpListener extends Own implements IPollEvents
             return ZError.EADDRINUSE;
         }
         endpoint = address.toString();
-        socket.event_listening(endpoint, handle);
+        socket.eventListening(endpoint, handle);
         return 0;
     }
 

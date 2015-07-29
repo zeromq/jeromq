@@ -49,11 +49,11 @@ public class YPipe<T>
     public YPipe(int qsize)
     {
         queue = new YQueue<T>(qsize);
-        int pos = queue.back_pos();
+        int pos = queue.backPos();
         f = pos;
         r = pos;
         w = pos;
-        c = new AtomicInteger(queue.back_pos());
+        c = new AtomicInteger(queue.backPos());
     }
 
     //  Write an item to the pipe.  Don't flush it yet. If incomplete is
@@ -67,7 +67,7 @@ public class YPipe<T>
 
         //  Move the "flush up to here" poiter.
         if (!incomplete) {
-            f = queue.back_pos();
+            f = queue.backPos();
         }
     }
 
@@ -75,7 +75,7 @@ public class YPipe<T>
     //  item exists, false otherwise.
     public T unwrite()
     {
-        if (f == queue.back_pos()) {
+        if (f == queue.backPos()) {
             return null;
         }
         queue.unpush();
@@ -114,7 +114,7 @@ public class YPipe<T>
     public boolean checkRead()
     {
         //  Was the value prefetched already? If so, return.
-        int h = queue.front_pos();
+        int h = queue.frontPos();
         if (h != r) {
              return true;
         }
@@ -154,9 +154,8 @@ public class YPipe<T>
 
         //  There was at least one value prefetched.
         //  Return it to the caller.
-        T value = queue.pop();
 
-        return value;
+        return queue.pop();
     }
 
     //  Applies the function fn to the first elemenent in the pipe
@@ -167,7 +166,6 @@ public class YPipe<T>
         boolean rc = checkRead();
         assert (rc);
 
-        T value = queue.front();
-        return value;
+        return queue.front();
     }
 }

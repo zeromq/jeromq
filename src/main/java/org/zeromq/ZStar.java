@@ -41,7 +41,7 @@ import org.zeromq.ZThread.IAttachedRunnable;
  * <br/>
  * - the Corbeille side, or control side
  * <br/>
- * This is where one can {@link Agent#send(ZMsg) send} and {@link Agent#recv() receive} control messages to the underneath star via the ZStar agent.
+ * This is where one can {@link ZAgent#send(ZMsg) send} and {@link ZAgent#recv() receive} control messages to the underneath star via the ZStar agent.
  * <br/>
  * The ZStar lives on this side and is a way to safely communicate with the distant provided star.
  * <br/>
@@ -213,9 +213,9 @@ public class ZStar implements ZAgent
     /**
      * Creates a new ZStar.
      *
-     * @param fortune    the creator of stars on the Plateau
-     * @param motdelafin the final word used to mark the end of the star. Null to disable this mechanism.
-     * @param args       the optional arguments that will be passed to the distant star
+     * @param actor    the creator of stars on the Plateau
+     * @param lock     the final word used to mark the end of the star. Null to disable this mechanism.
+     * @param args     the optional arguments that will be passed to the distant star
      */
     public ZStar(Fortune actor, String lock, Object... args)
     {
@@ -275,8 +275,7 @@ public class ZStar implements ZAgent
         // retrieve the last optional set and entourage given in input
         Set set = null;
         Entourage entourage = null;
-        for (int index = 0; index < bags.length; ++index) {
-            Object bag = bags[index];
+        for (Object bag : bags) {
             if (bag instanceof Set) {
                 set = (Set) bag;
             }

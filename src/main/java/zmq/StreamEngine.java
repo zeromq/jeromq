@@ -401,7 +401,6 @@ public class StreamEngine implements IEngine, IPollEvents, IMsgSink
         if (outsize == 0) {
             if (encoder != null && encoder.isError()) {
                 error();
-                return;
             }
         }
     }
@@ -606,7 +605,7 @@ public class StreamEngine implements IEngine, IPollEvents, IMsgSink
 
     private int write(Transfer buf)
     {
-        int nbytes = 0;
+        int nbytes;
         try {
             nbytes = buf.transferTo(handle);
         }
@@ -619,7 +618,7 @@ public class StreamEngine implements IEngine, IPollEvents, IMsgSink
 
     private int read(ByteBuffer buf)
     {
-        int nbytes = 0;
+        int nbytes;
         try {
             nbytes = handle.read(buf);
         }

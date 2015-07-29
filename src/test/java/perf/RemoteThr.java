@@ -49,43 +49,43 @@ public class RemoteThr
         messageSize = atoi(argv[1]);
         messageCount = atol(argv[2]);
 
-        ctx = ZMQ.zmqInit(1);
+        ctx = ZMQ.init(1);
         if (ctx == null) {
-            printf("error in zmqInit");
+            printf("error in init");
             return;
         }
 
-        s = ZMQ.zmq_socket(ctx, ZMQ.ZMQ_PUSH);
+        s = ZMQ.socket(ctx, ZMQ.ZMQ_PUSH);
         if (s == null) {
-            printf("error in zmq_socket");
+            printf("error in socket");
         }
 
         //  Add your socket options here.
         //  For example ZMQ_RATE, ZMQ_RECOVERY_IVL and ZMQ_MCAST_LOOP for PGM.
 
-        rc = ZMQ.zmq_connect(s, connectTo);
+        rc = ZMQ.connect(s, connectTo);
         if (!rc) {
-            printf("error in zmq_connect: %s\n");
+            printf("error in connect: %s\n");
             return;
         }
 
         for (i = 0; i != messageCount; i++) {
-            msg = ZMQ.zmq_msg_init_size(messageSize);
+            msg = ZMQ.msgInitWithSize(messageSize);
             if (msg == null) {
-                printf("error in zmq_msg_init: %s\n");
+                printf("error in msg_init: %s\n");
                 return;
             }
 
-            int n = ZMQ.zmq_sendmsg(s, msg, 0);
+            int n = ZMQ.sendMsg(s, msg, 0);
             if (n < 0) {
-                printf("error in zmq_sendmsg: %s\n");
+                printf("error in sendmsg: %s\n");
                 return;
             }
         }
 
-        ZMQ.zmq_close(s);
+        ZMQ.close(s);
 
-        ZMQ.zmq_term(ctx);
+        ZMQ.term(ctx);
 
     }
 

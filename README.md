@@ -40,14 +40,14 @@ Add it to your Maven project's `pom.xml`:
     <dependency>
       <groupId>org.zeromq</groupId>
       <artifactId>jeromq</artifactId>
-      <version>0.3.4</version>
+      <version>0.3.5</version>
     </dependency>
 
     <!-- for the latest SNAPSHOT -->
     <dependency>
       <groupId>org.zeromq</groupId>
       <artifactId>jeromq</artifactId>
-      <version>0.3.5-SNAPSHOT</version>
+      <version>0.3.6-SNAPSHOT</version>
     </dependency>
 
     <!-- If you can't find the latest snapshot -->
@@ -74,3 +74,9 @@ mvn ant:ant
 ```
 
 Also please refer the [Wiki](https://github.com/zeromq/jeromq/wiki).
+
+## Copying
+
+Free use of this software is granted under the terms of the GNU Lesser General
+Public License (LGPL). For details see the files `COPYING` and `COPYING.LESSER`
+included with the JeroMQ distribution.

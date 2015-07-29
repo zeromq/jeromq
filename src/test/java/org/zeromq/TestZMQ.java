@@ -484,4 +484,13 @@ public class TestZMQ
        router.close();
        ctx.term();
     }
+
+    @Test(timeout = 1000)
+    public void testSocketDoubleClose()
+    {
+        Context ctx = ZMQ.context(1);
+        Socket socket = ctx.socket(ZMQ.PUSH);
+        socket.close();
+        socket.close();
+    }
 }

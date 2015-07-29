@@ -32,65 +32,65 @@ public class TestRouterMandatory
         int rc;
         boolean brc;
 
-        Ctx ctx = ZMQ.zmqInit(1);
+        Ctx ctx = ZMQ.init(1);
         assertThat(ctx, notNullValue());
 
-        SocketBase sa = ZMQ.zmq_socket(ctx, ZMQ.ZMQ_ROUTER);
-        ZMQ.zmq_setsockopt(sa, ZMQ.ZMQ_SNDHWM, 1);
+        SocketBase sa = ZMQ.socket(ctx, ZMQ.ZMQ_ROUTER);
+        ZMQ.setSocketOption(sa, ZMQ.ZMQ_SNDHWM, 1);
         assertThat(sa, notNullValue());
 
-        brc = ZMQ.zmq_bind(sa, "tcp://127.0.0.1:15560");
+        brc = ZMQ.bind(sa, "tcp://127.0.0.1:15560");
         assertThat(brc , is(true));
 
         // Sending a message to an unknown peer with the default setting
-        rc = ZMQ.zmq_send(sa, "UNKNOWN", ZMQ.ZMQ_SNDMORE);
+        rc = ZMQ.send(sa, "UNKNOWN", ZMQ.ZMQ_SNDMORE);
         assertThat(rc, is(7));
-        rc = ZMQ.zmq_send(sa, "DATA", 0);
+        rc = ZMQ.send(sa, "DATA", 0);
         assertThat(rc, is(4));
 
         int mandatory = 1;
 
         // Set mandatory routing on socket
-        ZMQ.zmq_setsockopt(sa, ZMQ.ZMQ_ROUTER_MANDATORY, mandatory);
+        ZMQ.setSocketOption(sa, ZMQ.ZMQ_ROUTER_MANDATORY, mandatory);
 
         // Send a message and check that it fails
-        rc = ZMQ.zmq_send(sa, "UNKNOWN", ZMQ.ZMQ_SNDMORE | ZMQ.ZMQ_DONTWAIT);
+        rc = ZMQ.send(sa, "UNKNOWN", ZMQ.ZMQ_SNDMORE | ZMQ.ZMQ_DONTWAIT);
         assertThat(rc, is(-1));
         assertThat(sa.errno(), is(ZError.EHOSTUNREACH));
 
         // Create a valid socket
-        SocketBase sb = ZMQ.zmq_socket(ctx, ZMQ.ZMQ_DEALER);
+        SocketBase sb = ZMQ.socket(ctx, ZMQ.ZMQ_DEALER);
         assertThat(sb, notNullValue());
 
-        ZMQ.zmq_setsockopt(sb, ZMQ.ZMQ_RCVHWM, 1);
-        ZMQ.zmq_setsockopt(sb, ZMQ.ZMQ_IDENTITY, "X");
+        ZMQ.setSocketOption(sb, ZMQ.ZMQ_RCVHWM, 1);
+        ZMQ.setSocketOption(sb, ZMQ.ZMQ_IDENTITY, "X");
 
-        brc = ZMQ.zmq_connect(sb, "tcp://127.0.0.1:15560");
+        brc = ZMQ.connect(sb, "tcp://127.0.0.1:15560");
 
         // wait until connect
         Thread.sleep(1000);
 
         // make it full and check that it fails
-        rc = ZMQ.zmq_send(sa, "X", ZMQ.ZMQ_SNDMORE);
+        rc = ZMQ.send(sa, "X", ZMQ.ZMQ_SNDMORE);
         assertThat(rc, is(1));
-        rc = ZMQ.zmq_send(sa, "DATA1", 0);
+        rc = ZMQ.send(sa, "DATA1", 0);
         assertThat(rc, is(5));
 
-        rc = ZMQ.zmq_send(sa, "X", ZMQ.ZMQ_SNDMORE | ZMQ.ZMQ_DONTWAIT);
+        rc = ZMQ.send(sa, "X", ZMQ.ZMQ_SNDMORE | ZMQ.ZMQ_DONTWAIT);
         if (rc == 1) {
             // the first frame has been sent
-            rc = ZMQ.zmq_send(sa, "DATA2", 0);
+            rc = ZMQ.send(sa, "DATA2", 0);
             assertThat(rc, is(5));
 
             // send more
-            rc = ZMQ.zmq_send(sa, "X", ZMQ.ZMQ_SNDMORE | ZMQ.ZMQ_DONTWAIT);
+            rc = ZMQ.send(sa, "X", ZMQ.ZMQ_SNDMORE | ZMQ.ZMQ_DONTWAIT);
         }
         assertThat(rc, is(-1));
         assertThat(sa.errno(), is(ZError.EAGAIN));
 
         //  Clean up.
-        ZMQ.zmq_close(sa);
-        ZMQ.zmq_close(sb);
-        ZMQ.zmq_term(ctx);
+        ZMQ.close(sa);
+        ZMQ.close(sb);
+        ZMQ.term(ctx);
     }
 }

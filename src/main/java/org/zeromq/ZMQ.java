@@ -23,6 +23,7 @@ import java.io.Closeable;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectableChannel;
 import java.nio.charset.Charset;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import zmq.Ctx;
 import zmq.DecoderBase;
@@ -266,7 +267,7 @@ public class ZMQ
          */
         protected Context(int ioThreads)
         {
-            ctx = zmq.ZMQ.zmqInit(ioThreads);
+            ctx = zmq.ZMQ.init(ioThreads);
         }
 
         /**
@@ -373,6 +374,7 @@ public class ZMQ
 
         private final Ctx ctx;
         private final SocketBase base;
+        private final AtomicBoolean isClosed = new AtomicBoolean(false);
 
         /**
          * Class constructor.
@@ -411,7 +413,9 @@ public class ZMQ
         @Override
         public void close()
         {
-            base.close();
+            if (isClosed.compareAndSet(false, true)) {
+                base.close();
+            }
         }
 
         /**
@@ -640,7 +644,7 @@ public class ZMQ
          * bit to thread 2 and so on. For example, a value of 3 specifies that subsequent
          * connections on 'socket' shall be handled exclusively by I/O threads 1 and 2.
          *
-         * See also  in the man page of zmqInit[3] for details on allocating the number of I/O threads for a
+         * See also  in the man page of init[3] for details on allocating the number of I/O threads for a
          * specific _context_.
          *
          * @param value
@@ -1158,9 +1162,9 @@ public class ZMQ
          * @param addr
          *            the endpoint to bind to.
          */
-        public final int bind(String addr)
+        public final void bind(String addr)
         {
-            return bind(addr, DYNFROM, DYNTO);
+            bind(addr, DYNFROM, DYNTO);
         }
 
         /**
@@ -1173,7 +1177,7 @@ public class ZMQ
          * @param max
          *            The maximum port in the range of ports to try.
          */
-        private final int bind(String addr, int min, int max)
+        private int bind(String addr, int min, int max)
         {
             if (addr.endsWith(":*")) {
                 int port = min;
@@ -1382,8 +1386,7 @@ public class ZMQ
             zmq.Msg msg = base.recv(flags);
 
             if (msg != null) {
-                int size = msg.getBytes(0, buffer, offset, len);
-                return size;
+                return msg.getBytes(0, buffer, offset, len);
             }
 
             return -1;
@@ -1732,7 +1735,7 @@ public class ZMQ
                 pollItems[i] = items[i].base();
             }
 
-            return zmq.ZMQ.zmq_poll(pollItems, next, tout);
+            return zmq.ZMQ.poll(pollItems, next, tout);
         }
 
         /**
@@ -1875,7 +1878,9 @@ public class ZMQ
         EMTHREAD(ZError.EMTHREAD),
         EFSM(ZError.EFSM),
         ENOCOMPATPROTO(ZError.ENOCOMPATPROTO),
-        ETERM(ZError.ETERM);
+        ETERM(ZError.ETERM),
+        ENOTSOCK(ZError.ENOTSOCK),
+        EAGAIN(ZError.EAGAIN);
 
         private final int code;
 
@@ -1903,7 +1908,7 @@ public class ZMQ
     @Deprecated
     public static boolean device(int type, Socket frontend, Socket backend)
     {
-        return zmq.ZMQ.zmq_proxy(frontend.base, backend.base, null);
+        return zmq.ZMQ.proxy(frontend.base, backend.base, null);
     }
 
     /**
@@ -1924,7 +1929,7 @@ public class ZMQ
      */
     public static boolean proxy(Socket frontend, Socket backend, Socket capture)
     {
-        return zmq.ZMQ.zmq_proxy(frontend.base, backend.base, capture != null ? capture.base : null);
+        return zmq.ZMQ.proxy(frontend.base, backend.base, capture != null ? capture.base : null);
     }
 
     public static int poll(PollItem[] items, long timeout)
@@ -1939,7 +1944,7 @@ public class ZMQ
             pollItems[i] = items[i].base;
         }
 
-        return zmq.ZMQ.zmq_poll(pollItems, count, timeout);
+        return zmq.ZMQ.poll(pollItems, count, timeout);
     }
 
     /**
@@ -1971,7 +1976,7 @@ public class ZMQ
      */
     public static int getFullVersion()
     {
-        return zmq.ZMQ.ZMQ_MAKE_VERSION(zmq.ZMQ.ZMQ_VERSION_MAJOR,
+        return zmq.ZMQ.makeVersion(zmq.ZMQ.ZMQ_VERSION_MAJOR,
                 zmq.ZMQ.ZMQ_VERSION_MINOR,
                 zmq.ZMQ.ZMQ_VERSION_PATCH);
     }
@@ -1987,7 +1992,7 @@ public class ZMQ
                                     final int minor,
                                     final int patch)
     {
-      return zmq.ZMQ.ZMQ_MAKE_VERSION(major, minor, patch);
+      return zmq.ZMQ.makeVersion(major, minor, patch);
     }
 
     /**

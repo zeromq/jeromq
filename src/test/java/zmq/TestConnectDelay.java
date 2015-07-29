@@ -35,43 +35,43 @@ public class TestConnectDelay
         // of the messages getting queued, as connect() creates a
         // pipe immediately.
 
-        Ctx context = ZMQ.zmq_ctx_new();
+        Ctx context = ZMQ.createContext();
         assert (context != null);
 
-        SocketBase to = ZMQ.zmq_socket(context, ZMQ.ZMQ_PULL);
+        SocketBase to = ZMQ.socket(context, ZMQ.ZMQ_PULL);
         assert (to != null);
 
         int val = 0;
-        ZMQ.zmq_setsockopt(to, ZMQ.ZMQ_LINGER, val);
-        boolean rc = ZMQ.zmq_bind(to, "tcp://*:7555");
+        ZMQ.setSocketOption(to, ZMQ.ZMQ_LINGER, val);
+        boolean rc = ZMQ.bind(to, "tcp://*:7555");
         assert (rc);
 
         // Create a socket pushing to two endpoints - only 1 message should arrive.
-        SocketBase from = ZMQ.zmq_socket(context, ZMQ.ZMQ_PUSH);
+        SocketBase from = ZMQ.socket(context, ZMQ.ZMQ_PUSH);
         assert (from != null);
 
         val = 0;
-        ZMQ.zmq_setsockopt(from, ZMQ.ZMQ_LINGER, val);
-        rc = ZMQ.zmq_connect(from, "tcp://localhost:7556");
+        ZMQ.setSocketOption(from, ZMQ.ZMQ_LINGER, val);
+        rc = ZMQ.connect(from, "tcp://localhost:7556");
         assert (rc);
-        rc = ZMQ.zmq_connect(from, "tcp://localhost:7555");
+        rc = ZMQ.connect(from, "tcp://localhost:7555");
         assert (rc);
 
         for (int i = 0; i < 10; ++i) {
             String message = "message ";
             message += ('0' + i);
-            int sent = ZMQ.zmq_send(from, message, 0);
+            int sent = ZMQ.send(from, message, 0);
             assert (sent >= 0);
         }
 
         // We now consume from the connected pipe
         // - we should see just 5
         int timeout = 1000;
-        ZMQ.zmq_setsockopt(to, ZMQ.ZMQ_RCVTIMEO, timeout);
+        ZMQ.setSocketOption(to, ZMQ.ZMQ_RCVTIMEO, timeout);
 
         int seen = 0;
         for (int i = 0; i < 10; ++i) {
-            Msg msg = ZMQ.zmq_recv(to, 0);
+            Msg msg = ZMQ.recv(to, 0);
             if (msg == null) {
                 break;
             }
@@ -79,11 +79,11 @@ public class TestConnectDelay
         }
         assertEquals(seen, 5);
 
-        ZMQ.zmq_close(from);
+        ZMQ.close(from);
 
-        ZMQ.zmq_close(to);
+        ZMQ.close(to);
 
-        ZMQ.zmq_term(context);
+        ZMQ.term(context);
     }
 
     @Test
@@ -96,48 +96,48 @@ public class TestConnectDelay
         // also set the delay attach on connect flag, which should
         // cause the pipe attachment to be delayed until the connection
         // succeeds.
-        Ctx context = ZMQ.zmq_ctx_new();
+        Ctx context = ZMQ.createContext();
 
-        SocketBase to = ZMQ.zmq_socket(context, ZMQ.ZMQ_PULL);
+        SocketBase to = ZMQ.socket(context, ZMQ.ZMQ_PULL);
         assert (to != null);
-        boolean rc = ZMQ.zmq_bind(to, "tcp://*:7560");
+        boolean rc = ZMQ.bind(to, "tcp://*:7560");
         assert (rc);
 
         int val = 0;
-        ZMQ.zmq_setsockopt(to, ZMQ.ZMQ_LINGER, val);
+        ZMQ.setSocketOption(to, ZMQ.ZMQ_LINGER, val);
         assert (rc);
 
         // Create a socket pushing to two endpoints - all messages should arrive.
-        SocketBase from = ZMQ.zmq_socket(context, ZMQ.ZMQ_PUSH);
+        SocketBase from = ZMQ.socket(context, ZMQ.ZMQ_PUSH);
         assert (from != null);
 
         val = 0;
-        ZMQ.zmq_setsockopt(from, ZMQ.ZMQ_LINGER, val);
+        ZMQ.setSocketOption(from, ZMQ.ZMQ_LINGER, val);
 
         // Set the key flag
         val = 1;
-        ZMQ.zmq_setsockopt(from, ZMQ.ZMQ_DELAY_ATTACH_ON_CONNECT, val);
+        ZMQ.setSocketOption(from, ZMQ.ZMQ_DELAY_ATTACH_ON_CONNECT, val);
 
         // Connect to the invalid socket
-        rc = ZMQ.zmq_connect(from, "tcp://localhost:7561");
+        rc = ZMQ.connect(from, "tcp://localhost:7561");
         assert (rc);
         // Connect to the valid socket
-        rc = ZMQ.zmq_connect(from, "tcp://localhost:7560");
+        rc = ZMQ.connect(from, "tcp://localhost:7560");
         assert (rc);
 
         for (int i = 0; i < 10; ++i) {
             String message = "message ";
             message += ('0' + i);
-            int sent = ZMQ.zmq_send(from, message, 0);
+            int sent = ZMQ.send(from, message, 0);
             assert (sent >= 0);
         }
 
         int timeout = 1000;
-        ZMQ.zmq_setsockopt(to, ZMQ.ZMQ_RCVTIMEO, timeout);
+        ZMQ.setSocketOption(to, ZMQ.ZMQ_RCVTIMEO, timeout);
 
         int seen = 0;
         for (int i = 0; i < 10; ++i) {
-            Msg msg = ZMQ.zmq_recv(to, 0);
+            Msg msg = ZMQ.recv(to, 0);
             if (msg == null) {
                 break;
             }
@@ -145,11 +145,11 @@ public class TestConnectDelay
         }
         assertEquals(seen, 10);
 
-        ZMQ.zmq_close(from);
+        ZMQ.close(from);
 
-        ZMQ.zmq_close(to);
+        ZMQ.close(to);
 
-        ZMQ.zmq_term(context);
+        ZMQ.term(context);
     }
 
     @Test
@@ -160,73 +160,73 @@ public class TestConnectDelay
         // occurs with an existing connection that is broken. We will send
         // messages to a connected pipe, disconnect and verify the messages
         // block. Then we reconnect and verify messages flow again.
-        Ctx context = ZMQ.zmq_ctx_new();
+        Ctx context = ZMQ.createContext();
 
-        SocketBase backend = ZMQ.zmq_socket(context, ZMQ.ZMQ_DEALER);
+        SocketBase backend = ZMQ.socket(context, ZMQ.ZMQ_DEALER);
         assert (backend != null);
 
-        SocketBase frontend = ZMQ.zmq_socket(context, ZMQ.ZMQ_DEALER);
+        SocketBase frontend = ZMQ.socket(context, ZMQ.ZMQ_DEALER);
         assert (frontend != null);
 
         int val = 0;
-        ZMQ.zmq_setsockopt(backend, ZMQ.ZMQ_LINGER, val);
+        ZMQ.setSocketOption(backend, ZMQ.ZMQ_LINGER, val);
 
         val = 0;
-        ZMQ.zmq_setsockopt(frontend, ZMQ.ZMQ_LINGER, val);
+        ZMQ.setSocketOption(frontend, ZMQ.ZMQ_LINGER, val);
 
         //  Frontend connects to backend using DELAY_ATTACH_ON_CONNECT
         val = 1;
-        ZMQ.zmq_setsockopt(frontend, ZMQ.ZMQ_DELAY_ATTACH_ON_CONNECT, val);
+        ZMQ.setSocketOption(frontend, ZMQ.ZMQ_DELAY_ATTACH_ON_CONNECT, val);
 
-        boolean rc = ZMQ.zmq_bind(backend, "tcp://*:7760");
+        boolean rc = ZMQ.bind(backend, "tcp://*:7760");
         assert (rc);
 
-        rc = ZMQ.zmq_connect(frontend, "tcp://localhost:7760");
+        rc = ZMQ.connect(frontend, "tcp://localhost:7760");
         assert (rc);
 
         //  Ping backend to frontend so we know when the connection is up
-        int sent = ZMQ.zmq_send(backend, "Hello", 0);
+        int sent = ZMQ.send(backend, "Hello", 0);
         assertEquals(5, sent);
 
-        Msg msg = ZMQ.zmq_recv(frontend, 0);
+        Msg msg = ZMQ.recv(frontend, 0);
         assertEquals(5, msg.size());
 
         // Send message from frontend to backend
-        sent = ZMQ.zmq_send(frontend, "Hello", ZMQ.ZMQ_DONTWAIT);
+        sent = ZMQ.send(frontend, "Hello", ZMQ.ZMQ_DONTWAIT);
         assertEquals(5, sent);
 
-        ZMQ.zmq_close(backend);
+        ZMQ.close(backend);
 
         //  Give time to process disconnect
         //  There's no way to do this except with a sleep
         Thread.sleep(1000);
 
         // Send a message, should fail
-        sent = ZMQ.zmq_send(frontend, "Hello", ZMQ.ZMQ_DONTWAIT);
+        sent = ZMQ.send(frontend, "Hello", ZMQ.ZMQ_DONTWAIT);
         assertEquals(-1, sent);
 
         //  Recreate backend socket
-        backend = ZMQ.zmq_socket(context, ZMQ.ZMQ_DEALER);
+        backend = ZMQ.socket(context, ZMQ.ZMQ_DEALER);
         val = 0;
-        ZMQ.zmq_setsockopt(backend, ZMQ.ZMQ_LINGER, val);
-        rc = ZMQ.zmq_bind(backend, "tcp://*:7760");
+        ZMQ.setSocketOption(backend, ZMQ.ZMQ_LINGER, val);
+        rc = ZMQ.bind(backend, "tcp://*:7760");
         assert (rc);
 
         //  Ping backend to frontend so we know when the connection is up
-        sent = ZMQ.zmq_send(backend, "Hello", 0);
+        sent = ZMQ.send(backend, "Hello", 0);
         assertEquals(5, sent);
 
-        msg = ZMQ.zmq_recv(frontend, 0);
+        msg = ZMQ.recv(frontend, 0);
         assertEquals(5, msg.size());
 
         // After the reconnect, should succeed
-        sent = ZMQ.zmq_send(frontend, "Hello", ZMQ.ZMQ_DONTWAIT);
+        sent = ZMQ.send(frontend, "Hello", ZMQ.ZMQ_DONTWAIT);
         assertEquals(5, sent);
 
-        ZMQ.zmq_close(backend);
+        ZMQ.close(backend);
 
-        ZMQ.zmq_close(frontend);
+        ZMQ.close(frontend);
 
-        ZMQ.zmq_term(context);
+        ZMQ.term(context);
     }
 }

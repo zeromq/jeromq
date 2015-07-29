@@ -161,34 +161,34 @@ public class Helper
         byte[] content = "12345678ABCDEFGH12345678abcdefgh".getBytes(ZMQ.CHARSET);
 
         //  Send the message.
-        int rc = ZMQ.zmq_send(sc, content, 32, ZMQ.ZMQ_SNDMORE);
+        int rc = ZMQ.send(sc, content, 32, ZMQ.ZMQ_SNDMORE);
         assert (rc == 32);
-        rc = ZMQ.zmq_send(sc, content, 32, 0);
+        rc = ZMQ.send(sc, content, 32, 0);
         assertThat(rc, is(32));
 
         //  Bounce the message back.
         Msg msg;
-        msg = ZMQ.zmq_recv(sb, 0);
+        msg = ZMQ.recv(sb, 0);
         assert (msg.size() == 32);
-        long rcvmore = ZMQ.zmq_getsockopt(sb, ZMQ.ZMQ_RCVMORE);
+        long rcvmore = ZMQ.getSocketOption(sb, ZMQ.ZMQ_RCVMORE);
         assert (rcvmore == 1);
-        msg = ZMQ.zmq_recv(sb, 0);
+        msg = ZMQ.recv(sb, 0);
         assert (rc == 32);
-        rcvmore = ZMQ.zmq_getsockopt(sb, ZMQ.ZMQ_RCVMORE);
+        rcvmore = ZMQ.getSocketOption(sb, ZMQ.ZMQ_RCVMORE);
         assert (rcvmore == 0);
-        rc = ZMQ.zmq_send(sb, new Msg(msg), ZMQ.ZMQ_SNDMORE);
+        rc = ZMQ.send(sb, new Msg(msg), ZMQ.ZMQ_SNDMORE);
         assert (rc == 32);
-        rc = ZMQ.zmq_send(sb, new Msg(msg), 0);
+        rc = ZMQ.send(sb, new Msg(msg), 0);
         assert (rc == 32);
 
         //  Receive the bounced message.
-        msg = ZMQ.zmq_recv(sc, 0);
+        msg = ZMQ.recv(sc, 0);
         assert (rc == 32);
-        rcvmore = ZMQ.zmq_getsockopt(sc, ZMQ.ZMQ_RCVMORE);
+        rcvmore = ZMQ.getSocketOption(sc, ZMQ.ZMQ_RCVMORE);
         assertThat(rcvmore , is(1L));
-        msg = ZMQ.zmq_recv(sc,  0);
+        msg = ZMQ.recv(sc,  0);
         assert (rc == 32);
-        rcvmore = ZMQ.zmq_getsockopt(sc, ZMQ.ZMQ_RCVMORE);
+        rcvmore = ZMQ.getSocketOption(sc, ZMQ.ZMQ_RCVMORE);
         assertThat(rcvmore , is(0L));
         //  Check whether the message is still the same.
         //assert (memcmp (buf2, content, 32) == 0);

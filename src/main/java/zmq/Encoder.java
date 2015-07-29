@@ -57,7 +57,7 @@ public class Encoder extends EncoderBase
         }
     }
 
-    private final boolean sizeReady()
+    private boolean sizeReady()
     {
         //  Write message body into the buffer.
         nextStep(inProgress.data(), inProgress.size(),
@@ -65,7 +65,7 @@ public class Encoder extends EncoderBase
         return true;
     }
 
-    private final boolean messageReady()
+    private boolean messageReady()
     {
         //  Destroy content of the old message.
         //inProgress.close ();

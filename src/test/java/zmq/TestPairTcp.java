@@ -31,24 +31,24 @@ public class TestPairTcp
     @Test
     public void testPairTpc()
     {
-        Ctx ctx = ZMQ.zmqInit(1);
+        Ctx ctx = ZMQ.init(1);
         assertThat(ctx, notNullValue());
-        SocketBase sb = ZMQ.zmq_socket(ctx, ZMQ.ZMQ_PAIR);
+        SocketBase sb = ZMQ.socket(ctx, ZMQ.ZMQ_PAIR);
         assertThat(sb, notNullValue());
-        boolean brc = ZMQ.zmq_bind(sb, "tcp://127.0.0.1:6570");
+        boolean brc = ZMQ.bind(sb, "tcp://127.0.0.1:6570");
         assertThat(brc, is(true));
 
-        SocketBase sc = ZMQ.zmq_socket(ctx, ZMQ.ZMQ_PAIR);
+        SocketBase sc = ZMQ.socket(ctx, ZMQ.ZMQ_PAIR);
         assertThat(sc, notNullValue());
-        brc = ZMQ.zmq_connect(sc, "tcp://127.0.0.1:6570");
+        brc = ZMQ.connect(sc, "tcp://127.0.0.1:6570");
         assertThat(brc, is(true));
 
         Helper.bounce(sb, sc);
 
         //  Tear down the wiring.
-        ZMQ.zmq_close(sb);
-        ZMQ.zmq_close(sc);
-        ZMQ.zmq_term(ctx);
+        ZMQ.close(sb);
+        ZMQ.close(sc);
+        ZMQ.term(ctx);
 
     }
 }

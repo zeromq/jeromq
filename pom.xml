@@ -3,7 +3,7 @@
   <groupId>org.zeromq</groupId>
   <artifactId>jeromq</artifactId>
   <packaging>jar</packaging>
-  <version>0.3.5-SNAPSHOT</version>
+  <version>0.3.6-SNAPSHOT</version>
   <name>JeroMQ</name>
   <description>Pure Java implementation of libzmq</description>
   <url>https://github.com/zeromq/jeromq</url>
@@ -152,7 +152,7 @@
                     </goals>
                   </pluginExecutionFilter>
                   <action>
-                    <ignore></ignore>
+                    <ignore />
                   </action>
                 </pluginExecution>
               </pluginExecutions>
@@ -166,7 +166,7 @@
     <profile>
       <id>doclint-java8-disable</id>
       <activation>
-        <jdk>[1.8,</jdk>
+        <jdk>[1.8,)</jdk>
       </activation>
       <build>
         <plugins>

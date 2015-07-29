@@ -185,10 +185,7 @@ public abstract class DecoderBase implements IDecoder
 
         while (toRead == 0) {
             if (!next()) {
-                if (!next()) {
-                    return false;
-                }
-                return true;
+                return next();
             }
         }
         return false;

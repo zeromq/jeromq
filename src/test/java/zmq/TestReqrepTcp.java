@@ -29,23 +29,23 @@ public class TestReqrepTcp
     @Test
     public void testReqrepTcp() throws Exception
     {
-        Ctx ctx = ZMQ.zmqInit(1);
+        Ctx ctx = ZMQ.init(1);
         assertThat(ctx, notNullValue());
 
-        SocketBase sb = ZMQ.zmq_socket(ctx, ZMQ.ZMQ_REP);
+        SocketBase sb = ZMQ.socket(ctx, ZMQ.ZMQ_REP);
         assertThat(sb, notNullValue());
-        boolean rc = ZMQ.zmq_bind(sb, "tcp://127.0.0.1:7560");
+        boolean rc = ZMQ.bind(sb, "tcp://127.0.0.1:7560");
         assertThat(rc, is(true));
 
-        SocketBase sc = ZMQ.zmq_socket(ctx, ZMQ.ZMQ_REQ);
+        SocketBase sc = ZMQ.socket(ctx, ZMQ.ZMQ_REQ);
         assertThat(sc, notNullValue());
-        rc = ZMQ.zmq_connect(sc, "tcp://127.0.0.1:7560");
+        rc = ZMQ.connect(sc, "tcp://127.0.0.1:7560");
         assertThat(rc, is(true));
 
         Helper.bounce(sb, sc);
 
-        ZMQ.zmq_close(sc);
-        ZMQ.zmq_close(sb);
-        ZMQ.zmq_term(ctx);
+        ZMQ.close(sc);
+        ZMQ.close(sb);
+        ZMQ.term(ctx);
     }
 }

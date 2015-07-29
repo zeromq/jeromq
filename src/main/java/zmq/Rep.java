@@ -127,20 +127,12 @@ public class Rep extends Router
     @Override
     protected boolean xhasIn()
     {
-        if (sendingReply) {
-            return false;
-        }
-
-        return super.xhasIn();
+        return !sendingReply && super.xhasIn();
     }
 
     @Override
     protected boolean xhasOut()
     {
-        if (!sendingReply) {
-            return false;
-        }
-
-        return super.xhasOut();
+        return sendingReply && super.xhasOut();
     }
 }

@@ -66,7 +66,8 @@ public class Sub extends XSub
         if (option == ZMQ.ZMQ_SUBSCRIBE) {
             msg.put((byte) 1);
         }
-        else if (option == ZMQ.ZMQ_UNSUBSCRIBE) {
+        else {
+            // option = ZMQ.ZMQ_UNSUBSCRIBE
             msg.put((byte) 0);
         }
         msg.put(val);

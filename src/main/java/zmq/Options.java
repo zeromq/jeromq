@@ -293,7 +293,7 @@ public class Options
             }
             else {
                 TcpAddressMask filter = new TcpAddressMask();
-                filter.resolve(filterStr, ipv4only == 1 ? true : false);
+                filter.resolve(filterStr, ipv4only == 1);
                 tcpAcceptFilters.add(filter);
             }
             return;

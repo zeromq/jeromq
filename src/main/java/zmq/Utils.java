@@ -64,11 +64,11 @@ class Utils
                                          int tcpKeepaliveCnt, int tcpKeepaliveIdle,
                                          int tcpKeepaliveIntvl) throws SocketException
     {
-        tune_tcp_keepalives(ch.socket(), tcpKeepalive, tcpKeepaliveCnt,
+        tuneTcpKeepalives(ch.socket(), tcpKeepalive, tcpKeepaliveCnt,
                 tcpKeepaliveIdle, tcpKeepaliveIntvl);
     }
 
-    public static void tune_tcp_keepalives(Socket fd, int tcpKeepalive,
+    public static void tuneTcpKeepalives(Socket fd, int tcpKeepalive,
             int tcpKeepaliveCnt, int tcpKeepaliveIdle,
             int tcpKeepaliveIntvl) throws SocketException
     {
@@ -154,8 +154,11 @@ class Utils
         }
         boolean ret = true;
         if (path.isDirectory()) {
-            for (File f : path.listFiles()) {
-                ret = ret && delete(f);
+            File[] files = path.listFiles();
+            if (files != null) {
+                for (File f : files) {
+                    ret = ret && delete(f);
+                }
             }
         }
         return ret && path.delete();

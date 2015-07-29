@@ -408,12 +408,14 @@ class SessionBase extends Own implements
 
         //  Start pipe termination process. Delay the termination till all messages
         //  are processed in case the linger time is non-zero.
-        pipe.terminate(linger != 0);
+        if (pipe != null) {
+            pipe.terminate(linger != 0);
 
-        //  TODO: Should this go into pipe_t::terminate ?
-        //  In case there's no engine and there's only delimiter in the
-        //  pipe it wouldn't be ever read. Thus we check for it explicitly.
-        pipe.checkRead();
+            //  TODO: Should this go into pipe_t::terminate ?
+            //  In case there's no engine and there's only delimiter in the
+            //  pipe it wouldn't be ever read. Thus we check for it explicitly.
+            pipe.checkRead();
+        }
     }
 
     @Override

@@ -19,6 +19,7 @@
 
 package zmq;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.channels.SelectableChannel;
@@ -159,6 +160,12 @@ public abstract class SocketBase extends Own
 
     public void destroy()
     {
+        try {
+            mailbox.close();
+        }
+        catch (IOException ignore) {
+        }
+
         stopMonitor();
         assert (destroyed);
     }
@@ -364,7 +371,7 @@ public abstract class SocketBase extends Own
             int rc = listener.setAddress(address);
             if (rc != 0) {
                 listener.destroy();
-                event_bind_failed(address, rc);
+                eventBindFailed(address, rc);
                 errno.set(rc);
                 return false;
             }
@@ -381,7 +388,7 @@ public abstract class SocketBase extends Own
             int rc = listener.setAddress(address);
             if (rc != 0) {
                 listener.destroy();
-                event_bind_failed(address, rc);
+                eventBindFailed(address, rc);
                 errno.set(rc);
                 return false;
             }
@@ -496,7 +503,7 @@ public abstract class SocketBase extends Own
         if (ioThread == null) {
             throw new IllegalStateException("Empty IO Thread");
         }
-        boolean ipv4only = options.ipv4only != 0 ? true : false;
+        boolean ipv4only = options.ipv4only != 0;
         Address paddr = new Address(protocol, address, ipv4only);
 
         //  Resolve address (if needed by the protocol)
@@ -559,7 +566,7 @@ public abstract class SocketBase extends Own
         //  (from launchChild() for example) we're asked to terminate now.
         boolean rc = processCommands(0, false);
         if (!rc) {
-            return rc;
+            return false;
         }
 
         //  Parse addr_ string.
@@ -597,7 +604,7 @@ public abstract class SocketBase extends Own
             if (!e.getKey().equals(addr)) {
                 continue;
             }
-            term_child(e.getValue());
+            termChild(e.getValue());
             it.remove();
         }
         return true;
@@ -816,7 +823,6 @@ public abstract class SocketBase extends Own
     private boolean processCommands(int timeout, boolean throttle)
     {
         Command cmd;
-        boolean ret = true;
         if (timeout != 0) {
             //  If we are asked to wait, simply ask mailbox to wait.
             cmd = mailbox.recv(timeout);
@@ -862,7 +868,7 @@ public abstract class SocketBase extends Own
             return false;
         }
 
-        return ret;
+        return true;
     }
 
     @Override
@@ -1132,7 +1138,7 @@ public abstract class SocketBase extends Own
         return rc;
     }
 
-    public void event_connected(String addr, SelectableChannel ch)
+    public void eventConnected(String addr, SelectableChannel ch)
     {
         if ((monitorEvents & ZMQ.ZMQ_EVENT_CONNECTED) == 0) {
             return;
@@ -1159,7 +1165,7 @@ public abstract class SocketBase extends Own
         monitorEvent(new ZMQ.Event(ZMQ.ZMQ_EVENT_CONNECT_RETRIED, addr, interval));
     }
 
-    public void event_listening(String addr, SelectableChannel ch)
+    public void eventListening(String addr, SelectableChannel ch)
     {
         if ((monitorEvents & ZMQ.ZMQ_EVENT_LISTENING) == 0) {
             return;
@@ -1168,7 +1174,7 @@ public abstract class SocketBase extends Own
         monitorEvent(new ZMQ.Event(ZMQ.ZMQ_EVENT_LISTENING, addr, ch));
     }
 
-    public void event_bind_failed(String addr, int errno)
+    public void eventBindFailed(String addr, int errno)
     {
         if ((monitorEvents & ZMQ.ZMQ_EVENT_BIND_FAILED) == 0) {
             return;

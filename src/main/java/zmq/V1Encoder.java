@@ -61,7 +61,7 @@ public class V1Encoder extends EncoderBase
         }
     }
 
-    private final boolean sizeReady()
+    private boolean sizeReady()
     {
         //  Write message body into the buffer.
         nextStep(inProgress.data(), inProgress.size(),
@@ -69,7 +69,7 @@ public class V1Encoder extends EncoderBase
         return true;
     }
 
-    private final boolean messageReady()
+    private boolean messageReady()
     {
         //  Read new message. If there is none, return false.
         //  Note that new state is set only if write is successful. That way
