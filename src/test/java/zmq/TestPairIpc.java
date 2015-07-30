@@ -19,6 +19,8 @@
 
 package zmq;
 
+import java.util.UUID;
+
 import org.junit.Test;
 import static org.junit.Assert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
@@ -35,12 +37,16 @@ public class TestPairIpc
         assertThat(ctx, notNullValue());
         SocketBase sb = ZMQ.socket(ctx, ZMQ.ZMQ_PAIR);
         assertThat(sb, notNullValue());
-        boolean brc = ZMQ.bind(sb, "ipc:///tmp/tester");
+
+        UUID random = UUID.randomUUID();
+
+        boolean brc = ZMQ.bind(sb, "ipc:///tmp/tester" + random.toString());
         assertThat(brc, is(true));
 
         SocketBase sc = ZMQ.socket(ctx, ZMQ.ZMQ_PAIR);
         assertThat(sc, notNullValue());
-        brc = ZMQ.connect(sc, "ipc:///tmp/tester");
+
+        brc = ZMQ.connect(sc, "ipc:///tmp/tester" + random.toString());
         assertThat(brc, is(true));
 
         Helper.bounce(sb, sc);

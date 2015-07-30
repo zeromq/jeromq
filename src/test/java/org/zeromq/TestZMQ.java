@@ -19,20 +19,20 @@
 
 package org.zeromq;
 
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.charset.CharacterCodingException;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
-
-import org.junit.Test;
-import org.zeromq.ZMQ.Context;
-import org.zeromq.ZMQ.Socket;
-
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.charset.CharacterCodingException;
+
+import org.junit.Test;
+import org.zeromq.ZMQ.Context;
+import org.zeromq.ZMQ.Socket;
 
 public class TestZMQ
 {
@@ -372,24 +372,28 @@ public class TestZMQ
     public void testEventClosed()
     {
         Context context = ZMQ.context(1);
-        ZMQ.Event event;
-
-        Socket socket = context.socket(ZMQ.REP);
         Socket monitor = context.socket(ZMQ.PAIR);
-        monitor.setReceiveTimeOut(100);
+        try {
+            ZMQ.Event event;
 
-        socket.bindToRandomPort("tcp://127.0.0.1");
+            Socket socket = context.socket(ZMQ.REP);
+            monitor.setReceiveTimeOut(100);
 
-        assertTrue(socket.monitor("inproc://monitor.socket", ZMQ.EVENT_CLOSED));
-        monitor.connect("inproc://monitor.socket");
+            socket.bindToRandomPort("tcp://127.0.0.1");
 
-        socket.close();
-        event = ZMQ.Event.recv(monitor);
-        assertNotNull("No event was received", event);
-        assertEquals(ZMQ.EVENT_CLOSED, event.getEvent());
+            assertTrue(socket.monitor("inproc://monitor.socket", ZMQ.EVENT_CLOSED));
+            monitor.connect("inproc://monitor.socket");
 
-        monitor.close();
-        context.term();
+            socket.close();
+            event = ZMQ.Event.recv(monitor);
+            assertNotNull("No event was received", event);
+            assertEquals(ZMQ.EVENT_CLOSED, event.getEvent());
+
+        }
+        finally {
+            monitor.close();
+            context.term();
+        }
     }
 
     @Test
@@ -492,5 +496,6 @@ public class TestZMQ
         Socket socket = ctx.socket(ZMQ.PUSH);
         socket.close();
         socket.close();
+        ctx.term();
     }
 }

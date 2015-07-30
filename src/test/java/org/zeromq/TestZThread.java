@@ -19,15 +19,18 @@
 
 package org.zeromq;
 
-import org.zeromq.ZMQ.Socket;
+import java.util.concurrent.CountDownLatch;
+
 import org.junit.Assert;
 import org.junit.Test;
+import org.zeromq.ZMQ.Socket;
 
 public class TestZThread
 {
     @Test
     public void testDetached()
     {
+        final CountDownLatch stopped = new CountDownLatch(1);
         ZThread.IDetachedRunnable detached = new ZThread.IDetachedRunnable()
         {
             @Override
@@ -38,11 +41,19 @@ public class TestZThread
 
                 Socket push = ctx.createSocket(ZMQ.PUSH);
                 assert (push != null);
-                ctx.destroy();
+                ctx.close();
+                stopped.countDown();
             }
         };
 
         ZThread.start(detached);
+        try {
+            stopped.await();
+        }
+        catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            e.printStackTrace();
+        }
     }
 
     @Test
