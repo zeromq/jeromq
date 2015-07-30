@@ -57,7 +57,7 @@ import zmq.SocketBase;
  * <li>Proxy mechanism ensured by pluggable pumps
  *    <ul>
  *      <li>with built-in low-level {@link ZmqPump} (zmq.ZMQ): useful for performances
- *      <li>with built-in high-level  {@link ZPump}  (ZeroMQ): useful for {@link ZPump.Transformer message transformation}, lower performances
+ *      <li>with built-in high-level  {@link org.zeromq.ZProxy.ZPump}  (ZeroMQ): useful for {@link org.zeromq.ZProxy.ZPump.Transformer message transformation}, lower performances
  *      <li>with your own-custom proxy pump implementing a {@link Pump 1-method interface}
  *    </ul>
  * </ul><p>
@@ -331,7 +331,7 @@ public class ZProxy
      * Can be useful for programmatic interfaces.
      * Does not works with commands {@link #CONFIG CONFIG} and {@link #RESTART RESTART}.
      *
-     * @param command  the command to execute.
+     * @param command  the command to execute. Not null.
      * @param sync     true to read the status in synchronous way, false for asynchronous mode
      * @return the read status
      */
@@ -471,17 +471,22 @@ public class ZProxy
     // Waits for the completion of this proxy, like in old style.
     private String await()
     {
-        String status = status(true);
-        while (!Thread.currentThread().isInterrupted()) {
-            if (EXITED.equals(status)) {
-                break;
+        try {
+            String status = status(true);
+            while (!Thread.currentThread().isInterrupted()) {
+                if (EXITED.equals(status)) {
+                    break;
+                }
+                if (!agent.sign()) {
+                    return EXITED;
+                }
+                status = status(false);
             }
-            if (!agent.sign()) {
-                return EXITED;
-            }
-            status = status(false);
+            return status;
         }
-        return status;
+        catch (ZMQException e) {
+            return EXITED;
+        }
     }
 
     /**
@@ -501,18 +506,22 @@ public class ZProxy
      */
     public String status(boolean sync)
     {
-        String status = recvStatus();
+        try {
+            String status = recvStatus();
 
-        if (agent.send(STATUS) && sync) {
-            // wait for the response to emulate sync
-            status = recvStatus();
-            // AND refill a status
-            if (!agent.send(STATUS)) {
-                // TODO and in case of error? Let's handle it with exception for now
-                throw new RuntimeException("Unable to send the status message");
+            if (agent.send(STATUS) && sync) {
+                // wait for the response to emulate sync
+                status = recvStatus();
+                // AND refill a status
+                if (!agent.send(STATUS)) {
+                    return EXITED;
+                }
             }
+            return status;
         }
-        return status;
+        catch (ZMQException e) {
+            return EXITED;
+        }
     }
 
     // receives the last known state of the proxy
@@ -759,7 +768,7 @@ public class ZProxy
             assert (frontend != null);
             assert (backend != null);
 
-            return Arrays.asList(frontend, backend);
+            return Arrays.asList(frontend, backend, capture);
         }
 
         @Override
@@ -810,6 +819,7 @@ public class ZProxy
             else if (EXIT.equals(cmd)) {
                 // stops the proxy and the agent.
                 // the status will be sent at the end of the loop
+                state.restart = false;
             }
             else {
                 return provider.custom(pipe, cmd, frontend, backend, capture, args);

@@ -13,6 +13,7 @@ public class TestZProxy
     {
         final ZProxy.Proxy provider = new ZProxy.Proxy.SimpleProxy()
         {
+            @Override
             public Socket create(ZContext ctx, ZProxy.Plug place, Object[] extraArgs)
             {
                 Socket socket = null;
@@ -25,6 +26,7 @@ public class TestZProxy
                 return socket;
             }
 
+            @Override
             public void configure(Socket socket, ZProxy.Plug place, Object[] extrArgs)
             {
                 if (place == ZProxy.Plug.FRONT) {
@@ -74,8 +76,8 @@ public class TestZProxy
                 return super.custom(pipe, cmd, frontend, backend, capture, args);
             }
         };
-
-        ZProxy proxy = ZProxy.newProxy(null, "ProxyOne", provider, "ABRACADABRA", Arrays.asList("TEST"));
+        ZContext ctx = null;
+        ZProxy proxy = ZProxy.newProxy(ctx, "ProxyOne", provider, "ABRACADABRA", Arrays.asList("TEST"));
 
         final boolean async = false;
         final boolean sync = true;
@@ -99,11 +101,8 @@ public class TestZProxy
         msg.add("TEST-CONFIG");
         ZMsg recvd = proxy.configure(msg);
         Assert.assertEquals("TODO", recvd.popString());
-        System.out.println("Received config");
-        proxy.exit(async);
+        status = proxy.exit(sync);
 
-//        rc = pipe.send("boom ?!");
-//        assert (!rc);
-        System.out.println();
+        Assert.assertEquals("exit status is not good!", ZProxy.EXITED, status);
     }
 }

@@ -166,20 +166,26 @@ public interface ZAgent
             if (locked) {
                 return null;
             }
-            ZMsg msg = ZMsg.recvMsg(pipe, wait ? 0 : ZMQ.DONTWAIT);
-            if (msg == null) {
+            try {
+                ZMsg msg = ZMsg.recvMsg(pipe, wait ? 0 : ZMQ.DONTWAIT);
+                if (msg == null) {
+                    return null;
+                }
+
+                final ZFrame frame = msg.peek();
+                byte[] key = frame.getData();
+                if (lock != null && Arrays.equals(lock, key)) {
+                    locked = true;
+                    // this is the last message anyway, and not a one for a public display
+                    msg = null;
+                    pipe.close();
+                }
+                return msg;
+            }
+            catch (ZMQException e) {
+                locked = true;
                 return null;
             }
-
-            final ZFrame frame = msg.peek();
-            byte[] key = frame.getData();
-            if (lock != null && Arrays.equals(lock, key)) {
-                locked = true;
-                // this is the last message anyway, and not a one for a public display
-                msg = null;
-                pipe.close();
-            }
-            return msg;
         }
 
         @Override
