@@ -19,6 +19,8 @@
 
 package zmq;
 
+import java.util.UUID;
+
 import org.junit.Test;
 import static org.junit.Assert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
@@ -47,7 +49,7 @@ public class TestLastEndpoint
 
         bindAndVerify(sb, "tcp://127.0.0.1:5560");
         bindAndVerify(sb, "tcp://127.0.0.1:5561");
-        bindAndVerify(sb, "ipc:///tmp/testep");
+        bindAndVerify(sb, "ipc:///tmp/testep" + UUID.randomUUID().toString());
 
         sb.close();
         ctx.terminate();
