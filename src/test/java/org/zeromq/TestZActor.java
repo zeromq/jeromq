@@ -13,10 +13,6 @@ import zmq.ZError;
 
 public class TestZActor
 {
-    private class MiniActor extends ZActor.SimpleActor
-    {
-    }
-
     @Test
     public void testMinimalistic()
     {
@@ -80,7 +76,7 @@ public class TestZActor
     @Test
     public void testRecreateAgent()
     {
-        MiniActor acting = new MiniActor()
+        ZActor.Actor acting = new ZActor.SimpleActor()
         {
             private int counter = 0;
 
@@ -107,7 +103,7 @@ public class TestZActor
             }
 
             @Override
-            public boolean destroyed(Socket pipe, ZPoller poller)
+            public boolean destroyed(ZContext ctx, Socket pipe, ZPoller poller)
             {
                 if (counter == 2) {
                     System.out.print(".Acting Finished.");
