@@ -230,11 +230,12 @@ public class ZActor extends ZStar
          * Called when the current double has been destroyed.
          * Last in the order call of the double.
          *
-         * @param pipe   the backstage control pipe
+         * @param ctx    the context.
+         * @param pipe   the backstage control pipe.
          * @param poller the poller of the double.
          * @return <b>true to restart a new double</b>, false to stop the acting process
          */
-        boolean destroyed(Socket pipe, ZPoller poller);
+        boolean destroyed(ZContext ctx, Socket pipe, ZPoller poller);
 
         /**
          * Called when the stage is finished.
@@ -311,7 +312,7 @@ public class ZActor extends ZStar
         }
 
         @Override
-        public boolean destroyed(final Socket pipe, ZPoller poller)
+        public boolean destroyed(final ZContext ctx, final Socket pipe, final ZPoller poller)
         {
             // no restart
             return false;
@@ -407,10 +408,10 @@ public class ZActor extends ZStar
         }
 
         @Override
-        public boolean destroyed(final Socket pipe, final ZPoller poller)
+        public boolean destroyed(final ZContext ctx, final Socket pipe, final ZPoller poller)
         {
-            shadow.destroyed(pipe, poller);
-            return main.destroyed(pipe, poller);
+            shadow.destroyed(ctx, pipe, poller);
+            return main.destroyed(ctx, pipe, poller);
         }
 
         @Override
@@ -522,11 +523,15 @@ public class ZActor extends ZStar
         // actor responsible for processing messages
         private final Actor actor;
 
+        // context used for the closing of the sockets
+        private final ZContext context;
+
         // creates a new double
         public Double(final ZContext ctx, final Socket pipe,
                 final Selector selector, final Actor actor,
                 final Object[] args)
         {
+            this.context = ctx;
             this.pipe = pipe;
             this.actor = actor;
 
@@ -582,13 +587,13 @@ public class ZActor extends ZStar
                 iter.remove();
                 if (socket != null) {
                     poller.unregister(socket);
-                    socket.close();
+                    context.destroySocket(socket);
                     // call back the actor to inform that a socket has been closed.
                     actor.closed(socket);
                 }
             }
             // let the actor decide if the stage restarts a new double
-            return actor.destroyed(pipe, poller);
+            return actor.destroyed(context, pipe, poller);
         }
 
         @Override

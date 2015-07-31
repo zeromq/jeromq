@@ -137,14 +137,13 @@ public class ZContext implements Closeable
             return;
         }
 
-        if (sockets.contains(s)) {
+        if (sockets.remove(s)) {
             try {
                 s.setLinger(linger);
             }
             catch (ZError.CtxTerminatedException e) {
             }
             s.close();
-            sockets.remove(s);
         }
     }
 
