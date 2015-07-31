@@ -24,6 +24,7 @@ import java.nio.channels.Selector;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
@@ -200,6 +201,60 @@ public class ZStar implements ZAgent
     }
 
     /**
+     * Control for the end of the remote operations.
+     */
+    public static interface Exit
+    {
+        /**
+         * Causes the current thread to wait in blocking mode until the end of the remote operations,
+         * unless the thread is interrupted.
+         *
+         * <p>If the current thread:
+         * <ul>
+         * <li>has its interrupted status set on entry to this method; or
+         * <li>is {@linkplain Thread#interrupt interrupted} while waiting,
+         * </ul>
+         * then {@link InterruptedException} is thrown and the current thread's
+         * interrupted status is cleared.
+         *
+         * @throws InterruptedException if the current thread is interrupted
+         *         while waiting
+         */
+        void await() throws InterruptedException;
+
+        /**
+         * Causes the current thread to wait in blocking mode until the end of the remote operations,
+         * unless the thread is interrupted, or the specified waiting time elapses.
+         *
+         * <p>If the current thread:
+         * <ul>
+         * <li>has its interrupted status set on entry to this method; or
+         * <li>is {@linkplain Thread#interrupt interrupted} while waiting,
+         * </ul>
+         * then {@link InterruptedException} is thrown and the current thread's
+         * interrupted status is cleared.
+         *
+         * <p>If the specified waiting time elapses then the value {@code false}
+         * is returned.  If the time is less than or equal to zero, the method
+         * will not wait at all.
+         *
+         * @param timeout the maximum time to wait
+         * @param unit the time unit of the {@code timeout} argument
+         * @return {@code true} if the remote operations ended and {@code false}
+         *         if the waiting time elapsed before the remote operations ended
+         * @throws InterruptedException if the current thread is interrupted
+         *         while waiting
+         */
+        boolean await(long timeout, TimeUnit unit) throws InterruptedException;
+
+        /**
+         * Checks in non-blocking mode, if the remote operations have ended.
+         * @return true if the runnable where the remote operations occurred if finished, otherwise false.
+         */
+        boolean isExited();
+    }
+
+    /**
      * Returns the Corbeille endpoint.
      * Can be used to send or receive control messages to the distant star via Backstage.
      *
@@ -208,6 +263,15 @@ public class ZStar implements ZAgent
     public ZAgent agent()
     {
         return agent;
+    }
+
+    /**
+     * Returns the control of the proper exit of the remote operations.
+     * @return a structure used for checking the end of the remote operations.
+     */
+    public Exit exit()
+    {
+        return plateau;
     }
 
     /**
@@ -299,13 +363,16 @@ public class ZStar implements ZAgent
         train.addAll(Arrays.asList(bags));
 
         // now going to the plateau
-        Socket phone = ZThread.fork(chef, new Plateau(), train.toArray());
+        Socket phone = ZThread.fork(chef, plateau, train.toArray());
 
         agent = agent(phone, motdelafin);
     }
 
     // communicating agent with the star for the Corbeille side
     private final ZAgent agent;
+
+    // distant runnable where acting takes place
+    private final Plateau plateau = new Plateau();
 
     /**
      * Creates a new agent for the star.
@@ -325,11 +392,14 @@ public class ZStar implements ZAgent
 
     // the plateau where the acting will take place (stage and backstage), or
     // the forked runnable containing the loop processing all messages in the background
-    private static final class Plateau implements IAttachedRunnable
+    private static final class Plateau implements IAttachedRunnable, Exit
     {
         private static final AtomicInteger shows = new AtomicInteger();
         // id if unnamed
         private final int number = shows.incrementAndGet();
+
+        // waiting-flag for the end of the remote operations
+        private final CountDownLatch exit = new CountDownLatch(1);
 
         @Override
         public void run(final Object[] train,
@@ -380,34 +450,43 @@ public class ZStar implements ZAgent
                 // TODO enhance error
             }
             finally {
-                // star is interviewed about this event
-                boolean tell = star.interview(mic);
-
-                if (tell && gossip != null) {
-                    // inform the Corbeille side of the future closing of the plateau and the vanishing of the star
-                    mic.send(gossip);
-                }
-
-                // we are not in a hurry at this point when cleaning up the remains of a good show ...
-                star.party(chef);
-                star = null;
-                if (entourage != null) {
-                    entourage.party(chef);
-                }
-                // Sober again ...
-
-                // show is over, time to close
-                chef.close();
-                if (producer != null) {
-                    // this is a self-generated context, destroy it
-                    producer.close();
-                }
                 try {
+                    // star is interviewed about this event
+                    boolean tell = star.interview(mic);
+
+                    if (tell && gossip != null) {
+                        // inform the Corbeille side of the future closing of the plateau and the vanishing of the star
+                        try {
+                            mic.send(gossip);
+                        }
+                        catch (Exception e) {
+                            // really ?
+                            e.printStackTrace();
+                        }
+                    }
+
+                    // we are not in a hurry at this point when cleaning up the remains of a good show ...
+                    star.party(chef);
+                    star = null;
+                    if (entourage != null) {
+                        entourage.party(chef);
+                    }
+                    // Sober again ...
+
+                    // show is over, time to close
+                    chef.close();
+                    if (producer != null) {
+                        // this is a self-generated context, destroy it
+                        producer.close();
+                    }
                     feather.destroy(story);
                 }
                 catch (IOException e) {
-                    // really ?
                     e.printStackTrace();
+                    // TODO enhance error
+                }
+                finally {
+                    exit.countDown();
                 }
             }
         }
@@ -457,6 +536,24 @@ public class ZStar implements ZAgent
         /* | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | |*/
         /******************************************************************************/
         // NB: never use green color on the stage floor of a french theater. Or something bad will happen...
+
+        @Override
+        public void await() throws InterruptedException
+        {
+            exit.await();
+        }
+
+        @Override
+        public boolean await(long timeout, TimeUnit unit) throws InterruptedException
+        {
+            return exit.await(timeout, unit);
+        }
+
+        @Override
+        public boolean isExited()
+        {
+            return exit.getCount() == 0;
+        }
     }
 
     @Override
