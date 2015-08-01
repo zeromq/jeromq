@@ -40,6 +40,12 @@ abstract class PollerBase
             this.sink = sink;
             this.id = id;
         }
+
+        @Override
+        public String toString()
+        {
+            return "TimerInfo [id=" + id + ", sink=" + sink + "]";
+        }
     }
     private final Map<Long, TimerInfo> timers;
     private final Map<Long, TimerInfo> addingTimers;

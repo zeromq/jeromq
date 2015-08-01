@@ -46,22 +46,22 @@ public class TcpConnecter extends Own implements IPollEvents
     private boolean handleValid;
 
     //  If true, connecter is waiting a while before trying to connect.
-    private boolean delayedStart;
+    private final boolean delayedStart;
 
     //  True iff a timer has been started.
     private boolean timerStarted;
 
     //  Reference to the session we belong to.
-    private SessionBase session;
+    private final SessionBase session;
 
     //  Current reconnect ivl, updated for backoff strategy
     private int currentReconnectIvl;
 
     // String representation of endpoint to connect to
-    private Address address;
+    private final Address address;
 
     // Socket
-    private SocketBase socket;
+    private final SocketBase socket;
 
     public TcpConnecter(IOThread ioThread,
       SessionBase session, final Options options,
@@ -102,7 +102,7 @@ public class TcpConnecter extends Own implements IPollEvents
     }
 
     @Override
-    public void processTerm(int linger)
+    protected void processTerm(int linger)
     {
         if (timerStarted) {
             ioObject.cancelTimer(RECONNECT_TIMER_ID);
@@ -346,5 +346,11 @@ public class TcpConnecter extends Own implements IPollEvents
             socket.eventCloseFailed(address.toString(), ZError.exccode(e));
         }
         handle = null;
+    }
+
+    @Override
+    public String toString()
+    {
+        return super.toString() + "[" + options.socketId + "]";
     }
 }

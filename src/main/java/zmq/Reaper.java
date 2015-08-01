@@ -22,6 +22,7 @@ package zmq;
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.channels.SelectableChannel;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Reaper extends ZObject implements IPollEvents, Closeable
 {
@@ -29,7 +30,7 @@ public class Reaper extends ZObject implements IPollEvents, Closeable
     private final Mailbox mailbox;
 
     //  Handle associated with mailbox' file descriptor.
-    private SelectableChannel mailboxHandle;
+    private final SelectableChannel mailboxHandle;
 
     //  I/O multiplexing is performed using a poller object.
     private final Poller poller;
@@ -38,7 +39,7 @@ public class Reaper extends ZObject implements IPollEvents, Closeable
     private int sockets;
 
     //  If true, we were already asked to terminate.
-    private volatile boolean terminating;
+    private final AtomicBoolean terminating = new AtomicBoolean();
 
     private String name;
 
@@ -46,7 +47,6 @@ public class Reaper extends ZObject implements IPollEvents, Closeable
     {
         super(ctx, tid);
         sockets = 0;
-        terminating = false;
         name = "reaper-" + tid;
         poller = new Poller(name);
 
@@ -76,7 +76,7 @@ public class Reaper extends ZObject implements IPollEvents, Closeable
 
     public void stop()
     {
-        if (!terminating) {
+        if (!terminating.get()) {
             sendStop();
         }
     }
@@ -123,7 +123,7 @@ public class Reaper extends ZObject implements IPollEvents, Closeable
     @Override
     protected void processStop()
     {
-        terminating = true;
+        terminating.set(true);
 
         //  If there are no sockets being reaped finish immediately.
         if (sockets == 0) {
@@ -149,7 +149,7 @@ public class Reaper extends ZObject implements IPollEvents, Closeable
 
         //  If reaped was already asked to terminate and there are no more sockets,
         //  finish immediately.
-        if (sockets == 0 && terminating) {
+        if (sockets == 0 && terminating.get()) {
             sendDone();
             poller.removeHandle(mailboxHandle);
             poller.stop();

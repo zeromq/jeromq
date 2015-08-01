@@ -38,8 +38,8 @@ public class Msg
     private Type type;
 
     private int size;
-    private byte[] data;
-    private ByteBuffer buf;
+    private final byte[] data;
+    private final ByteBuffer buf;
 
     public Msg()
     {
