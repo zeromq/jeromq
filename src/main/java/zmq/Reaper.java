@@ -115,10 +115,10 @@ public class Reaper extends ZObject implements IPollEvents, Closeable
     @Override
     protected void processReap(SocketBase socket)
     {
+        ++socketsReaping;
+
         //  Add the socket to the poller.
         socket.startReaping(poller);
-
-        ++socketsReaping;
     }
 
     @Override
