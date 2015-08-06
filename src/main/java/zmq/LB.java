@@ -20,6 +20,7 @@
 package zmq;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class LB
@@ -70,7 +71,7 @@ public class LB
         //  accordingly.
         if (index < active) {
             active--;
-            Utils.swap(pipes, index, active);
+            Collections.swap(pipes, index, active);
             if (current == active) {
                 current = 0;
             }
@@ -81,7 +82,7 @@ public class LB
     public void activated(Pipe pipe)
     {
         //  Move the pipe to the list of active pipes.
-        Utils.swap(pipes, pipes.indexOf(pipe), active);
+        Collections.swap(pipes, pipes.indexOf(pipe), active);
         active++;
     }
 
@@ -105,7 +106,7 @@ public class LB
             assert (!more);
             active--;
             if (current < active) {
-                Utils.swap(pipes, current, active);
+                Collections.swap(pipes, current, active);
             }
             else {
                 current = 0;
@@ -147,7 +148,7 @@ public class LB
 
             //  Deactivate the pipe.
             active--;
-            Utils.swap(pipes, current, active);
+            Collections.swap(pipes, current, active);
             if (current == active) {
                 current = 0;
             }

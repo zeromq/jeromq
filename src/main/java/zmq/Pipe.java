@@ -541,6 +541,12 @@ class Pipe extends ZObject
         sendHiccup(peer, inpipe);
     }
 
+    public boolean checkHwm()
+    {
+        boolean full = hwm > 0 && (msgsWritten - peersMsgsRead) >= (hwm - 1);
+        return !full;
+    }
+
     @Override
     public String toString()
     {
