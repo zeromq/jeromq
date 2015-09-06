@@ -341,6 +341,7 @@ public class ZLoop
                     }
                 }
             }
+            zombies.clear();
             //  Now handle any new timers added inside the loop
             timers.addAll(newTimers);
             newTimers.clear();
