@@ -20,8 +20,6 @@
 package zmq;
 
 import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.channels.SelectableChannel;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -324,20 +322,9 @@ public abstract class SocketBase extends Own
             return false;
         }
 
-        //  Parse addr_ string.
-        URI uri;
-        try {
-            uri = new URI(addr);
-        }
-        catch (URISyntaxException e) {
-            throw new IllegalArgumentException(e);
-        }
-        String protocol = uri.getScheme();
-        String address = uri.getAuthority();
-        String path = uri.getPath();
-        if (address == null) {
-            address = path;
-        }
+        SimpleURI uri = SimpleURI.create(addr);
+        String protocol = uri.getProtocol();
+        String address = uri.getAddress();
 
         checkProtocol(protocol);
 
@@ -415,21 +402,9 @@ public abstract class SocketBase extends Own
             return false;
         }
 
-        //  Parse addr_ string.
-        URI uri;
-        try {
-            uri = new URI(addr);
-        }
-        catch (URISyntaxException e) {
-            throw new IllegalArgumentException(e);
-        }
-
-        String protocol = uri.getScheme();
-        String address = uri.getAuthority();
-        String path = uri.getPath();
-        if (address == null) {
-            address = path;
-        }
+        SimpleURI uri = SimpleURI.create(addr);
+        String protocol = uri.getProtocol();
+        String address = uri.getAddress();
 
         checkProtocol(protocol);
 
@@ -569,16 +544,9 @@ public abstract class SocketBase extends Own
             return false;
         }
 
-        //  Parse addr_ string.
-        URI uri;
-        try {
-            uri = new URI(addr);
-        }
-        catch (URISyntaxException e) {
-            throw new IllegalArgumentException(e);
-        }
+        SimpleURI uri = SimpleURI.create(addr);
+        String protocol = uri.getProtocol();
 
-        String protocol = uri.getScheme();
         // Disconnect an inproc socket
         if (protocol.equals("inproc")) {
             if (!inprocs.containsKey(addr)) {
@@ -1089,20 +1057,8 @@ public abstract class SocketBase extends Own
             return true;
         }
 
-        //  Parse addr_ string.
-        URI uri;
-        try {
-            uri = new URI(addr);
-        }
-        catch (URISyntaxException e) {
-            throw new IllegalArgumentException(e);
-        }
-        String protocol = uri.getScheme();
-        String address = uri.getAuthority();
-        String path = uri.getPath();
-        if (address == null) {
-            address = path;
-        }
+        SimpleURI uri = SimpleURI.create(addr);
+        String protocol = uri.getProtocol();
 
         checkProtocol(protocol);
 
@@ -1289,5 +1245,42 @@ public abstract class SocketBase extends Own
     public int errno()
     {
         return errno.get();
+    }
+
+    private static class SimpleURI
+    {
+        private final String protocol;
+        private final String address;
+
+        private SimpleURI(String protocol, String address)
+        {
+            this.protocol = protocol;
+            this.address = address;
+        }
+
+        public static SimpleURI create(String value)
+        {
+            int pos = value.indexOf("://");
+            if (pos < 0) {
+                throw new IllegalArgumentException("Invalid URI: " + value);
+            }
+            String protocol = value.substring(0, pos);
+            String address = value.substring(pos + 3);
+
+            if (protocol.isEmpty() || address.isEmpty()) {
+                throw new IllegalArgumentException("Invalid URI: " + value);
+            }
+            return new SimpleURI(protocol, address);
+        }
+
+        public String getProtocol()
+        {
+            return protocol;
+        }
+
+        public String getAddress()
+        {
+            return address;
+        }
     }
 }
