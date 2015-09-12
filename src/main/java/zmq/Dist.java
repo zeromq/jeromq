@@ -20,6 +20,7 @@
 package zmq;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 class Dist
@@ -64,13 +65,13 @@ class Dist
         if (more) {
             pipes.add(pipe);
             //pipes.swap (eligible, pipes.size() - 1);
-            Utils.swap(pipes, eligible, pipes.size() - 1);
+            Collections.swap(pipes, eligible, pipes.size() - 1);
             eligible++;
         }
         else {
             pipes.add(pipe);
             //pipes.swap (active, pipes.size() - 1);
-            Utils.swap(pipes, active, pipes.size() - 1);
+            Collections.swap(pipes, active, pipes.size() - 1);
             active++;
             eligible++;
         }
@@ -92,7 +93,7 @@ class Dist
         }
 
         //  Mark the pipe as matching.
-        Utils.swap(pipes, idx, matching);
+        Collections.swap(pipes, idx, matching);
         matching++;
     }
 
@@ -108,15 +109,15 @@ class Dist
         //  Remove the pipe from the list; adjust number of matching, active and/or
         //  eligible pipes accordingly.
         if (pipes.indexOf(pipe) < matching) {
-            Utils.swap(pipes, pipes.indexOf(pipe), matching - 1);
+            Collections.swap(pipes, pipes.indexOf(pipe), matching - 1);
             matching--;
         }
         if (pipes.indexOf(pipe) < active) {
-            Utils.swap(pipes, pipes.indexOf(pipe), active - 1);
+            Collections.swap(pipes, pipes.indexOf(pipe), active - 1);
             active--;
         }
         if (pipes.indexOf(pipe) < eligible) {
-            Utils.swap(pipes, pipes.indexOf(pipe), eligible - 1);
+            Collections.swap(pipes, pipes.indexOf(pipe), eligible - 1);
             eligible--;
         }
         pipes.remove(pipe);
@@ -126,13 +127,13 @@ class Dist
     public void activated(Pipe pipe)
     {
         //  Move the pipe from passive to eligible state.
-        Utils.swap(pipes, pipes.indexOf(pipe), eligible);
+        Collections.swap(pipes, pipes.indexOf(pipe), eligible);
         eligible++;
 
         //  If there's no message being sent at the moment, move it to
         //  the active state.
         if (!more) {
-            Utils.swap(pipes, eligible - 1, active);
+            Collections.swap(pipes, eligible - 1, active);
             active++;
         }
     }
@@ -188,16 +189,26 @@ class Dist
     private boolean write(Pipe pipe, Msg msg)
     {
         if (!pipe.write(msg)) {
-            Utils.swap(pipes, pipes.indexOf(pipe), matching - 1);
+            Collections.swap(pipes, pipes.indexOf(pipe), matching - 1);
             matching--;
-            Utils.swap(pipes, pipes.indexOf(pipe), active - 1);
+            Collections.swap(pipes, pipes.indexOf(pipe), active - 1);
             active--;
-            Utils.swap(pipes, active, eligible - 1);
+            Collections.swap(pipes, active, eligible - 1);
             eligible--;
             return false;
         }
         if (!msg.hasMore()) {
             pipe.flush();
+        }
+        return true;
+    }
+
+    public boolean checkHwm()
+    {
+        for (int i = 0; i < matching; ++i) {
+            if (!(pipes.get(i).checkHwm())) {
+                return false;
+            }
         }
         return true;
     }
