@@ -1071,7 +1071,7 @@ public class ZMQ
          * If two clients use the same identity when connecting to a ROUTER, the
          * results shall depend on the ZMQ_ROUTER_HANDOVER option setting
          *
-         * @param handlover A value of false, (default) the ROUTER socket shall reject clients trying to connect with an already-used identity
+         * @param handover A value of false, (default) the ROUTER socket shall reject clients trying to connect with an already-used identity
          *                  A value of true, the ROUTER socket shall hand-over the connection to the new client and disconnect the existing one
          */
         public final void setRouterHandover(boolean handlover)
