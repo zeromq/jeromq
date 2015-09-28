@@ -1074,7 +1074,7 @@ public class ZMQ
          * @param handlover A value of false, (default) the ROUTER socket shall reject clients trying to connect with an already-used identity
          *                  A value of true, the ROUTER socket shall hand-over the connection to the new client and disconnect the existing one
          */
-        public final void setRouterHandlover(boolean handlover)
+        public final void setRouterHandover(boolean handlover)
         {
             setsockopt(zmq.ZMQ.ZMQ_ROUTER_HANDOVER, handlover ? 1 : 0);
         }
