@@ -35,7 +35,7 @@ public class Reaper extends ZObject implements IPollEvents, Closeable
     private final Poller poller;
 
     //  Number of sockets being reaped at the moment.
-    private int sockets;
+    private int socketsReaping;
 
     //  If true, we were already asked to terminate.
     private volatile boolean terminating;
@@ -45,7 +45,7 @@ public class Reaper extends ZObject implements IPollEvents, Closeable
     public Reaper(Ctx ctx, int tid)
     {
         super(ctx, tid);
-        sockets = 0;
+        socketsReaping = 0;
         terminating = false;
         name = "reaper-" + tid;
         poller = new Poller(name);
@@ -126,33 +126,36 @@ public class Reaper extends ZObject implements IPollEvents, Closeable
         terminating = true;
 
         //  If there are no sockets being reaped finish immediately.
-        if (sockets == 0) {
-            sendDone();
-            poller.removeHandle(mailboxHandle);
-            poller.stop();
+        if (socketsReaping == 0) {
+            finishTerminating();
         }
     }
 
     @Override
     protected void processReap(SocketBase socket)
     {
+        ++socketsReaping;
+
         //  Add the socket to the poller.
         socket.startReaping(poller);
-
-        ++sockets;
     }
 
     @Override
     protected void processReaped()
     {
-        --sockets;
+        --socketsReaping;
 
         //  If reaped was already asked to terminate and there are no more sockets,
         //  finish immediately.
-        if (sockets == 0 && terminating) {
-            sendDone();
-            poller.removeHandle(mailboxHandle);
-            poller.stop();
+        if (socketsReaping == 0 && terminating) {
+            finishTerminating();
         }
+    }
+
+    private void finishTerminating()
+    {
+        sendDone();
+        poller.removeHandle(mailboxHandle);
+        poller.stop();
     }
 }
