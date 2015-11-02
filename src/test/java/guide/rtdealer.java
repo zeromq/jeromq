@@ -24,6 +24,7 @@ import org.zeromq.ZMQ.Context;
 import org.zeromq.ZMQ.Socket;
 
 import java.util.Random;
+import java.util.UUID;
 
 /**
  * ROUTER-TO-REQ example
@@ -40,7 +41,7 @@ public class rtdealer
 
             Context context = ZMQ.context(1);
             Socket worker = context.socket(ZMQ.DEALER);
-            ZHelper.setId (worker);  //  Set a printable identity
+            worker.setIdentity(UUID.randomUUID().toString().getBytes());
 
             worker.connect("tcp://localhost:5671");
 
