@@ -71,8 +71,8 @@ public class ZBeacon
         broadcastClient.setDaemon(true);
     }
 
-    public setUncaughtExceptionHandlers(UncaughtExceptionHandler clientHandler,
-                UncaughtExceptionHandler serverHandler) {
+    public void setUncaughtExceptionHandlers(Thread.UncaughtExceptionHandler clientHandler, Thread.UncaughtExceptionHandler serverHandler)
+    {
         broadcastClient.setUncaughtExceptionHandler(clientHandler);
         broadcastServer.setUncaughtExceptionHandler(serverHandler);
     }
