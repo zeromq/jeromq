@@ -53,7 +53,7 @@ public class YPipe<T>
         f = pos;
         r = pos;
         w = pos;
-        c = new AtomicInteger(queue.backPos());
+        c = new AtomicInteger(pos);
     }
 
     //  Write an item to the pipe.  Don't flush it yet. If incomplete is
