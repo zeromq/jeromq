@@ -208,6 +208,9 @@ public class ZMsg implements Iterable<ZFrame>, Deque<ZFrame>
         while (i.hasNext()) {
             ZFrame f = i.next();
             ret = f.sendAndKeep(socket, (i.hasNext()) ? ZFrame.MORE : 0);
+            if (!ret) {
+                break;
+            }
         }
         if (destroy) {
             destroy();
