@@ -38,7 +38,7 @@ public class Msg
     private Type type;
 
     private int size;
-    private final byte[] data;
+    private byte[] data;
     private final ByteBuffer buf;
 
     public Msg()
@@ -76,13 +76,10 @@ public class Msg
         if (src == null) {
             throw new IllegalArgumentException("ByteBuffer cannot be null");
         }
-        if (src.position() > 0) {
-            throw new IllegalArgumentException("ByteBuffer position is not zero, did you forget to flip it?");
-        }
         this.type = Type.DATA;
         this.flags = 0;
         this.buf = src.duplicate();
-        if (buf.hasArray()) {
+        if (buf.hasArray() && buf.position() == 0 && buf.limit() == buf.capacity()) {
             this.data = buf.array();
         }
         else {
@@ -100,8 +97,10 @@ public class Msg
         this.flags = m.flags;
         this.size = m.size;
         this.buf = m.buf != null ? m.buf.duplicate() : null;
-        this.data = new byte[this.size];
-        System.arraycopy(m.data, 0, this.data, 0, m.size);
+        if (m.data != null) {
+           this.data = new byte[this.size];
+           System.arraycopy(m.data, 0, this.data, 0, m.size);
+        }
     }
 
     public boolean isIdentity()
@@ -142,11 +141,9 @@ public class Msg
 
     public byte[] data()
     {
-        if (buf.isDirect()) {
-            int length = buf.remaining();
-            byte[] bytes = new byte[length];
-            buf.duplicate().get(bytes);
-            return bytes;
+        if (data == null) {
+            data = new byte[buf.remaining()];
+            buf.duplicate().get(data);
         }
         return data;
     }
