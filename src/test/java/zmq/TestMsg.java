@@ -30,16 +30,6 @@ public class TestMsg
         new Msg((ByteBuffer) null);
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void shouldThrowForBufferWithWrongPosition()
-    {
-        ByteBuffer buffer = ByteBuffer.allocate(10);
-        buffer.putChar('a');
-        buffer.putChar('b');
-        buffer.putChar('c');
-        new Msg(buffer);
-    }
-
     @Test
     public void shouldWorkForFlippedBuffers()
     {
