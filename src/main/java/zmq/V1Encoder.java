@@ -64,8 +64,7 @@ public class V1Encoder extends EncoderBase
     private boolean sizeReady()
     {
         //  Write message body into the buffer.
-        nextStep(inProgress.data(), inProgress.size(),
-                MESSAGE_READY, !inProgress.hasMore());
+        nextStep(inProgress.buf(), MESSAGE_READY, !inProgress.hasMore());
         return true;
     }
 
@@ -100,9 +99,8 @@ public class V1Encoder extends EncoderBase
         final int size = inProgress.size();
         if (size > 255) {
             ByteBuffer b = ByteBuffer.wrap(tmpbuf);
-            b.position(1);
-            b.putLong(size);
-            nextStep(tmpbuf, 9, SIZE_READY, false);
+            b.putLong(1, size);
+            nextStep(b, SIZE_READY, false);
         }
         else {
             tmpbuf[1] = (byte) (size);
