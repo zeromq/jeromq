@@ -137,7 +137,7 @@ public class TestEncoder
         public CustomEncoder(int bufsize)
         {
             super(bufsize);
-            nextStep(null, read_body, true);
+            nextStep((Msg) null, read_body, true);
         }
 
         @Override
