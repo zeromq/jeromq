@@ -35,11 +35,7 @@ import java.nio.ByteBuffer;
 public abstract class DecoderBase implements IDecoder
 {
     //  Where to store the read data.
-    private byte[] readBuf;
-    private int readPos;
-
-    //  How much data to read before taking next step.
-    protected int toRead;
+    private ByteBuffer readBuf;
 
     //  The buffer for data to decode.
     private int bufsize;
@@ -52,7 +48,6 @@ public abstract class DecoderBase implements IDecoder
     public DecoderBase(int bufsize)
     {
         state = -1;
-        toRead = 0;
         this.bufsize = bufsize;
         if (bufsize > 0) {
             buf = ByteBuffer.allocateDirect(bufsize);
@@ -73,18 +68,15 @@ public abstract class DecoderBase implements IDecoder
         //  other engines running in the same I/O thread for excessive
         //  amounts of time.
 
-        ByteBuffer b;
-        if (toRead >= bufsize) {
+        if (readBuf.remaining() >= bufsize) {
             zeroCopy = true;
-            b = ByteBuffer.wrap(readBuf);
-            b.position(readPos);
+            return readBuf.duplicate();
         }
         else {
             zeroCopy = false;
-            b = buf;
-            b.clear();
+            buf.clear();
+            return buf;
         }
-        return b;
     }
 
     //  Processes the data in the buffer previously allocated using
@@ -102,10 +94,9 @@ public abstract class DecoderBase implements IDecoder
         //  is required. Also, run the state machine in case all the data
         //  were processed.
         if (zeroCopy) {
-            readPos += size;
-            toRead -= size;
+            readBuf.position(readBuf.position() + size);
 
-            while (toRead == 0) {
+            while (readBuf.remaining() == 0) {
                 if (!next()) {
                     if (state() < 0) {
                         return -1;
@@ -120,7 +111,7 @@ public abstract class DecoderBase implements IDecoder
         while (true) {
             //  Try to get more space in the message to fill in.
             //  If none is available, return.
-            while (toRead == 0) {
+            while (readBuf.remaining() == 0) {
                 if (!next()) {
                     if (state() < 0) {
                         return -1;
@@ -136,24 +127,30 @@ public abstract class DecoderBase implements IDecoder
             }
 
             //  Copy the data from buffer to the message.
-            int toCopy = Math.min(toRead, size - pos);
-            buf.get(readBuf, readPos, toCopy);
-            readPos += toCopy;
+            int toCopy = Math.min(readBuf.remaining(), size - pos);
+            int limit = buf.limit();
+            buf.limit(buf.position() + toCopy);
+            readBuf.put(buf);
+            buf.limit(limit);
             pos += toCopy;
-            toRead -= toCopy;
         }
     }
 
     protected void nextStep(Msg msg, int state)
     {
-        nextStep(msg.data(), msg.size(), state);
+        nextStep(msg.buf(), state);
     }
 
     protected void nextStep(byte[] buf, int toRead, int state)
     {
+        readBuf = ByteBuffer.wrap(buf);
+        readBuf.limit(toRead);
+        this.state = state;
+    }
+
+    protected void nextStep(ByteBuffer buf, int state)
+    {
         readBuf = buf;
-        readPos = 0;
-        this.toRead = toRead;
         this.state = state;
     }
 
@@ -183,7 +180,7 @@ public abstract class DecoderBase implements IDecoder
             return false;
         }
 
-        while (toRead == 0) {
+        while (readBuf.remaining() == 0) {
             if (!next()) {
                 return next();
             }
