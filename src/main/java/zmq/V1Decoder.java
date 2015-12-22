@@ -92,7 +92,7 @@ public class V1Decoder extends DecoderBase
         inProgress = new Msg(size);
 
         inProgress.setFlags(msgFlags);
-        nextStep(inProgress.data(), inProgress.size(),
+        nextStep(inProgress,
                 MESSAGE_READY);
 
         return true;
@@ -124,7 +124,7 @@ public class V1Decoder extends DecoderBase
         inProgress = new Msg((int) msgSize);
 
         inProgress.setFlags(msgFlags);
-        nextStep(inProgress.data(), inProgress.size(),
+        nextStep(inProgress,
                 MESSAGE_READY);
 
         return true;

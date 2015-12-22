@@ -40,6 +40,10 @@ public class Msg
     private int size;
     private byte[] data;
     private final ByteBuffer buf;
+    // keep track of relative write position
+    private int writeIndex = 0;
+    // keep track of relative read position
+    private int readIndex = 0;
 
     public Msg()
     {
@@ -165,7 +169,7 @@ public class Msg
 
     public byte get()
     {
-        return buf.get();
+        return get(readIndex++);
     }
 
     public byte get(int index)
@@ -175,8 +179,7 @@ public class Msg
 
     public Msg put(byte b)
     {
-        buf.put(b);
-        return this;
+        return put(writeIndex++, b);
     }
 
     public Msg put(int index, byte b)
@@ -195,34 +198,44 @@ public class Msg
         if (src == null) {
             return this;
         }
-        buf.put(src, off, len);
+        ByteBuffer dup = buf.duplicate();
+        dup.position(writeIndex);
+        writeIndex += len;
+        dup.put(src, off, len);
         return this;
     }
 
     public Msg put(ByteBuffer src)
     {
-        buf.put(src);
+        ByteBuffer dup = buf.duplicate();
+        dup.position(writeIndex);
+        writeIndex += Math.min(dup.remaining(), src.remaining());
+        dup.put(src);
         return this;
     }
 
     public int getBytes(int index, byte[] dst, int off, int len)
     {
-        int count = Math.min(len, size);
-        if (buf.isDirect()) {
+        int count = Math.min(len, size - index);
+        if (data == null) {
             ByteBuffer dup = buf.duplicate();
             dup.position(index);
             dup.put(dst, off, count);
-            return count;
         }
-        System.arraycopy(data, index, dst, off, count);
+        else {
+           System.arraycopy(data, index, dst, off, count);
+        }
+
         return count;
     }
 
     public int getBytes(int index, ByteBuffer bb, int len)
     {
-        int count = Math.min(bb.remaining(), size - index);
+        ByteBuffer dup = buf.duplicate();
+        dup.position(index);
+        int count = Math.min(bb.remaining(), dup.remaining());
         count = Math.min(count, len);
-        bb.put(buf);
+        bb.put(dup);
         return count;
     }
 

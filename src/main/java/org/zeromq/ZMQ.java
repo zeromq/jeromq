@@ -1404,7 +1404,7 @@ public class ZMQ
             zmq.Msg msg = base.recv(flags);
 
             if (msg != null) {
-                buffer.put(msg.data());
+                buffer.put(msg.buf());
                 return msg.size();
             }
 

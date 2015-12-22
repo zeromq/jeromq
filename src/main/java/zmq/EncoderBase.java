@@ -25,7 +25,7 @@ import java.nio.channels.FileChannel;
 public abstract class EncoderBase implements IEncoder
 {
     //  Where to get the data to write from.
-    private byte[] writeBuf;
+    private ByteBuffer writeBuf;
     private FileChannel writeChannel;
     private int writePos;
 
@@ -104,9 +104,9 @@ public abstract class EncoderBase implements IEncoder
             //  amounts of time.
             if (this.buffer.position() == 0 && toWrite >= bufferSize) {
                 Transfer t;
-                ByteBuffer b = ByteBuffer.wrap(writeBuf);
-                b.position(writePos);
-                t = new Transfer.ByteBufferTransfer(b);
+                writeBuf.position(writePos);
+                writeBuf.limit(writePos + toWrite);
+                t = new Transfer.ByteBufferTransfer(writeBuf);
                 writePos = 0;
                 toWrite = 0;
 
@@ -116,7 +116,9 @@ public abstract class EncoderBase implements IEncoder
             //  Copy data to the buffer. If the buffer is full, return.
             int toCopy = Math.min(toWrite, buffer.remaining());
             if (toCopy > 0) {
-                buffer.put(writeBuf, writePos, toCopy);
+                writeBuf.position(writePos);
+                writeBuf.limit(writePos + toCopy);
+                buffer.put(writeBuf);
                 writePos += toCopy;
                 toWrite -= toCopy;
             }
@@ -160,19 +162,30 @@ public abstract class EncoderBase implements IEncoder
             nextStep(null, 0, state, beginning);
         }
         else {
-            nextStep(msg.data(), msg.size(), state, beginning);
+            nextStep(msg.buf(), state, beginning);
         }
     }
 
     protected void nextStep(byte[] buf, int toWrite,
                             int next, boolean beginning)
     {
-        writeBuf = buf;
+        writeBuf = buf != null ? ByteBuffer.wrap(buf) : null;
         writeChannel = null;
         writePos = 0;
         this.toWrite = toWrite;
         this.next = next;
         this.beginning = beginning;
+    }
+
+    protected void nextStep(ByteBuffer buf,
+          int next, boolean beginning)
+    {
+       writeBuf = buf;
+       writeChannel = null;
+       writePos = buf.position();
+       this.toWrite = buf.remaining();
+       this.next = next;
+       this.beginning = beginning;
     }
 
     protected void nextStep(FileChannel ch, long pos, long toWrite,

@@ -166,6 +166,102 @@ public class TestZMQ
 
     }
 
+    @Test
+    public void testByteBufferLarge() throws InterruptedException, CharacterCodingException
+    {
+        ZMQ.Context context = ZMQ.context(1);
+        int[] array = new int[2048 * 2000];
+        for (int i = 0; i < array.length; ++i) {
+           array[i] = i;
+        }
+        ByteBuffer bSend = ByteBuffer.allocate(Integer.SIZE / 8 * array.length).order(ByteOrder.nativeOrder());
+        bSend.asIntBuffer().put(array);
+        ByteBuffer bRec = ByteBuffer.allocate(bSend.capacity()).order(ByteOrder.nativeOrder());
+        int[] recArray = new int[array.length];
+
+        ZMQ.Socket push = null;
+        ZMQ.Socket pull = null;
+        try {
+            push = context.socket(ZMQ.PUSH);
+            pull = context.socket(ZMQ.PULL);
+            pull.bind("tcp://*:12345");
+            push.connect("tcp://localhost:12345");
+            push.sendByteBuffer(bSend, 0);
+            pull.recvByteBuffer(bRec, 0);
+            bRec.flip();
+            bRec.asIntBuffer().get(recArray);
+            assertArrayEquals(array, recArray);
+        }
+        finally {
+            try {
+                push.close();
+            }
+            catch (Exception ignore) {
+                ignore.printStackTrace();
+            }
+            try {
+                pull.close();
+            }
+            catch (Exception ignore) {
+                ignore.printStackTrace();
+            }
+            try {
+                context.term();
+            }
+            catch (Exception ignore) {
+                ignore.printStackTrace();
+            }
+        }
+    }
+
+    @Test
+    public void testByteBufferLargeDirect() throws InterruptedException, CharacterCodingException
+    {
+        ZMQ.Context context = ZMQ.context(1);
+        int[] array = new int[2048 * 2000];
+        for (int i = 0; i < array.length; ++i) {
+           array[i] = i;
+        }
+        ByteBuffer bSend = ByteBuffer.allocateDirect(Integer.SIZE / 8 * array.length).order(ByteOrder.nativeOrder());
+        bSend.asIntBuffer().put(array);
+        ByteBuffer bRec = ByteBuffer.allocateDirect(bSend.capacity()).order(ByteOrder.nativeOrder());
+        int[] recArray = new int[array.length];
+
+        ZMQ.Socket push = null;
+        ZMQ.Socket pull = null;
+        try {
+            push = context.socket(ZMQ.PUSH);
+            pull = context.socket(ZMQ.PULL);
+            pull.bind("tcp://*:12345");
+            push.connect("tcp://localhost:12345");
+            push.sendByteBuffer(bSend, 0);
+            pull.recvByteBuffer(bRec, 0);
+            bRec.flip();
+            bRec.asIntBuffer().get(recArray);
+            assertArrayEquals(array, recArray);
+        }
+        finally {
+            try {
+                push.close();
+            }
+            catch (Exception ignore) {
+                ignore.printStackTrace();
+            }
+            try {
+                pull.close();
+            }
+            catch (Exception ignore) {
+                ignore.printStackTrace();
+            }
+            try {
+                context.term();
+            }
+            catch (Exception ignore) {
+                ignore.printStackTrace();
+            }
+        }
+    }
+
     @Test(expected = ZMQException.class)
     public void testBindSameAddress()
     {

@@ -60,7 +60,7 @@ public class Encoder extends EncoderBase
     private boolean sizeReady()
     {
         //  Write message body into the buffer.
-        nextStep(inProgress.data(), inProgress.size(),
+        nextStep(inProgress.buf(),
                 MESSAGE_READY, !inProgress.hasMore());
         return true;
     }
@@ -101,10 +101,10 @@ public class Encoder extends EncoderBase
         }
         else {
             ByteBuffer b = ByteBuffer.wrap(tmpbuf);
-            b.put((byte) 0xff);
-            b.putLong(size);
-            b.put((byte) (inProgress.flags() & Msg.MORE));
-            nextStep(tmpbuf, 10, SIZE_READY, false);
+            b.put(0, (byte) 0xff);
+            b.putLong(1, size);
+            b.put(9, (byte) (inProgress.flags() & Msg.MORE));
+            nextStep(b, SIZE_READY, false);
         }
 
         return true;
