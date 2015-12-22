@@ -40,7 +40,7 @@ public class Msg
     private int size;
     private byte[] data;
     private final ByteBuffer buf;
-    // keep track of relative write position 
+    // keep track of relative write position
     private int writeIndex = 0;
     // keep track of relative read position
     private int readIndex = 0;
