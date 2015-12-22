@@ -108,7 +108,7 @@ public class Decoder extends DecoderBase
 
             }
             else {
-                inProgress = new Msg(size - 1);
+                inProgress = getMsgAllocator().allocate(size - 1);
             }
 
             nextStep(tmpbuf, 1, FLAGS_READY);
@@ -145,7 +145,7 @@ public class Decoder extends DecoderBase
         //  inProgress is initialized at this point so in theory we should
         //  close it before calling init_size, however, it's a 0-byte
         //  message and thus we can treat it as uninitialized...
-        inProgress = new Msg(msgSize);
+        inProgress = getMsgAllocator().allocate(msgSize);
 
         nextStep(tmpbuf, 1, FLAGS_READY);
 

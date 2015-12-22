@@ -89,7 +89,7 @@ public class V1Decoder extends DecoderBase
         //  inProgress is initialised at this point so in theory we should
         //  close it before calling msgInitWithSize, however, it's a 0-byte
         //  message and thus we can treat it as uninitialised...
-        inProgress = new Msg(size);
+        inProgress = getMsgAllocator().allocate(size);
 
         inProgress.setFlags(msgFlags);
         nextStep(inProgress,
@@ -121,7 +121,7 @@ public class V1Decoder extends DecoderBase
         //  inProgress is initialised at this point so in theory we should
         //  close it before calling init_size, however, it's a 0-byte
         //  message and thus we can treat it as uninitialised.
-        inProgress = new Msg((int) msgSize);
+        inProgress = getMsgAllocator().allocate((int) msgSize);
 
         inProgress.setFlags(msgFlags);
         nextStep(inProgress,

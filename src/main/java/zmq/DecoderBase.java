@@ -36,6 +36,7 @@ public abstract class DecoderBase implements IDecoder
 {
     //  Where to store the read data.
     private ByteBuffer readBuf;
+    private MsgAllocator msgAllocator = new MsgAllocatorHeap();
 
     //  The buffer for data to decode.
     private int bufsize;
@@ -186,6 +187,16 @@ public abstract class DecoderBase implements IDecoder
             }
         }
         return false;
+    }
+
+    public MsgAllocator getMsgAllocator()
+    {
+       return msgAllocator;
+    }
+
+    public void setMsgAllocator(MsgAllocator msgAllocator)
+    {
+       this.msgAllocator = msgAllocator;
     }
 
     protected abstract boolean next();
