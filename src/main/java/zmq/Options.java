@@ -115,6 +115,7 @@ public class Options
     int socketId;
     Class<? extends DecoderBase> decoder;
     Class<? extends EncoderBase> encoder;
+    MsgAllocator msgAllocator;
 
     public Options()
     {
@@ -151,6 +152,7 @@ public class Options
         tcpAcceptFilters = new ArrayList<TcpAddress.TcpAddressMask>();
         decoder = null;
         encoder = null;
+        msgAllocator = null;
     }
 
     @SuppressWarnings("unchecked")
@@ -331,6 +333,41 @@ public class Options
                 throw new IllegalArgumentException("decoder " + optval);
             }
             return;
+        case ZMQ.ZMQ_MSG_ALLOCATOR:
+           if (optval instanceof String) {
+               try {
+                   Class<? extends MsgAllocator> msgAllocatorClass = Class.forName((String) optval).asSubclass(MsgAllocator.class);
+                   msgAllocator = msgAllocatorClass.newInstance();
+               }
+               catch (ClassNotFoundException e) {
+                   throw new IllegalArgumentException(e);
+               }
+               catch (InstantiationException e) {
+                  throw new IllegalArgumentException(e);
+               }
+               catch (IllegalAccessException e) {
+                  throw new IllegalArgumentException(e);
+               }
+           }
+           else if (optval instanceof Class) {
+              try {
+                 Class<? extends MsgAllocator> msgAllocatorClass = (Class<? extends MsgAllocator>) optval;
+                 msgAllocator = msgAllocatorClass.newInstance();
+              }
+              catch (InstantiationException e) {
+                 throw new IllegalArgumentException(e);
+              }
+              catch (IllegalAccessException e) {
+                 throw new IllegalArgumentException(e);
+              }
+           }
+           else if (optval instanceof MsgAllocator) {
+              msgAllocator = (MsgAllocator) optval;
+           }
+           else {
+               throw new IllegalArgumentException("msgAllocator " + optval);
+           }
+           return;
 
         default:
             throw new IllegalArgumentException("Unknown Option " + option);
