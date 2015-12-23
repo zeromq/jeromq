@@ -40,6 +40,7 @@ public class Decoder extends DecoderBase
     private static final int MESSAGE_READY = 3;
 
     private final byte[] tmpbuf;
+    private final ByteBuffer tmpbufWrap;
     private Msg inProgress;
     private final long maxmsgsize;
     private IMsgSink msgSink;
@@ -49,9 +50,11 @@ public class Decoder extends DecoderBase
         super(bufsize);
         this.maxmsgsize = maxmsgsize;
         tmpbuf = new byte[8];
+        tmpbufWrap = ByteBuffer.wrap(tmpbuf);
+        tmpbufWrap.limit(1);
 
         //  At the beginning, read one byte and go to oneByteSizeReady state.
-        nextStep(tmpbuf, 1, ONE_BYTE_SIZE_READY);
+        nextStep(tmpbufWrap, ONE_BYTE_SIZE_READY);
     }
 
     //  Set the receiver of decoded messages.
@@ -83,9 +86,11 @@ public class Decoder extends DecoderBase
         //  First byte of size is read. If it is 0xff(-1 for java byte) read 8-byte size.
         //  Otherwise allocate the buffer for message data and read the
         //  message data into it.
+        tmpbufWrap.position(0);
         byte first = tmpbuf[0];
         if (first == -1) {
-            nextStep(tmpbuf, 8, EIGHT_BYTE_SIZE_READY);
+            tmpbufWrap.limit(8);
+            nextStep(tmpbufWrap, EIGHT_BYTE_SIZE_READY);
         }
         else {
             //  There has to be at least one byte (the flags) in the message).
@@ -111,7 +116,8 @@ public class Decoder extends DecoderBase
                 inProgress = getMsgAllocator().allocate(size - 1);
             }
 
-            nextStep(tmpbuf, 1, FLAGS_READY);
+            tmpbufWrap.limit(1);
+            nextStep(tmpbufWrap, FLAGS_READY);
         }
         return true;
 
@@ -121,7 +127,9 @@ public class Decoder extends DecoderBase
     {
         //  8-byte payload length is read. Allocate the buffer
         //  for message body and read the message data into it.
-        final long payloadLength = ByteBuffer.wrap(tmpbuf).getLong();
+        tmpbufWrap.position(0);
+        tmpbufWrap.limit(8);
+        final long payloadLength = tmpbufWrap.getLong(0);
 
         //  There has to be at least one byte (the flags) in the message).
         if (payloadLength <= 0) {
@@ -147,7 +155,8 @@ public class Decoder extends DecoderBase
         //  message and thus we can treat it as uninitialized...
         inProgress = getMsgAllocator().allocate(msgSize);
 
-        nextStep(tmpbuf, 1, FLAGS_READY);
+        tmpbufWrap.limit(1);
+        nextStep(tmpbufWrap, FLAGS_READY);
 
         return true;
     }
@@ -181,7 +190,9 @@ public class Decoder extends DecoderBase
             return false;
         }
 
-        nextStep(tmpbuf, 1, ONE_BYTE_SIZE_READY);
+        tmpbufWrap.position(0);
+        tmpbufWrap.limit(1);
+        nextStep(tmpbufWrap, ONE_BYTE_SIZE_READY);
 
         return true;
     }
