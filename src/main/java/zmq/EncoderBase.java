@@ -103,10 +103,7 @@ public abstract class EncoderBase implements IEncoder
             //  other engines running in the same I/O thread for excessive
             //  amounts of time.
             if (this.buffer.position() == 0 && toWrite >= bufferSize) {
-                Transfer t;
-                writeBuf.position(writePos);
-                writeBuf.limit(writePos + toWrite);
-                t = new Transfer.ByteBufferTransfer(writeBuf);
+                Transfer t = new Transfer.ByteBufferTransfer(writeBuf);
                 writePos = 0;
                 toWrite = 0;
 
@@ -114,13 +111,18 @@ public abstract class EncoderBase implements IEncoder
             }
 
             //  Copy data to the buffer. If the buffer is full, return.
-            int toCopy = Math.min(toWrite, buffer.remaining());
-            if (toCopy > 0) {
-                writeBuf.position(writePos);
-                writeBuf.limit(writePos + toCopy);
+            int remaining = buffer.remaining();
+            if (toWrite <= remaining) {
                 buffer.put(writeBuf);
-                writePos += toCopy;
-                toWrite -= toCopy;
+                writePos = 0;
+                toWrite = 0;
+            }
+            else {
+                writeBuf.limit(writePos + remaining);
+                buffer.put(writeBuf);
+                writePos += remaining;
+                toWrite -= remaining;
+                writeBuf.limit(writePos + toWrite);
             }
         }
 
@@ -169,7 +171,13 @@ public abstract class EncoderBase implements IEncoder
     protected void nextStep(byte[] buf, int toWrite,
                             int next, boolean beginning)
     {
-        writeBuf = buf != null ? ByteBuffer.wrap(buf) : null;
+        if (buf != null) {
+            writeBuf = ByteBuffer.wrap(buf);
+            writeBuf.limit(toWrite);
+        }
+        else {
+            writeBuf = null;
+        }
         writeChannel = null;
         writePos = 0;
         this.toWrite = toWrite;

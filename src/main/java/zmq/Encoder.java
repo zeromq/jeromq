@@ -28,12 +28,14 @@ public class Encoder extends EncoderBase
 
     private Msg inProgress;
     private final byte[] tmpbuf;
+    private final ByteBuffer tmpbufWrap;
     private IMsgSource msgSource;
 
     public Encoder(int bufsize)
     {
         super(bufsize);
         tmpbuf = new byte[10];
+        tmpbufWrap = ByteBuffer.wrap(tmpbuf);
         //  Write 0 bytes to the batch and go to messageReady state.
         nextStep((byte[]) null, 0, MESSAGE_READY, true);
     }
@@ -93,18 +95,19 @@ public class Encoder extends EncoderBase
         //  For messages less than 255 bytes long, write one byte of message size.
         //  For longer messages write 0xff escape character followed by 8-byte
         //  message size. In both cases 'flags' field follows.
-
+        tmpbufWrap.position(0);
         if (size < 255) {
+            tmpbufWrap.limit(2);
             tmpbuf[0] = (byte) size;
             tmpbuf[1] = (byte) (inProgress.flags() & Msg.MORE);
-            nextStep(tmpbuf, 2, SIZE_READY, false);
+            nextStep(tmpbufWrap, SIZE_READY, false);
         }
         else {
-            ByteBuffer b = ByteBuffer.wrap(tmpbuf);
-            b.put(0, (byte) 0xff);
-            b.putLong(1, size);
-            b.put(9, (byte) (inProgress.flags() & Msg.MORE));
-            nextStep(b, SIZE_READY, false);
+            tmpbufWrap.limit(10);
+            tmpbuf[0] = (byte) 0xff;
+            tmpbufWrap.putLong(1, size);
+            tmpbuf[9] = (byte) (inProgress.flags() & Msg.MORE);
+            nextStep(tmpbufWrap, SIZE_READY, false);
         }
 
         return true;
