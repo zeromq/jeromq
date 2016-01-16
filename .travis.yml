@@ -2,4 +2,4 @@ install: mvn install --quiet -DskipTests=true -Dgpg.skip=true
 language: java
 jdk:
   - openjdk7
-  - openjdk6
+
