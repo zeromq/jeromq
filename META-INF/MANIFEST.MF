@@ -1,0 +1,9 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: JeroMQ
+Bundle-SymbolicName: org.zeromq;singleton:=true
+Bundle-RequiredExecutionEnvironment: J2SE-1.5,
+ JavaSE-1.6,
+ JavaSE-1.7
+Bundle-Version: 3.2.5.qualifier
+Export-Package: org.zeromq
