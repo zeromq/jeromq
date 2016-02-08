@@ -19,6 +19,8 @@
 
 package zmq;
 
+import java.nio.ByteBuffer;
+
 public class Trie
 {
     private int refcnt;
@@ -213,7 +215,7 @@ public class Trie
     }
 
     //  Check whether particular key is in the trie.
-    public boolean check(byte[] data)
+    public boolean check(ByteBuffer data)
     {
         //  This function is on critical path. It deliberately doesn't use
         //  recursion to get a bit better performance.
@@ -226,13 +228,13 @@ public class Trie
             }
 
             //  We've checked all the data and haven't found matching subscription.
-            if (data.length == start) {
+            if (data.remaining() == start) {
                 return false;
             }
 
             //  If there's no corresponding slot for the first character
             //  of the prefix, the message does not match.
-            byte c = data[start];
+            byte c = data.get(start);
             if (c < current.min || c >= current.min + current.count) {
                 return false;
             }

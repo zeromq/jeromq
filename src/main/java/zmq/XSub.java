@@ -248,6 +248,6 @@ public class XSub extends SocketBase
 
     private boolean match(Msg msg)
     {
-        return subscriptions.check(msg.data());
+        return subscriptions.check(msg.buf());
     }
 }

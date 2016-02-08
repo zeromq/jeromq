@@ -19,6 +19,7 @@
 
 package zmq;
 
+import java.nio.ByteBuffer;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -350,7 +351,7 @@ public class Mtrie
     }
 
     //  Signal all the matching pipes.
-    public void match(byte[] data, int size, IMtrieHandler func, Object arg)
+    public void match(ByteBuffer data, int size, IMtrieHandler func, Object arg)
     {
         Mtrie current = this;
         int idx = 0;
@@ -373,7 +374,7 @@ public class Mtrie
                 break;
             }
 
-            byte c = data[idx];
+            byte c = data.get(idx);
             //  If there's one subnode (optimisation).
             if (current.count == 1) {
                 if (c != current.min) {
