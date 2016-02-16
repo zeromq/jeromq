@@ -19,6 +19,7 @@
 
 package zmq;
 
+import java.nio.ByteBuffer;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -129,18 +130,23 @@ public class Mtrie
     //  Remove all subscriptions for a specific peer from the trie.
     //  If there are no subscriptions left on some topics, invoke the
     //  supplied callback function.
-    public boolean rm(Pipe pipe, IMtrieHandler func, Object arg)
+    public boolean rm(Pipe pipe, IMtrieHandler func, Object arg, boolean callOnUniq)
     {
-        return rmHelper(pipe, new byte[0], 0, 0, func, arg);
+        return rmHelper(pipe, new byte[0], 0, 0, func, arg, callOnUniq);
     }
 
     private boolean rmHelper(Pipe pipe, byte[] buff, int buffsize, int maxBuffSize,
-                             IMtrieHandler func, Object arg)
+                             IMtrieHandler func, Object arg, boolean callOnUniq)
     {
         //  Remove the subscription from this node.
-        if (pipes != null && pipes.remove(pipe) && pipes.isEmpty()) {
-            func.invoke(null, buff, buffsize, arg);
-            pipes = null;
+        if (pipes != null && pipes.remove(pipe)) {
+            if (!callOnUniq || pipes.isEmpty()) {
+                func.invoke(null, buff, buffsize, arg);
+            }
+
+            if (pipes.isEmpty()) {
+                pipes = null;
+            }
         }
 
         //  Adjust the buffer.
@@ -159,7 +165,7 @@ public class Mtrie
             buff[buffsize] = (byte) min;
             buffsize++;
             next[0].rmHelper(pipe, buff, buffsize, maxBuffSize,
-                    func, arg);
+                    func, arg, callOnUniq);
 
             //  Prune the node if it was made redundant by the removal
             if (next[0].isRedundant()) {
@@ -181,7 +187,7 @@ public class Mtrie
             buff[buffsize] = (byte) (min + c);
             if (next[c] != null) {
                 next[c].rmHelper(pipe, buff, buffsize + 1,
-                        maxBuffSize, func, arg);
+                        maxBuffSize, func, arg, callOnUniq);
 
                 //  Prune redundant nodes from the mtrie
                 if (next[c].isRedundant()) {
@@ -345,7 +351,7 @@ public class Mtrie
     }
 
     //  Signal all the matching pipes.
-    public void match(byte[] data, int size, IMtrieHandler func, Object arg)
+    public void match(ByteBuffer data, int size, IMtrieHandler func, Object arg)
     {
         Mtrie current = this;
         int idx = 0;
@@ -368,7 +374,7 @@ public class Mtrie
                 break;
             }
 
-            byte c = data[idx];
+            byte c = data.get(idx);
             //  If there's one subnode (optimisation).
             if (current.count == 1) {
                 if (c != current.min) {

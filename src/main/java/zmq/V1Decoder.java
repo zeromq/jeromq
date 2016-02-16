@@ -29,6 +29,7 @@ public class V1Decoder extends DecoderBase
     private static final int MESSAGE_READY = 3;
 
     private final byte[] tmpbuf;
+    private final ByteBuffer tmpbufWrap;
     private Msg inProgress;
     private IMsgSink msgSink;
     private final long maxmsgsize;
@@ -42,9 +43,11 @@ public class V1Decoder extends DecoderBase
         msgSink = session;
 
         tmpbuf = new byte[8];
+        tmpbufWrap = ByteBuffer.wrap(tmpbuf);
+        tmpbufWrap.limit(1);
 
         //  At the beginning, read one byte and go to ONE_BYTE_SIZE_READY state.
-        nextStep(tmpbuf, 1, FLAGS_READY);
+        nextStep(tmpbufWrap, FLAGS_READY);
     }
 
     //  Set the receiver of decoded messages.
@@ -89,10 +92,10 @@ public class V1Decoder extends DecoderBase
         //  inProgress is initialised at this point so in theory we should
         //  close it before calling msgInitWithSize, however, it's a 0-byte
         //  message and thus we can treat it as uninitialised...
-        inProgress = new Msg(size);
+        inProgress = getMsgAllocator().allocate(size);
 
         inProgress.setFlags(msgFlags);
-        nextStep(inProgress.data(), inProgress.size(),
+        nextStep(inProgress,
                 MESSAGE_READY);
 
         return true;
@@ -102,7 +105,9 @@ public class V1Decoder extends DecoderBase
     {
         //  The payload size is encoded as 64-bit unsigned integer.
         //  The most significant byte comes first.
-        final long msgSize = ByteBuffer.wrap(tmpbuf).getLong();
+        tmpbufWrap.position(0);
+        tmpbufWrap.limit(8);
+        final long msgSize = tmpbufWrap.getLong(0);
 
         //  Message size must not exceed the maximum allowed size.
         if (maxmsgsize >= 0) {
@@ -121,10 +126,10 @@ public class V1Decoder extends DecoderBase
         //  inProgress is initialised at this point so in theory we should
         //  close it before calling init_size, however, it's a 0-byte
         //  message and thus we can treat it as uninitialised.
-        inProgress = new Msg((int) msgSize);
+        inProgress = getMsgAllocator().allocate((int) msgSize);
 
         inProgress.setFlags(msgFlags);
-        nextStep(inProgress.data(), inProgress.size(),
+        nextStep(inProgress,
                 MESSAGE_READY);
 
         return true;
@@ -141,11 +146,14 @@ public class V1Decoder extends DecoderBase
 
         //  The payload length is either one or eight bytes,
         //  depending on whether the 'large' bit is set.
+        tmpbufWrap.position(0);
         if ((first & V1Protocol.LARGE_FLAG) > 0) {
-            nextStep(tmpbuf, 8, EIGHT_BYTE_SIZE_READY);
+            tmpbufWrap.limit(8);
+            nextStep(tmpbufWrap, EIGHT_BYTE_SIZE_READY);
         }
         else {
-            nextStep(tmpbuf, 1, ONE_BYTE_SIZE_READY);
+            tmpbufWrap.limit(1);
+            nextStep(tmpbufWrap, ONE_BYTE_SIZE_READY);
         }
 
         return true;
@@ -169,7 +177,9 @@ public class V1Decoder extends DecoderBase
             return false;
         }
 
-        nextStep(tmpbuf, 1, FLAGS_READY);
+        tmpbufWrap.position(0);
+        tmpbufWrap.limit(1);
+        nextStep(tmpbufWrap, FLAGS_READY);
 
         return true;
     }

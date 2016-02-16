@@ -42,10 +42,17 @@ class XPub extends SocketBase
 
     // If true, send all subscription messages upstream, not just
     // unique ones
-    boolean verbose;
+    private boolean verboseSubs;
+
+    // If true, send all unsubscription messages upstream, not just
+    // unique ones
+    private boolean verboseUnsubs;
 
     //  True if we are in the middle of sending a multi-part message.
     private boolean more;
+
+    //  Drop messages if HWM reached, otherwise return with false
+    private boolean lossy;
 
     //  List of pending (un)subscriptions, ie. those that were already
     //  applied to the trie, but not yet received by the user.
@@ -91,8 +98,10 @@ class XPub extends SocketBase
         super(parent, tid, sid);
 
         options.type = ZMQ.ZMQ_XPUB;
-        verbose = false;
+        verboseSubs = false;
+        verboseUnsubs = false;
         more = false;
+        lossy = true;
 
         subscriptions = new Mtrie();
         dist = new Dist();
@@ -101,14 +110,14 @@ class XPub extends SocketBase
     }
 
     @Override
-    protected void xattachPipe(Pipe pipe, boolean icanhasall)
+    protected void xattachPipe(Pipe pipe, boolean subscribeToAll)
     {
         assert (pipe != null);
         dist.attach(pipe);
 
         //  If icanhasall_ is specified, the caller would like to subscribe
         //  to all data on this pipe, implicitly.
-        if (icanhasall) {
+        if (subscribeToAll) {
             subscriptions.add(null, pipe);
         }
 
@@ -136,8 +145,9 @@ class XPub extends SocketBase
                 }
 
                 //  If the subscription is not a duplicate, store it so that it can be
-                //  passed to used on next recv call. (Unsubscribe is not verbose.)
-                if (options.type == ZMQ.ZMQ_XPUB && (unique || (data[0] == 1 && verbose))) {
+                //  passed to used on next recv call. (Unsubscribe is not verboseSubs.)
+                if (options.type == ZMQ.ZMQ_XPUB && (unique || (data[0] == 1 && verboseSubs) ||
+                        (data[0] == 0 && verboseUnsubs))) {
                     pendingData.add(Blob.createBlob(data, true));
                     pendingFlags.add(0);
                 }
@@ -159,10 +169,18 @@ class XPub extends SocketBase
     @Override
     public boolean xsetsockopt(int option, Object optval)
     {
-        if (option != ZMQ.ZMQ_XPUB_VERBOSE) {
+        if (option == ZMQ.ZMQ_XPUB_VERBOSE) {
+            verboseSubs = (Integer) optval == 1;
+        }
+        else if (option == ZMQ.ZMQ_XPUB_VERBOSE_UNSUBSCRIBE) {
+            verboseUnsubs = (Integer) optval == 1;
+        }
+        else if (option == ZMQ.ZMQ_XPUB_NODROP) {
+            lossy = (Integer) optval == 0;
+        }
+        else {
             return false;
         }
-        verbose = (Integer) optval == 1;
 
         return true;
     }
@@ -174,7 +192,7 @@ class XPub extends SocketBase
         //  is interested in anymore, send corresponding unsubscriptions
         //  upstream.
 
-        subscriptions.rm(pipe, sendUnsubscription, this);
+        subscriptions.rm(pipe, sendUnsubscription, this, !verboseUnsubs);
 
         dist.terminated(pipe);
     }
@@ -186,25 +204,28 @@ class XPub extends SocketBase
 
         //  For the first part of multi-part message, find the matching pipes.
         if (!more) {
-            subscriptions.match(msg.data(), msg.size(),
+            subscriptions.match(msg.buf(), msg.size(),
                     markAsMatching, this);
         }
 
-        //  Send the message to all the pipes that were marked as matching
-        //  in the previous step.
-        boolean rc = dist.sendToMatching(msg);
-        if (!rc) {
-            return false;
+        if (lossy || dist.checkHwm()) {
+            //  Send the message to all the pipes that were marked as matching
+            //  in the previous step.
+            if (dist.sendToMatching(msg)) {
+                //  If we are at the end of multi-part message we can mark all the pipes
+                //  as non-matching.
+                if (!msgMore) {
+                    dist.unmatch();
+                }
+                more = msgMore;
+                return true;
+            }
+        }
+        else {
+            errno.set(ZError.EAGAIN);
         }
 
-        //  If we are at the end of multi-part message we can mark all the pipes
-        //  as non-matching.
-        if (!msgMore) {
-            dist.unmatch();
-        }
-
-        more = msgMore;
-        return true;
+        return false;
     }
 
     @Override

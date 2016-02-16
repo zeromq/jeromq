@@ -30,12 +30,14 @@ public class V1Encoder extends EncoderBase
 
     private Msg inProgress;
     private final byte[] tmpbuf;
+    private final ByteBuffer tmpbufWrap;
     private IMsgSource msgSource;
 
     public V1Encoder(int bufsize, IMsgSource session)
     {
         super(bufsize);
         tmpbuf = new byte[9];
+        tmpbufWrap = ByteBuffer.wrap(tmpbuf);
         msgSource = session;
 
         //  Write 0 bytes to the batch and go to messageReady state.
@@ -64,8 +66,7 @@ public class V1Encoder extends EncoderBase
     private boolean sizeReady()
     {
         //  Write message body into the buffer.
-        nextStep(inProgress.data(), inProgress.size(),
-                MESSAGE_READY, !inProgress.hasMore());
+        nextStep(inProgress.buf(), MESSAGE_READY, !inProgress.hasMore());
         return true;
     }
 
@@ -98,15 +99,16 @@ public class V1Encoder extends EncoderBase
         //  the length is encoded as 8-bit unsigned integer. For larger
         //  messages, 64-bit unsigned integer in network byte order is used.
         final int size = inProgress.size();
+        tmpbufWrap.position(0);
         if (size > 255) {
-            ByteBuffer b = ByteBuffer.wrap(tmpbuf);
-            b.position(1);
-            b.putLong(size);
-            nextStep(tmpbuf, 9, SIZE_READY, false);
+            tmpbufWrap.limit(9);
+            tmpbufWrap.putLong(1, size);
+            nextStep(tmpbufWrap, SIZE_READY, false);
         }
         else {
+            tmpbufWrap.limit(2);
             tmpbuf[1] = (byte) (size);
-            nextStep(tmpbuf, 2, SIZE_READY, false);
+            nextStep(tmpbufWrap, SIZE_READY, false);
         }
         return true;
     }

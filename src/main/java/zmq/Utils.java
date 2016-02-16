@@ -28,7 +28,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SocketChannel;
 import java.security.SecureRandom;
-import java.util.List;
 
 class Utils
 {
@@ -112,22 +111,6 @@ class Utils
             dest = src;
         }
         return dest;
-    }
-
-    public static <T> void swap(List<T> items, int index1, int index2)
-    {
-        if (index1 == index2) {
-            return;
-        }
-
-        T item1 = items.get(index1);
-        T item2 = items.get(index2);
-        if (item1 != null) {
-            items.set(index2, item1);
-        }
-        if (item2 != null) {
-            items.set(index1, item2);
-        }
     }
 
     public static byte[] bytes(ByteBuffer buf)

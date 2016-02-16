@@ -22,7 +22,6 @@ package zmq;
 import java.io.IOException;
 import java.net.Socket;
 import java.nio.ByteBuffer;
-import java.nio.channels.Selector;
 
 import org.junit.Test;
 import static org.junit.Assert.assertThat;
@@ -196,7 +195,7 @@ public class TestProxyTcp
         public ProxyEncoder(int bufsize)
         {
             super(bufsize);
-            nextStep(null, WRITE_HEADER, true);
+            nextStep((Msg) null, WRITE_HEADER, true);
             messageReady = false;
             identityRecieved = false;
         }
@@ -266,7 +265,6 @@ public class TestProxyTcp
     static class Main extends Thread
     {
         private Ctx ctx;
-        private Selector selector;
         Main(Ctx ctx)
         {
             this.ctx = ctx;

@@ -19,9 +19,6 @@
 
 package zmq;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.junit.Test;
 import static org.junit.Assert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
@@ -68,24 +65,6 @@ public class TestUtils
         assertThat(dest[0], is(7));
         assertThat(dest[1], is(9));
         assertThat(dest[2], is(11));
-
-    }
-
-    @Test
-    public void testSwap()
-    {
-        List<Integer> data = new ArrayList<Integer>();
-        data.add(1);
-        data.add(3);
-        data.add(5);
-        data.add(7);
-
-        Utils.swap(data, 1, 3);
-        assertThat(data.get(1), is(7));
-        assertThat(data.get(3), is(3));
-
-        Utils.swap(data, 2, 2);
-        assertThat(data.get(2), is(5));
 
     }
 }

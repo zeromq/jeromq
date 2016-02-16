@@ -20,6 +20,7 @@
 package zmq;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 //  Class manages a set of inbound pipes. On receive it performs fair
@@ -53,7 +54,7 @@ class FQ
     public void attach(Pipe pipe)
     {
         pipes.add(pipe);
-        Utils.swap(pipes, active, pipes.size() - 1);
+        Collections.swap(pipes, active, pipes.size() - 1);
         active++;
     }
 
@@ -65,7 +66,7 @@ class FQ
         //  accordingly.
         if (index < active) {
             active--;
-            Utils.swap(pipes, index, active);
+            Collections.swap(pipes, index, active);
             if (current == active) {
                 current = 0;
             }
@@ -76,7 +77,7 @@ class FQ
     public void activated(Pipe pipe)
     {
         //  Move the pipe to the list of active pipes.
-        Utils.swap(pipes, pipes.indexOf(pipe), active);
+        Collections.swap(pipes, pipes.indexOf(pipe), active);
         active++;
     }
 
@@ -114,7 +115,7 @@ class FQ
             assert (!more);
 
             active--;
-            Utils.swap(pipes, current, active);
+            Collections.swap(pipes, current, active);
             if (current == active) {
                 current = 0;
             }
@@ -144,7 +145,7 @@ class FQ
 
             //  Deactivate the pipe.
             active--;
-            Utils.swap(pipes, current, active);
+            Collections.swap(pipes, current, active);
             if (current == active) {
                 current = 0;
             }

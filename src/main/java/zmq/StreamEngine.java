@@ -115,40 +115,49 @@ public class StreamEngine implements IEngine, IPollEvents, IMsgSink
 
     private DecoderBase newDecoder(int size, long max, SessionBase session, int version)
     {
-        if (options.decoder == null) {
+       DecoderBase decoder;
+       if (options.decoder == null) {
             if (version == V1Protocol.VERSION) {
-                return new V1Decoder(size, max, session);
-            }
-            return new Decoder(size, max);
-        }
-
-        try {
-            Constructor<? extends DecoderBase> dcon;
-
-            if (version == 0)  {
-                dcon = options.decoder.getConstructor(int.class, long.class);
-                return dcon.newInstance(size, max);
+               decoder = new V1Decoder(size, max, session);
             }
             else {
-                dcon = options.decoder.getConstructor(int.class, long.class, IMsgSink.class, int.class);
-                return dcon.newInstance(size, max, session, version);
+               decoder = new Decoder(size, max);
             }
         }
-        catch (SecurityException e) {
-            throw new ZError.InstantiationException(e);
+        else {
+           try {
+               Constructor<? extends DecoderBase> dcon;
+
+               if (version == 0)  {
+                   dcon = options.decoder.getConstructor(int.class, long.class);
+                   decoder = dcon.newInstance(size, max);
+               }
+               else {
+                   dcon = options.decoder.getConstructor(int.class, long.class, IMsgSink.class, int.class);
+                   decoder = dcon.newInstance(size, max, session, version);
+               }
+           }
+           catch (SecurityException e) {
+               throw new ZError.InstantiationException(e);
+           }
+           catch (NoSuchMethodException e) {
+               throw new ZError.InstantiationException(e);
+           }
+           catch (InvocationTargetException e) {
+               throw new ZError.InstantiationException(e);
+           }
+           catch (IllegalAccessException e) {
+               throw new ZError.InstantiationException(e);
+           }
+           catch (InstantiationException e) {
+               throw new ZError.InstantiationException(e);
+           }
         }
-        catch (NoSuchMethodException e) {
-            throw new ZError.InstantiationException(e);
+
+        if (options.msgAllocator != null) {
+           decoder.setMsgAllocator(options.msgAllocator);
         }
-        catch (InvocationTargetException e) {
-            throw new ZError.InstantiationException(e);
-        }
-        catch (IllegalAccessException e) {
-            throw new ZError.InstantiationException(e);
-        }
-        catch (InstantiationException e) {
-            throw new ZError.InstantiationException(e);
-        }
+        return decoder;
     }
 
     private EncoderBase newEncoder(int size, SessionBase session, int version)

@@ -39,7 +39,11 @@ public class Msg
 
     private int size;
     private byte[] data;
-    private ByteBuffer buf;
+    private final ByteBuffer buf;
+    // keep track of relative write position
+    private int writeIndex = 0;
+    // keep track of relative read position
+    private int readIndex = 0;
 
     public Msg()
     {
@@ -76,13 +80,10 @@ public class Msg
         if (src == null) {
             throw new IllegalArgumentException("ByteBuffer cannot be null");
         }
-        if (src.position() > 0) {
-            throw new IllegalArgumentException("ByteBuffer position is not zero, did you forget to flip it?");
-        }
         this.type = Type.DATA;
         this.flags = 0;
         this.buf = src.duplicate();
-        if (buf.hasArray()) {
+        if (buf.hasArray() && buf.position() == 0 && buf.limit() == buf.capacity()) {
             this.data = buf.array();
         }
         else {
@@ -100,8 +101,10 @@ public class Msg
         this.flags = m.flags;
         this.size = m.size;
         this.buf = m.buf != null ? m.buf.duplicate() : null;
-        this.data = new byte[this.size];
-        System.arraycopy(m.data, 0, this.data, 0, m.size);
+        if (m.data != null) {
+           this.data = new byte[this.size];
+           System.arraycopy(m.data, 0, this.data, 0, m.size);
+        }
     }
 
     public boolean isIdentity()
@@ -142,11 +145,9 @@ public class Msg
 
     public byte[] data()
     {
-        if (buf.isDirect()) {
-            int length = buf.remaining();
-            byte[] bytes = new byte[length];
-            buf.duplicate().get(bytes);
-            return bytes;
+        if (data == null) {
+            data = new byte[buf.remaining()];
+            buf.duplicate().get(data);
         }
         return data;
     }
@@ -168,7 +169,7 @@ public class Msg
 
     public byte get()
     {
-        return buf.get();
+        return get(readIndex++);
     }
 
     public byte get(int index)
@@ -178,8 +179,7 @@ public class Msg
 
     public Msg put(byte b)
     {
-        buf.put(b);
-        return this;
+        return put(writeIndex++, b);
     }
 
     public Msg put(int index, byte b)
@@ -198,34 +198,44 @@ public class Msg
         if (src == null) {
             return this;
         }
-        buf.put(src, off, len);
+        ByteBuffer dup = buf.duplicate();
+        dup.position(writeIndex);
+        writeIndex += len;
+        dup.put(src, off, len);
         return this;
     }
 
     public Msg put(ByteBuffer src)
     {
-        buf.put(src);
+        ByteBuffer dup = buf.duplicate();
+        dup.position(writeIndex);
+        writeIndex += Math.min(dup.remaining(), src.remaining());
+        dup.put(src);
         return this;
     }
 
     public int getBytes(int index, byte[] dst, int off, int len)
     {
-        int count = Math.min(len, size);
-        if (buf.isDirect()) {
+        int count = Math.min(len, size - index);
+        if (data == null) {
             ByteBuffer dup = buf.duplicate();
             dup.position(index);
             dup.put(dst, off, count);
-            return count;
         }
-        System.arraycopy(data, index, dst, off, count);
+        else {
+           System.arraycopy(data, index, dst, off, count);
+        }
+
         return count;
     }
 
     public int getBytes(int index, ByteBuffer bb, int len)
     {
-        int count = Math.min(bb.remaining(), size - index);
+        ByteBuffer dup = buf.duplicate();
+        dup.position(index);
+        int count = Math.min(bb.remaining(), dup.remaining());
         count = Math.min(count, len);
-        bb.put(buf);
+        bb.put(dup);
         return count;
     }
 

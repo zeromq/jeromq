@@ -106,11 +106,14 @@ public class ZMQ
     public static final int ZMQ_XPUB_VERBOSE = 40;
     // TODO: more constants
     public static final int ZMQ_ROUTER_HANDOVER = 56;
+    public static final int ZMQ_XPUB_NODROP = 69;
     public static final int ZMQ_BLOCKY = 70;
+    public static final int ZMQ_XPUB_VERBOSE_UNSUBSCRIBE = 78;
 
     /* Custom options */
     public static final int ZMQ_ENCODER = 1001;
     public static final int ZMQ_DECODER = 1002;
+    public static final int ZMQ_MSG_ALLOCATOR = 1003;
 
     /*  Message options                                                           */
     public static final int ZMQ_MORE = 1;
