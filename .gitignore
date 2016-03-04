@@ -1,9 +1,36 @@
-*.jar
-*.iml
-.settings
-.idea
-target
-maven-build.properties
-maven-build.xml
-build.xml
-.checkstyle
+### Temporary files ###
+*.bak
+*.swp
+*.tmp
+*.*~
+
+### Java ###
+*.class
+hs_err_pid*
+
+### Python / Jython ###
+__pycache__/
+*.py[cod]
+jythonCache/
+cachedir/
+
+### Build output ###
+.springBeans
+/bin/
+/classes/
+/src/corba/
+
+### JUnit testing ###
+/test-reports
+/test-scratch
+
+### Security files ###
+*ssh.key
+password
+passwords
+
+### Various OS, etc. files ###
+*.lnk
+desktop.ini
+.nfs[:xdigit:][:xdigit:][:xdigit:][:xdigit:][:xdigit:][:xdigit:][:xdigit:][:xdigit:]*
+.svn/
