@@ -7,6 +7,7 @@
 ### Java ###
 *.class
 hs_err_pid*
+derby.log
 
 ### Python / Jython ###
 __pycache__/
@@ -21,16 +22,23 @@ cachedir/
 /src/corba/
 
 ### JUnit testing ###
+/activemq-data
 /test-reports
 /test-scratch
 
 ### Security files ###
+*.ppk
 *ssh.key
+id_rsa
 password
 passwords
 
 ### Various OS, etc. files ###
 *.lnk
-desktop.ini
-.nfs[:xdigit:][:xdigit:][:xdigit:][:xdigit:][:xdigit:][:xdigit:][:xdigit:][:xdigit:]*
+.DS_Store
+[Dd]esktop.ini
+.nfs[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f]*
 .svn/
+Thumbs.db
+$RECYCLE.BIN/
+.Trash-*
