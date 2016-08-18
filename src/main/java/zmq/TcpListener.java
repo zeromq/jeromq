@@ -146,7 +146,6 @@ public class TcpListener extends Own implements IPollEvents
     public int setAddress(final String addr)
     {
         address.resolve(addr, options.ipv4only > 0);
-
         try {
             handle = ServerSocketChannel.open();
             handle.configureBlocking(false);
@@ -154,9 +153,6 @@ public class TcpListener extends Own implements IPollEvents
                 handle.socket().setReuseAddress(true);
             }
             handle.socket().bind(address.address(), options.backlog);
-            if (address.getPort() == 0) {
-                address.updatePort(handle.socket().getLocalPort());
-            }
         }
         catch (IOException e) {
             close();

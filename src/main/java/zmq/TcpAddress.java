@@ -61,20 +61,6 @@ public class TcpAddress implements Address.IZAddress
         }
     }
 
-    public int getPort()
-    {
-        if (address != null) {
-            return address.getPort();
-        }
-        return -1;
-    }
-
-    //Used after binding to ephemeral port to update ephemeral port (0) to actual port
-    protected void updatePort(int port)
-    {
-        address = new InetSocketAddress(address.getAddress(), port);
-    }
-
     @Override
     public void resolve(String name, boolean ipv4only)
     {

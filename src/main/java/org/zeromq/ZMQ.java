@@ -1248,18 +1248,6 @@ public class ZMQ
         }
 
         /**
-         * Disconnect to remote application.
-         *
-         * @param addr
-         *            the endpoint to disconnect to.
-         * @return true if successful.
-         */
-        public final boolean disconnect(String addr)
-        {
-            return base.termEndpoint(addr);
-        }
-
-        /**
          * Stop accepting connections on a socket.
          *
          * @param addr
