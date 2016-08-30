@@ -45,7 +45,6 @@ public class rrclient{
             System.out.println("Received reply " + request_nbr + " [" + reply + "]");
         }
         
-        //  We never get here but clean up anyhow
         requester.close();
         context.term();
     }
