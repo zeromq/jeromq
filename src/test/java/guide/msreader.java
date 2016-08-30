@@ -56,6 +56,7 @@ public class msreader {
             //  No activity, so sleep for 1 msec
             Thread.sleep(1000);
         }
+        receiver.close ();
         subscriber.close ();
         context.term ();
     }
