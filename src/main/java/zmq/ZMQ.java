@@ -85,6 +85,8 @@ public class ZMQ
     public static final int ZMQ_TCP_ACCEPT_FILTER = 38;
     public static final int ZMQ_DELAY_ATTACH_ON_CONNECT = 39;
     public static final int ZMQ_XPUB_VERBOSE = 40;
+    public static final int ZMQ_REQ_CORRELATE = 52;
+    public static final int ZMQ_REQ_RELAXED = 53;
     // TODO: more constants
     public static final int ZMQ_ROUTER_HANDOVER = 56;
     public static final int ZMQ_XPUB_NODROP = 69;

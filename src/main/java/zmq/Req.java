@@ -1,10 +1,24 @@
 package zmq;
 
+import java.time.Instant;
+import java.util.Arrays;
+import java.util.Random;
+
 public class Req extends Dealer
 {
+    static final int REQUEST_ID_LENGTH = 6;
+    // Random generator for request IDs.
+    public static final Random REQUEST_ID_GEN = new Random(
+            Instant.now().getEpochSecond() ^ (long) Instant.now().getNano());
+
     //  If true, request was already sent and reply wasn't received yet or
     //  was raceived partially.
     private boolean receivingReply;
+
+    // If ZMQ_REQ_CORRELATE is enabled, this is set to the request ID of the most
+    // recent request. Any incoming message that does not have this ID will
+    // be discarded.
+    private byte[] currentRequestId;
 
     //  If true, we are starting to send/recv a message. The first part
     //  of the message must be empty message part (backtrace stack bottom).
@@ -17,6 +31,7 @@ public class Req extends Dealer
         receivingReply = false;
         messageBegins = true;
         options.type = ZMQ.ZMQ_REQ;
+        currentRequestId = new byte[REQUEST_ID_LENGTH];
     }
 
     @Override
@@ -24,14 +39,29 @@ public class Req extends Dealer
     {
         //  If we've sent a request and we still haven't got the reply,
         //  we can't send another request.
-        if (receivingReply) {
+        if (receivingReply && getSocketOpt(zmq.ZMQ.ZMQ_REQ_RELAXED) == 0) {
             errno.set(ZError.EFSM);
             return false;
         }
 
         //  First part of the request is the request identity.
         if (messageBegins) {
+            // If CORRELATE is enabled, send request ID frame before the empty
+            // frame.
+            if (getSocketOpt(zmq.ZMQ.ZMQ_REQ_CORRELATE) > 0) {
+                REQUEST_ID_GEN.nextBytes(currentRequestId);
+
+                Msg requestId = new Msg(currentRequestId);
+                requestId.setFlags(Msg.MORE);
+
+                boolean rc = super.xsend(requestId);
+                if (!rc) {
+                    return rc;
+                }
+            }
+
             Msg bottom = new Msg();
+
             bottom.setFlags(Msg.MORE);
             boolean rc = super.xsend(bottom);
             if (!rc) {
@@ -59,21 +89,37 @@ public class Req extends Dealer
     @Override
     protected Msg xrecv()
     {
-        //  If request wasn't send, we can't wait for reply.
+        // If request wasn't send, we can't wait for reply.
+        // Thus, we don't look at the state of the ZMQ_REQ_RELAXED option.
         if (!receivingReply) {
             errno.set(ZError.EFSM);
             return null;
         }
+
         Msg msg = null;
-        //  First part of the reply should be the original request ID.
+        //  First part of the reply should be the original request ID, if
+        // ZMQ_REQ_CORRELATE is enabled.
         if (messageBegins) {
             msg = super.xrecv();
             if (msg == null) {
                 return null;
             }
 
+            boolean requestIdIsBad = false;
+
+            // Check request ID
+            if (getSocketOpt(zmq.ZMQ.ZMQ_REQ_CORRELATE) > 0) {
+                requestIdIsBad = !Arrays.equals(msg.data(), currentRequestId);
+
+                // Receive empty delimiter frame
+                msg = super.xrecv();
+                if (msg == null) {
+                    return null;
+                }
+            }
+
             // TODO: This should also close the connection with the peer!
-            if (!msg.hasMore() || msg.size() != 0) {
+            if (!msg.hasMore() || msg.size() != 0 || requestIdIsBad) {
                 while (true) {
                     msg = super.xrecv();
                     assert (msg != null);

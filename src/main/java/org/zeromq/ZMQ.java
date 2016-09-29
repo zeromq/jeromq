@@ -717,6 +717,49 @@ public class ZMQ
         }
 
         /**
+         * The 'ZMQ_REQ_CORRELATE' option causes a socket to send a request ID
+         * frame with every message. This means that the outgoing message
+         * is [request id, (empty frame), payload]. Any message not having those
+         * first two frames is discarded.
+         * See also ZMQ_REQ_RELAXED.
+         * @param correlate Whether to enable outgoing request ids.
+         */
+        public final void setReqCorrelate(boolean correlate)
+        {
+            setsockopt(zmq.ZMQ.ZMQ_REQ_CORRELATE, correlate ? 1 : 0);
+        }
+
+        /**
+         * @see #setReqCorrelate(boolean)
+         * @return state of the ZMQ_REQ_CORRELATE option.
+         */
+        public final boolean getReqCorrelate()
+        {
+            return base.getSocketOpt(zmq.ZMQ.ZMQ_REQ_CORRELATE) > 0;
+        }
+
+        /**
+         * The 'ZMQ_REQ_RELAXED' option relaxes the strict lock-step requirement
+         * of REQ sockets. Instead, it allows for several requests to be sent
+         * sequentially. If enabled, also enable ZMQ_REQ_CORRELATE in order to
+         * receive the correct responses to requests.
+          @param relaxed
+         */
+        public final void setReqRelaxed(boolean relaxed)
+        {
+            setsockopt(zmq.ZMQ.ZMQ_REQ_RELAXED, relaxed ? 1 : 0);
+        }
+
+        /**
+         * @see #setReqRelaxed(boolean)
+         * @return state of the ZMQ_REQ_RELAXED option.
+         */
+        public final boolean getReqRelaxed()
+        {
+            return base.getSocketOpt(zmq.ZMQ.ZMQ_REQ_CORRELATE) > 0;
+        }
+
+        /**
          * @see #setMulticastLoop(boolean)
          *
          * @return the Multicast Loop.

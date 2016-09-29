@@ -3,7 +3,6 @@ package zmq;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
 import zmq.TcpAddress.TcpAddressMask;
 
 public class Options
@@ -47,6 +46,12 @@ public class Options
     //  Maximum interval between attempts to reconnect, in milliseconds.
     //  Default 0 (unused)
     int reconnectIvlMax;
+
+    // if the REQ socket has correlation enabled (= is sending request IDs)
+    int reqCorrelate;
+
+    // if the REQ FSM is not strictly adhered to
+    int reqRelaxed;
 
     //  Maximum backlog for pending connections.
     int backlog;
@@ -113,6 +118,8 @@ public class Options
         linger = -1;
         reconnectIvl = 100;
         reconnectIvlMax = 0;
+        reqCorrelate = 0;
+        reqRelaxed = 0;
         backlog = 100;
         maxMsgSize = -1;
         recvTimeout = -1;
@@ -393,6 +400,12 @@ public class Options
 
         case ZMQ.ZMQ_RECONNECT_IVL_MAX:
             return reconnectIvlMax;
+
+            case ZMQ.ZMQ_REQ_CORRELATE:
+                return reqCorrelate;
+
+            case ZMQ.ZMQ_REQ_RELAXED:
+                return reqRelaxed;
 
         case ZMQ.ZMQ_BACKLOG:
             return backlog;
