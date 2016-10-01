@@ -9,8 +9,6 @@ import org.junit.Test;
 
 /**
  * This test does one setup, and runs a few tests on that setup.
- *
- * @author lbo
  */
 public class TestReqCorrelateRelaxed
 {
@@ -39,12 +37,18 @@ public class TestReqCorrelateRelaxed
 
         reqClient.setSocketOpt(ZMQ.ZMQ_REQ_CORRELATE, 1);
         reqClient.setSocketOpt(ZMQ.ZMQ_REQ_RELAXED, 1);
+        reqClient.setSocketOpt(ZMQ.ZMQ_RCVTIMEO, 100);
 
         brc = ZMQ.connect(reqClient, "inproc://a");
         assertThat(brc, is(true));
 
+        // Test good path
         byte[] origRequestId = testReqSentFrames(dealer, reqClient);
         testReqRecvGoodRequestId(dealer, reqClient, origRequestId);
+
+        // Test what happens when a bad request ID is sent back.
+        origRequestId = testReqSentFrames(dealer, reqClient);
+        testReqRecvBadRequestId(dealer, reqClient, origRequestId);
     }
 
     /**
@@ -122,11 +126,52 @@ public class TestReqCorrelateRelaxed
         assertThat(ZMQ.send(dealer, responsePayload, 0), is(responsePayload.size()));
 
         // Receive response (payload only)
-        Msg receivedResponsePayload = reqClient.recv(0);
+        Msg receivedResponsePayload = ZMQ.recv(reqClient, 0);
         assertThat(receivedResponsePayload, notNullValue());
 
         byte[] buf = new byte[128];
         int payloadLen = receivedResponsePayload.getBytes(0, buf, 0, 128);
         assertThat(payloadLen, is(PAYLOAD.getBytes().length));
+    }
+
+    /**
+     * Asserts that a response with a non-current request ID is ignored.
+     *
+     * @param dealer
+     * @param reqClient
+     * @param origRequestId
+     * @throws Exception
+     */
+    public void testReqRecvBadRequestId(SocketBase dealer, SocketBase reqClient, byte[] origRequestId) throws Exception
+    {
+        Msg badRequestId = new Msg("gobbledygook".getBytes());
+        Msg goodRequestId = new Msg(origRequestId);
+
+        Msg empty = new Msg();
+
+        Msg badResponsePayload = new Msg("Bad response".getBytes());
+        Msg goodResponsePayload = new Msg(PAYLOAD.getBytes());
+
+        // Send response with bad request ID
+        assertThat(ZMQ.send(dealer, badRequestId, ZMQ.ZMQ_SNDMORE), is(12));
+        assertThat(ZMQ.send(dealer, empty, ZMQ.ZMQ_SNDMORE), is(0));
+        assertThat(ZMQ.send(dealer, badResponsePayload, 0), is(badResponsePayload.size()));
+
+        // Send response with good request ID
+        assertThat(ZMQ.send(dealer, goodRequestId, ZMQ.ZMQ_SNDMORE), is(6));
+        assertThat(ZMQ.send(dealer, empty, ZMQ.ZMQ_SNDMORE), is(0));
+        assertThat(ZMQ.send(dealer, goodResponsePayload, 0), is(goodResponsePayload.size()));
+
+        // Receive response (payload only)
+        Msg receivedResponsePayload = ZMQ.recv(reqClient, 0);
+        assertThat(receivedResponsePayload, notNullValue());
+
+        // Expecting PAYLOAD, not "Bad payload"
+        byte[] buf = new byte[128];
+        int payloadLen = receivedResponsePayload.getBytes(0, buf, 0, 128);
+        assertThat(payloadLen, is(PAYLOAD.getBytes().length));
+
+        byte[] receivedPayload = Arrays.copyOf(buf, payloadLen);
+        assertThat(receivedPayload, is(PAYLOAD.getBytes()));
     }
 }
