@@ -221,6 +221,14 @@ public class Options
                 throw new IllegalArgumentException("reconnectIvlMax " + optval);
             }
 
+                return;
+
+        case ZMQ.ZMQ_REQ_CORRELATE:
+            reqCorrelate = (Integer) optval;
+            return;
+
+        case ZMQ.ZMQ_REQ_RELAXED:
+            reqRelaxed = (Integer) optval;
             return;
 
         case ZMQ.ZMQ_BACKLOG:
