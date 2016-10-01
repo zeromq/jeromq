@@ -1,7 +1,7 @@
 package zmq;
 
-import java.time.Instant;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Random;
 
 public class Req extends Dealer
@@ -9,7 +9,7 @@ public class Req extends Dealer
     static final int REQUEST_ID_LENGTH = 6;
     // Random generator for request IDs.
     public static final Random REQUEST_ID_GEN = new Random(
-            Instant.now().getEpochSecond() ^ (long) Instant.now().getNano());
+            Calendar.getInstance().getTimeInMillis());
 
     //  If true, request was already sent and reply wasn't received yet or
     //  was raceived partially.
@@ -27,7 +27,6 @@ public class Req extends Dealer
     public Req(Ctx parent, int tid, int sid)
     {
         super(parent, tid, sid);
-
         receivingReply = false;
         messageBegins = true;
         options.type = ZMQ.ZMQ_REQ;
