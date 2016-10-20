@@ -4,17 +4,8 @@ import zmq.ZError;
 
 public class ZMQException extends RuntimeException
 {
-    public static class IOException extends RuntimeException
-    {
-        private static final long serialVersionUID = 8440355423370109164L;
 
-        public IOException(java.io.IOException cause)
-        {
-            super(cause);
-        }
-    }
-
-    private static final long serialVersionUID = 5957233088499712341L;
+    private static final long serialVersionUID = -978820750094924644L;
 
     private final int code;
 
@@ -28,12 +19,6 @@ public class ZMQException extends RuntimeException
     {
         super(message);
         code = errno;
-    }
-
-    public ZMQException(ZMQException cause)
-    {
-        super(cause.getMessage(), cause);
-        code = cause.code;
     }
 
     public int getErrorCode()

@@ -1,5 +1,6 @@
 package org.zeromq;
 
+import org.zeromq.ZMQ.Error;
 import org.zeromq.ZMQ.Socket;
 
 public class ZThread
@@ -49,7 +50,14 @@ public class ZThread
         public void run()
         {
             if (attachedRunnable != null) {
-                attachedRunnable.run(args, ctx, pipe);
+                try {
+                    attachedRunnable.run(args, ctx, pipe);
+                } 
+                catch (ZMQException e) {
+                    if (e.getErrorCode() != Error.ETERM.getCode()) {
+                        throw e;
+                    }
+                }
                 ctx.destroy();
             }
             else {
