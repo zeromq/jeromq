@@ -342,7 +342,7 @@ public class TestZMQ
     }
 
     @Test
-    public void testEventConnectRetried()
+    public void testEventConnectRetried() throws InterruptedException
     {
         Context context = ZMQ.context(1);
         ZMQ.Event event;
@@ -355,6 +355,7 @@ public class TestZMQ
         monitor.connect("inproc://monitor.socket");
 
         socket.connect("tcp://127.0.0.1:6752");
+        Thread.sleep(1000L); // on windows, this is required, otherwise test fails
         event = ZMQ.Event.recv(monitor);
         assertNotNull("No event was received", event);
         assertEquals(ZMQ.EVENT_CONNECT_RETRIED, event.getEvent());

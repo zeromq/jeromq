@@ -41,11 +41,6 @@ public class ZContext implements Closeable
     private int linger;
 
     /**
-     * HWM timeout, default 1
-     */
-    private int hwm;
-
-    /**
      * Indicates if context object is owned by main thread
      * (useful for multi-threaded applications)
      */
@@ -87,7 +82,9 @@ public class ZContext implements Closeable
             context.term();
         }
 
-        context = null;
+        synchronized (this) {
+            context = null;
+        }
     }
 
     /**
@@ -174,22 +171,6 @@ public class ZContext implements Closeable
     public void setLinger(int linger)
     {
         this.linger = linger;
-    }
-
-    /**
-     * @return the HWM
-     */
-    public int getHWM()
-    {
-        return hwm;
-    }
-
-    /**
-     * @param hwm the HWM to set
-     */
-    public void setHWM(int hwm)
-    {
-        this.hwm = hwm;
     }
 
     /**

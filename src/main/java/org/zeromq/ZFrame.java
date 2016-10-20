@@ -242,19 +242,20 @@ public class ZFrame
         this.data = data;
     }
 
+    private static final String HEX_CHAR = "0123456789ABCDEF";
+        
     /**
      * @return frame data as a printable hex string
      */
     public String strhex()
     {
-        String hexChar = "0123456789ABCDEF";
 
         StringBuilder b = new StringBuilder();
         for (byte aData : data) {
             int b1 = aData >>> 4 & 0xf;
             int b2 = aData & 0xf;
-            b.append(hexChar.charAt(b1));
-            b.append(hexChar.charAt(b2));
+            b.append(HEX_CHAR.charAt(b1));
+            b.append(HEX_CHAR.charAt(b2));
         }
         return b.toString();
     }
@@ -307,7 +308,7 @@ public class ZFrame
         // Dump message as text or hex-encoded string
         boolean isText = true;
         for (byte aData : data) {
-            if (aData < 32) {
+            if (aData < 32 || aData > 127) {
                 isText = false;
                 break;
             }
