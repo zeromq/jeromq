@@ -7,10 +7,10 @@
     <module name="NewlineAtEndOfFile">
         <property name="lineSeparator" value="lf"/>
     </module>
-    <module name="RegexpMultiline">
+    <!-- module name="RegexpMultiline">
         <property name="format" value="\r"/>
         <property name="message" value="Line contains carriage return"/>
-    </module>
+    </module -->
     <module name="RegexpMultiline">
         <property name="format" value=" \n"/>
         <property name="message" value="Line has trailing whitespace"/>
