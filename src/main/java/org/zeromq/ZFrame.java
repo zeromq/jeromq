@@ -243,13 +243,12 @@ public class ZFrame
     }
 
     private static final String HEX_CHAR = "0123456789ABCDEF";
-        
+
     /**
      * @return frame data as a printable hex string
      */
     public String strhex()
     {
-
         StringBuilder b = new StringBuilder();
         for (byte aData : data) {
             int b1 = aData >>> 4 & 0xf;

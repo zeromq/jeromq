@@ -52,7 +52,7 @@ public class ZThread
             if (attachedRunnable != null) {
                 try {
                     attachedRunnable.run(args, ctx, pipe);
-                } 
+                }
                 catch (ZMQException e) {
                     if (e.getErrorCode() != Error.ETERM.getCode()) {
                         throw e;
