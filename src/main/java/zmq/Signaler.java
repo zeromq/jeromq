@@ -154,7 +154,7 @@ public class Signaler
                 nbytes = r.read(rdummy);
                 rdummy.rewind();
                 // assert nbytes == 1; This was introduced in 0.3.5 and fails on windows causing tests to hang
-            } 
+            }
             catch (IOException e) {
                 throw new ZError.IOException(e);
             }
