@@ -21,6 +21,7 @@ public class Signaler
     private final Pipe.SinkChannel w;
     private final Pipe.SourceChannel r;
     private final Selector selector;
+    private final ByteBuffer rdummy = ByteBuffer.allocate(1);
 
     // Selector.selectNow at every sending message doesn't show enough performance
     private final AtomicInteger wcursor = new AtomicInteger(0);
@@ -148,13 +149,15 @@ public class Signaler
     public void recv()
     {
         int nbytes = 0;
-        try {
-            ByteBuffer dummy = ByteBuffer.allocate(1);
-            nbytes = r.read(dummy);
-            assert nbytes == 1;
-        }
-        catch (IOException e) {
-            throw new ZError.IOException(e);
+        while (nbytes == 0) {
+            try {
+                nbytes = r.read(rdummy);
+                rdummy.rewind();
+                // assert nbytes == 1; This was introduced in 0.3.5 and fails on windows causing tests to hang
+            } 
+            catch (IOException e) {
+                throw new ZError.IOException(e);
+            }
         }
         rcursor++;
     }
