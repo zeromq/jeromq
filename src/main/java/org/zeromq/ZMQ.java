@@ -1497,7 +1497,7 @@ public class ZMQ
             items = new PollItem[size];
             timeout = -1L;
             next = 0;
-        
+
             freeSlots = new LinkedList<Integer>();
         }
 
@@ -1526,12 +1526,12 @@ public class ZMQ
 
         /**
          * Register a Channel for polling on all events.
-         * 
-         * @param channel 
+         *
+         * @param channel
          *            the Channel we are registering.
          * @return the index identifying this Channel in the poll set.
          */
-        public int register(SelectableChannel channel) 
+        public int register(SelectableChannel channel)
         {
             return register(channel, POLLIN | POLLOUT | POLLERR);
         }
@@ -1584,13 +1584,13 @@ public class ZMQ
 
         /**
          * Register a Socket for polling on the specified events.
-         * 
+         *
          * Automatically grow the internal representation if needed.
-         * 
+         *
          * @param item the PollItem we are registering.
          * @return the index identifying this Socket in the poll set.
          */
-        private int registerInternal(PollItem item) 
+        private int registerInternal(PollItem item)
         {
             int pos = -1;
 
@@ -1598,7 +1598,7 @@ public class ZMQ
                 // If there are free slots in our array, remove one
                 // from the free list and use it.
                 pos = freeSlots.remove();
-            } 
+            }
             else {
                 if (next >= items.length) {
                     PollItem[] nitems = new PollItem[items.length + SIZE_INCREMENT];
@@ -1621,7 +1621,6 @@ public class ZMQ
          */
         public void unregister(Socket socket)
         {
-
             unregisterInternal(socket);
         }
 
@@ -1638,7 +1637,7 @@ public class ZMQ
 
         /**
          * Unregister a Socket for polling on the specified events.
-         * 
+         *
          * @param socket the Socket to be unregistered
          */
         private void unregisterInternal(Object socket)
