@@ -19,15 +19,4 @@ public class TestZContext
         ctx.close();
         Assert.assertEquals(0, ctx.getSockets().size());
     }
-
-    @Test
-    public void testZContextSocketCloseBeforeContextClose()
-    {
-        ZContext ctx = new ZContext();
-        Socket s1 = ctx.createSocket(ZMQ.PUSH);
-        Socket s2 = ctx.createSocket(ZMQ.PULL);
-        s1.close();
-        s2.close();
-        ctx.close();
-    }
 }
