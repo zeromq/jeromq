@@ -59,34 +59,34 @@ public class TooManyOpenFilesTester
         @Override
         public void run()
         {
-            Ctx ctx = ZMQ.zmqInit(1);
+            Ctx ctx = ZMQ.init(1);
 
-            SocketBase server = ZMQ.zmq_socket(ctx, ZMQ.ZMQ_ROUTER);
+            SocketBase server = ZMQ.socket(ctx, ZMQ.ZMQ_ROUTER);
 
-            ZMQ.zmq_bind(server, "tcp://localhost:" + port);
+            ZMQ.bind(server, "tcp://localhost:" + port);
 
-            Msg msg = ZMQ.zmq_recv(server, 0);
+            Msg msg = ZMQ.recv(server, 0);
 
             Msg address = msg;
 
             poll(server);
 
-            msg = ZMQ.zmq_recv(server, 0);
+            msg = ZMQ.recv(server, 0);
             Msg delimiter = msg;
 
             poll(server);
 
-            msg = ZMQ.zmq_recv(server, 0);
+            msg = ZMQ.recv(server, 0);
 
             // only one echo message for this server
 
-            ZMQ.zmq_send(server, address, ZMQ.ZMQ_SNDMORE);
-            ZMQ.zmq_send(server, delimiter, ZMQ.ZMQ_SNDMORE);
-            ZMQ.zmq_send(server, msg, 0);
+            ZMQ.send(server, address, ZMQ.ZMQ_SNDMORE);
+            ZMQ.send(server, delimiter, ZMQ.ZMQ_SNDMORE);
+            ZMQ.send(server, msg, 0);
 
             // Clean up.
-            ZMQ.zmq_close(server);
-            ZMQ.zmq_term(ctx);
+            ZMQ.close(server);
+            ZMQ.term(ctx);
         }
     }
 
@@ -113,24 +113,24 @@ public class TooManyOpenFilesTester
         @Override
         public void run()
         {
-            Ctx ctx = ZMQ.zmqInit(1);
+            Ctx ctx = ZMQ.init(1);
 
-            SocketBase client = ZMQ.zmq_socket(ctx, ZMQ.ZMQ_REQ);
+            SocketBase client = ZMQ.socket(ctx, ZMQ.ZMQ_REQ);
 
-            ZMQ.zmq_setsockopt(client, ZMQ.ZMQ_IDENTITY, "ID");
-            ZMQ.zmq_connect(client, "tcp://localhost:" + port);
+            ZMQ.setSocketOption(client, ZMQ.ZMQ_IDENTITY, "ID");
+            ZMQ.connect(client, "tcp://localhost:" + port);
 
-            ZMQ.zmq_send(client, "DATA", 0);
+            ZMQ.send(client, "DATA", 0);
 
             inBetween(client);
 
-            Msg reply = ZMQ.zmq_recv(client, 0);
+            Msg reply = ZMQ.recv(client, 0);
             assertThat(reply, notNullValue());
             assertThat(new String(reply.data(), ZMQ.CHARSET), is("DATA"));
 
             // Clean up.
-            ZMQ.zmq_close(client);
-            ZMQ.zmq_term(ctx);
+            ZMQ.close(client);
+            ZMQ.term(ctx);
 
             finished.set(true);
         }
@@ -153,7 +153,7 @@ public class TooManyOpenFilesTester
     {
         // Poll socket for a reply, with timeout
         PollItem item = new PollItem(socket, ZMQ.ZMQ_POLLIN);
-        int rc = zmq.ZMQ.zmq_poll(new PollItem[] { item }, REQUEST_TIMEOUT);
+        int rc = zmq.ZMQ.poll(new PollItem[] { item }, REQUEST_TIMEOUT);
         assertThat(rc, is(1));
 
         boolean readable = item.isReadable();
