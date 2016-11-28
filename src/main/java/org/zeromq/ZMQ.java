@@ -3,6 +3,7 @@ package org.zeromq;
 import java.io.Closeable;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectableChannel;
+import java.nio.channels.Selector;
 import java.nio.charset.Charset;
 import java.util.LinkedList;
 import java.util.Random;
@@ -321,6 +322,16 @@ public class ZMQ
         }
 
         /**
+         * Create a new Selector within this context.
+         *
+         * @return the newly created Selector.
+         */
+        public Selector selector()
+        {
+            return ctx.createSelector();
+        }
+
+        /**
          * Create a new Poller within this context, with a default size.
          *
          * @return the newly created Poller.
@@ -328,7 +339,9 @@ public class ZMQ
          */
         public Poller poller()
         {
-            return new Poller(this);
+            Poller poller = new Poller(this);
+            poller.selector = selector();
+            return poller;
         }
 
         /**
@@ -341,7 +354,9 @@ public class ZMQ
          */
         public Poller poller(int size)
         {
-            return new Poller(this, size);
+            Poller poller = new Poller(this, size);
+            poller.selector = selector();
+            return poller;
         }
 
         @Override
@@ -1471,6 +1486,7 @@ public class ZMQ
         private static final int SIZE_DEFAULT = 32;
         private static final int SIZE_INCREMENT = 16;
 
+        public Selector selector;
         private PollItem[] items;
         private long timeout;
         private int next;
@@ -1781,7 +1797,13 @@ public class ZMQ
                 }
             }
 
-            return zmq.ZMQ.poll(pollItems, used, tout);
+            if (selector != null) {
+                return zmq.ZMQ.poll(selector, pollItems, used, tout);
+            }
+            else {
+                return zmq.ZMQ.poll(pollItems, used, tout);
+            }
+
         }
 
         /**

@@ -1,10 +1,14 @@
 package org.zeromq;
 
 import java.io.Closeable;
+import java.io.IOException;
+import java.nio.channels.Selector;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.zeromq.ZMQ.Context;
+import org.zeromq.ZMQ.Poller;
 import org.zeromq.ZMQ.Socket;
 
 import zmq.ZError;
@@ -29,6 +33,11 @@ public class ZContext implements Closeable
      * List of sockets managed by this ZContext
      */
     private List<Socket> sockets;
+
+    /**
+     * List of selectors managed by this ZContext
+     */
+    private List<Selector> selectors;
 
     /**
      * Number of io threads allocated to this context, default 1
@@ -57,6 +66,7 @@ public class ZContext implements Closeable
     public ZContext(int ioThreads)
     {
         sockets = new CopyOnWriteArrayList<Socket>();
+        selectors = new ArrayList<Selector>();
         this.ioThreads = ioThreads;
         linger = 0;
         main = true;
@@ -76,6 +86,18 @@ public class ZContext implements Closeable
             socket.close();
         }
         sockets.clear();
+
+        for (Selector selector : selectors) {
+            if (selector != null) {
+                try {
+                    selector.close();
+                }
+                catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+        selectors.clear();
 
         // Only terminate context if we are on the main thread
         if (isMain() && context != null) {
@@ -123,6 +145,26 @@ public class ZContext implements Closeable
             }
             s.close();
         }
+    }
+
+    public Selector createSelector()
+    {
+        try {
+            // Create and register selector
+            Selector selector = Selector.open();
+            selectors.add(selector);
+            return selector;
+        }
+        catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public Poller createPoller(int size)
+    {
+        Poller poller = new Poller(size);
+        poller.selector = createSelector();
+        return poller;
     }
 
     /**

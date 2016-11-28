@@ -1,6 +1,7 @@
 package zmq;
 
 import java.io.IOException;
+import java.nio.channels.Selector;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
@@ -59,6 +60,11 @@ public class Ctx
     //  a memory barrier to ensure that all CPU cores see the same data.
     private final Lock slotSync;
 
+    // A list of poll selectors opened under this context. When the context is
+    // destroyed, each of the selectors is closed to ensure resource
+    // deallocation.
+    public List<Selector> selectors;
+
     //  The reaper thread.
     private Reaper reaper;
 
@@ -115,6 +121,7 @@ public class Ctx
         emptySlots = new ArrayDeque<Integer>();
         ioThreads = new ArrayList<IOThread>();
         sockets = new ArrayList<SocketBase>();
+        selectors = new ArrayList<Selector>();
         endpoints = new HashMap<String, Endpoint>();
     }
 
@@ -127,14 +134,19 @@ public class Ctx
             it.close();
         }
 
+        for (Selector selector : selectors) {
+            if (selector != null) {
+                selector.close();
+            }
+        }
+        selectors.clear();
+
         if (reaper != null) {
             reaper.close();
         }
         termMailbox.close();
 
         tag = 0xdeadbeef;
-
-        zmq.ZMQ.closePollSelector();
     }
 
     //  Returns false if object is not a context.
@@ -356,6 +368,19 @@ public class Ctx
         }
         finally {
             slotSync.unlock();
+        }
+    }
+
+    // Creates a Selector that will be closed when the context is destroyed.
+    public Selector createSelector()
+    {
+        try {
+            Selector selector = Selector.open();
+            selectors.add(selector);
+            return selector;
+        }
+        catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 
