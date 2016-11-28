@@ -3,6 +3,7 @@ package zmq;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Array;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
@@ -10,7 +11,7 @@ import java.nio.channels.SelectableChannel;
 import java.nio.channels.SocketChannel;
 import java.security.SecureRandom;
 
-class Utils
+public class Utils
 {
     private Utils()
     {
@@ -21,6 +22,14 @@ class Utils
     public static int generateRandom()
     {
         return random.nextInt();
+    }
+
+    public static int findOpenPort() throws IOException
+    {
+        ServerSocket tmpSocket = new ServerSocket(0);
+        int portNumber = tmpSocket.getLocalPort();
+        tmpSocket.close();
+        return portNumber;
     }
 
     public static void tuneTcpSocket(SocketChannel ch) throws SocketException
