@@ -1,5 +1,7 @@
 package zmq;
 
+import java.io.IOException;
+
 import org.junit.Test;
 import static org.junit.Assert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
@@ -11,16 +13,19 @@ public class TestShutdownStress
 
     class Worker implements Runnable
     {
+        int port;
         SocketBase s;
-        Worker(SocketBase s)
+
+        Worker(SocketBase s) throws IOException
         {
+            this.port = Utils.findOpenPort();
             this.s = s;
         }
 
         @Override
         public void run()
         {
-            boolean rc = ZMQ.connect(s, "tcp://127.0.0.1:5560");
+            boolean rc = ZMQ.connect(s, "tcp://127.0.0.1:" + port);
             assertThat(rc, is(true));
 
             //  Start closing the socket while the connecting process is underway.
@@ -33,6 +38,8 @@ public class TestShutdownStress
     {
         Thread[] threads = new Thread[THREAD_COUNT];
 
+        int randomPort = Utils.findOpenPort();
+
         for (int j = 0; j != 10; j++) {
             Ctx ctx = ZMQ.init(7);
             assertThat(ctx, notNullValue());
@@ -40,7 +47,7 @@ public class TestShutdownStress
             SocketBase s1 = ZMQ.socket(ctx, ZMQ.ZMQ_PUB);
             assertThat(s1, notNullValue());
 
-            boolean rc = ZMQ.bind(s1, "tcp://127.0.0.1:7570");
+            boolean rc = ZMQ.bind(s1, "tcp://127.0.0.1:" + randomPort);
             assertThat(rc, is(true));
 
             for (int i = 0; i != THREAD_COUNT; i++) {

@@ -1,5 +1,6 @@
 package zmq;
 
+import java.io.IOException;
 import java.util.UUID;
 
 import org.junit.Test;
@@ -19,8 +20,11 @@ public class TestLastEndpoint
     }
 
     @Test
-    public void testLastEndpoint()
+    public void testLastEndpoint() throws IOException
     {
+        int port1 = Utils.findOpenPort();
+        int port2 = Utils.findOpenPort();
+
         //  Create the infrastructure
         Ctx ctx = ZMQ.init(1);
         assertThat(ctx, notNullValue());
@@ -28,8 +32,8 @@ public class TestLastEndpoint
         SocketBase sb = ZMQ.socket(ctx, ZMQ.ZMQ_ROUTER);
         assertThat(sb, notNullValue());
 
-        bindAndVerify(sb, "tcp://127.0.0.1:5560");
-        bindAndVerify(sb, "tcp://127.0.0.1:5561");
+        bindAndVerify(sb, "tcp://127.0.0.1:" + port1);
+        bindAndVerify(sb, "tcp://127.0.0.1:" + port2);
         bindAndVerify(sb, "ipc:///tmp/testep" + UUID.randomUUID().toString());
 
         sb.close();

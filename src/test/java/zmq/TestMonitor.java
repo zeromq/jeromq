@@ -72,7 +72,8 @@ public class TestMonitor
     @Test
     public void testMonitor() throws Exception
     {
-        String addr = "tcp://127.0.0.1:5590";
+        int port = Utils.findOpenPort();
+        String addr = "tcp://127.0.0.1:" + port;
         SocketMonitor [] threads = new SocketMonitor [3];
         //  Create the infrastructure
         Ctx ctx = ZMQ.init(1);

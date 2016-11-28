@@ -10,17 +10,18 @@ public class TestReqrepTcp
     @Test
     public void testReqrepTcp() throws Exception
     {
+        int port = Utils.findOpenPort();
         Ctx ctx = ZMQ.init(1);
         assertThat(ctx, notNullValue());
 
         SocketBase sb = ZMQ.socket(ctx, ZMQ.ZMQ_REP);
         assertThat(sb, notNullValue());
-        boolean rc = ZMQ.bind(sb, "tcp://127.0.0.1:7560");
+        boolean rc = ZMQ.bind(sb, "tcp://127.0.0.1:" + port);
         assertThat(rc, is(true));
 
         SocketBase sc = ZMQ.socket(ctx, ZMQ.ZMQ_REQ);
         assertThat(sc, notNullValue());
-        rc = ZMQ.connect(sc, "tcp://127.0.0.1:7560");
+        rc = ZMQ.connect(sc, "tcp://127.0.0.1:" + port);
         assertThat(rc, is(true));
 
         Helper.bounce(sb, sc);

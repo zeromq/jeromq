@@ -156,7 +156,7 @@ public class TooManyOpenFilesTester
         for (int index = 0; index < 10000; ++index) {
             long start = System.currentTimeMillis();
             List<Pair> pairs = new ArrayList<Pair>();
-            int port = 5963;
+            int port = Utils.findOpenPort();
 
             for (int idx = 0; idx < 20; ++idx) {
                 Pair pair = testWithPoll(port + idx);

@@ -1,5 +1,6 @@
 package org.zeromq;
 
+import java.io.IOException;
 import java.net.InetAddress;
 
 import org.junit.Test;
@@ -12,12 +13,13 @@ import static org.junit.Assert.assertEquals;
 public class ZBeaconTest
 {
     @Test
-    public void test() throws InterruptedException
+    public void test() throws InterruptedException, IOException
     {
         final CountDownLatch latch = new CountDownLatch(1);
         byte[] beacon = new byte[] { 'H', 'Y', 'D', 'R', 'A', 0x01, 0x12, 0x34 };
         byte[] prefix = new byte[] { 'H', 'Y', 'D', 'R', 'A', 0x01 };
-        ZBeacon zbeacon = new ZBeacon("255.255.255.255", 5670, beacon, false);
+        int port = Utils.findOpenPort();
+        ZBeacon zbeacon = new ZBeacon("127.0.0.1", port, beacon, false);
         zbeacon.setPrefix(prefix);
         zbeacon.setListener(new Listener()
         {

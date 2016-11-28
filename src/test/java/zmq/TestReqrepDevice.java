@@ -1,5 +1,7 @@
 package zmq;
 
+import java.io.IOException;
+
 import org.junit.Test;
 import static org.junit.Assert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
@@ -10,8 +12,11 @@ public class TestReqrepDevice
     //  Create REQ/ROUTER wiring.
 
     @Test
-    public void testReprepDevice()
+    public void testReprepDevice() throws IOException
     {
+        int routerPort = Utils.findOpenPort();
+        int dealerPort = Utils.findOpenPort();
+
         boolean brc;
         Ctx ctx = ZMQ.init(1);
         assertThat(ctx, notNullValue());
@@ -20,26 +25,26 @@ public class TestReqrepDevice
         SocketBase dealer = ZMQ.socket(ctx, ZMQ.ZMQ_DEALER);
         assertThat(dealer, notNullValue());
 
-        brc = ZMQ.bind(dealer, "tcp://127.0.0.1:5580");
+        brc = ZMQ.bind(dealer, "tcp://127.0.0.1:" + dealerPort);
         assertThat(brc , is(true));
 
         SocketBase router = ZMQ.socket(ctx, ZMQ.ZMQ_ROUTER);
         assertThat(router, notNullValue());
 
-        brc = ZMQ.bind(router, "tcp://127.0.0.1:5581");
+        brc = ZMQ.bind(router, "tcp://127.0.0.1:" + routerPort);
         assertThat(brc , is(true));
 
         //  Create a worker.
         SocketBase rep = ZMQ.socket(ctx, ZMQ.ZMQ_REP);
         assertThat(rep, notNullValue());
 
-        brc = ZMQ.connect(rep, "tcp://127.0.0.1:5580");
+        brc = ZMQ.connect(rep, "tcp://127.0.0.1:" + dealerPort);
         assertThat(brc , is(true));
 
         SocketBase req = ZMQ.socket(ctx, ZMQ.ZMQ_REQ);
         assertThat(req, notNullValue());
 
-        brc = ZMQ.connect(req, "tcp://127.0.0.1:5581");
+        brc = ZMQ.connect(req, "tcp://127.0.0.1:" + routerPort);
         assertThat(brc, is(true));
 
         //  Send a request.

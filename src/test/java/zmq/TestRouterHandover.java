@@ -15,11 +15,13 @@ public class TestRouterHandover
         int rc;
         boolean brc;
 
+        int port = Utils.findOpenPort();
+
         Ctx ctx = ZMQ.init(1);
         assertThat(ctx, notNullValue());
 
         SocketBase router = ZMQ.socket(ctx, ZMQ.ZMQ_ROUTER);
-        brc = ZMQ.bind(router, "tcp://127.0.0.1:15561");
+        brc = ZMQ.bind(router, "tcp://127.0.0.1:" + port);
         assertThat(brc , is(true));
 
         // Enable the handover flag
@@ -32,7 +34,7 @@ public class TestRouterHandover
 
         ZMQ.setSocketOption(dealerOne, ZMQ.ZMQ_IDENTITY, "X");
 
-        brc = ZMQ.connect(dealerOne, "tcp://127.0.0.1:15561");
+        brc = ZMQ.connect(dealerOne, "tcp://127.0.0.1:" + port);
         assertThat(brc, is(true));
 
         // Get message from dealer to know when connection is ready
@@ -52,7 +54,7 @@ public class TestRouterHandover
 
         ZMQ.setSocketOption(dealerTwo, ZMQ.ZMQ_IDENTITY, "X");
 
-        brc = ZMQ.connect(dealerTwo, "tcp://127.0.0.1:15561");
+        brc = ZMQ.connect(dealerTwo, "tcp://127.0.0.1:" + port);
         assertThat(brc, is(true));
 
         // Get message from dealer to know when connection is ready

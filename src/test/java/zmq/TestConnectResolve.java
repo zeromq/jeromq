@@ -1,5 +1,7 @@
 package zmq;
 
+import java.io.IOException;
+
 import org.junit.Test;
 import static org.junit.Assert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
@@ -8,8 +10,9 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 public class TestConnectResolve
 {
     @Test
-    public void testConnectResolve()
+    public void testConnectResolve() throws IOException
     {
+        int port = Utils.findOpenPort();
         System.out.println("test_connect_resolve running...\n");
 
         Ctx ctx = ZMQ.init(1);
@@ -20,12 +23,12 @@ public class TestConnectResolve
         SocketBase sock = ZMQ.socket(ctx, ZMQ.ZMQ_PUB);
         assertThat(sock, notNullValue());
 
-        boolean brc = ZMQ.connect(sock, "tcp://localhost:1234");
+        boolean brc = ZMQ.connect(sock, "tcp://localhost:" + port);
         assertThat(brc, is(true));
 
         /*
         try {
-            brc = ZMQ.connect (sock, "tcp://foobar123xyz:1234");
+            brc = ZMQ.connect (sock, "tcp://foobar123xyz:" + port);
             assertTrue(false);
         } catch (IllegalArgumentException e) {
         }
