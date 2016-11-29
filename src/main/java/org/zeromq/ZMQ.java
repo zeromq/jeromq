@@ -335,7 +335,6 @@ public class ZMQ
          * Create a new Poller within this context, with a default size.
          *
          * @return the newly created Poller.
-         * @deprecated Use poller constructor
          */
         public Poller poller()
         {
@@ -350,7 +349,6 @@ public class ZMQ
          * @param size
          *            the poller initial size.
          * @return the newly created Poller.
-         * @deprecated Use poller constructor
          */
         public Poller poller(int size)
         {
@@ -1495,6 +1493,15 @@ public class ZMQ
         // When socket is removed from polling, store free slots here
         private LinkedList<Integer> freeSlots;
 
+        /**
+         * Create a new Poller, with a specified initial size, that is not
+         * associated with any context.
+         *
+         * @param size
+         *            the poller initial size.
+         * @return the newly created Poller.
+         * @deprecated Use ZMQ.Context.poller or ZContext.createPoller instead.
+         */
         public Poller(int size)
         {
             this (null, size);
