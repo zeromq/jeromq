@@ -376,6 +376,7 @@ public class Ctx
     {
         try {
             Selector selector = Selector.open();
+            assert (selector != null);
             selectors.add(selector);
             return selector;
         }
