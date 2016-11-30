@@ -17,9 +17,9 @@ import org.zeromq.ZThread.IAttachedRunnable;
 
 /**
  * Clone server Model Two
- * 
+ *
  * @author Danish Shrestha <dshrestha06@gmail.com>
- * 
+ *
  */
 public class clonesrv2 {
 
@@ -65,7 +65,7 @@ public class clonesrv2 {
 			Socket snapshot = ctx.createSocket(ZMQ.ROUTER);
 			snapshot.bind("tcp://*:5556");
 
-			Poller poller = new ZMQ.Poller(2);
+			Poller poller = ctx.createPoller(2);
 			poller.register(pipe, ZMQ.Poller.POLLIN);
 			poller.register(snapshot, ZMQ.Poller.POLLIN);
 

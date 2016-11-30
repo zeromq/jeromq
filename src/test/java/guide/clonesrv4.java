@@ -30,7 +30,7 @@ public class clonesrv4
         Socket collector = ctx.createSocket(ZMQ.PULL);
         collector.bind("tcp://*:5558");
 
-        Poller poller = new Poller(2);
+        Poller poller = ctx.createPoller(2);
         poller.register(collector, Poller.POLLIN);
         poller.register(snapshot, Poller.POLLIN);
 

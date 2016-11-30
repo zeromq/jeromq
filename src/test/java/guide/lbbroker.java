@@ -115,7 +115,7 @@ public class lbbroker {
         while (!Thread.currentThread().isInterrupted()) {
 
             //  Initialize poll set
-            Poller items = new Poller (2);
+            Poller items = context.poller(2);
 
             //  Always poll for worker activity on backend
             items.register(backend, Poller.POLLIN);

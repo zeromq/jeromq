@@ -130,9 +130,7 @@ public class ZContext implements Closeable
 
     public Poller createPoller(int size)
     {
-        Poller poller = new Poller(size);
-        poller.selector = createSelector();
-        return poller;
+        return new Poller(getContext(), size);
     }
 
     /**

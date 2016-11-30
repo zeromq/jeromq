@@ -556,46 +556,6 @@ public class ZMQ
     }
 
     /**
-     * Polling on items. This has very poor performance.
-     * Try to use zmq_poll with selector
-     * CAUTION: This could be affected by jdk epoll bug
-     *
-     * @param items
-     * @param timeout
-     * @return number of events
-     */
-    public static int poll(PollItem[] items, long timeout)
-    {
-        return poll(items, items.length, timeout);
-    }
-
-    /**
-     * Polling on items. This has very poor performance.
-     * Try to use zmq_poll with selector
-     * CAUTION: This could be affected by jdk epoll bug
-     *
-     * @param items
-     * @param timeout
-     * @return number of events
-     */
-    public static int poll(PollItem[] items, int count, long timeout)
-    {
-        Selector selector = null;
-        try {
-            selector = PollSelector.open();
-        }
-        catch (IOException e) {
-            throw new ZError.IOException(e);
-        }
-
-        int ret = poll(selector, items, count, timeout);
-
-        //  Do not close selector
-
-        return ret;
-    }
-
-    /**
      * Polling on items with given selector
      * CAUTION: This could be affected by jdk epoll bug
      *
@@ -781,69 +741,5 @@ public class ZMQ
     public static String strerror(int errno)
     {
         return "Errno = " + errno;
-    }
-
-    private static final ThreadLocal<PollSelector> POLL_SELECTOR = new ThreadLocal<PollSelector>();
-
-    // GC closes selector handle
-    private static class PollSelector
-    {
-        private Selector selector;
-
-        private PollSelector(Selector selector)
-        {
-            this.selector = selector;
-        }
-
-        public static Selector open() throws IOException
-        {
-            PollSelector polls = POLL_SELECTOR.get();
-            if (polls == null) {
-                synchronized (POLL_SELECTOR) {
-                    polls = POLL_SELECTOR.get();
-                    try {
-                        if (polls == null) {
-                            polls = new PollSelector(Selector.open());
-                            POLL_SELECTOR.set(polls);
-                        }
-                    }
-                    catch (IOException e) {
-                        throw new ZError.IOException(e);
-                    }
-                }
-            }
-            return polls.get();
-        }
-
-        public Selector get()
-        {
-            assert (selector != null);
-            assert (selector.isOpen());
-            return selector;
-        }
-
-        void close()
-        {
-            if (selector != null) {
-                try {
-                    selector.close();
-                    selector = null;
-                }
-                catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-
-        @Override
-        public void finalize()
-        {
-            close();
-            try {
-                super.finalize();
-            }
-            catch (Throwable e) {
-            }
-        }
     }
 }

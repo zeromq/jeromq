@@ -6,7 +6,6 @@ import java.util.Random;
 import org.zeromq.ZContext;
 import org.zeromq.ZFrame;
 import org.zeromq.ZMQ;
-import org.zeromq.ZMQ.PollItem;
 import org.zeromq.ZMQ.Poller;
 import org.zeromq.ZMQ.Socket;
 import org.zeromq.ZMsg;
@@ -41,6 +40,9 @@ public class peering3
             monitor.connect(String.format("ipc://%s-monitor.ipc", self));
             Random rand = new Random(System.nanoTime());
 
+            Poller poller = ctx.createPoller(1);
+            poller.register(client, Poller.POLLIN);
+
             while (true) {
 
                 try {
@@ -55,12 +57,11 @@ public class peering3
                     client.send(taskId, 0);
 
                     //  Wait max ten seconds for a reply, then complain
-                    PollItem pollSet[] = {new PollItem(client, Poller.POLLIN)};
-                    int rc = ZMQ.poll(pollSet, 10 * 1000);
+                    int rc = poller.poll(10 * 1000);
                     if (rc == -1)
                         break;          //  Interrupted
 
-                    if (pollSet[0].isReadable()) {
+                    if (poller.pollin(0)) {
                         String reply = client.recvStr(0);
                         if (reply == null)
                             break;              //  Interrupted
@@ -195,18 +196,21 @@ public class peering3
         //  sockets (statefe and monitor), in any case. If we have no ready workers,
         //  there's no point in looking at incoming requests. These can remain on
         //  their internal 0MQ queues:
+        Poller primary = ctx.createPoller(4);
+        primary.register(localbe, Poller.POLLIN);
+        primary.register(cloudbe, Poller.POLLIN);
+        primary.register(statefe, Poller.POLLIN);
+        primary.register(monitor, Poller.POLLIN);
+
+        Poller secondary = ctx.createPoller(2);
+        secondary.register(localfe, Poller.POLLIN);
+        secondary.register(cloudfe, Poller.POLLIN);
 
         while (true) {
             //  First, route any waiting replies from workers
-            PollItem primary[] = {
-                    new PollItem(localbe, Poller.POLLIN),
-                    new PollItem(cloudbe, Poller.POLLIN),
-                    new PollItem(statefe, Poller.POLLIN),
-                    new PollItem(monitor, Poller.POLLIN)
-            };
+
             //  If we have no workers anyhow, wait indefinitely
-            int rc = ZMQ.poll(primary,
-                    localCapacity > 0 ? 1000 : -1);
+            int rc = primary.poll(localCapacity > 0 ? 1000 : -1);
             if (rc == -1)
                 break;              //  Interrupted
 
@@ -216,7 +220,7 @@ public class peering3
 
             //  Handle reply from local worker
             ZMsg msg = null;
-            if (primary[0].isReadable()) {
+            if (primary.pollin(0)) {
                 msg = ZMsg.recvMsg(localbe);
                 if (msg == null)
                     break;          //  Interrupted
@@ -232,7 +236,7 @@ public class peering3
                 }
             }
             //  Or handle reply from peer broker
-            else if (primary[1].isReadable()) {
+            else if (primary.pollin(1)) {
                 msg = ZMsg.recvMsg(cloudbe);
                 if (msg == null)
                     break;          //  Interrupted
@@ -255,12 +259,12 @@ public class peering3
             //  If we have input messages on our statefe or monitor sockets we
             //  can process these immediately:
 
-            if (primary[2].isReadable()) {
+            if (primary.pollin(2)) {
                 String peer = statefe.recvStr();
                 String status = statefe.recvStr();
                 cloudCapacity = Integer.parseInt(status);
             }
-            if (primary[3].isReadable()) {
+            if (primary.pollin(3)) {
                 String status = monitor.recvStr();
                 System.out.println(status);
             }
@@ -272,21 +276,13 @@ public class peering3
             //  cloud capacity://
 
             while (localCapacity + cloudCapacity > 0) {
-                PollItem secondary[] = {
-                        new PollItem(localfe, Poller.POLLIN),
-                        new PollItem(cloudfe, Poller.POLLIN)
-                };
-
-                if (localCapacity > 0)
-                    rc = ZMQ.poll(secondary, 2, 0);
-                else
-                    rc = ZMQ.poll(secondary, 1, 0);
+                rc = secondary.poll(0);
 
                 assert (rc >= 0);
 
-                if (secondary[0].isReadable()) {
+                if (secondary.pollin(0)) {
                     msg = ZMsg.recvMsg(localfe);
-                } else if (secondary[1].isReadable()) {
+                } else if (localCapacity > 0 && secondary.pollin(1)) {
                     msg = ZMsg.recvMsg(cloudfe);
                 } else
                     break;      //  No work, go back to backends

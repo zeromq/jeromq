@@ -2,7 +2,7 @@ package guide;
 
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
-import org.zeromq.ZMQ.PollItem;
+import org.zeromq.ZMQ.Poller;
 import org.zeromq.ZMQ.Socket;
 import org.zeromq.ZMsg;
 
@@ -56,10 +56,13 @@ public class flclient2
         //  Since we can poll several times, calculate each one
         ZMsg reply = null;
         long endtime = System.currentTimeMillis() + GLOBAL_TIMEOUT;
+
+        Poller poller = ctx.createPoller(1);
+        poller.register(socket, Poller.POLLIN);
+
         while (System.currentTimeMillis() < endtime) {
-            PollItem[] items = { new PollItem(socket, ZMQ.Poller.POLLIN) };
-            ZMQ.poll(items, endtime - System.currentTimeMillis());
-            if (items[0].isReadable()) {
+            poller.poll(endtime - System.currentTimeMillis());
+            if (poller.pollin(0)) {
                 //  Reply is [empty][getSequence][OK]
                 reply = ZMsg.recvMsg(socket);
                 assert (reply.size() == 3);

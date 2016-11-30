@@ -346,9 +346,7 @@ public class ZMQ
          */
         public Poller poller()
         {
-            Poller poller = new Poller(this);
-            poller.selector = selector();
-            return poller;
+            return new Poller(this);
         }
 
         /**
@@ -360,9 +358,7 @@ public class ZMQ
          */
         public Poller poller(int size)
         {
-            Poller poller = new Poller(this, size);
-            poller.selector = selector();
-            return poller;
+            return new Poller(this, size);
         }
 
         @Override
@@ -1492,8 +1488,8 @@ public class ZMQ
         private static final int SIZE_DEFAULT = 32;
         private static final int SIZE_INCREMENT = 16;
 
+        private Selector selector;
         private Context context;
-        public Selector selector;
         private PollItem[] items;
         private long timeout;
         private int next;
@@ -1501,20 +1497,6 @@ public class ZMQ
 
         // When socket is removed from polling, store free slots here
         private LinkedList<Integer> freeSlots;
-
-        /**
-         * Create a new Poller, with a specified initial size, that is not
-         * associated with any context.
-         *
-         * @param size
-         *            the poller initial size.
-         * @return the newly created Poller.
-         * @deprecated Use ZMQ.Context.poller or ZContext.createPoller instead.
-         */
-        public Poller(int size)
-        {
-            this (null, size);
-        }
 
         /**
          * Class constructor.
@@ -1526,13 +1508,11 @@ public class ZMQ
          */
         protected Poller(Context context, int size)
         {
-            if (context != null) {
-                this.context = context;
-            }
-
-            items = new PollItem[size];
-            timeout = -1L;
-            next = 0;
+            this.context = context;
+            selector     = context.selector();
+            items        = new PollItem[size];
+            timeout      = -1L;
+            next         = 0;
 
             freeSlots = new LinkedList<Integer>();
         }
@@ -1818,12 +1798,7 @@ public class ZMQ
             }
 
             try {
-                if (selector != null) {
-                    return zmq.ZMQ.poll(selector, pollItems, used, tout);
-                }
-                else {
-                    return zmq.ZMQ.poll(pollItems, used, tout);
-                }
+                return zmq.ZMQ.poll(selector, pollItems, used, tout);
             }
             catch (ZError.IOException e) {
                 if (context != null && context.isTerminated()) {
@@ -2028,21 +2003,6 @@ public class ZMQ
     public static boolean proxy(Socket frontend, Socket backend, Socket capture)
     {
         return zmq.ZMQ.proxy(frontend.base, backend.base, capture != null ? capture.base : null);
-    }
-
-    public static int poll(PollItem[] items, long timeout)
-    {
-        return poll(items, items.length, timeout);
-    }
-
-    public static int poll(PollItem[] items, int count, long timeout)
-    {
-        zmq.PollItem[] pollItems = new zmq.PollItem[count];
-        for (int i = 0; i < count; i++) {
-            pollItems[i] = items[i].base;
-        }
-
-        return zmq.ZMQ.poll(pollItems, count, timeout);
     }
 
     /**

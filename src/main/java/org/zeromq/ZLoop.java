@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import org.zeromq.ZMQ.Context;
 import org.zeromq.ZMQ.PollItem;
 import org.zeromq.ZMQ.Poller;
 
@@ -58,6 +59,7 @@ public class ZLoop
 
     }
 
+    private Context context;                    //  Context managing the pollers.
     private final List<SPoller> pollers;        //  List of poll items
     private final List<STimer> timers;          //  List of timers
     private int pollSize;                       //  Size of poll set
@@ -68,12 +70,20 @@ public class ZLoop
     private final List<Object> zombies;         //  List of timers to kill
     private final List<STimer> newTimers;       //  List of timers to add
 
-    public ZLoop()
+    public ZLoop(Context context)
     {
-        pollers = new ArrayList<SPoller>();
-        timers = new ArrayList<STimer>();
-        zombies = new ArrayList<Object>();
+        assert (context != null);
+
+        context   = context;
+        pollers   = new ArrayList<SPoller>();
+        timers    = new ArrayList<STimer>();
+        zombies   = new ArrayList<Object>();
         newTimers = new ArrayList<STimer>();
+    }
+
+    public ZLoop(ZContext ctx)
+    {
+        this(ctx.getContext());
     }
 
     public void destroy()
@@ -90,7 +100,7 @@ public class ZLoop
         pollact = null;
 
         pollSize = pollers.size();
-        pollset = new Poller(pollSize);
+        pollset = context.poller(pollSize);
 
         pollact = new SPoller[pollSize];
 
@@ -242,13 +252,17 @@ public class ZLoop
             if (dirty) {
                 // If s_rebuild_pollset() fails, break out of the loop and
                 // return its error
-                rebuild();
+                if (context != null) {
+                  rebuild();
+                }
             }
             long wait = ticklessTimer();
 
-            rc = pollset.poll(wait);
+            if (pollset != null) {
+              rc = pollset.poll(wait);
+            }
 
-            if (rc == -1) {
+            if (context == null || rc == -1) {
                 if (verbose) {
                     System.out.printf("I: zloop: interrupted (%d)\n", rc);
                 }

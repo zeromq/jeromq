@@ -83,7 +83,7 @@ public class mdcliapi {
             request.duplicate().send(client);
 
             // Poll socket for a reply, with timeout
-            ZMQ.Poller items = new ZMQ.Poller(1);
+            ZMQ.Poller items = ctx.createPoller(1);
             items.register(client, ZMQ.Poller.POLLIN);
             if (items.poll(timeout) == -1)
                 break; // Interrupted

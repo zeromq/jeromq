@@ -57,7 +57,7 @@ public class mdcliapi2 {
         ZMsg reply = null;
 
         // Poll socket for a reply, with timeout
-        ZMQ.Poller items = new ZMQ.Poller(1);
+        ZMQ.Poller items = ctx.createPoller(1);
         items.register(client, ZMQ.Poller.POLLIN);
         if (items.poll(timeout * 1000) == -1)
             return null; // Interrupted

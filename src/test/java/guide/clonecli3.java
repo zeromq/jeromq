@@ -48,7 +48,7 @@ public class clonecli3 {
 			clonecli3.kvMap.put(kvMsg.getKey(), kvMsg);
 		}
 
-		Poller poller = new ZMQ.Poller(1);
+		Poller poller = ctx.createPoller(1);
 		poller.register(subscriber);
 
 		Random random = new Random();

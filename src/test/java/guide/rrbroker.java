@@ -23,7 +23,7 @@ public class rrbroker{
         System.out.println("launch and connect broker.");
 
         //  Initialize poll set
-        Poller items = new Poller (2);
+        Poller items = context.poller(2);
         items.register(frontend, Poller.POLLIN);
         items.register(backend, Poller.POLLIN);
 
@@ -31,7 +31,7 @@ public class rrbroker{
         byte[] message;
 
         //  Switch messages between sockets
-        while (!Thread.currentThread().isInterrupted()) {            
+        while (!Thread.currentThread().isInterrupted()) {
             //  poll and memorize multipart detection
             items.poll();
 

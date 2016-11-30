@@ -220,7 +220,7 @@ public class bstar
     public bstar(boolean primary, String local, String remote) {
         //  Initialize the Binary Star
         ctx = new ZContext();
-        loop = new ZLoop();
+        loop = new ZLoop(ctx);
         state = primary? State.STATE_PRIMARY: State.STATE_BACKUP;
 
         //  Create publisher for state going to peer

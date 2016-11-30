@@ -2,7 +2,6 @@ package guide;
 
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
-import org.zeromq.ZMQ.PollItem;
 import org.zeromq.ZMQ.Poller;
 import org.zeromq.ZMQ.Socket;
 
@@ -27,6 +26,9 @@ public class lpclient
         assert (client != null);
         client.connect(SERVER_ENDPOINT);
 
+        Poller poller = ctx.createPoller(1);
+        poller.register(client, Poller.POLLIN);
+
         int sequence = 0;
         int retriesLeft = REQUEST_RETRIES;
         while (retriesLeft > 0 && !Thread.currentThread().isInterrupted()) {
@@ -37,8 +39,7 @@ public class lpclient
             int expect_reply = 1;
             while (expect_reply > 0) {
                 //  Poll socket for a reply, with timeout
-                PollItem items[] = {new PollItem(client, Poller.POLLIN)};
-                int rc = ZMQ.poll(items, REQUEST_TIMEOUT);
+                int rc = poller.poll(REQUEST_TIMEOUT);
                 if (rc == -1)
                     break;          //  Interrupted
 
@@ -47,7 +48,7 @@ public class lpclient
                 //  socket and resend the request. We try a number of times
                 //  before finally abandoning:
 
-                if (items[0].isReadable()) {
+                if (poller.pollin(0)) {
                     //  We got a reply from the server, must match getSequence
                     String reply = client.recvStr();
                     if (reply == null)

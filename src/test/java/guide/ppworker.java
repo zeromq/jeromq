@@ -5,7 +5,7 @@ import java.util.Random;
 import org.zeromq.ZContext;
 import org.zeromq.ZFrame;
 import org.zeromq.ZMQ;
-import org.zeromq.ZMQ.PollItem;
+import org.zeromq.ZMQ.Poller;
 import org.zeromq.ZMQ.Socket;
 import org.zeromq.ZMsg;
 
@@ -50,6 +50,9 @@ public class ppworker
         ZContext ctx = new ZContext();
         Socket worker = worker_socket(ctx);
 
+        Poller poller = ctx.createPoller(1);
+        poller.register(worker, Poller.POLLIN);
+
         //  If liveness hits zero, queue is considered disconnected
         int liveness = HEARTBEAT_LIVENESS;
         int interval = INTERVAL_INIT;
@@ -60,12 +63,11 @@ public class ppworker
         Random rand = new Random(System.nanoTime());
         int cycles = 0;
         while (true) {
-            PollItem items[] = {new PollItem(worker, ZMQ.Poller.POLLIN)};
-            int rc = ZMQ.poll(items, HEARTBEAT_INTERVAL);
+            int rc = poller.poll(HEARTBEAT_INTERVAL);
             if (rc == -1)
                 break;              //  Interrupted
 
-            if (items[0].isReadable()) {
+            if (poller.pollin(0)) {
                 //  Get message
                 //  - 3-part envelope + content -> request
                 //  - 1-part HEARTBEAT -> heartbeat

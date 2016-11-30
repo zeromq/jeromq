@@ -175,7 +175,7 @@ public class lruqueue3
         arg.workers = new LinkedList<ZFrame>();
 
         //  Prepare reactor and fire it up
-        ZLoop reactor = new ZLoop();
+        ZLoop reactor = new ZLoop(context);
         reactor.verbose(true);
         PollItem poller = new PollItem(arg.backend, ZMQ.Poller.POLLIN);
         reactor.addPoller(poller, handle_backend, arg);

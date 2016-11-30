@@ -2,7 +2,7 @@ package guide;
 
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
-import org.zeromq.ZMQ.PollItem;
+import org.zeromq.ZMQ.Poller;
 import org.zeromq.ZMQ.Socket;
 import org.zeromq.ZMsg;
 
@@ -22,10 +22,14 @@ public class flclient1
         //  Send request, wait safely for reply
         ZMsg msg = request.duplicate();
         msg.send(client);
-        PollItem[] items = { new PollItem(client, ZMQ.Poller.POLLIN) };
-        ZMQ.poll(items, REQUEST_TIMEOUT);
+
+        Poller poller = ctx.createPoller(1);
+        poller.register(client, Poller.POLLIN);
+
+        poller.poll(REQUEST_TIMEOUT);
+
         ZMsg reply = null;
-        if (items[0].isReadable())
+        if (poller.pollin(0))
             reply = ZMsg.recvMsg(client);
 
         //  Close socket in any case, we're done with it now

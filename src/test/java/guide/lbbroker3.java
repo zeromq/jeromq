@@ -172,7 +172,7 @@ public class lbbroker3
         arg.workers = new LinkedList<ZFrame> ();
 
         //  Prepare reactor and fire it up
-        ZLoop reactor = new ZLoop ();
+        ZLoop reactor = new ZLoop(context);
         PollItem item = new PollItem (arg.backend, ZMQ.Poller.POLLIN);
         reactor.addPoller (item, backendHandler, arg);
         reactor.start ();
