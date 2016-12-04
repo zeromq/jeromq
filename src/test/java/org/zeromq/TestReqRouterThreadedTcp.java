@@ -83,7 +83,7 @@ public class TestReqRouterThreadedTcp
 
             client.send("DATA");
 
-            inBetween(client);
+            inBetween(ctx, client);
 
             String reply = client.recvStr();
             assertThat(reply, notNullValue());
@@ -100,7 +100,7 @@ public class TestReqRouterThreadedTcp
          * Called between the request-reply cycle.
          * @param client the socket participating to the cycle of request-reply
          */
-        protected void inBetween(Socket client)
+        protected void inBetween(ZContext ctx, Socket client)
         {
             // to be overriden
         }
@@ -115,7 +115,7 @@ public class TestReqRouterThreadedTcp
 
         // same results
 //        @Override
-//        protected void inBetween(Socket client) {
+//        protected void inBetween(ZContext ctx, Socket client) {
 //            // Poll socket for a reply, with timeout
 //            PollItem items[] = { new PollItem(client, ZMQ.Poller.POLLIN) };
 //            int rc = ZMQ.poll(items, 1, REQUEST_TIMEOUT);
@@ -129,10 +129,10 @@ public class TestReqRouterThreadedTcp
          * This should activate the prefetching mechanism.
          */
         @Override
-        protected void inBetween(Socket client)
+        protected void inBetween(ZContext ctx, Socket client)
         {
             // Poll socket for a reply, with timeout
-            ZMQ.Poller poller = new ZMQ.Poller(1);
+            ZMQ.Poller poller = ctx.createPoller(1);
             poller.register(client, ZMQ.Poller.POLLIN);
 
             int rc = poller.poll(REQUEST_TIMEOUT);

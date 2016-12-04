@@ -822,14 +822,23 @@ public class ZMQ
             return selector;
         }
 
+        void close()
+        {
+            if (selector != null) {
+                try {
+                    selector.close();
+                    selector = null;
+                }
+                catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
         @Override
         public void finalize()
         {
-            try {
-                selector.close();
-            }
-            catch (IOException e) {
-            }
+            close();
             try {
                 super.finalize();
             }

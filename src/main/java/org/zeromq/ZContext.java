@@ -1,10 +1,12 @@
 package org.zeromq;
 
 import java.io.Closeable;
+import java.nio.channels.Selector;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.zeromq.ZMQ.Context;
+import org.zeromq.ZMQ.Poller;
 import org.zeromq.ZMQ.Socket;
 
 import zmq.ZError;
@@ -123,6 +125,18 @@ public class ZContext implements Closeable
             }
             s.close();
         }
+    }
+
+    public Selector createSelector()
+    {
+        return getContext().selector();
+    }
+
+    public Poller createPoller(int size)
+    {
+        Poller poller = new Poller(size);
+        poller.selector = createSelector();
+        return poller;
     }
 
     /**
