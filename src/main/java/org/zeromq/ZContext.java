@@ -9,8 +9,6 @@ import org.zeromq.ZMQ.Context;
 import org.zeromq.ZMQ.Poller;
 import org.zeromq.ZMQ.Socket;
 
-import zmq.ZError;
-
 /**
  * ZContext provides a high-level ZeroMQ context management class
  *
@@ -70,11 +68,7 @@ public class ZContext implements Closeable
     public void destroy()
     {
         for (Socket socket : sockets) {
-            try {
-                socket.setLinger(linger);
-            }
-            catch (ZError.CtxTerminatedException e) {
-            }
+            socket.setLinger(linger);
             socket.close();
         }
         sockets.clear();
@@ -118,11 +112,7 @@ public class ZContext implements Closeable
         }
 
         if (sockets.remove(s)) {
-            try {
-                s.setLinger(linger);
-            }
-            catch (ZError.CtxTerminatedException e) {
-            }
+            s.setLinger(linger);
             s.close();
         }
     }

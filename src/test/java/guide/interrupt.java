@@ -30,6 +30,7 @@ public class interrupt {
                 }
             }
 
+            socket.setLinger(0);
             socket.close();
          }
       };
