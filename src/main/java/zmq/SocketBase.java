@@ -214,7 +214,7 @@ public abstract class SocketBase extends Own
 
     public void setSocketOpt(int option, Object optval)
     {
-        if (ctxTerminated) {
+        if (ctxTerminated && option != zmq.ZMQ.ZMQ_LINGER) {
             throw new ZError.CtxTerminatedException();
         }
 
