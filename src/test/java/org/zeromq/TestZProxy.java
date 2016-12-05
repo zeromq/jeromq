@@ -1,16 +1,33 @@
 package org.zeromq;
 
+import java.io.IOException;
+
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.zeromq.ZMQ.Socket;
 
 public class TestZProxy
 {
+    private int frontPort;
+    private int backPort;
+    private int capturePort1;
+    private int capturePort2;
+
+    @Before
+    public void setUp() throws IOException
+    {
+        frontPort    = Utils.findOpenPort();
+        backPort     = Utils.findOpenPort();
+        capturePort1 = Utils.findOpenPort();
+        capturePort2 = Utils.findOpenPort();
+    }
+
     @Test
     public void testAllOptionsAsync()
     {
@@ -117,13 +134,13 @@ public class TestZProxy
         public void configure(Socket socket, ZProxy.Plug place, Object[] extrArgs)
         {
             if (place == ZProxy.Plug.FRONT) {
-                socket.bind("tcp://127.0.0.1:6660");
+                socket.bind("tcp://127.0.0.1:" + frontPort);
             }
             if (place == ZProxy.Plug.BACK) {
-                socket.bind("tcp://127.0.0.1:6661");
+                socket.bind("tcp://127.0.0.1:" + backPort);
             }
             if (place == ZProxy.Plug.CAPTURE && socket != null) {
-                socket.bind("tcp://127.0.0.1:6662");
+                socket.bind("tcp://127.0.0.1:" + capturePort1);
             }
         }
 
@@ -132,19 +149,19 @@ public class TestZProxy
         {
 //            System.out.println("HOT restart msg : " + cfg);
             if (place == ZProxy.Plug.FRONT) {
-                socket.unbind("tcp://127.0.0.1:6660");
+                socket.unbind("tcp://127.0.0.1:" + frontPort);
                 waitSomeTime();
-                socket.bind("tcp://127.0.0.1:6660");
+                socket.bind("tcp://127.0.0.1:" + frontPort);
             }
             if (place == ZProxy.Plug.BACK) {
-                socket.unbind("tcp://127.0.0.1:6661");
+                socket.unbind("tcp://127.0.0.1:" + backPort);
                 waitSomeTime();
-                socket.bind("tcp://127.0.0.1:6661");
+                socket.bind("tcp://127.0.0.1:" + backPort);
             }
             if (place == ZProxy.Plug.CAPTURE && socket != null) {
-                socket.unbind("tcp://127.0.0.1:6662");
+                socket.unbind("tcp://127.0.0.1:" + capturePort1);
                 waitSomeTime();
-                socket.bind("tcp://127.0.0.1:5432");
+                socket.bind("tcp://127.0.0.1:" + capturePort2);
             }
             String msg = cfg.popString();
             return "COLD".equals(msg);

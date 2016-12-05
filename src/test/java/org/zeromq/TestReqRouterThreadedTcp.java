@@ -151,7 +151,7 @@ public class TestReqRouterThreadedTcp
     @Test
     public void testReqRouterTcp() throws Exception
     {
-        int port = 5962;
+        int port = Utils.findOpenPort();
         Server server = new Server(port);
 
         server.start();
@@ -174,7 +174,7 @@ public class TestReqRouterThreadedTcp
     @Test
     public void testReqRouterTcpPoll() throws Exception
     {
-        int port = 5963;
+        int port = Utils.findOpenPort();
         Server server = new Server(port);
 
         server.start();

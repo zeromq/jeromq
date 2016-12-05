@@ -13,8 +13,11 @@ public class TestProxyTcp
 {
     static class Client extends Thread
     {
-        public Client()
+        private int port;
+
+        public Client(int port)
         {
+            this.port = port;
         }
 
         @Override
@@ -22,7 +25,7 @@ public class TestProxyTcp
         {
             System.out.println("Start client thread");
             try {
-                Socket s = new Socket("127.0.0.1", 6560);
+                Socket s = new Socket("127.0.0.1", port);
                 Helper.send(s, "hellow");
                 Helper.send(s, "1234567890abcdefghizklmnopqrstuvwxyz");
                 Helper.send(s, "end");
@@ -40,11 +43,13 @@ public class TestProxyTcp
     {
         private final SocketBase s;
         private final String name;
+        private final int port;
 
-        public Dealer(Ctx ctx, String name)
+        public Dealer(Ctx ctx, String name, int port)
         {
             this.s = ZMQ.socket(ctx, ZMQ.ZMQ_DEALER);
             this.name = name;
+            this.port = port;
         }
 
         @Override
@@ -52,7 +57,7 @@ public class TestProxyTcp
         {
             System.out.println("Start dealer " + name);
 
-            ZMQ.connect(s, "tcp://127.0.0.1:6561");
+            ZMQ.connect(s, "tcp://127.0.0.1:" + port);
             int i = 0;
             while (true) {
                 Msg msg = s.recv(0);
@@ -246,9 +251,14 @@ public class TestProxyTcp
     static class Main extends Thread
     {
         private Ctx ctx;
-        Main(Ctx ctx)
+        private int routerPort;
+        private int dealerPort;
+
+        Main(Ctx ctx, int routerPort, int dealerPort)
         {
             this.ctx = ctx;
+            this.routerPort = routerPort;
+            this.dealerPort = dealerPort;
         }
 
         @Override
@@ -261,12 +271,12 @@ public class TestProxyTcp
             sa.setSocketOpt(ZMQ.ZMQ_DECODER, ProxyDecoder.class);
             sa.setSocketOpt(ZMQ.ZMQ_ENCODER, ProxyEncoder.class);
 
-            rc = ZMQ.bind(sa, "tcp://127.0.0.1:6560");
+            rc = ZMQ.bind(sa, "tcp://127.0.0.1:" + routerPort);
             assertThat(rc, is(true));
 
             SocketBase sb = ZMQ.socket(ctx, ZMQ.ZMQ_DEALER);
             assertThat(sb, notNullValue());
-            rc = ZMQ.bind(sb, "tcp://127.0.0.1:6561");
+            rc = ZMQ.bind(sb, "tcp://127.0.0.1:" + dealerPort);
             assertThat(rc, is(true));
 
             ZMQ.proxy(sa, sb, null);
@@ -279,16 +289,20 @@ public class TestProxyTcp
     @Test
     public void testProxyTcp() throws Exception
     {
+        int routerPort = Utils.findOpenPort();
+        int dealerPort = Utils.findOpenPort();
+
         Ctx ctx = ZMQ.init(1);
         assertThat(ctx, notNullValue());
 
-        Main mt = new Main(ctx);
+        Main mt = new Main(ctx, routerPort, dealerPort);
         mt.start();
-        new Dealer(ctx, "A").start();
-        new Dealer(ctx, "B").start();
+
+        new Dealer(ctx, "A", dealerPort).start();
+        new Dealer(ctx, "B", dealerPort).start();
 
         Thread.sleep(1000);
-        Thread client = new Client();
+        Thread client = new Client(routerPort);
         client.start();
 
         client.join();

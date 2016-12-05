@@ -10,7 +10,8 @@ public class TestTermEndpoint
     @Test
     public void testTermEndpoint() throws Exception
     {
-        String ep = "tcp://127.0.0.1:7590";
+        int port = Utils.findOpenPort();
+        String ep = "tcp://127.0.0.1:" + port;
         Ctx ctx = ZMQ.init(1);
         assertThat(ctx, notNullValue());
 

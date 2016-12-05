@@ -10,12 +10,13 @@ public class TestPubsubTcp
     @Test
     public void testPubsubTcp() throws Exception
     {
+        int port = Utils.findOpenPort();
         Ctx ctx = ZMQ.init(1);
         assertThat(ctx, notNullValue());
 
         SocketBase sb = ZMQ.socket(ctx, ZMQ.ZMQ_PUB);
         assertThat(sb, notNullValue());
-        boolean rc = ZMQ.bind(sb, "tcp://127.0.0.1:7660");
+        boolean rc = ZMQ.bind(sb, "tcp://127.0.0.1:" + port);
         assertThat(rc, is(true));
 
         SocketBase sc = ZMQ.socket(ctx, ZMQ.ZMQ_SUB);
@@ -23,7 +24,7 @@ public class TestPubsubTcp
 
         sc.setSocketOpt(ZMQ.ZMQ_SUBSCRIBE, "topic");
 
-        rc = ZMQ.connect(sc, "tcp://127.0.0.1:7660");
+        rc = ZMQ.connect(sc, "tcp://127.0.0.1:" + port);
         assertThat(rc, is(true));
 
         ZMQ.sleep(2);
