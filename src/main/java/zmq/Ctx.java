@@ -150,6 +150,8 @@ public class Ctx
     }
 
     //  Returns false if object is not a context.
+    //
+    //  This will also return false if terminate() has been called.
     public boolean checkTag()
     {
         return tag == 0xabadcafe;

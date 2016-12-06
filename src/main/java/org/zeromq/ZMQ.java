@@ -256,6 +256,14 @@ public class ZMQ
         }
 
         /**
+         * Returns true if terminate() has been called on ctx.
+         */
+        public boolean isTerminated()
+        {
+            return !ctx.checkTag();
+        }
+
+        /**
          * The size of the 0MQ thread pool to handle I/O operations.
          */
         public int getIOThreads()
@@ -1484,6 +1492,7 @@ public class ZMQ
         private static final int SIZE_DEFAULT = 32;
         private static final int SIZE_INCREMENT = 16;
 
+        private Context context;
         public Selector selector;
         private PollItem[] items;
         private long timeout;
@@ -1517,6 +1526,10 @@ public class ZMQ
          */
         protected Poller(Context context, int size)
         {
+            if (context != null) {
+                this.context = context;
+            }
+
             items = new PollItem[size];
             timeout = -1L;
             next = 0;
@@ -1804,13 +1817,22 @@ public class ZMQ
                 }
             }
 
-            if (selector != null) {
-                return zmq.ZMQ.poll(selector, pollItems, used, tout);
+            try {
+                if (selector != null) {
+                    return zmq.ZMQ.poll(selector, pollItems, used, tout);
+                }
+                else {
+                    return zmq.ZMQ.poll(pollItems, used, tout);
+                }
             }
-            else {
-                return zmq.ZMQ.poll(pollItems, used, tout);
+            catch (ZError.IOException e) {
+                if (context != null && context.isTerminated()) {
+                    return 0;
+                }
+                else {
+                    throw(e);
+                }
             }
-
         }
 
         /**
