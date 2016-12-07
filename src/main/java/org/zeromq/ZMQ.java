@@ -1,28 +1,12 @@
-/*
-    Copyright (c) 2007-2014 Contributors as noted in the AUTHORS file
-
-    This file is part of 0MQ.
-
-    0MQ is free software; you can redistribute it and/or modify it under
-    the terms of the GNU Lesser General Public License as published by
-    the Free Software Foundation; either version 3 of the License, or
-    (at your option) any later version.
-
-    0MQ is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Lesser General Public License for more details.
-
-    You should have received a copy of the GNU Lesser General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
-
 package org.zeromq;
 
 import java.io.Closeable;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectableChannel;
+import java.nio.channels.Selector;
 import java.nio.charset.Charset;
+import java.util.LinkedList;
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import zmq.Ctx;
@@ -257,6 +241,7 @@ public class ZMQ
 
     public static class Context implements Closeable
     {
+        private final AtomicBoolean closed = new AtomicBoolean(false);
         private final Ctx ctx;
 
         /**
@@ -268,6 +253,14 @@ public class ZMQ
         protected Context(int ioThreads)
         {
             ctx = zmq.ZMQ.init(ioThreads);
+        }
+
+        /**
+         * Returns true if terminate() has been called on ctx.
+         */
+        public boolean isTerminated()
+        {
+            return !ctx.checkTag();
         }
 
         /**
@@ -319,7 +312,9 @@ public class ZMQ
 
         public void term()
         {
-            ctx.terminate();
+            if (closed.compareAndSet(false, true)) {
+                ctx.terminate();
+            }
         }
 
         /**
@@ -335,14 +330,25 @@ public class ZMQ
         }
 
         /**
+         * Create a new Selector within this context.
+         *
+         * @return the newly created Selector.
+         */
+        public Selector selector()
+        {
+            return ctx.createSelector();
+        }
+
+        /**
          * Create a new Poller within this context, with a default size.
          *
          * @return the newly created Poller.
-         * @deprecated Use poller constructor
          */
         public Poller poller()
         {
-            return new Poller(this);
+            Poller poller = new Poller(this);
+            poller.selector = selector();
+            return poller;
         }
 
         /**
@@ -351,17 +357,18 @@ public class ZMQ
          * @param size
          *            the poller initial size.
          * @return the newly created Poller.
-         * @deprecated Use poller constructor
          */
         public Poller poller(int size)
         {
-            return new Poller(this, size);
+            Poller poller = new Poller(this, size);
+            poller.selector = selector();
+            return poller;
         }
 
         @Override
         public void close()
         {
-            ctx.terminate();
+            term();
         }
     }
 
@@ -736,6 +743,49 @@ public class ZMQ
         }
 
         /**
+         * The 'ZMQ_REQ_CORRELATE' option causes a socket to send a request ID
+         * frame with every message. This means that the outgoing message
+         * is [request id, (empty frame), payload]. Any message not having those
+         * first two frames is discarded.
+         * See also ZMQ_REQ_RELAXED.
+         * @param correlate Whether to enable outgoing request ids.
+         */
+        public final void setReqCorrelate(boolean correlate)
+        {
+            setsockopt(zmq.ZMQ.ZMQ_REQ_CORRELATE, correlate ? 1 : 0);
+        }
+
+        /**
+         * @see #setReqCorrelate(boolean)
+         * @return state of the ZMQ_REQ_CORRELATE option.
+         */
+        public final boolean getReqCorrelate()
+        {
+            return base.getSocketOpt(zmq.ZMQ.ZMQ_REQ_CORRELATE) > 0;
+        }
+
+        /**
+         * The 'ZMQ_REQ_RELAXED' option relaxes the strict lock-step requirement
+         * of REQ sockets. Instead, it allows for several requests to be sent
+         * sequentially. If enabled, also enable ZMQ_REQ_CORRELATE in order to
+         * receive the correct responses to requests.
+          @param relaxed
+         */
+        public final void setReqRelaxed(boolean relaxed)
+        {
+            setsockopt(zmq.ZMQ.ZMQ_REQ_RELAXED, relaxed ? 1 : 0);
+        }
+
+        /**
+         * @see #setReqRelaxed(boolean)
+         * @return state of the ZMQ_REQ_RELAXED option.
+         */
+        public final boolean getReqRelaxed()
+        {
+            return base.getSocketOpt(zmq.ZMQ.ZMQ_REQ_CORRELATE) > 0;
+        }
+
+        /**
          * @see #setMulticastLoop(boolean)
          *
          * @return the Multicast Loop.
@@ -1074,9 +1124,9 @@ public class ZMQ
          * @param handover A value of false, (default) the ROUTER socket shall reject clients trying to connect with an already-used identity
          *                  A value of true, the ROUTER socket shall hand-over the connection to the new client and disconnect the existing one
          */
-        public final void setRouterHandover(boolean handlover)
+        public final void setRouterHandover(boolean handover)
         {
-            setsockopt(zmq.ZMQ.ZMQ_ROUTER_HANDOVER, handlover ? 1 : 0);
+            setsockopt(zmq.ZMQ.ZMQ_ROUTER_HANDOVER, handover ? 1 : 0);
         }
 
         /**
@@ -1164,47 +1214,8 @@ public class ZMQ
          */
         public final void bind(String addr)
         {
-            bind(addr, DYNFROM, DYNTO);
-        }
-
-        /**
-         * Bind to network interface. Start listening for new connections.
-         *
-         * @param addr
-         *            the endpoint to bind to.
-         * @param min
-         *            The minimum port in the range of ports to try.
-         * @param max
-         *            The maximum port in the range of ports to try.
-         */
-        private int bind(String addr, int min, int max)
-        {
-            if (addr.endsWith(":*")) {
-                int port = min;
-                String prefix = addr.substring(0, addr.lastIndexOf(':') + 1);
-                while (port <= max) {
-                    addr = prefix + port;
-                    //  Try to bind on the next plausible port
-                    if (base.bind(addr)) {
-                        return port;
-                    }
-                    port++;
-                }
-            }
-            else {
-                if (base.bind(addr)) {
-                    int port = 0;
-                    try {
-                        port = Integer.parseInt(
-                            addr.substring(addr.lastIndexOf(':') + 1));
-                    }
-                    catch (NumberFormatException e) {
-                    }
-                    return port;
-                }
-            }
+            base.bind(addr);
             mayRaise();
-            return -1;
         }
 
         /**
@@ -1216,7 +1227,7 @@ public class ZMQ
          */
         public int bindToRandomPort(String addr)
         {
-            return bind(addr + ":*", DYNFROM, DYNTO);
+            return bindToRandomPort(addr, DYNFROM, DYNTO);
         }
 
         /**
@@ -1232,7 +1243,18 @@ public class ZMQ
          */
         public int bindToRandomPort(String addr, int min, int max)
         {
-            return bind(addr + ":*", min, max);
+            int port;
+            Random rand = new Random();
+//            int port = min;
+//            while (port <= max) {
+            for (int i = 0; i < 100; i++) { // hardcoded to 100 tries. should this be parametrised
+                port = rand.nextInt(max - min + 1) + min;
+                if (base.bind(String.format("%s:%s", addr, port))) {
+                    return port;
+                }
+//                port++;
+            }
+            throw new ZMQException("Could not bind socket to random port.", ZError.EADDRINUSE);
         }
 
         /**
@@ -1248,10 +1270,10 @@ public class ZMQ
         }
 
         /**
-         * Disconnect to remote application.
+         * Disconnect from remote application.
          *
          * @param addr
-         *            the endpoint to disconnect to.
+         *            the endpoint to disconnect from.
          * @return true if successful.
          */
         public final boolean disconnect(String addr)
@@ -1470,10 +1492,25 @@ public class ZMQ
         private static final int SIZE_DEFAULT = 32;
         private static final int SIZE_INCREMENT = 16;
 
+        private Context context;
+        public Selector selector;
         private PollItem[] items;
         private long timeout;
         private int next;
+        private int used;
 
+        // When socket is removed from polling, store free slots here
+        private LinkedList<Integer> freeSlots;
+
+        /**
+         * Create a new Poller, with a specified initial size, that is not
+         * associated with any context.
+         *
+         * @param size
+         *            the poller initial size.
+         * @return the newly created Poller.
+         * @deprecated Use ZMQ.Context.poller or ZContext.createPoller instead.
+         */
         public Poller(int size)
         {
             this (null, size);
@@ -1489,9 +1526,15 @@ public class ZMQ
          */
         protected Poller(Context context, int size)
         {
+            if (context != null) {
+                this.context = context;
+            }
+
             items = new PollItem[size];
             timeout = -1L;
             next = 0;
+
+            freeSlots = new LinkedList<Integer>();
         }
 
         /**
@@ -1518,6 +1561,18 @@ public class ZMQ
         }
 
         /**
+         * Register a Channel for polling on all events.
+         *
+         * @param channel
+         *            the Channel we are registering.
+         * @return the index identifying this Channel in the poll set.
+         */
+        public int register(SelectableChannel channel)
+        {
+            return register(channel, POLLIN | POLLOUT | POLLERR);
+        }
+
+        /**
          * Register a Socket for polling on the specified events.
          *
          * Automatically grow the internal representation if needed.
@@ -1530,7 +1585,7 @@ public class ZMQ
          */
         public int register(Socket socket, int events)
         {
-            return insert(new PollItem(socket, events));
+            return registerInternal(new PollItem(socket, events));
         }
 
         /**
@@ -1546,7 +1601,7 @@ public class ZMQ
          */
         public int register(SelectableChannel channel, int events)
         {
-            return insert(new PollItem(channel, events));
+            return registerInternal(new PollItem(channel, events));
         }
 
         /**
@@ -1560,18 +1615,37 @@ public class ZMQ
          */
         public int register(PollItem item)
         {
-            return insert(item);
+            return registerInternal(item);
         }
 
-        private int insert(PollItem item)
+        /**
+         * Register a Socket for polling on the specified events.
+         *
+         * Automatically grow the internal representation if needed.
+         *
+         * @param item the PollItem we are registering.
+         * @return the index identifying this Socket in the poll set.
+         */
+        private int registerInternal(PollItem item)
         {
-            int pos = next++;
-            if (pos == items.length) {
-                PollItem[] nitems = new PollItem[items.length + SIZE_INCREMENT];
-                System.arraycopy(items, 0, nitems, 0, items.length);
-                items = nitems;
+            int pos = -1;
+
+            if (!freeSlots.isEmpty()) {
+                // If there are free slots in our array, remove one
+                // from the free list and use it.
+                pos = freeSlots.remove();
             }
+            else {
+                if (next >= items.length) {
+                    PollItem[] nitems = new PollItem[items.length + SIZE_INCREMENT];
+                    System.arraycopy(items, 0, nitems, 0, items.length);
+                    items = nitems;
+                }
+                pos = next++;
+            }
+
             items[pos] = item;
+            used++;
             return pos;
         }
 
@@ -1583,13 +1657,7 @@ public class ZMQ
          */
         public void unregister(Socket socket)
         {
-            for (int pos = 0; pos < items.length; pos++) {
-                PollItem item = items[pos];
-                if (item.getSocket() == socket) {
-                    remove(pos);
-                    break;
-                }
-            }
+            unregisterInternal(socket);
         }
 
         /**
@@ -1600,22 +1668,30 @@ public class ZMQ
          */
         public void unregister(SelectableChannel channel)
         {
-            for (int pos = 0; pos < items.length; pos++) {
-                PollItem item = items[pos];
-                if (item.getRawSocket() == channel) {
-                    remove(pos);
+            unregisterInternal(channel);
+        }
+
+        /**
+         * Unregister a Socket for polling on the specified events.
+         *
+         * @param socket the Socket to be unregistered
+         */
+        private void unregisterInternal(Object socket)
+        {
+            for (int i = 0; i < next; ++i) {
+                PollItem item = items[i];
+                if (item == null) {
+                    continue;
+                }
+                if (item.socket == socket || item.getRawSocket() == socket) {
+                    items[i] = null;
+
+                    freeSlots.add(i);
+                    --used;
+
                     break;
                 }
             }
-        }
-
-        private void remove(int pos)
-        {
-            next--;
-            if (pos != next) {
-                items[pos] = items[next];
-            }
-            items [next] = null;
         }
 
         /**
@@ -1645,7 +1721,7 @@ public class ZMQ
             if (index < 0 || index >= this.next) {
                 return null;
             }
-            return items[index].getSocket();
+            return items[index].socket;
         }
 
         /**
@@ -1668,11 +1744,9 @@ public class ZMQ
          */
         public void setTimeout(long timeout)
         {
-            if (timeout < -1) {
-                return;
+            if (timeout >= -1L) {
+                this.timeout = timeout;
             }
-
-            this.timeout = timeout;
         }
 
         /**
@@ -1730,12 +1804,35 @@ public class ZMQ
          */
         public int poll(long tout)
         {
-            zmq.PollItem[] pollItems = new zmq.PollItem[next];
-            for (int i = 0; i < next; i++) {
-                pollItems[i] = items[i].base();
+            if (tout < -1) {
+                return 0;
+            }
+            if (items.length <= 0 || next <= 0) {
+                return 0;
+            }
+            zmq.PollItem[] pollItems = new zmq.PollItem[used];
+            for (int i = 0, j = 0; i < next; i++) {
+                if (items[i] != null) {
+                    pollItems[j++] = items[i].base;
+                }
             }
 
-            return zmq.ZMQ.poll(pollItems, next, tout);
+            try {
+                if (selector != null) {
+                    return zmq.ZMQ.poll(selector, pollItems, used, tout);
+                }
+                else {
+                    return zmq.ZMQ.poll(pollItems, used, tout);
+                }
+            }
+            catch (ZError.IOException e) {
+                if (context != null && context.isTerminated()) {
+                    return 0;
+                }
+                else {
+                    throw(e);
+                }
+            }
         }
 
         /**
@@ -1804,7 +1901,7 @@ public class ZMQ
             socket = null;
         }
 
-        protected final zmq.PollItem base()
+        final zmq.PollItem base()
         {
             return base;
         }
@@ -1875,6 +1972,7 @@ public class ZMQ
         EADDRNOTAVAIL(ZError.EADDRNOTAVAIL),
         ECONNREFUSED(ZError.ECONNREFUSED),
         EINPROGRESS(ZError.EINPROGRESS),
+        EHOSTUNREACH(ZError.EHOSTUNREACH),
         EMTHREAD(ZError.EMTHREAD),
         EFSM(ZError.EFSM),
         ENOCOMPATPROTO(ZError.ENOCOMPATPROTO),

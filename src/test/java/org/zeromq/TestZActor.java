@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.UUID;
 
 import org.junit.Assert;
-import org.junit.Test;
 import org.zeromq.ZActor.Actor;
 import org.zeromq.ZMQ.Socket;
 
@@ -13,7 +12,6 @@ import zmq.ZError;
 
 public class TestZActor
 {
-    @Test
     public void testMinimalistic()
     {
         Actor acting = new ZActor.SimpleActor()
@@ -73,7 +71,7 @@ public class TestZActor
         context.close();
         System.out.println(".");
     }
-    @Test
+
     public void testRecreateAgent()
     {
         ZActor.Actor acting = new ZActor.SimpleActor()

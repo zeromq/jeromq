@@ -1,22 +1,3 @@
-/*
-    Copyright (c) 2007-2014 Contributors as noted in the AUTHORS file
-
-    This file is part of 0MQ.
-
-    0MQ is free software; you can redistribute it and/or modify it under
-    the terms of the GNU Lesser General Public License as published by
-    the Free Software Foundation; either version 3 of the License, or
-    (at your option) any later version.
-
-    0MQ is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Lesser General Public License for more details.
-
-    You should have received a copy of the GNU Lesser General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
-
 package zmq;
 
 import java.io.IOException;
@@ -104,6 +85,8 @@ public class ZMQ
     public static final int ZMQ_TCP_ACCEPT_FILTER = 38;
     public static final int ZMQ_DELAY_ATTACH_ON_CONNECT = 39;
     public static final int ZMQ_XPUB_VERBOSE = 40;
+    public static final int ZMQ_REQ_CORRELATE = 52;
+    public static final int ZMQ_REQ_RELAXED = 53;
     // TODO: more constants
     public static final int ZMQ_ROUTER_HANDOVER = 56;
     public static final int ZMQ_XPUB_NODROP = 69;
@@ -839,14 +822,23 @@ public class ZMQ
             return selector;
         }
 
+        void close()
+        {
+            if (selector != null) {
+                try {
+                    selector.close();
+                    selector = null;
+                }
+                catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
         @Override
         public void finalize()
         {
-            try {
-                selector.close();
-            }
-            catch (IOException e) {
-            }
+            close();
             try {
                 super.finalize();
             }

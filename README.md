@@ -77,6 +77,6 @@ Also please refer the [Wiki](https://github.com/zeromq/jeromq/wiki).
 
 ## Copying
 
-Free use of this software is granted under the terms of the GNU Lesser General
-Public License (LGPL). For details see the files `COPYING` and `COPYING.LESSER`
-included with the JeroMQ distribution.
+All source files are copyright © 2007-2016 contributors as noted in the AUTHORS file.
+
+Free use of this software is granted under the terms of the Mozilla Public License 2.0. For details see the file `LICENSE` included with the JeroMQ distribution.

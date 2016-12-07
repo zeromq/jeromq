@@ -1,29 +1,24 @@
-/*
-    Copyright (c) 2007-2014 Contributors as noted in the AUTHORS file
-
-    This file is part of 0MQ.
-
-    0MQ is free software; you can redistribute it and/or modify it under
-    the terms of the GNU Lesser General Public License as published by
-    the Free Software Foundation; either version 3 of the License, or
-    (at your option) any later version.
-
-    0MQ is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Lesser General Public License for more details.
-
-    You should have received a copy of the GNU Lesser General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
-
 package zmq;
+
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Random;
 
 public class Req extends Dealer
 {
+    static final int REQUEST_ID_LENGTH = 6;
+    // Random generator for request IDs.
+    public static final Random REQUEST_ID_GEN = new Random(
+            Calendar.getInstance().getTimeInMillis());
+
     //  If true, request was already sent and reply wasn't received yet or
     //  was raceived partially.
     private boolean receivingReply;
+
+    // If ZMQ_REQ_CORRELATE is enabled, this is set to the request ID of the most
+    // recent request. Any incoming message that does not have this ID will
+    // be discarded.
+    private byte[] currentRequestId;
 
     //  If true, we are starting to send/recv a message. The first part
     //  of the message must be empty message part (backtrace stack bottom).
@@ -32,10 +27,10 @@ public class Req extends Dealer
     public Req(Ctx parent, int tid, int sid)
     {
         super(parent, tid, sid);
-
         receivingReply = false;
         messageBegins = true;
         options.type = ZMQ.ZMQ_REQ;
+        currentRequestId = new byte[REQUEST_ID_LENGTH];
     }
 
     @Override
@@ -43,14 +38,29 @@ public class Req extends Dealer
     {
         //  If we've sent a request and we still haven't got the reply,
         //  we can't send another request.
-        if (receivingReply) {
+        if (receivingReply && getSocketOpt(zmq.ZMQ.ZMQ_REQ_RELAXED) == 0) {
             errno.set(ZError.EFSM);
             return false;
         }
 
         //  First part of the request is the request identity.
         if (messageBegins) {
+            // If CORRELATE is enabled, send request ID frame before the empty
+            // frame.
+            if (getSocketOpt(zmq.ZMQ.ZMQ_REQ_CORRELATE) > 0) {
+                REQUEST_ID_GEN.nextBytes(currentRequestId);
+
+                Msg requestId = new Msg(currentRequestId);
+                requestId.setFlags(Msg.MORE);
+
+                boolean rc = super.xsend(requestId);
+                if (!rc) {
+                    return rc;
+                }
+            }
+
             Msg bottom = new Msg();
+
             bottom.setFlags(Msg.MORE);
             boolean rc = super.xsend(bottom);
             if (!rc) {
@@ -78,21 +88,37 @@ public class Req extends Dealer
     @Override
     protected Msg xrecv()
     {
-        //  If request wasn't send, we can't wait for reply.
+        // If request wasn't send, we can't wait for reply.
+        // Thus, we don't look at the state of the ZMQ_REQ_RELAXED option.
         if (!receivingReply) {
             errno.set(ZError.EFSM);
             return null;
         }
+
         Msg msg = null;
-        //  First part of the reply should be the original request ID.
+        //  First part of the reply should be the original request ID, if
+        // ZMQ_REQ_CORRELATE is enabled.
         if (messageBegins) {
             msg = super.xrecv();
             if (msg == null) {
                 return null;
             }
 
+            boolean requestIdIsBad = false;
+
+            // Check request ID
+            if (getSocketOpt(zmq.ZMQ.ZMQ_REQ_CORRELATE) > 0) {
+                requestIdIsBad = !Arrays.equals(msg.data(), currentRequestId);
+
+                // Receive empty delimiter frame
+                msg = super.xrecv();
+                if (msg == null) {
+                    return null;
+                }
+            }
+
             // TODO: This should also close the connection with the peer!
-            if (!msg.hasMore() || msg.size() != 0) {
+            if (!msg.hasMore() || msg.size() != 0 || requestIdIsBad) {
                 while (true) {
                     msg = super.xrecv();
                     assert (msg != null);

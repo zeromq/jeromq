@@ -1,22 +1,3 @@
-/*
-    Copyright (c) 2007-2014 Contributors as noted in the AUTHORS file
-
-    This file is part of 0MQ.
-
-    0MQ is free software; you can redistribute it and/or modify it under
-    the terms of the GNU Lesser General Public License as published by
-    the Free Software Foundation; either version 3 of the License, or
-    (at your option) any later version.
-
-    0MQ is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Lesser General Public License for more details.
-
-    You should have received a copy of the GNU Lesser General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
-
 package org.zeromq;
 
 import java.io.IOException;
@@ -261,19 +242,19 @@ public class ZFrame
         this.data = data;
     }
 
+    private static final String HEX_CHAR = "0123456789ABCDEF";
+
     /**
      * @return frame data as a printable hex string
      */
     public String strhex()
     {
-        String hexChar = "0123456789ABCDEF";
-
         StringBuilder b = new StringBuilder();
         for (byte aData : data) {
             int b1 = aData >>> 4 & 0xf;
             int b2 = aData & 0xf;
-            b.append(hexChar.charAt(b1));
-            b.append(hexChar.charAt(b2));
+            b.append(HEX_CHAR.charAt(b1));
+            b.append(HEX_CHAR.charAt(b2));
         }
         return b.toString();
     }
@@ -326,7 +307,7 @@ public class ZFrame
         // Dump message as text or hex-encoded string
         boolean isText = true;
         for (byte aData : data) {
-            if (aData < 32) {
+            if (aData < 32 || aData > 127) {
                 isText = false;
                 break;
             }

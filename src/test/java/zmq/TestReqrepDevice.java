@@ -1,23 +1,6 @@
-/*
-    Copyright (c) 2007-2014 Contributors as noted in the AUTHORS file
-
-    This file is part of 0MQ.
-
-    0MQ is free software; you can redistribute it and/or modify it under
-    the terms of the GNU Lesser General Public License as published by
-    the Free Software Foundation; either version 3 of the License, or
-    (at your option) any later version.
-
-    0MQ is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Lesser General Public License for more details.
-
-    You should have received a copy of the GNU Lesser General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
-
 package zmq;
+
+import java.io.IOException;
 
 import org.junit.Test;
 import static org.junit.Assert.assertThat;
@@ -29,8 +12,11 @@ public class TestReqrepDevice
     //  Create REQ/ROUTER wiring.
 
     @Test
-    public void testReprepDevice()
+    public void testReprepDevice() throws IOException
     {
+        int routerPort = Utils.findOpenPort();
+        int dealerPort = Utils.findOpenPort();
+
         boolean brc;
         Ctx ctx = ZMQ.init(1);
         assertThat(ctx, notNullValue());
@@ -39,26 +25,26 @@ public class TestReqrepDevice
         SocketBase dealer = ZMQ.socket(ctx, ZMQ.ZMQ_DEALER);
         assertThat(dealer, notNullValue());
 
-        brc = ZMQ.bind(dealer, "tcp://127.0.0.1:5580");
+        brc = ZMQ.bind(dealer, "tcp://127.0.0.1:" + dealerPort);
         assertThat(brc , is(true));
 
         SocketBase router = ZMQ.socket(ctx, ZMQ.ZMQ_ROUTER);
         assertThat(router, notNullValue());
 
-        brc = ZMQ.bind(router, "tcp://127.0.0.1:5581");
+        brc = ZMQ.bind(router, "tcp://127.0.0.1:" + routerPort);
         assertThat(brc , is(true));
 
         //  Create a worker.
         SocketBase rep = ZMQ.socket(ctx, ZMQ.ZMQ_REP);
         assertThat(rep, notNullValue());
 
-        brc = ZMQ.connect(rep, "tcp://127.0.0.1:5580");
+        brc = ZMQ.connect(rep, "tcp://127.0.0.1:" + dealerPort);
         assertThat(brc , is(true));
 
         SocketBase req = ZMQ.socket(ctx, ZMQ.ZMQ_REQ);
         assertThat(req, notNullValue());
 
-        brc = ZMQ.connect(req, "tcp://127.0.0.1:5581");
+        brc = ZMQ.connect(req, "tcp://127.0.0.1:" + routerPort);
         assertThat(brc, is(true));
 
         //  Send a request.

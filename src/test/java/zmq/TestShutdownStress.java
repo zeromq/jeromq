@@ -1,23 +1,6 @@
-/*
-    Copyright (c) 2007-2014 Contributors as noted in the AUTHORS file
-
-    This file is part of 0MQ.
-
-    0MQ is free software; you can redistribute it and/or modify it under
-    the terms of the GNU Lesser General Public License as published by
-    the Free Software Foundation; either version 3 of the License, or
-    (at your option) any later version.
-
-    0MQ is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Lesser General Public License for more details.
-
-    You should have received a copy of the GNU Lesser General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
-
 package zmq;
+
+import java.io.IOException;
 
 import org.junit.Test;
 import static org.junit.Assert.assertThat;
@@ -30,16 +13,19 @@ public class TestShutdownStress
 
     class Worker implements Runnable
     {
+        int port;
         SocketBase s;
-        Worker(SocketBase s)
+
+        Worker(SocketBase s) throws IOException
         {
+            this.port = Utils.findOpenPort();
             this.s = s;
         }
 
         @Override
         public void run()
         {
-            boolean rc = ZMQ.connect(s, "tcp://127.0.0.1:5560");
+            boolean rc = ZMQ.connect(s, "tcp://127.0.0.1:" + port);
             assertThat(rc, is(true));
 
             //  Start closing the socket while the connecting process is underway.
@@ -52,6 +38,8 @@ public class TestShutdownStress
     {
         Thread[] threads = new Thread[THREAD_COUNT];
 
+        int randomPort = Utils.findOpenPort();
+
         for (int j = 0; j != 10; j++) {
             Ctx ctx = ZMQ.init(7);
             assertThat(ctx, notNullValue());
@@ -59,7 +47,7 @@ public class TestShutdownStress
             SocketBase s1 = ZMQ.socket(ctx, ZMQ.ZMQ_PUB);
             assertThat(s1, notNullValue());
 
-            boolean rc = ZMQ.bind(s1, "tcp://127.0.0.1:7570");
+            boolean rc = ZMQ.bind(s1, "tcp://127.0.0.1:" + randomPort);
             assertThat(rc, is(true));
 
             for (int i = 0; i != THREAD_COUNT; i++) {

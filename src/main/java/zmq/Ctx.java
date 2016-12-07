@@ -1,25 +1,7 @@
-/*
-    Copyright (c) 2007-2014 Contributors as noted in the AUTHORS file
-
-    This file is part of 0MQ.
-
-    0MQ is free software; you can redistribute it and/or modify it under
-    the terms of the GNU Lesser General Public License as published by
-    the Free Software Foundation; either version 3 of the License, or
-    (at your option) any later version.
-
-    0MQ is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Lesser General Public License for more details.
-
-    You should have received a copy of the GNU Lesser General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
-
 package zmq;
 
 import java.io.IOException;
+import java.nio.channels.Selector;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
@@ -78,6 +60,11 @@ public class Ctx
     //  a memory barrier to ensure that all CPU cores see the same data.
     private final Lock slotSync;
 
+    // A list of poll selectors opened under this context. When the context is
+    // destroyed, each of the selectors is closed to ensure resource
+    // deallocation.
+    public List<Selector> selectors;
+
     //  The reaper thread.
     private Reaper reaper;
 
@@ -134,6 +121,7 @@ public class Ctx
         emptySlots = new ArrayDeque<Integer>();
         ioThreads = new ArrayList<IOThread>();
         sockets = new ArrayList<SocketBase>();
+        selectors = new ArrayList<Selector>();
         endpoints = new HashMap<String, Endpoint>();
     }
 
@@ -146,6 +134,13 @@ public class Ctx
             it.close();
         }
 
+        for (Selector selector : selectors) {
+            if (selector != null) {
+                selector.close();
+            }
+        }
+        selectors.clear();
+
         if (reaper != null) {
             reaper.close();
         }
@@ -155,6 +150,8 @@ public class Ctx
     }
 
     //  Returns false if object is not a context.
+    //
+    //  This will also return false if terminate() has been called.
     public boolean checkTag()
     {
         return tag == 0xabadcafe;
@@ -373,6 +370,20 @@ public class Ctx
         }
         finally {
             slotSync.unlock();
+        }
+    }
+
+    // Creates a Selector that will be closed when the context is destroyed.
+    public Selector createSelector()
+    {
+        try {
+            Selector selector = Selector.open();
+            assert (selector != null);
+            selectors.add(selector);
+            return selector;
+        }
+        catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 

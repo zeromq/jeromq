@@ -1,22 +1,3 @@
-/*
-    Copyright (c) 2007-2014 Contributors as noted in the AUTHORS file
-
-    This file is part of 0MQ.
-
-    0MQ is free software; you can redistribute it and/or modify it under
-    the terms of the GNU Lesser General Public License as published by
-    the Free Software Foundation; either version 3 of the License, or
-    (at your option) any later version.
-
-    0MQ is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Lesser General Public License for more details.
-
-    You should have received a copy of the GNU Lesser General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
-
 package zmq;
 
 import org.junit.Test;
@@ -35,6 +16,9 @@ public class TestConnectDelay
         // of the messages getting queued, as connect() creates a
         // pipe immediately.
 
+        int pushPort1 = Utils.findOpenPort();
+        int pushPort2 = Utils.findOpenPort();
+
         Ctx context = ZMQ.createContext();
         assert (context != null);
 
@@ -43,7 +27,7 @@ public class TestConnectDelay
 
         int val = 0;
         ZMQ.setSocketOption(to, ZMQ.ZMQ_LINGER, val);
-        boolean rc = ZMQ.bind(to, "tcp://*:7555");
+        boolean rc = ZMQ.bind(to, "tcp://*:" + pushPort1);
         assert (rc);
 
         // Create a socket pushing to two endpoints - only 1 message should arrive.
@@ -52,9 +36,9 @@ public class TestConnectDelay
 
         val = 0;
         ZMQ.setSocketOption(from, ZMQ.ZMQ_LINGER, val);
-        rc = ZMQ.connect(from, "tcp://localhost:7556");
+        rc = ZMQ.connect(from, "tcp://localhost:" + pushPort2);
         assert (rc);
-        rc = ZMQ.connect(from, "tcp://localhost:7555");
+        rc = ZMQ.connect(from, "tcp://localhost:" + pushPort1);
         assert (rc);
 
         for (int i = 0; i < 10; ++i) {
@@ -96,11 +80,13 @@ public class TestConnectDelay
         // also set the delay attach on connect flag, which should
         // cause the pipe attachment to be delayed until the connection
         // succeeds.
+        int validPort   = Utils.findOpenPort();
+        int invalidPort = Utils.findOpenPort();
         Ctx context = ZMQ.createContext();
 
         SocketBase to = ZMQ.socket(context, ZMQ.ZMQ_PULL);
         assert (to != null);
-        boolean rc = ZMQ.bind(to, "tcp://*:7560");
+        boolean rc = ZMQ.bind(to, "tcp://*:" + validPort);
         assert (rc);
 
         int val = 0;
@@ -119,10 +105,10 @@ public class TestConnectDelay
         ZMQ.setSocketOption(from, ZMQ.ZMQ_DELAY_ATTACH_ON_CONNECT, val);
 
         // Connect to the invalid socket
-        rc = ZMQ.connect(from, "tcp://localhost:7561");
+        rc = ZMQ.connect(from, "tcp://localhost:" + invalidPort);
         assert (rc);
         // Connect to the valid socket
-        rc = ZMQ.connect(from, "tcp://localhost:7560");
+        rc = ZMQ.connect(from, "tcp://localhost:" + validPort);
         assert (rc);
 
         for (int i = 0; i < 10; ++i) {
@@ -160,6 +146,7 @@ public class TestConnectDelay
         // occurs with an existing connection that is broken. We will send
         // messages to a connected pipe, disconnect and verify the messages
         // block. Then we reconnect and verify messages flow again.
+        int port = Utils.findOpenPort();
         Ctx context = ZMQ.createContext();
 
         SocketBase backend = ZMQ.socket(context, ZMQ.ZMQ_DEALER);
@@ -178,10 +165,10 @@ public class TestConnectDelay
         val = 1;
         ZMQ.setSocketOption(frontend, ZMQ.ZMQ_DELAY_ATTACH_ON_CONNECT, val);
 
-        boolean rc = ZMQ.bind(backend, "tcp://*:7760");
+        boolean rc = ZMQ.bind(backend, "tcp://*:" + port);
         assert (rc);
 
-        rc = ZMQ.connect(frontend, "tcp://localhost:7760");
+        rc = ZMQ.connect(frontend, "tcp://localhost:" + port);
         assert (rc);
 
         //  Ping backend to frontend so we know when the connection is up
@@ -209,7 +196,7 @@ public class TestConnectDelay
         backend = ZMQ.socket(context, ZMQ.ZMQ_DEALER);
         val = 0;
         ZMQ.setSocketOption(backend, ZMQ.ZMQ_LINGER, val);
-        rc = ZMQ.bind(backend, "tcp://*:7760");
+        rc = ZMQ.bind(backend, "tcp://*:" + port);
         assert (rc);
 
         //  Ping backend to frontend so we know when the connection is up

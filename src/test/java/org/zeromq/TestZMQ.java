@@ -1,22 +1,3 @@
-/*
-    Copyright (c) 2007-2014 Contributors as noted in the AUTHORS file
-
-    This file is part of 0MQ.
-
-    0MQ is free software; you can redistribute it and/or modify it under
-    the terms of the GNU Lesser General Public License as published by
-    the Free Software Foundation; either version 3 of the License, or
-    (at your option) any later version.
-
-    0MQ is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Lesser General Public License for more details.
-
-    You should have received a copy of the GNU Lesser General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
-
 package org.zeromq;
 
 import static org.junit.Assert.assertArrayEquals;
@@ -25,6 +6,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+
+import java.io.IOException;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -38,9 +21,12 @@ public class TestZMQ
 {
     static class Client extends Thread
     {
+        private int port = -1;
         private Socket s = null;
-        public Client(Context ctx)
+
+        public Client(Context ctx, int port)
         {
+            this.port = port;
             s = ctx.socket(ZMQ.PULL);
         }
 
@@ -48,7 +34,7 @@ public class TestZMQ
         public void run()
         {
             System.out.println("Start client thread ");
-            s.connect("tcp://127.0.0.1:6669");
+            s.connect("tcp://127.0.0.1:" + port);
             s.recv(0);
 
             s.close();
@@ -59,12 +45,14 @@ public class TestZMQ
     @Test
     public void testPollerPollout() throws Exception
     {
+        int port = Utils.findOpenPort();
+
         ZMQ.Context context = ZMQ.context(1);
-        Client client = new Client(context);
+        Client client = new Client(context, port);
 
         //  Socket to send messages to
         ZMQ.Socket sender = context.socket(ZMQ.PUSH);
-        sender.bind("tcp://127.0.0.1:6669");
+        sender.bind("tcp://127.0.0.1:" + port);
 
         ZMQ.Poller outItems;
         outItems = context.poller();
@@ -88,8 +76,9 @@ public class TestZMQ
     }
 
     @Test
-    public void testByteBufferSend() throws InterruptedException
+    public void testByteBufferSend() throws InterruptedException, IOException
     {
+        int port = Utils.findOpenPort();
         ZMQ.Context context = ZMQ.context(1);
         ByteBuffer bb = ByteBuffer.allocate(4).order(ByteOrder.nativeOrder());
         ZMQ.Socket push = null;
@@ -97,8 +86,8 @@ public class TestZMQ
         try {
             push = context.socket(ZMQ.PUSH);
             pull = context.socket(ZMQ.PULL);
-            pull.bind("tcp://*:12344");
-            push.connect("tcp://localhost:12344");
+            pull.bind("tcp://*:" + port);
+            push.connect("tcp://localhost:" + port);
             bb.put("PING".getBytes(ZMQ.CHARSET));
             bb.flip();
             push.sendByteBuffer(bb, 0);
@@ -125,8 +114,10 @@ public class TestZMQ
     }
 
     @Test
-    public void testByteBufferRecv() throws InterruptedException, CharacterCodingException
+    public void testByteBufferRecv()
+    throws InterruptedException, IOException, CharacterCodingException
     {
+        int port = Utils.findOpenPort();
         ZMQ.Context context = ZMQ.context(1);
         ByteBuffer bb = ByteBuffer.allocate(6).order(ByteOrder.nativeOrder());
         ZMQ.Socket push = null;
@@ -134,8 +125,8 @@ public class TestZMQ
         try {
             push = context.socket(ZMQ.PUSH);
             pull = context.socket(ZMQ.PULL);
-            pull.bind("tcp://*:12345");
-            push.connect("tcp://localhost:12345");
+            pull.bind("tcp://*:" + port);
+            push.connect("tcp://localhost:" + port);
             push.send("PING".getBytes(ZMQ.CHARSET), 0);
             pull.recvByteBuffer(bb, 0);
             bb.flip();
@@ -167,8 +158,10 @@ public class TestZMQ
     }
 
     @Test
-    public void testByteBufferLarge() throws InterruptedException, CharacterCodingException
+    public void testByteBufferLarge()
+    throws InterruptedException, IOException, CharacterCodingException
     {
+        int port = Utils.findOpenPort();
         ZMQ.Context context = ZMQ.context(1);
         int[] array = new int[2048 * 2000];
         for (int i = 0; i < array.length; ++i) {
@@ -184,8 +177,8 @@ public class TestZMQ
         try {
             push = context.socket(ZMQ.PUSH);
             pull = context.socket(ZMQ.PULL);
-            pull.bind("tcp://*:12345");
-            push.connect("tcp://localhost:12345");
+            pull.bind("tcp://*:" + port);
+            push.connect("tcp://localhost:" + port);
             push.sendByteBuffer(bSend, 0);
             pull.recvByteBuffer(bRec, 0);
             bRec.flip();
@@ -215,8 +208,10 @@ public class TestZMQ
     }
 
     @Test
-    public void testByteBufferLargeDirect() throws InterruptedException, CharacterCodingException
+    public void testByteBufferLargeDirect()
+    throws InterruptedException, IOException, CharacterCodingException
     {
+        int port = Utils.findOpenPort();
         ZMQ.Context context = ZMQ.context(1);
         int[] array = new int[2048 * 2000];
         for (int i = 0; i < array.length; ++i) {
@@ -232,8 +227,8 @@ public class TestZMQ
         try {
             push = context.socket(ZMQ.PUSH);
             pull = context.socket(ZMQ.PULL);
-            pull.bind("tcp://*:12345");
-            push.connect("tcp://localhost:12345");
+            pull.bind("tcp://*:" + port);
+            push.connect("tcp://localhost:" + port);
             push.sendByteBuffer(bSend, 0);
             pull.recvByteBuffer(bRec, 0);
             bRec.flip();
@@ -263,15 +258,16 @@ public class TestZMQ
     }
 
     @Test(expected = ZMQException.class)
-    public void testBindSameAddress()
+    public void testBindSameAddress() throws IOException
     {
+        int port = Utils.findOpenPort();
         ZMQ.Context context = ZMQ.context(1);
 
         ZMQ.Socket socket1 = context.socket(ZMQ.REQ);
         ZMQ.Socket socket2 = context.socket(ZMQ.REQ);
-        socket1.bind("tcp://*:12346");
+        socket1.bind("tcp://*:" + port);
         try {
-            socket2.bind("tcp://*:12346");
+            socket2.bind("tcp://*:" + port);
             fail("Exception not thrown");
         }
         catch (ZMQException e) {
@@ -338,7 +334,7 @@ public class TestZMQ
     }
 
     @Test
-    public void testEventConnectDelayed()
+    public void testEventConnectDelayed() throws IOException
     {
         Context context = ZMQ.context(1);
         ZMQ.Event event;
@@ -350,7 +346,9 @@ public class TestZMQ
         assertTrue(socket.monitor("inproc://monitor.socket", ZMQ.EVENT_CONNECT_DELAYED));
         monitor.connect("inproc://monitor.socket");
 
-        socket.connect("tcp://127.0.0.1:6751");
+        int randomPort = Utils.findOpenPort();
+
+        socket.connect("tcp://127.0.0.1:" + randomPort);
         event = ZMQ.Event.recv(monitor);
         assertNotNull("No event was received", event);
         assertEquals(ZMQ.EVENT_CONNECT_DELAYED, event.getEvent());
@@ -362,6 +360,7 @@ public class TestZMQ
 
     @Test
     public void testEventConnectRetried()
+    throws InterruptedException, IOException
     {
         Context context = ZMQ.context(1);
         ZMQ.Event event;
@@ -373,7 +372,10 @@ public class TestZMQ
         assertTrue(socket.monitor("inproc://monitor.socket", ZMQ.EVENT_CONNECT_RETRIED));
         monitor.connect("inproc://monitor.socket");
 
-        socket.connect("tcp://127.0.0.1:6752");
+        int randomPort = Utils.findOpenPort();
+
+        socket.connect("tcp://127.0.0.1:" + randomPort);
+        Thread.sleep(1000L); // on windows, this is required, otherwise test fails
         event = ZMQ.Event.recv(monitor);
         assertNotNull("No event was received", event);
         assertEquals(ZMQ.EVENT_CONNECT_RETRIED, event.getEvent());
