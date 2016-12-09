@@ -1508,11 +1508,15 @@ public class ZMQ
          */
         protected Poller(Context context, int size)
         {
+            assert (context != null);
             this.context = context;
-            selector     = context.selector();
-            items        = new PollItem[size];
-            timeout      = -1L;
-            next         = 0;
+
+            selector = context.selector();
+            assert (selector != null);
+
+            items   = new PollItem[size];
+            timeout = -1L;
+            next    = 0;
 
             freeSlots = new LinkedList<Integer>();
         }
