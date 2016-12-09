@@ -101,6 +101,7 @@ public class ZLoop
 
         pollSize = pollers.size();
         pollset = context.poller(pollSize);
+        assert (pollset != null);
 
         pollact = new SPoller[pollSize];
 
@@ -256,9 +257,7 @@ public class ZLoop
             }
             long wait = ticklessTimer();
 
-            if (pollset != null) {
-              rc = pollset.poll(wait);
-            }
+            rc = pollset.poll(wait);
 
             if (rc == -1) {
                 if (verbose) {
