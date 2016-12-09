@@ -252,9 +252,7 @@ public class ZLoop
             if (dirty) {
                 // If s_rebuild_pollset() fails, break out of the loop and
                 // return its error
-                if (context != null) {
-                  rebuild();
-                }
+                rebuild();
             }
             long wait = ticklessTimer();
 
@@ -262,7 +260,7 @@ public class ZLoop
               rc = pollset.poll(wait);
             }
 
-            if (context == null || rc == -1) {
+            if (rc == -1) {
                 if (verbose) {
                     System.out.printf("I: zloop: interrupted (%d)\n", rc);
                 }
