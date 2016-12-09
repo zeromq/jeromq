@@ -59,7 +59,7 @@ public class ZLoop
 
     }
 
-    private Context context;                    //  Context managing the pollers.
+    private final Context context;              //  Context managing the pollers.
     private final List<SPoller> pollers;        //  List of poll items
     private final List<STimer> timers;          //  List of timers
     private int pollSize;                       //  Size of poll set
@@ -73,8 +73,8 @@ public class ZLoop
     public ZLoop(Context context)
     {
         assert (context != null);
+        this.context = context;
 
-        context   = context;
         pollers   = new ArrayList<SPoller>();
         timers    = new ArrayList<STimer>();
         zombies   = new ArrayList<Object>();
