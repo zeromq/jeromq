@@ -1,13 +1,9 @@
-package zmq;
+package org.zeromq;
 
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-
-import org.zeromq.ZContext;
-import org.zeromq.ZMQ.Poller;
-import org.zeromq.ZMQ.Socket;
 
 public class TestDisconnectInproc
 {
@@ -18,17 +14,17 @@ public class TestDisconnectInproc
         boolean isSubscribed = false;
 
         ZContext ctx = new ZContext();
-        Socket pubSocket = ctx.createSocket(ZMQ.ZMQ_XPUB);
-        Socket subSocket = ctx.createSocket(ZMQ.ZMQ_SUB);
+        ZMQ.Socket pubSocket = ctx.createSocket(ZMQ.XPUB);
+        ZMQ.Socket subSocket = ctx.createSocket(ZMQ.SUB);
 
         subSocket.subscribe("foo".getBytes());
         pubSocket.bind("inproc://someInProcDescriptor");
 
         int iteration = 0;
 
-        Poller poller = ctx.createPoller(2);
-        poller.register(subSocket, Poller.POLLIN); // read publications
-        poller.register(pubSocket, Poller.POLLIN); // read subscriptions
+        ZMQ.Poller poller = ctx.createPoller(2);
+        poller.register(subSocket, ZMQ.Poller.POLLIN); // read publications
+        poller.register(pubSocket, ZMQ.Poller.POLLIN); // read subscriptions
 
         while (true) {
             poller.poll(500);
@@ -81,7 +77,7 @@ public class TestDisconnectInproc
                 break;
             }
 
-            pubSocket.send("foo".getBytes(ZMQ.CHARSET), ZMQ.ZMQ_SNDMORE);
+            pubSocket.send("foo".getBytes(ZMQ.CHARSET), ZMQ.SNDMORE);
             pubSocket.send("this is foo!".getBytes(ZMQ.CHARSET), 0);
             iteration++;
         }
