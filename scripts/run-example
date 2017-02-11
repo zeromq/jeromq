@@ -1,0 +1,15 @@
+#!/bin/bash
+
+if [[ $# -lt 1 ]]; then
+  echo "Usage: $0 <name-of-zguide-example>"
+fi
+
+example=$1
+filename="src/test/java/guide/$example.java"
+
+if [[ ! -f $filename ]]; then
+  echo "File not found: $filename"
+  exit 1
+fi
+
+mvn exec:java -Dexec.mainClass=guide.$example -Dexec.classpathScope=test
