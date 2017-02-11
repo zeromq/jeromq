@@ -76,7 +76,7 @@ mvn ant:ant
 
 Also please refer the [Wiki](https://github.com/zeromq/jeromq/wiki).
 
-## Copying
+## License
 
 All source files are copyright © 2007-2017 contributors as noted in the AUTHORS file.
 
