@@ -1,4 +1,4 @@
-#JeroMQ
+# JeroMQ
 
 Pure Java implementation of libzmq (http://zeromq.org).
 
@@ -29,9 +29,7 @@ Pure Java implementation of libzmq (http://zeromq.org).
 
 ## Contribution Process
 
-This project uses the [C4 process](http://rfc.zeromq.org/spec:16) for all code changes. "Everyone,
-without distinction or discrimination, SHALL have an equal right to become a Contributor under the
-terms of this contract."
+This project uses the [C4 process](http://rfc.zeromq.org/spec:16) for all code changes. "Everyone, without distinction or discrimination, SHALL have an equal right to become a Contributor under the terms of this contract."
 
 ## Usage
 
