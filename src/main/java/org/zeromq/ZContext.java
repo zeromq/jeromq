@@ -51,7 +51,7 @@ public class ZContext implements Closeable
      */
     public ZContext()
     {
-        this(null, true, 1);
+        this(1);
     }
 
     public ZContext(int ioThreads)
