@@ -33,6 +33,8 @@ This project uses the [C4 process](http://rfc.zeromq.org/spec:16) for all code c
 
 ## Usage
 
+### Maven
+
 Add it to your Maven project's `pom.xml`:
 
 ```xml
@@ -64,7 +66,7 @@ Add it to your Maven project's `pom.xml`:
     </repositories>
 ```
 
-## Using ANT
+### Ant
 
 To generate an ant build file from `pom.xml`, issue the following command:
 
