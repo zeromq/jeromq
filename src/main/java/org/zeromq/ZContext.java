@@ -156,6 +156,16 @@ public class ZContext implements Closeable
     }
 
     /**
+     * @param ioThreads the number of ioThreads to set
+     * @deprecated This value should not be changed after the context is initialized.
+     */
+    @Deprecated
+    public void setIoThreads(int ioThreads)
+    {
+        return;
+    }
+
+    /**
      * @return the linger
      */
     public int getLinger()
@@ -180,6 +190,16 @@ public class ZContext implements Closeable
     }
 
     /**
+     * @param main whether or not the context is being set to main
+     * @deprecated This value should not be changed after the context is initialized.
+     */
+    @Deprecated
+    public void setMain(boolean main)
+    {
+        return;
+    }
+
+    /**
      * @return the context
      */
     public Context getContext()
@@ -195,6 +215,16 @@ public class ZContext implements Closeable
             }
         }
         return result;
+    }
+
+    /**
+     * @param ctx sets the underlying zmq.Context associated with this ZContext wrapper object
+     * @deprecated This value should not be changed after the ZContext is initialized.
+     */
+    @Deprecated
+    public void setContext(Context ctx)
+    {
+        return;
     }
 
     /**
