@@ -27,9 +27,9 @@ Pure Java implementation of libzmq (http://zeromq.org).
  * [TestProxyTcp](https://github.com/zeromq/jeromq/blob/master/src/test/java/zmq/TestProxyTcp.java)
  * [Proxy](https://github.com/zeromq/jeromq/blob/master/src/main/java/org/jeromq/codec/Proxy.java)
 
-## Contribution Process
+## Contributing
 
-This project uses the [C4 process](http://rfc.zeromq.org/spec:16) for all code changes. "Everyone, without distinction or discrimination, SHALL have an equal right to become a Contributor under the terms of this contract."
+Contributions welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for details about the contribution process and useful development tasks.
 
 ## Usage
 
@@ -73,8 +73,6 @@ To generate an ant build file from `pom.xml`, issue the following command:
 ```bash
 mvn ant:ant
 ```
-
-Also please refer the [Wiki](https://github.com/zeromq/jeromq/wiki).
 
 ## License
 
