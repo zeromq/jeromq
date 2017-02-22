@@ -369,6 +369,11 @@ class Pipe extends ZObject
             assert (state == State.TERMINATING || state == State.DOUBLE_TERMINATED);
         }
 
+        // If the inbound pipe has already been deallocated, then we're done.
+        if (inpipe == null) {
+            return;
+        }
+
         //  We'll deallocate the inbound pipe, the peer will deallocate the outbound
         //  pipe (which is an inbound pipe from its point of view).
         //  First, delete all the unread messages in the pipe. We have to do it by
@@ -378,9 +383,8 @@ class Pipe extends ZObject
             // do nothing
         }
 
-        inpipe = null;
-
         //  Deallocate the pipe object
+        inpipe = null;
     }
 
     //  Ask pipe to terminate. The termination will happen asynchronously

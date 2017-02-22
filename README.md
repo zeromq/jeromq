@@ -1,8 +1,9 @@
-#JeroMQ
+# JeroMQ
 
 Pure Java implementation of libzmq (http://zeromq.org).
 
 [![Build Status](https://travis-ci.org/zeromq/jeromq.png)](https://travis-ci.org/zeromq/jeromq)
+[![Maven Central](https://img.shields.io/maven-central/v/org.zeromq/jeromq.svg)](https://maven-badges.herokuapp.com/maven-central/org.zeromq/jeromq)
 
 ## Features
 
@@ -26,13 +27,13 @@ Pure Java implementation of libzmq (http://zeromq.org).
  * [TestProxyTcp](https://github.com/zeromq/jeromq/blob/master/src/test/java/zmq/TestProxyTcp.java)
  * [Proxy](https://github.com/zeromq/jeromq/blob/master/src/main/java/org/jeromq/codec/Proxy.java)
 
-## Contribution Process
+## Contributing
 
-This project uses the [C4 process](http://rfc.zeromq.org/spec:16) for all code changes. "Everyone,
-without distinction or discrimination, SHALL have an equal right to become a Contributor under the
-terms of this contract."
+Contributions welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for details about the contribution process and useful development tasks.
 
 ## Usage
+
+### Maven
 
 Add it to your Maven project's `pom.xml`:
 
@@ -65,7 +66,7 @@ Add it to your Maven project's `pom.xml`:
     </repositories>
 ```
 
-## Using ANT
+### Ant
 
 To generate an ant build file from `pom.xml`, issue the following command:
 
@@ -73,10 +74,8 @@ To generate an ant build file from `pom.xml`, issue the following command:
 mvn ant:ant
 ```
 
-Also please refer the [Wiki](https://github.com/zeromq/jeromq/wiki).
+## License
 
-## Copying
-
-All source files are copyright © 2007-2016 contributors as noted in the AUTHORS file.
+All source files are copyright © 2007-2017 contributors as noted in the AUTHORS file.
 
 Free use of this software is granted under the terms of the Mozilla Public License 2.0. For details see the file `LICENSE` included with the JeroMQ distribution.

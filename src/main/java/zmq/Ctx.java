@@ -20,6 +20,8 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public class Ctx
 {
+    private static final int WAIT_FOREVER = -1;
+
     //  Information associated with inproc endpoint. Note that endpoint options
     //  are registered as well so that the peer can access them without a need
     //  for synchronisation, handshaking or similar.
@@ -191,7 +193,7 @@ public class Ctx
                 slotSync.unlock();
             }
             //  Wait till reaper thread closes all the sockets.
-            Command cmd = termMailbox.recv(-1);
+            Command cmd = termMailbox.recv(WAIT_FOREVER);
             if (cmd == null) {
                 throw new IllegalStateException();
             }
@@ -275,46 +277,7 @@ public class Ctx
         slotSync.lock();
         try {
             if (starting.compareAndSet(true, false)) {
-                //  Initialize the array of mailboxes. Additional three slots are for
-                //  zmq_term thread and reaper thread.
-                int mazmq;
-                int ios;
-                optSync.lock();
-                try {
-                    mazmq = maxSockets;
-                    ios = ioThreadCount;
-                }
-                finally {
-                    optSync.unlock();
-                }
-                slotCount = mazmq + ios + 2;
-                slots = new Mailbox[slotCount];
-                //alloc_assert (slots);
-
-                //  Initialize the infrastructure for zmq_term thread.
-                slots[TERM_TID] = termMailbox;
-
-                //  Create the reaper thread.
-                reaper = new Reaper(this, REAPER_TID);
-                //alloc_assert (reaper);
-                slots[REAPER_TID] = reaper.getMailbox();
-                reaper.start();
-
-                //  Create I/O thread objects and launch them.
-                for (int i = 2; i != ios + 2; i++) {
-                    IOThread ioThread = new IOThread(this, i);
-                    //alloc_assert (io_thread);
-                    ioThreads.add(ioThread);
-                    slots[i] = ioThread.getMailbox();
-                    ioThread.start();
-                }
-
-                //  In the unused part of the slot array, create a list of empty slots.
-                for (int i = (int) slotCount - 1;
-                      i >= (int) ios + 2; i--) {
-                    emptySlots.add(i);
-                    slots[i] = null;
-                }
+                initSlots();
             }
 
             //  Once zmq_term() was called, we can't create new sockets.
@@ -468,7 +431,6 @@ public class Ctx
         try {
             endpoint = endpoints.get(addr);
             if (endpoint == null) {
-                //ZError.errno(ZError.ECONNREFUSED);
                 return new Endpoint(null, new Options());
             }
 
@@ -482,5 +444,54 @@ public class Ctx
             endpointsSync.unlock();
         }
         return endpoint;
+    }
+
+    private void initSlots()
+    {
+        slotSync.lock();
+        try {
+            //  Initialize the array of mailboxes. Additional two slots are for
+            //  zmq_term thread and reaper thread.
+            int slotCount;
+            int ios;
+            optSync.lock();
+            try {
+                ios = ioThreadCount;
+                slotCount = maxSockets + ioThreadCount + 2;
+            }
+            finally {
+                optSync.unlock();
+            }
+            slots = new Mailbox[slotCount];
+            //alloc_assert (slots);
+
+            //  Initialize the infrastructure for zmq_term thread.
+            slots[TERM_TID] = termMailbox;
+
+            //  Create the reaper thread.
+            reaper = new Reaper(this, REAPER_TID);
+            //alloc_assert (reaper);
+            slots[REAPER_TID] = reaper.getMailbox();
+            reaper.start();
+
+            //  Create I/O thread objects and launch them.
+            for (int i = 2; i != ios + 2; i++) {
+                IOThread ioThread = new IOThread(this, i);
+                //alloc_assert (io_thread);
+                ioThreads.add(ioThread);
+                slots[i] = ioThread.getMailbox();
+                ioThread.start();
+            }
+
+            //  In the unused part of the slot array, create a list of empty slots.
+            for (int i = (int) slotCount - 1;
+                  i >= (int) ios + 2; i--) {
+                emptySlots.add(i);
+                slots[i] = null;
+            }
+        }
+        finally {
+            slotSync.unlock();
+        }
     }
 }

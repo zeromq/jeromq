@@ -23,17 +23,17 @@ public class ZContext implements Closeable
     /**
      * Reference to underlying Context object
      */
-    private volatile Context context;
+    private volatile Context context;  //  Created lazily, use getContext() to access.
 
     /**
      * List of sockets managed by this ZContext
      */
-    private List<Socket> sockets;
+    private final List<Socket> sockets;
 
     /**
      * Number of io threads allocated to this context, default 1
      */
-    private int ioThreads;
+    private final int ioThreads;
 
     /**
      * Linger timeout, default 0
@@ -44,7 +44,7 @@ public class ZContext implements Closeable
      * Indicates if context object is owned by main thread
      * (useful for multi-threaded applications)
      */
-    private boolean main;
+    private final boolean main;
 
     /**
      * Class Constructor
@@ -56,10 +56,16 @@ public class ZContext implements Closeable
 
     public ZContext(int ioThreads)
     {
+        this(null, true, ioThreads);
+    }
+
+    private ZContext(Context context, boolean main, int ioThreads)
+    {
         sockets = new CopyOnWriteArrayList<Socket>();
+        this.context = context;
         this.ioThreads = ioThreads;
+        this.main = main;
         linger = 0;
-        main = true;
     }
 
     /**
@@ -138,11 +144,7 @@ public class ZContext implements Closeable
      */
     public static ZContext shadow(ZContext ctx)
     {
-        ZContext shadow = new ZContext();
-        shadow.setContext(ctx.getContext());
-        shadow.setMain(false);
-
-        return shadow;
+        return new ZContext(ctx.getContext(), false, ctx.getIoThreads());
     }
 
     /**
@@ -154,11 +156,13 @@ public class ZContext implements Closeable
     }
 
     /**
-     * @param ioThreads the ioThreads to set
+     * @param ioThreads the number of ioThreads to set
+     * @deprecated This value should not be changed after the context is initialized.
      */
+    @Deprecated
     public void setIoThreads(int ioThreads)
     {
-        this.ioThreads = ioThreads;
+        return;
     }
 
     /**
@@ -186,11 +190,13 @@ public class ZContext implements Closeable
     }
 
     /**
-     * @param main the main to set
+     * @param main whether or not the context is being set to main
+     * @deprecated This value should not be changed after the context is initialized.
      */
+    @Deprecated
     public void setMain(boolean main)
     {
-        this.main = main;
+        return;
     }
 
     /**
@@ -212,11 +218,13 @@ public class ZContext implements Closeable
     }
 
     /**
-     * @param ctx   sets the underlying org.zeromq.Context associated with this ZContext wrapper object
+     * @param ctx sets the underlying zmq.Context associated with this ZContext wrapper object
+     * @deprecated This value should not be changed after the ZContext is initialized.
      */
+    @Deprecated
     public void setContext(Context ctx)
     {
-        this.context = ctx;
+        return;
     }
 
     /**
