@@ -230,7 +230,7 @@ public class ZPoller implements Closeable
     /******************************************************************************/
     /* 0MQ socket events */
     /******************************************************************************/
-    /**
+    /*
      * These values can be ORed to specify what we want to poll for.
      */
     public static final int POLLIN = Poller.POLLIN;
@@ -241,6 +241,10 @@ public class ZPoller implements Closeable
     public static final int IN = POLLIN;
     public static final int OUT = POLLOUT;
     public static final int ERR = POLLERR;
+
+    // same values with semantic consistency
+    public static final int READABLE = POLLIN;
+    public static final int WRITABLE = POLLOUT;
 
     /**
      * Creates a new poller based on the current one.
@@ -265,9 +269,21 @@ public class ZPoller implements Closeable
     }
 
     /**
-     * Creates a new poller based on the current one.
-     * This will be a shadow poller, sharing the same selector.
-     * The global events handler will not be shared.
+     * Creates a new poller attached to a given context that will provide
+     * selector for operational polling.
+     *
+     * @param context
+     *            the context that will provide the selector to use for polling.
+     */
+    public ZPoller(final ZContext context)
+    {
+        this(new SimpleCreator(), context.createSelector());
+    }
+
+    /**
+     * Creates a new poller based on the current one. This will be a shadow
+     * poller, sharing the same selector. The global events handler will not be
+     * shared.
      *
      * @param creator   the items creator
      * @param poller    the main poller.
@@ -275,6 +291,20 @@ public class ZPoller implements Closeable
     public ZPoller(final ItemCreator creator, final ZPoller poller)
     {
         this(creator, poller.selector);
+    }
+
+    /**
+     * Creates a new poller attached to a given context that will provide
+     * selector for operational polling.
+     *
+     * @param creator
+     *            the items creator
+     * @param context
+     *            the context that will provide the selector to use for polling.
+     */
+    public ZPoller(final ItemCreator creator, final ZContext context)
+    {
+        this(creator, context.createSelector());
     }
 
     /**
@@ -425,9 +455,7 @@ public class ZPoller implements Closeable
      *            happens; if 0, it will return immediately;
      *            otherwise, it will wait for at most that many
      *            milliseconds/microseconds (see above).
-     *
      * @see "http://api.zeromq.org/3-0:zmq-poll"
-     *
      * @return how many objects where signaled by poll ()
      */
     public int poll(final long timeout)
@@ -441,7 +469,6 @@ public class ZPoller implements Closeable
      * @param timeout           the timeout, as per zmq_poll ();
      * @param dispatchEvents    true to dispatch events using items handler and the global one.
      * @see "http://api.zeromq.org/3-0:zmq-poll"
-     *
      * @return how many objects where signaled by poll ()
      */
     protected int poll(final long timeout, final boolean dispatchEvents)
@@ -571,11 +598,21 @@ public class ZPoller implements Closeable
     // checks for read event
     public boolean readable(final Object socketOrChannel)
     {
-        final zmq.PollItem it = filter(socketOrChannel, IN);
+        final zmq.PollItem it = filter(socketOrChannel, READABLE);
         if (it == null) {
             return false;
         }
         return it.isReadable();
+    }
+
+    public boolean pollin(final Socket socket)
+    {
+        return isReadable(socket);
+    }
+
+    public boolean pollin(final SelectableChannel channel)
+    {
+        return isReadable(channel);
     }
 
     /**
@@ -613,11 +650,21 @@ public class ZPoller implements Closeable
     // checks for write event
     public boolean writable(final Object socketOrChannel)
     {
-        final zmq.PollItem it = filter(socketOrChannel, OUT);
+        final zmq.PollItem it = filter(socketOrChannel, WRITABLE);
         if (it == null) {
             return false;
         }
         return it.isWritable();
+    }
+
+    public boolean pollout(final Socket socket)
+    {
+        return isWritable(socket);
+    }
+
+    public boolean pollout(final SelectableChannel channel)
+    {
+        return isWritable(channel);
     }
 
     /**
@@ -660,6 +707,16 @@ public class ZPoller implements Closeable
             return false;
         }
         return it.isError();
+    }
+
+    public boolean pollerr(final Socket socket)
+    {
+        return isError(socket);
+    }
+
+    public boolean pollerr(final SelectableChannel channel)
+    {
+        return isError(channel);
     }
 
     /**
@@ -781,7 +838,7 @@ public class ZPoller implements Closeable
         final Iterable<ItemHolder> items = items(socketOrChannel);
         for (ItemHolder item : items) {
             final zmq.PollItem it = item.item();
-            if ((it.interestOps() & events) > 0) {
+            if ((it.zinterestOps() & events) > 0) {
                 return it;
             }
         }
