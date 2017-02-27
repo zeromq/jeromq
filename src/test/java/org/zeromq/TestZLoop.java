@@ -42,7 +42,10 @@ public class TestZLoop
     {
         int rc = 0;
 
-        ZLoop loop = new ZLoop();
+        // setUp() should create the context
+        assert (ctx != null);
+
+        ZLoop loop = new ZLoop(ctx);
         assert (loop != null);
 
         ZLoop.IZLoopHandler timerEvent = new ZLoop.IZLoopHandler()
@@ -84,7 +87,7 @@ public class TestZLoop
     {
         int rc = 0;
 
-        ZLoop loop = new ZLoop();
+        ZLoop loop = new ZLoop(ctx);
         assert (loop != null);
 
         ZLoop.IZLoopHandler timerEvent = new ZLoop.IZLoopHandler()
@@ -142,7 +145,7 @@ public class TestZLoop
     {
         int rc = 0;
 
-        ZLoop loop = new ZLoop();
+        ZLoop loop = new ZLoop(ctx);
         assert (loop != null);
 
         ZLoop.IZLoopHandler timerEvent = new ZLoop.IZLoopHandler()
@@ -198,7 +201,7 @@ public class TestZLoop
     {
         int rc = 0;
 
-        ZLoop loop = new ZLoop();
+        ZLoop loop = new ZLoop(ctx);
         assert (loop != null);
 
         ZLoop.IZLoopHandler timerEvent = new ZLoop.IZLoopHandler()

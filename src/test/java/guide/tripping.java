@@ -24,10 +24,10 @@ public class tripping {
             backend.bind("tcp://*:5556");
 
             while (!Thread.currentThread().isInterrupted()) {
-                ZMQ.Poller items = new ZMQ.Poller(2);
+                ZMQ.Poller items = ctx.createPoller(2);
                 items.register(frontend, ZMQ.Poller.POLLIN);
                 items.register(backend, ZMQ.Poller.POLLIN);
-                
+
                 if (items.poll() == -1)
                     break; // Interrupted
                 if (items.pollin(0)) {
@@ -130,7 +130,7 @@ public class tripping {
     }
 
     public static void main(String[] args) {
-        
+
         if (args.length==1)
             Client.SAMPLE_SIZE = Integer.parseInt(args[0]);
 

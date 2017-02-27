@@ -3,7 +3,7 @@ package guide;
 import org.zeromq.ZContext;
 import org.zeromq.ZFrame;
 import org.zeromq.ZMQ;
-import org.zeromq.ZMQ.PollItem;
+import org.zeromq.ZMQ.Poller;
 import org.zeromq.ZMQ.Socket;
 import org.zeromq.ZMsg;
 import org.zeromq.ZThread;
@@ -201,19 +201,20 @@ public class titanic
         boolean verbose = (args.length > 0 && "-v".equals(args[0]));
 
         ZContext ctx = new ZContext();
-
         Socket requestPipe = ZThread.fork(ctx, new TitanicRequest());
         ZThread.start(new TitanicReply());
         ZThread.start(new TitanicClose());
 
+        Poller poller = ctx.createPoller(1);
+        poller.register(requestPipe, ZMQ.Poller.POLLIN);
+
         //  Main dispatcher loop
         while (true) {
             //  We'll dispatch once per second, if there's no activity
-            PollItem items [] = { new PollItem(requestPipe, ZMQ.Poller.POLLIN) };
-            int rc = ZMQ.poll(items, 1, 1000);
+            int rc = poller.poll(1000);
             if (rc == -1)
                 break;              //  Interrupted
-            if (items [0].isReadable()) {
+            if (poller.pollin(0)) {
                 //  Ensure message directory exists
                 new File(TITANIC_DIR).mkdirs();
 

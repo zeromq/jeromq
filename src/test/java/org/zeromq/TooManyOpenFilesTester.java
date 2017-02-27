@@ -1,4 +1,4 @@
-package zmq;
+package org.zeromq;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -9,6 +9,9 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.Test;
+
+import org.zeromq.ZMQ.Poller;
+import org.zeromq.ZMQ.Socket;
 
 /**
  * Tests exhaustion of java file pipes,
@@ -41,34 +44,33 @@ public class TooManyOpenFilesTester
         @Override
         public void run()
         {
-            Ctx ctx = ZMQ.init(1);
+            ZContext ctx = new ZContext(1);
 
-            SocketBase server = ZMQ.socket(ctx, ZMQ.ZMQ_ROUTER);
+            Socket server = ctx.createSocket(ZMQ.ROUTER);
 
-            ZMQ.bind(server, "tcp://localhost:" + port);
+            server.bind("tcp://localhost:" + port);
 
-            Msg msg = ZMQ.recv(server, 0);
+            byte[] msg = server.recv(0);
 
-            Msg address = msg;
+            byte[] address = msg;
 
-            poll(server);
+            poll(ctx, server);
 
-            msg = ZMQ.recv(server, 0);
-            Msg delimiter = msg;
+            msg = server.recv(0);
+            byte[] delimiter = msg;
 
-            poll(server);
+            poll(ctx, server);
 
-            msg = ZMQ.recv(server, 0);
+            msg = server.recv(0);
 
             // only one echo message for this server
 
-            ZMQ.send(server, address, ZMQ.ZMQ_SNDMORE);
-            ZMQ.send(server, delimiter, ZMQ.ZMQ_SNDMORE);
-            ZMQ.send(server, msg, 0);
+            server.send(address, ZMQ.SNDMORE);
+            server.send(delimiter, ZMQ.SNDMORE);
+            server.send(msg, 0);
 
             // Clean up.
-            ZMQ.close(server);
-            ZMQ.term(ctx);
+            ctx.destroy();
         }
     }
 
@@ -95,24 +97,23 @@ public class TooManyOpenFilesTester
         @Override
         public void run()
         {
-            Ctx ctx = ZMQ.init(1);
+            ZContext ctx = new ZContext(1);
 
-            SocketBase client = ZMQ.socket(ctx, ZMQ.ZMQ_REQ);
+            Socket client = ctx.createSocket(ZMQ.REQ);
 
-            ZMQ.setSocketOption(client, ZMQ.ZMQ_IDENTITY, "ID");
-            ZMQ.connect(client, "tcp://localhost:" + port);
+            client.setIdentity("ID".getBytes());
+            client.connect("tcp://localhost:" + port);
 
-            ZMQ.send(client, "DATA", 0);
+            client.send("DATA", 0);
 
-            inBetween(client);
+            inBetween(ctx, client);
 
-            Msg reply = ZMQ.recv(client, 0);
+            byte[] reply = client.recv(0);
             assertThat(reply, notNullValue());
-            assertThat(new String(reply.data(), ZMQ.CHARSET), is("DATA"));
+            assertThat(new String(reply, ZMQ.CHARSET), is("DATA"));
 
             // Clean up.
-            ZMQ.close(client);
-            ZMQ.term(ctx);
+            ctx.destroy();
 
             finished.set(true);
         }
@@ -121,9 +122,9 @@ public class TooManyOpenFilesTester
          * Called between the request-reply cycle.
          * @param client the socket participating to the cycle of request-reply
          */
-        protected void inBetween(SocketBase client)
+        protected void inBetween(ZContext ctx, Socket client)
         {
-            poll(client);
+            poll(ctx, client);
         }
     }
 
@@ -131,14 +132,15 @@ public class TooManyOpenFilesTester
      * Polls while keeping the selector opened.
      * @param socket the socket to poll
      */
-    private void poll(SocketBase socket)
+    private void poll(ZContext ctx, Socket socket)
     {
         // Poll socket for a reply, with timeout
-        PollItem item = new PollItem(socket, ZMQ.ZMQ_POLLIN);
-        int rc = zmq.ZMQ.poll(new PollItem[] { item }, REQUEST_TIMEOUT);
+        Poller poller = ctx.createPoller(1);
+        poller.register(socket, Poller.POLLIN);
+        int rc = poller.poll(REQUEST_TIMEOUT);
         assertThat(rc, is(1));
 
-        boolean readable = item.isReadable();
+        boolean readable = poller.pollin(0);
         assertThat(readable, is(true));
     }
 

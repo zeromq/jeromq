@@ -3,7 +3,7 @@ package guide;
 import org.zeromq.ZContext;
 import org.zeromq.ZFrame;
 import org.zeromq.ZMQ;
-import org.zeromq.ZMQ.PollItem;
+import org.zeromq.ZMQ.Poller;
 import org.zeromq.ZMQ.Socket;
 
 import java.util.HashMap;
@@ -27,20 +27,20 @@ public class lvcache
         //  Store last instance of each topic in a cache
         Map<String, String> cache = new HashMap<String, String>();
 
+        Poller poller = context.createPoller(2);
+        poller.register(frontend, Poller.POLLIN);
+        poller.register(backend, Poller.POLLIN);
+
         //  .split main poll loop
         //  We route topic updates from frontend to backend, and
         //  we handle subscriptions by sending whatever we cached,
         //  if anything:
         while (true) {
-            PollItem[] items = {
-                    new PollItem(frontend, ZMQ.Poller.POLLIN),
-                    new PollItem(backend, ZMQ.Poller.POLLIN),
-            };
-            if (ZMQ.poll(items, 1000) == -1)
+            if (poller.poll(1000) == -1)
                 break;              //  Interrupted
 
             //  Any new topic data we cache and then forward
-            if (items[0].isReadable()) {
+            if (poller.pollin(0)) {
                 String topic = frontend.recvStr();
                 String current = frontend.recvStr();
 
@@ -52,7 +52,7 @@ public class lvcache
             }
             //  .split handle subscriptions
             //  When we get a new subscription, we pull data from the cache:
-            if (items[1].isReadable()) {
+            if (poller.pollin(1)) {
                 ZFrame frame = ZFrame.recvFrame(backend);
                 if (frame == null)
                     break;

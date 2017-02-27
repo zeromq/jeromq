@@ -55,7 +55,7 @@ public class clonecli4
 			clonecli4.kvMap.put(kvMsg.getKey(), kvMsg);
 		}
 
-		Poller poller = new Poller(1);
+		Poller poller = ctx.createPoller(1);
 		poller.register(subscriber);
 
 		Random random = new Random();

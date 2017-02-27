@@ -3,7 +3,6 @@ package guide;
 import org.zeromq.ZContext;
 import org.zeromq.ZFrame;
 import org.zeromq.ZMQ;
-import org.zeromq.ZMQ.PollItem;
 import org.zeromq.ZMQ.Socket;
 import org.zeromq.ZMsg;
 import org.zeromq.ZMQ.Poller;
@@ -39,14 +38,15 @@ public class asyncsrv
             client.setIdentity(identity.getBytes(ZMQ.CHARSET));
             client.connect("tcp://localhost:5570");
 
-            PollItem[] items = new PollItem[] { new PollItem(client, Poller.POLLIN) };
+            Poller poller = ctx.createPoller(1);
+            poller.register(client, Poller.POLLIN);
 
             int requestNbr = 0;
             while (!Thread.currentThread().isInterrupted()) {
                 //  Tick once per second, pulling in arriving messages
                 for (int centitick = 0; centitick < 100; centitick++) {
-                    ZMQ.poll(items, 10);
-                    if (items[0].isReadable()) {
+                    poller.poll(10);
+                    if (poller.pollin(0)) {
                         ZMsg msg = ZMsg.recvMsg(client);
                         msg.getLast().print(identity);
                         msg.destroy();

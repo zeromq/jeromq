@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import org.zeromq.ZMQ.Context;
 import org.zeromq.ZMQ.PollItem;
 import org.zeromq.ZMQ.Poller;
 
@@ -58,6 +59,7 @@ public class ZLoop
 
     }
 
+    private final Context context;              //  Context managing the pollers.
     private final List<SPoller> pollers;        //  List of poll items
     private final List<STimer> timers;          //  List of timers
     private int pollSize;                       //  Size of poll set
@@ -68,12 +70,20 @@ public class ZLoop
     private final List<Object> zombies;         //  List of timers to kill
     private final List<STimer> newTimers;       //  List of timers to add
 
-    public ZLoop()
+    public ZLoop(Context context)
     {
-        pollers = new ArrayList<SPoller>();
-        timers = new ArrayList<STimer>();
-        zombies = new ArrayList<Object>();
+        assert (context != null);
+        this.context = context;
+
+        pollers   = new ArrayList<SPoller>();
+        timers    = new ArrayList<STimer>();
+        zombies   = new ArrayList<Object>();
         newTimers = new ArrayList<STimer>();
+    }
+
+    public ZLoop(ZContext ctx)
+    {
+        this(ctx.getContext());
     }
 
     public void destroy()
@@ -90,7 +100,8 @@ public class ZLoop
         pollact = null;
 
         pollSize = pollers.size();
-        pollset = new Poller(pollSize);
+        pollset = context.poller(pollSize);
+        assert (pollset != null);
 
         pollact = new SPoller[pollSize];
 

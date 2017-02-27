@@ -103,7 +103,7 @@ public class mdbroker {
      */
     public void mediate() {
         while (!Thread.currentThread().isInterrupted()) {
-            ZMQ.Poller items = new ZMQ.Poller(1);
+            ZMQ.Poller items = ctx.createPoller(1);
             items.register(socket, ZMQ.Poller.POLLIN);
             if (items.poll(HEARTBEAT_INTERVAL) == -1)
                 break; // Interrupted

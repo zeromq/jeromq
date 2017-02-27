@@ -2,7 +2,7 @@ package guide;
 
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
-import org.zeromq.ZMQ.PollItem;
+import org.zeromq.ZMQ.Poller;
 import org.zeromq.ZMQ.Socket;
 
 //  Binary Star client proof-of-concept implementation. This client does no
@@ -23,6 +23,9 @@ public class bstarcli
         Socket client = ctx.createSocket(ZMQ.REQ);
         client.connect(server[serverNbr]);
 
+        Poller poller = ctx.createPoller(1);
+        poller.register(client, ZMQ.Poller.POLLIN);
+
         int sequence = 0;
         while (!Thread.currentThread().isInterrupted()) {
             //  We send a request, then we work to get a reply
@@ -32,8 +35,7 @@ public class bstarcli
             boolean expectReply = true;
             while (expectReply) {
                 //  Poll socket for a reply, with timeout
-                PollItem items [] = { new PollItem(client, ZMQ.Poller.POLLIN) };
-                int rc = ZMQ.poll(items, 1, REQUEST_TIMEOUT);
+                int rc = poller.poll(REQUEST_TIMEOUT);
                 if (rc == -1)
                     break;          //  Interrupted
 
@@ -44,7 +46,7 @@ public class bstarcli
                 //  server is primary; the client must therefore try to connect
                 //  to each server in turn:
 
-                if (items[0].isReadable()) {
+                if (poller.pollin(0)) {
                     //  We got a reply from the server, must match getSequence
                     String reply = client.recvStr();
                     if (Integer.parseInt(reply) == sequence) {

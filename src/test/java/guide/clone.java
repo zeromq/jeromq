@@ -2,7 +2,6 @@ package guide;
 
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
-import org.zeromq.ZMQ.PollItem;
 import org.zeromq.ZMQ.Poller;
 import org.zeromq.ZMQ.Socket;
 import org.zeromq.ZMsg;
@@ -232,11 +231,10 @@ public class clone
         {
             Agent self = new Agent(ctx, pipe);
 
+            Poller poller = ctx.createPoller(1);
+            poller.register(pipe, Poller.POLLIN);
+
             while (!Thread.currentThread().isInterrupted()) {
-                PollItem[] pollItems = {
-                        new PollItem(pipe, Poller.POLLIN),
-                        null
-                };
                 long pollTimer = -1;
                 int pollSize = 2;
                 Server server = self.server[self.curServer];
@@ -254,7 +252,10 @@ public class clone
                         }
                         server.expiry = System.currentTimeMillis() + SERVER_TTL;
                         self.state = STATE_SYNCING;
-                        pollItems[1] = new PollItem(server.snapshot, Poller.POLLIN);
+
+                        poller = ctx.createPoller(2);
+                        poller.register(pipe, Poller.POLLIN);
+                        poller.register(server.snapshot, Poller.POLLIN);
                     }
                     else
                         pollSize = 1;
@@ -263,13 +264,17 @@ public class clone
                 case STATE_SYNCING:
                     //  In this state we read from snapshot and we expect
                     //  the server to respond, else we fail over.
-                    pollItems[1] = new PollItem(server.snapshot, Poller.POLLIN);
+                    poller = ctx.createPoller(2);
+                    poller.register(pipe, Poller.POLLIN);
+                    poller.register(server.snapshot, Poller.POLLIN);
                     break;
 
                 case STATE_ACTIVE:
                     //  In this state we read from subscriber and we expect
                     //  the server to give hugz, else we fail over.
-                    pollItems[1] = new PollItem(server.subscriber, Poller.POLLIN);
+                    poller = ctx.createPoller(2);
+                    poller.register(pipe, Poller.POLLIN);
+                    poller.register(server.subscriber, Poller.POLLIN);
                     break;
                 }
                 if (server != null) {
@@ -281,17 +286,17 @@ public class clone
                 //  We're ready to process incoming messages; if nothing at all
                 //  comes from our server within the timeout, that means the
                 //  server is dead:
-                int rc = ZMQ.poll(pollItems, pollSize, pollTimer);
+                int rc = poller.poll(pollTimer);
                 if (rc == -1)
                     break;              //  Context has been shut down
 
-                if (pollItems[0].isReadable()) {
+                if (poller.pollin(0)) {
                     if (!self.controlMessage())
                         break;          //  Interrupted
                 }
                 else
-                if (pollItems[1].isReadable()) {
-                    kvmsg msg = kvmsg.recv(pollItems[1].getSocket());
+                if (pollSize == 2 && poller.pollin(1)) {
+                    kvmsg msg = kvmsg.recv(poller.getSocket(1));
                     if (msg == null)
                         break;          //  Interrupted
 

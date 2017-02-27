@@ -114,7 +114,7 @@ public class clonesrv5
         port = 5556;
         ctx = new ZContext();
         kvmap = new HashMap<String, kvmsg>();
-        loop = new ZLoop();
+        loop = new ZLoop(ctx);
         loop.verbose(false);
 
         //  Set up our clone server sockets

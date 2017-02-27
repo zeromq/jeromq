@@ -2,7 +2,7 @@ package guide;
 
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
-import org.zeromq.ZMQ.PollItem;
+import org.zeromq.ZMQ.Poller;
 import org.zeromq.ZMQ.Socket;
 import org.zeromq.ZMsg;
 
@@ -159,23 +159,22 @@ public class bstarsrv
         //  .split handling socket input
         //  We now process events on our two input sockets, and process these
         //  events one at a time via our finite-state machine. Our "work" for
-        //  a client request is simply to echo it back:
+        //  a client request is simply to echo it back.
+        Poller poller = ctx.createPoller(2);
+        poller.register(frontend, ZMQ.Poller.POLLIN);
+        poller.register(statesub, ZMQ.Poller.POLLIN);
 
         //  Set timer for next outgoing state message
         long sendStateAt = System.currentTimeMillis() + HEARTBEAT;
         while (!Thread.currentThread().isInterrupted()) {
-            PollItem[] items = {
-                    new PollItem(frontend, ZMQ.Poller.POLLIN),
-                    new PollItem(statesub, ZMQ.Poller.POLLIN),
-            };
             int timeLeft = (int) ((sendStateAt - System.currentTimeMillis()));
             if (timeLeft < 0)
                 timeLeft = 0;
-            int rc = ZMQ.poll(items, 2, timeLeft);
+            int rc = poller.poll(timeLeft);
             if (rc == -1)
                 break;              //  Context has been shut down
 
-            if (items[0].isReadable()) {
+            if (poller.pollin(0)) {
                 //  Have a client request
                 ZMsg msg = ZMsg.recvMsg(frontend);
                 fsm.event = Event.CLIENT_REQUEST;
@@ -185,7 +184,7 @@ public class bstarsrv
                 else
                     msg.destroy();
             }
-            if (items[1].isReadable()) {
+            if (poller.pollin(1)) {
                 //  Have state from our peer, execute as event
                 String message = statesub.recvStr();
                 fsm.event = Event.values()[Integer.parseInt(message)];

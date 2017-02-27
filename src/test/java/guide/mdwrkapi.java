@@ -109,7 +109,7 @@ public class mdwrkapi {
 
         while (!Thread.currentThread().isInterrupted()) {
             // Poll socket for a reply, with timeout
-            ZMQ.Poller items = new ZMQ.Poller(1);
+            ZMQ.Poller items = ctx.createPoller(1);
             items.register(worker, ZMQ.Poller.POLLIN);
             if (items.poll(timeout) == -1)
                 break; // Interrupted

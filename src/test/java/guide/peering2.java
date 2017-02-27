@@ -146,20 +146,24 @@ public class peering2
         int capacity = 0;
         ArrayList<ZFrame> workers = new ArrayList<ZFrame>();
 
+        Poller backends = ctx.createPoller(2);
+        backends.register(localbe, Poller.POLLIN);
+        backends.register(cloudbe, Poller.POLLIN);
+
+        Poller frontends = ctx.createPoller(2);
+        frontends.register(localfe, Poller.POLLIN);
+        frontends.register(cloudfe, Poller.POLLIN);
+
         while (true) {
             //  First, route any waiting replies from workers
-            PollItem backends[] = {
-                    new PollItem(localbe, Poller.POLLIN),
-                    new PollItem(cloudbe, Poller.POLLIN)
-            };
+
             //  If we have no workers anyhow, wait indefinitely
-            int rc = ZMQ.poll(backends,
-                    capacity > 0 ? 1000 : -1);
+            int rc = backends.poll(capacity > 0 ? 1000 : -1);
             if (rc == -1)
                 break;              //  Interrupted
             //  Handle reply from local worker
             ZMsg msg = null;
-            if (backends[0].isReadable()) {
+            if (backends.pollin(0)) {
                 msg = ZMsg.recvMsg(localbe);
                 if (msg == null)
                     break;          //  Interrupted
@@ -175,7 +179,7 @@ public class peering2
                 }
             }
             //  Or handle reply from peer broker
-            else if (backends[1].isReadable()) {
+            else if (backends.pollin(1)) {
                 msg = ZMsg.recvMsg(cloudbe);
                 if (msg == null)
                     break;          //  Interrupted
@@ -202,18 +206,14 @@ public class peering2
             //  cloud capacity://
 
             while (capacity > 0) {
-                PollItem frontends[] = {
-                        new PollItem(localfe, Poller.POLLIN),
-                        new PollItem(cloudfe, Poller.POLLIN)
-                };
-                rc = ZMQ.poll(frontends, 0);
+                rc = frontends.poll(0);
                 assert (rc >= 0);
                 int reroutable = 0;
                 //  We'll do peer brokers first, to prevent starvation
-                if (frontends[1].isReadable()) {
+                if (frontends.pollin(1)) {
                     msg = ZMsg.recvMsg(cloudfe);
                     reroutable = 0;
-                } else if (frontends[0].isReadable()) {
+                } else if (frontends.pollin(0)) {
                     msg = ZMsg.recvMsg(localfe);
                     reroutable = 1;
                 } else

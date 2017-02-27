@@ -2,7 +2,7 @@ package guide;
 
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
-import org.zeromq.ZMQ.PollItem;
+import org.zeromq.ZMQ.Poller;
 import org.zeromq.ZMQ.Socket;
 import org.zeromq.ZMsg;
 import org.zeromq.ZThread;
@@ -238,10 +238,10 @@ public class flcliapi
         {
             Agent agent = new Agent(ctx, pipe);
 
-            PollItem[] items = {
-                    new PollItem(agent.pipe, ZMQ.Poller.POLLIN),
-                    new PollItem(agent.router, ZMQ.Poller.POLLIN)
-            };
+            Poller poller = ctx.createPoller(2);
+            poller.register(agent.pipe, Poller.POLLIN);
+            poller.register(agent.router, Poller.POLLIN);
+
             while (!Thread.currentThread().isInterrupted()) {
                 //  Calculate tickless timer, up to 1 hour
                 long tickless = System.currentTimeMillis() + 1000 * 3600;
@@ -255,15 +255,14 @@ public class flcliapi
                         tickless = newTickless;
                 }
 
-                int rc = ZMQ.poll(items,
-                        (tickless - System.currentTimeMillis()));
+                int rc = poller.poll(tickless - System.currentTimeMillis());
                 if (rc == -1)
                     break;              //  Context has been shut down
 
-                if (items[0].isReadable())
+                if (poller.pollin(0))
                     agent.controlMessage();
 
-                if (items[1].isReadable())
+                if (poller.pollin(1))
                     agent.routerMessage();
 
                 //  If we're processing a request, dispatch to next server
