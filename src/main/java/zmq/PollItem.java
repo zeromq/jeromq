@@ -41,7 +41,7 @@ public class PollItem
             interest |= SelectionKey.OP_READ;
         }
         if ((ops & ZMQ.ZMQ_POLLOUT) > 0) {
-            if (socket != null) { //  ZMQ Socket get readiness from the mailbox
+            if (socket != null) { // ZMQ Socket get readiness from the mailbox
                 interest |= SelectionKey.OP_READ;
             }
             else {
@@ -90,6 +90,11 @@ public class PollItem
     public final int interestOps()
     {
         return interest;
+    }
+
+    public final int zinterestOps()
+    {
+        return zinterest;
     }
 
     public final int interestOps(int ops)
