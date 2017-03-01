@@ -1,5 +1,35 @@
 # Changelog
 
+## v0.4.0 (unreleased)
+
+### Added
+
+* [#366](https://github.com/zeromq/jeromq/pull/366): support for `ZMQ_REQ_RELAXED` and `ZMQ_REQ_CORRELATE` socket options
+
+* [#375](https://github.com/zeromq/jeromq/pull/375): re-added `ZMQ.Socket.disconnect`, which had been removed in 0.3.6 because the contributor who originally added it did not agree to the license change from LGPL to MPLv2
+
+### Changed
+
+* [#374](https://github.com/zeromq/jeromq/pull/374):
+  * fixed a NullPointerException and mangling of existing indexes in ZMQ.Poller
+  * fixed a Windows bug in Signaler
+  * other small changes to keep JeroMQ in sync with jzmq
+
+* [#386](https://github.com/zeromq/jeromq/pull/386): improved deallocation of polling Selector resources. When creating a poller via `ZMQ.Context.poller` or `ZContext.createPoller`, the context will manage the Selector resources and ensure that they are deallocated when the context is terminated.
+
+* [#387](https://github.com/zeromq/jeromq/pull/387): (**BREAKING CHANGE**) It is no longer possible to create a ZMQ.Poller in any way except via a context.  This is to ensure that all Selector resources are deallocated when a context is terminated.
+
+* [#388](https://github.com/zeromq/jeromq/pull/388) `ZMQ.Socket.setLinger` can now be called safely after a context is terminated.
+
+* [#390](https://github.com/zeromq/jeromq/pull/390): fixed a bug where terminating a context while polling would sometimes cause a ClosedChannelException.
+
+* [#399](https://github.com/zeromq/jeromq/pull/399): fixed a NullPointerException that would sometimes occur when terminating a context
+
+* [#400](https://github.com/zeromq/jeromq/pull/400): (**BREAKING CHANGE**)
+  * deprecated the setters `setIoThreads`, `setMain` and `setContext` in `ZContext`. These parameters are set in the constructor and `final`. Because it is no longer possible to set these values after constructing a ZContext, the setters are now no-ops.
+
+* [#402](https://github.com/zeromq/jeromq/pull/402): added constructors for ZPoller that take a ZContext argument, thus making it possible to create a ZPoller whose Selector resources are managed by the context.
+
 ## v0.3.6 (2016-09-27)
 
 ### Added
