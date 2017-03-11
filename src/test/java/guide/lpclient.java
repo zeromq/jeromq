@@ -67,10 +67,12 @@ public class lpclient
                 } else {
                     System.out.println("W: no response from server, retrying\n");
                     //  Old socket is confused; close it and open a new one
+                    poller.unregister(client);
                     ctx.destroySocket(client);
                     System.out.println("I: reconnecting to server\n");
                     client = ctx.createSocket(ZMQ.REQ);
                     client.connect(SERVER_ENDPOINT);
+                    poller.register(client, Poller.POLLIN);
                     //  Send request again, on new socket
                     client.send(request);
                 }
