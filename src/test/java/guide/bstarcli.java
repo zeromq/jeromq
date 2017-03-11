@@ -61,6 +61,7 @@ public class bstarcli
                     System.out.printf ("W: no response from server, failing over\n");
 
                     //  Old socket is confused; close it and open a new one
+                    poller.unregister(client);
                     ctx.destroySocket(client);
                     serverNbr = (serverNbr + 1) % 2;
                     Thread.sleep(SETTLE_DELAY);
@@ -68,6 +69,7 @@ public class bstarcli
                             server[serverNbr]);
                     client = ctx.createSocket(ZMQ.REQ);
                     client.connect(server[serverNbr]);
+                    poller.register(client, ZMQ.Poller.POLLIN);
 
                     //  Send request again, on new socket
                     client.send(request);
