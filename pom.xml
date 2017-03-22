@@ -3,7 +3,7 @@
   <groupId>org.zeromq</groupId>
   <artifactId>jeromq</artifactId>
   <packaging>jar</packaging>
-  <version>0.4.0</version>
+  <version>0.4.1-SNAPSHOT</version>
   <name>JeroMQ</name>
   <description>Pure Java implementation of libzmq</description>
   <url>https://github.com/zeromq/jeromq</url>
@@ -22,7 +22,7 @@
     <url>git@github.com:zeromq/jeromq.git</url>
     <connection>scm:git:git@github.com:zeromq/jeromq.git</connection>
     <developerConnection>scm:git:git@github.com:zeromq/jeromq.git</developerConnection>
-    <tag>v0.4.0</tag>
+    <tag>HEAD</tag>
   </scm>
   <developers>
     <developer />
