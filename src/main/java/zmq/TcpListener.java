@@ -145,18 +145,12 @@ public class TcpListener extends Own implements IPollEvents
     }
 
     //  Accept the new connection. Returns the file descriptor of the
-    //  newly created connection. The function may return retired_fd
+    //  newly created connection. The function may throw IOException
     //  if the connection was dropped while waiting in the listen backlog
     //  or was denied because of accept filters.
-    private SocketChannel accept()
+    private SocketChannel accept() throws IOException
     {
-        Socket sock = null;
-        try {
-            sock = handle.socket().accept();
-        }
-        catch (IOException e) {
-            return null;
-        }
+        Socket sock = handle.socket().accept();
 
         if (!options.tcpAcceptFilters.isEmpty()) {
             boolean matched = false;
@@ -172,7 +166,7 @@ public class TcpListener extends Own implements IPollEvents
                 }
                 catch (IOException e) {
                 }
-                return null;
+                throw new IOException("address does not match accept filter");
             }
         }
         return sock.getChannel();
