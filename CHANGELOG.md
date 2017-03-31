@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.4.1 (unreleased)
+
+### Changed
+
+* [#413](https://github.com/zeromq/jeromq/pull/413): fixed a NullPointerException when ZMQ.ZMQ_TCP_ACCEPT_FILTER is used
+
 ## v0.4.0 (2017-03-22)
 
 ### Added
