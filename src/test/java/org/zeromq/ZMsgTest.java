@@ -12,7 +12,7 @@ public class ZMsgTest
     public void testRecvFrame() throws Exception
     {
         ZMQ.Context ctx = ZMQ.context(0);
-        ZMQ.Socket  socket   = ctx.socket(ZMQ.PULL);
+        ZMQ.Socket socket = ctx.socket(ZMQ.PULL);
 
         ZFrame f = ZFrame.recvFrame(socket, ZMQ.NOBLOCK);
         Assert.assertNull(f);
@@ -25,7 +25,7 @@ public class ZMsgTest
     public void testRecvMsg() throws Exception
     {
         ZMQ.Context ctx = ZMQ.context(0);
-        ZMQ.Socket  socket   = ctx.socket(ZMQ.PULL);
+        ZMQ.Socket socket = ctx.socket(ZMQ.PULL);
 
         ZMsg msg = ZMsg.recvMsg(socket, ZMQ.NOBLOCK);
         Assert.assertNull(msg);

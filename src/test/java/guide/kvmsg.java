@@ -1,9 +1,5 @@
 package guide;
 
-import org.zeromq.ZContext;
-import org.zeromq.ZMQ;
-import org.zeromq.ZMQ.Socket;
-
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
@@ -11,10 +7,14 @@ import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.UUID;
 
+import org.zeromq.ZContext;
+import org.zeromq.ZMQ;
+import org.zeromq.ZMQ.Socket;
+
 public class kvmsg
 {
     //  Keys are short strings
-    private static final int KVMSG_KEY_MAX  = 255;
+    private static final int KVMSG_KEY_MAX = 255;
 
     //  Message is formatted on wire as 4 frames:
     //  frame 0: getKey (0MQ string)
@@ -22,12 +22,12 @@ public class kvmsg
     //  frame 2: uuid (blob, 16 bytes)
     //  frame 3: properties (0MQ string)
     //  frame 4: body (blob)
-    private static final int FRAME_KEY      = 0;
-    private static final int FRAME_SEQ      = 1;
-    private static final int FRAME_UUID     = 2;
-    private static final int FRAME_PROPS    = 3;
-    private static final int FRAME_BODY     = 4;
-    private static final int KVMSG_FRAMES   = 5;
+    private static final int FRAME_KEY    = 0;
+    private static final int FRAME_SEQ    = 1;
+    private static final int FRAME_UUID   = 2;
+    private static final int FRAME_PROPS  = 3;
+    private static final int FRAME_BODY   = 4;
+    private static final int KVMSG_FRAMES = 5;
 
     //  Presence indicators for each frame
     private boolean[] present = new boolean[KVMSG_FRAMES];
@@ -37,7 +37,7 @@ public class kvmsg
     private String key;
     //  List of properties, as name=value strings
     private Properties props;
-    private int props_size;
+    private int        props_size;
 
     //  .split property encoding
     //  These two helpers serialize a list of properties to and from a
@@ -46,7 +46,7 @@ public class kvmsg
     private void encodeProps()
     {
         ByteBuffer msg = ByteBuffer.allocate(props_size);
-        for (Entry<Object, Object> o: props.entrySet()) {
+        for (Entry<Object, Object> o : props.entrySet()) {
             String prop = o.getKey().toString() + "=" + o.getValue().toString() + "\n";
             msg.put(prop.getBytes(ZMQ.CHARSET));
         }
@@ -64,12 +64,11 @@ public class kvmsg
             return;
 
         System.out.println("" + msg.length + " :" + new String(msg, ZMQ.CHARSET));
-        for (String prop: new String(msg, ZMQ.CHARSET).split("\n")) {
+        for (String prop : new String(msg, ZMQ.CHARSET).split("\n")) {
             String[] split = prop.split("=");
             props.setProperty(split[0], split[1]);
         }
     }
-
 
     //  .split constructor and destructor
     //  Here are the constructor and destructor for the class:
@@ -105,7 +104,7 @@ public class kvmsg
                 break;
             }
             //  Verify multipart framing
-            boolean rcvmore = (frameNbr < KVMSG_FRAMES - 1)? true: false;
+            boolean rcvmore = (frameNbr < KVMSG_FRAMES - 1) ? true : false;
             if (socket.hasReceiveMore() != rcvmore) {
                 self.destroy();
                 break;
@@ -115,6 +114,7 @@ public class kvmsg
         self.decodeProps();
         return self;
     }
+
     //  Send getKey-value message to socket; any empty frames are sent as such.
     public void send(Socket socket)
     {
@@ -128,7 +128,7 @@ public class kvmsg
             byte[] copy = ZMQ.MESSAGE_SEPARATOR;
             if (present[frameNbr])
                 copy = frame[frameNbr];
-            socket.send(copy, (frameNbr < KVMSG_FRAMES - 1)? ZMQ.SNDMORE: 0);
+            socket.send(copy, (frameNbr < KVMSG_FRAMES - 1) ? ZMQ.SNDMORE : 0);
         }
     }
 
@@ -143,8 +143,7 @@ public class kvmsg
         for (frameNbr = 0; frameNbr < KVMSG_FRAMES; frameNbr++) {
             if (present[frameNbr]) {
                 kvmsg.frame[frameNbr] = new byte[frame[frameNbr].length];
-                System.arraycopy(frame[frameNbr], 0,
-                        kvmsg.frame[frameNbr], 0, frame[frameNbr].length);
+                System.arraycopy(frame[frameNbr], 0, kvmsg.frame[frameNbr], 0, frame[frameNbr].length);
                 kvmsg.present[frameNbr] = true;
             }
         }
@@ -169,8 +168,7 @@ public class kvmsg
             }
             return key;
         }
-        else
-            return null;
+        else return null;
     }
 
     //  Set message getKey as provided
@@ -183,7 +181,7 @@ public class kvmsg
     }
 
     //  Set message getKey using printf format
-    public void fmtKey(String fmt, Object ... args)
+    public void fmtKey(String fmt, Object... args)
     {
         setKey(String.format(fmt, args));
     }
@@ -196,8 +194,7 @@ public class kvmsg
             ByteBuffer source = ByteBuffer.wrap(frame[FRAME_SEQ]);
             return source.getLong();
         }
-        else
-            return 0;
+        else return 0;
     }
 
     //  Set message getSequence number
@@ -216,8 +213,7 @@ public class kvmsg
     {
         if (present[FRAME_BODY])
             return frame[FRAME_BODY];
-        else
-            return null;
+        else return null;
     }
 
     //  Set message body
@@ -225,7 +221,7 @@ public class kvmsg
     {
         byte[] msg = new byte[body.length];
         System.arraycopy(body, 0, msg, 0, body.length);
-        frame [FRAME_BODY] = msg;
+        frame[FRAME_BODY] = msg;
         present[FRAME_BODY] = true;
     }
 
@@ -240,8 +236,7 @@ public class kvmsg
     {
         if (present[FRAME_BODY])
             return frame[FRAME_BODY].length;
-        else
-            return 0;
+        else return 0;
     }
     //  .until
 
@@ -251,8 +246,7 @@ public class kvmsg
     {
         if (present[FRAME_UUID])
             return frame[FRAME_UUID];
-        else
-            return null;
+        else return null;
     }
 
     //  Sets the UUID to a randomly generated value
@@ -274,14 +268,13 @@ public class kvmsg
 
     //  Set message property. Property name cannot contain '='. Max length of
     //  value is 255 chars.
-    public void setProp(String name, String fmt, Object ... args)
+    public void setProp(String name, String fmt, Object... args)
     {
         String value = String.format(fmt, args);
         Object old = props.setProperty(name, value);
         if (old != null)
             props_size -= old.toString().length();
-        else
-            props_size += name.length() + 2;
+        else props_size += name.length() + 2;
         props_size += value.length();
     }
 
@@ -296,8 +289,8 @@ public class kvmsg
             if (present[FRAME_KEY] && present[FRAME_BODY]) {
                 hash.put(getKey(), this);
             }
-        } else
-            hash.remove(getKey());
+        }
+        else hash.remove(getKey());
     }
 
     //  .split dump method
@@ -313,7 +306,7 @@ public class kvmsg
         //  .until
         System.err.printf("[size:%d] ", size);
         System.err.printf("[");
-        for (String key: props.stringPropertyNames()) {
+        for (String key : props.stringPropertyNames()) {
             System.err.printf("%s=%s;", key, props.getProperty(key));
         }
         System.err.printf("]");
@@ -340,7 +333,7 @@ public class kvmsg
         Socket input = ctx.createSocket(ZMQ.DEALER);
         input.connect("ipc://kvmsg_selftest.ipc");
 
-        Map<String,kvmsg> kvmap = new HashMap<String, kvmsg>();
+        Map<String, kvmsg> kvmap = new HashMap<String, kvmsg>();
 
         //  .until
         //  Test send and receive of simple message
@@ -353,7 +346,7 @@ public class kvmsg
         kvmsg.send(output);
         kvmsg.store(kvmap);
 
-        kvmsg = kvmsg.recv(input);
+        kvmsg = guide.kvmsg.recv(input);
         if (verbose)
             kvmsg.dump();
         assert (kvmsg.getKey().equals("getKey"));
@@ -373,7 +366,7 @@ public class kvmsg
         kvmsg.send(output);
         kvmsg.destroy();
 
-        kvmsg = kvmsg.recv(input);
+        kvmsg = guide.kvmsg.recv(input);
         if (verbose)
             kvmsg.dump();
         assert (kvmsg.key.equals("getKey"));
@@ -382,7 +375,7 @@ public class kvmsg
 
         //  .skip
         //  Shutdown and destroy all objects
-        ctx.destroy();
+        ctx.close();
 
         System.out.printf("OK\n");
 

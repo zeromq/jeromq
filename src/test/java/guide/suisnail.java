@@ -1,5 +1,7 @@
 package guide;
 
+import java.util.Random;
+
 //  Suicidal Snail
 
 import org.zeromq.ZContext;
@@ -8,12 +10,10 @@ import org.zeromq.ZMQ.Socket;
 import org.zeromq.ZThread;
 import org.zeromq.ZThread.IAttachedRunnable;
 
-import java.util.Random;
-
 public class suisnail
 {
-    private static final long MAX_ALLOWED_DELAY = 1000; //  msecs
-    private static Random rand = new Random(System.currentTimeMillis());
+    private static final long MAX_ALLOWED_DELAY = 1000;                                  //  msecs
+    private static Random     rand              = new Random(System.currentTimeMillis());
 
     //  This is our subscriber. It connects to the publisher and subscribes
     //  to everything. It sleeps for a short time between messages to
@@ -43,7 +43,8 @@ public class suisnail
                 //  Work for 1 msec plus some random additional time
                 try {
                     Thread.sleep(1000 + rand.nextInt(2000));
-                } catch (InterruptedException e) {
+                }
+                catch (InterruptedException e) {
                     break;
                 }
             }
@@ -73,7 +74,8 @@ public class suisnail
                 }
                 try {
                     Thread.sleep(1);
-                } catch (InterruptedException e) {
+                }
+                catch (InterruptedException e) {
                 }
             }
 
@@ -83,7 +85,7 @@ public class suisnail
     //  .split main task
     //  The main task simply starts a client and a server, and then
     //  waits for the client to signal that it has died:
-    public static void main (String[] args) throws Exception
+    public static void main(String[] args) throws Exception
     {
         ZContext ctx = new ZContext();
         Socket pubpipe = ZThread.fork(ctx, new Publisher());

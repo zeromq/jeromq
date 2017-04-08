@@ -5,13 +5,16 @@ import java.io.IOException;
 import java.nio.channels.SelectableChannel;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class Reaper extends ZObject implements IPollEvents, Closeable
+import zmq.poll.IPollEvents;
+import zmq.poll.Poller;
+
+final class Reaper extends ZObject implements IPollEvents, Closeable
 {
     //  Reaper thread accesses incoming commands via this mailbox.
     private final Mailbox mailbox;
 
     //  Handle associated with mailbox' file descriptor.
-    private final SelectableChannel mailboxHandle;
+    private final Poller.Handle mailboxHandle;
 
     //  I/O multiplexing is performed using a poller object.
     private final Poller poller;
@@ -22,19 +25,19 @@ public class Reaper extends ZObject implements IPollEvents, Closeable
     //  If true, we were already asked to terminate.
     private final AtomicBoolean terminating = new AtomicBoolean();
 
-    private String name;
+    private final String name;
 
-    public Reaper(Ctx ctx, int tid)
+    Reaper(Ctx ctx, int tid)
     {
         super(ctx, tid);
         socketsReaping = 0;
         name = "reaper-" + tid;
-        poller = new Poller(name);
+        poller = new Poller(ctx, name);
 
-        mailbox = new Mailbox(name);
+        mailbox = new Mailbox(ctx, name, tid);
 
-        mailboxHandle = mailbox.getFd();
-        poller.addHandle(mailboxHandle, this);
+        SelectableChannel fd = mailbox.getFd();
+        mailboxHandle = poller.addHandle(fd, this);
         poller.setPollIn(mailboxHandle);
     }
 
@@ -45,17 +48,17 @@ public class Reaper extends ZObject implements IPollEvents, Closeable
         mailbox.close();
     }
 
-    public Mailbox getMailbox()
+    Mailbox getMailbox()
     {
         return mailbox;
     }
 
-    public void start()
+    void start()
     {
         poller.start();
     }
 
-    public void stop()
+    void stop()
     {
         if (!terminating.get()) {
             sendStop();
@@ -73,7 +76,7 @@ public class Reaper extends ZObject implements IPollEvents, Closeable
             }
 
             //  Process the command.
-            cmd.destination().processCommand(cmd);
+            cmd.process();
         }
     }
 

@@ -1,5 +1,7 @@
 package guide;
 
+import java.nio.channels.Selector;
+
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQ.Poller;
@@ -14,13 +16,14 @@ import org.zeromq.ZMQ.Socket;
 public class lpclient
 {
 
-    private final static int REQUEST_TIMEOUT = 2500;    //  msecs, (> 1000!)
-    private final static int REQUEST_RETRIES = 3;       //  Before we abandon
+    private final static int    REQUEST_TIMEOUT = 2500;                  //  msecs, (> 1000!)
+    private final static int    REQUEST_RETRIES = 3;                     //  Before we abandon
     private final static String SERVER_ENDPOINT = "tcp://localhost:5555";
 
     public static void main(String[] argv)
     {
         ZContext ctx = new ZContext();
+        Selector selector = ctx.createSelector();
         System.out.println("I: connecting to server");
         Socket client = ctx.createSocket(ZMQ.REQ);
         assert (client != null);
@@ -41,7 +44,7 @@ public class lpclient
                 //  Poll socket for a reply, with timeout
                 int rc = poller.poll(REQUEST_TIMEOUT);
                 if (rc == -1)
-                    break;          //  Interrupted
+                    break; //  Interrupted
 
                 //  Here we process a server reply and exit our loop if the
                 //  reply is valid. If we didn't a reply we close the client
@@ -52,19 +55,20 @@ public class lpclient
                     //  We got a reply from the server, must match getSequence
                     String reply = client.recvStr();
                     if (reply == null)
-                        break;      //  Interrupted
+                        break; //  Interrupted
                     if (Integer.parseInt(reply) == sequence) {
                         System.out.printf("I: server replied OK (%s)\n", reply);
                         retriesLeft = REQUEST_RETRIES;
                         expect_reply = 0;
-                    } else
-                        System.out.printf("E: malformed reply from server: %s\n",
-                                reply);
+                    }
+                    else System.out.printf("E: malformed reply from server: %s\n", reply);
 
-                } else if (--retriesLeft == 0) {
+                }
+                else if (--retriesLeft == 0) {
                     System.out.println("E: server seems to be offline, abandoning\n");
                     break;
-                } else {
+                }
+                else {
                     System.out.println("W: no response from server, retrying\n");
                     //  Old socket is confused; close it and open a new one
                     poller.unregister(client);
@@ -78,6 +82,6 @@ public class lpclient
                 }
             }
         }
-        ctx.destroy();
+        ctx.close();
     }
 }

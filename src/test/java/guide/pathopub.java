@@ -1,10 +1,10 @@
 package guide;
 
+import java.util.Random;
+
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQ.Socket;
-
-import java.util.Random;
 
 //  Pathological publisher
 //  Sends out 1,000 topics and then one random update per second
@@ -16,8 +16,7 @@ public class pathopub
         Socket publisher = context.createSocket(ZMQ.PUB);
         if (args.length == 1)
             publisher.connect(args[0]);
-        else
-            publisher.bind("tcp://*:5556");
+        else publisher.bind("tcp://*:5556");
 
         //  Ensure subscriber connection has time to complete
         Thread.sleep(1000);
@@ -35,6 +34,6 @@ public class pathopub
             publisher.send(String.format("%03d", rand.nextInt(1000)), ZMQ.SNDMORE);
             publisher.send("Off with his head!");
         }
-        context.destroy();
+        context.close();
     }
 }

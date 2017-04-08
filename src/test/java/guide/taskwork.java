@@ -9,9 +9,11 @@ import org.zeromq.ZMQ;
 //  Connects PUSH socket to tcp://localhost:5558
 //  Sends results to sink via that socket
 //
-public class taskwork {
+public class taskwork
+{
 
-    public static void main (String[] args) throws Exception {
+    public static void main(String[] args) throws Exception
+    {
         ZMQ.Context context = ZMQ.context(1);
 
         //  Socket to receive messages on
@@ -23,7 +25,7 @@ public class taskwork {
         sender.connect("tcp://localhost:5558");
 
         //  Process tasks forever
-        while (!Thread.currentThread ().isInterrupted ()) {
+        while (!Thread.currentThread().isInterrupted()) {
             String string = new String(receiver.recv(0), ZMQ.CHARSET).trim();
             long msec = Long.parseLong(string);
             //  Simple progress indicator for the viewer

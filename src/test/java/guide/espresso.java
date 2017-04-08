@@ -1,13 +1,13 @@
 package guide;
 
+import java.util.Random;
+
 import org.zeromq.ZContext;
 import org.zeromq.ZFrame;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQ.Socket;
 import org.zeromq.ZThread;
 import org.zeromq.ZThread.IAttachedRunnable;
-
-import java.util.Random;
 
 //  Espresso Pattern
 //  This shows how to capture data using a pub-sub proxy
@@ -31,7 +31,7 @@ public class espresso
             while (count < 5) {
                 String string = subscriber.recvStr();
                 if (string == null)
-                    break;              //  Interrupted
+                    break; //  Interrupted
                 count++;
             }
             ctx.destroySocket(subscriber);
@@ -52,10 +52,11 @@ public class espresso
             while (!Thread.currentThread().isInterrupted()) {
                 String string = String.format("%c-%05d", 'A' + rand.nextInt(10), rand.nextInt(100000));
                 if (!publisher.send(string))
-                    break;              //  Interrupted
+                    break; //  Interrupted
                 try {
-                    Thread.sleep(100);     //  Wait for 1/10th second
-                } catch (InterruptedException e) {
+                    Thread.sleep(100); //  Wait for 1/10th second
+                }
+                catch (InterruptedException e) {
                 }
             }
             ctx.destroySocket(publisher);
@@ -75,7 +76,7 @@ public class espresso
             while (true) {
                 ZFrame frame = ZFrame.recvFrame(pipe);
                 if (frame == null)
-                    break;              //  Interrupted
+                    break; //  Interrupted
                 frame.print(null);
                 frame.destroy();
             }
@@ -97,7 +98,7 @@ public class espresso
         Socket publisher = ctx.createSocket(ZMQ.XPUB);
         publisher.bind("tcp://*:6001");
         Socket listener = ZThread.fork(ctx, new Listener());
-        ZMQ.proxy (subscriber, publisher, listener);
+        ZMQ.proxy(subscriber, publisher, listener);
 
         System.out.println(" interrupted");
         //  Tell attached threads to exit

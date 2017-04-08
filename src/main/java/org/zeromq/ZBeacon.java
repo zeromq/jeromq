@@ -13,17 +13,17 @@ import java.util.Arrays;
 
 public class ZBeacon
 {
-    public static final long DEFAULT_BROADCAST_INTERVAL = 1000L;
-    public static final String DEFAULT_BROADCAST_HOST = "255.255.255.255";
+    public static final long   DEFAULT_BROADCAST_INTERVAL = 1000L;
+    public static final String DEFAULT_BROADCAST_HOST     = "255.255.255.255";
 
-    private final int port;
-    private InetAddress broadcastInetAddress;
+    private final int             port;
+    private InetAddress           broadcastInetAddress;
     private final BroadcastClient broadcastClient;
     private final BroadcastServer broadcastServer;
-    private final byte[] beacon;
-    private byte[] prefix = {};
-    private long broadcastInterval = DEFAULT_BROADCAST_INTERVAL;
-    private Listener listener = null;
+    private final byte[]          beacon;
+    private byte[]                prefix            = {};
+    private long                  broadcastInterval = DEFAULT_BROADCAST_INTERVAL;
+    private Listener              listener          = null;
 
     public ZBeacon(int port, byte[] beacon)
     {
@@ -52,7 +52,8 @@ public class ZBeacon
         broadcastClient.setDaemon(true);
     }
 
-    public void setUncaughtExceptionHandlers(Thread.UncaughtExceptionHandler clientHandler, Thread.UncaughtExceptionHandler serverHandler)
+    public void setUncaughtExceptionHandlers(Thread.UncaughtExceptionHandler clientHandler,
+                                             Thread.UncaughtExceptionHandler serverHandler)
     {
         broadcastClient.setUncaughtExceptionHandler(clientHandler);
         broadcastServer.setUncaughtExceptionHandler(serverHandler);
@@ -111,7 +112,7 @@ public class ZBeacon
      */
     private class BroadcastClient extends Thread
     {
-        private DatagramChannel broadcastChannel;
+        private DatagramChannel         broadcastChannel;
         private final InetSocketAddress broadcastInetSocketAddress;
 
         public BroadcastClient()
@@ -158,8 +159,8 @@ public class ZBeacon
      */
     private class BroadcastServer extends Thread
     {
-        private DatagramChannel handle; // Socket for send/recv
-        private final boolean ignoreLocalAddress;
+        private DatagramChannel handle;            // Socket for send/recv
+        private final boolean   ignoreLocalAddress;
 
         public BroadcastServer(boolean ignoreLocalAddress)
         {
@@ -194,10 +195,9 @@ public class ZBeacon
 
                     InetAddress senderAddress = ((InetSocketAddress) sender).getAddress();
 
-                    if (ignoreLocalAddress &&
-                                (InetAddress.getLocalHost().getHostAddress().equals(senderAddress.getHostAddress())
-                                         || senderAddress.isAnyLocalAddress()
-                                         || senderAddress.isLoopbackAddress())) {
+                    if (ignoreLocalAddress
+                            && (InetAddress.getLocalHost().getHostAddress().equals(senderAddress.getHostAddress())
+                                    || senderAddress.isAnyLocalAddress() || senderAddress.isLoopbackAddress())) {
                         continue;
                     }
 

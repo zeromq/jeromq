@@ -4,41 +4,45 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertThat;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.junit.Ignore;
 import org.junit.Test;
-
 import org.zeromq.ZMQ.Poller;
 import org.zeromq.ZMQ.Socket;
 
 /**
  * Tests exhaustion of java file pipes,
  * each component being on a separate thread.
- * @author fred
  *
  */
+@Ignore
 public class TooManyOpenFilesTester
 {
-    private static final long REQUEST_TIMEOUT = 1000; // msecs
+    private static final long REQUEST_TIMEOUT = 2000; // msecs
 
     /**
      * A simple server for one reply only.
-     * @author fred
      *
      */
     private class Server extends Thread
     {
         private final int port;
+        private final int idx;
 
         /**
          * Creates a new server.
          * @param port the port to which to connect.
+         * @param idx the index of the server
          */
-        public Server(int port)
+        public Server(int port, int idx)
         {
             this.port = port;
+            this.idx = idx;
+            setName("Server-" + idx);
         }
 
         @Override
@@ -76,7 +80,6 @@ public class TooManyOpenFilesTester
 
     /**
      * Simple client.
-     * @author fred
      *
      */
     private class Client extends Thread
@@ -85,13 +88,17 @@ public class TooManyOpenFilesTester
 
         final AtomicBoolean finished = new AtomicBoolean();
 
+        private final int idx;
+
         /**
          * Creates a new client.
          * @param port the port to which to connect.
          */
-        public Client(int port)
+        public Client(int port, int idx)
         {
             this.port = port;
+            this.idx = idx;
+            setName("Client-" + idx);
         }
 
         @Override
@@ -121,6 +128,7 @@ public class TooManyOpenFilesTester
         /**
          * Called between the request-reply cycle.
          * @param client the socket participating to the cycle of request-reply
+         * @param selector the selector used for polling
          */
         protected void inBetween(ZContext ctx, Socket client)
         {
@@ -131,6 +139,7 @@ public class TooManyOpenFilesTester
     /**
      * Polls while keeping the selector opened.
      * @param socket the socket to poll
+     * @param selector the selector used for polling
      */
     private void poll(ZContext ctx, Socket socket)
     {
@@ -147,7 +156,7 @@ public class TooManyOpenFilesTester
     /**
      * Test exhaustion of java pipes.
      * Exhaustion can currently come from {@link zmq.Signaler} that are not closed
-     * or from {@link Selector} that are not closed.
+     * or from {@link java.nio.Selector} that are not closed.
      * @throws Exception if something bad occurs.
      */
     @Test
@@ -157,11 +166,10 @@ public class TooManyOpenFilesTester
         // crashed on iteration 3000-ish in my machine for poll selectors; on iteration 16-ish for sockets
         for (int index = 0; index < 10000; ++index) {
             long start = System.currentTimeMillis();
-            List<Pair> pairs = new ArrayList<Pair>();
-            int port = Utils.findOpenPort();
+            List<Pair> pairs = new ArrayList<>();
 
             for (int idx = 0; idx < 20; ++idx) {
-                Pair pair = testWithPoll(port + idx);
+                Pair pair = testWithPoll(idx);
                 pairs.add(pair);
             }
 
@@ -177,16 +185,12 @@ public class TooManyOpenFilesTester
             long end = System.currentTimeMillis();
             assertThat(finished, is(true));
 
-            System.out.printf(
-                    "Test %s finished in %s millis.\n",
-                    index, (end - start));
+            System.out.printf("Test %s finished in %s millis.\n", index, (end - start));
         }
     }
 
     /**
      * Dummy class to help keep relation between client and server.
-     * @author fred
-     *
      */
     private class Pair
     {
@@ -194,13 +198,15 @@ public class TooManyOpenFilesTester
         private Server server;
     }
 
-    private Pair testWithPoll(int port)
+    private Pair testWithPoll(int idx) throws IOException
     {
-        Server server = new Server(port);
+        int port = Utils.findOpenPort();
+
+        Server server = new Server(port, idx);
 
         server.start();
 
-        Client client = new Client(port);
+        Client client = new Client(port, idx);
         client.start();
 
         Pair pair = new Pair();

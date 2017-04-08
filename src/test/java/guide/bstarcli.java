@@ -1,5 +1,7 @@
 package guide;
 
+import java.nio.channels.Selector;
+
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQ.Poller;
@@ -9,17 +11,17 @@ import org.zeromq.ZMQ.Socket;
 //  real work; it just demonstrates the Binary Star failover model.
 public class bstarcli
 {
-    private static final long REQUEST_TIMEOUT = 1000;    //  msecs
-    private static final long SETTLE_DELAY = 2000;       //  Before failing over
+    private static final long REQUEST_TIMEOUT = 1000; //  msecs
+    private static final long SETTLE_DELAY    = 2000; //  Before failing over
 
     public static void main(String[] argv) throws Exception
     {
         ZContext ctx = new ZContext();
-
+        Selector selector = ctx.createSelector();
         String[] server = { "tcp://localhost:5001", "tcp://localhost:5002" };
         int serverNbr = 0;
 
-        System.out.printf ("I: connecting to server at %s...\n", server [serverNbr]);
+        System.out.printf("I: connecting to server at %s...\n", server[serverNbr]);
         Socket client = ctx.createSocket(ZMQ.REQ);
         client.connect(server[serverNbr]);
 
@@ -37,7 +39,7 @@ public class bstarcli
                 //  Poll socket for a reply, with timeout
                 int rc = poller.poll(REQUEST_TIMEOUT);
                 if (rc == -1)
-                    break;          //  Interrupted
+                    break; //  Interrupted
 
                 //  .split main body of client
                 //  We use a Lazy Pirate strategy in the client. If there's no
@@ -50,23 +52,21 @@ public class bstarcli
                     //  We got a reply from the server, must match getSequence
                     String reply = client.recvStr();
                     if (Integer.parseInt(reply) == sequence) {
-                        System.out.printf ("I: server replied OK (%s)\n", reply);
+                        System.out.printf("I: server replied OK (%s)\n", reply);
                         expectReply = false;
-                        Thread.sleep(1000);  //  One request per second
+                        Thread.sleep(1000); //  One request per second
                     }
-                    else
-                        System.out.printf ("E: bad reply from server: %s\n", reply);
+                    else System.out.printf("E: bad reply from server: %s\n", reply);
                 }
                 else {
-                    System.out.printf ("W: no response from server, failing over\n");
+                    System.out.printf("W: no response from server, failing over\n");
 
                     //  Old socket is confused; close it and open a new one
                     poller.unregister(client);
                     ctx.destroySocket(client);
                     serverNbr = (serverNbr + 1) % 2;
                     Thread.sleep(SETTLE_DELAY);
-                    System.out.printf("I: connecting to server at %s...\n",
-                            server[serverNbr]);
+                    System.out.printf("I: connecting to server at %s...\n", server[serverNbr]);
                     client = ctx.createSocket(ZMQ.REQ);
                     client.connect(server[serverNbr]);
                     poller.register(client, ZMQ.Poller.POLLIN);
@@ -76,7 +76,7 @@ public class bstarcli
                 }
             }
         }
-        ctx.destroy();
+        ctx.close();
 
     }
 }

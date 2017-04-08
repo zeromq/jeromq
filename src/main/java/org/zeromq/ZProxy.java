@@ -122,8 +122,8 @@ public class ZProxy
      */
     public static enum Plug
     {
-        FRONT,   // The position of the frontend socket.
-        BACK,    // The position of the backend socket.
+        FRONT, // The position of the frontend socket.
+        BACK, // The position of the backend socket.
         CAPTURE; // The position of the capture socket.
     }
 
@@ -177,8 +177,7 @@ public class ZProxy
          * @param args      the optional array of arguments that has been passed at the creation of the ZProxy.
          * @return true to continue the proxy, false to exit
          */
-        boolean configure(Socket pipe, ZMsg cfg, Socket frontend, Socket backend,
-                Socket capture, Object[] args);
+        boolean configure(Socket pipe, ZMsg cfg, Socket frontend, Socket backend, Socket capture, Object[] args);
 
         /**
          * Handles a custom command not recognized by the proxy.
@@ -200,21 +199,21 @@ public class ZProxy
         public abstract static class SimpleProxy implements Proxy
         {
             @Override
-            public boolean restart(ZMsg cfg, Socket socket, Plug place,
-                    Object[] args)
+            public boolean restart(ZMsg cfg, Socket socket, Plug place, Object[] args)
             {
                 return true;
             }
 
             @Override
-            public boolean configure(Socket pipe, ZMsg cfg,
-                    Socket frontend, Socket backend, Socket capture, Object[] args)
+            public boolean configure(Socket pipe, ZMsg cfg, Socket frontend, Socket backend, Socket capture,
+                                     Object[] args)
             {
                 return true;
             }
 
             @Override
-            public boolean custom(Socket pipe, String cmd, Socket frontend, Socket backend, Socket capture, Object[] args)
+            public boolean custom(Socket pipe, String cmd, Socket frontend, Socket backend, Socket capture,
+                                  Object[] args)
             {
                 return true;
             }
@@ -236,8 +235,8 @@ public class ZProxy
      * @return the created proxy.
      */
     // creates a new proxy
-    public static ZProxy newZProxy(ZContext ctx, String name,
-            SelectorCreator selector, Proxy sockets, String motdelafin, Object... args)
+    public static ZProxy newZProxy(ZContext ctx, String name, SelectorCreator selector, Proxy sockets,
+                                   String motdelafin, Object... args)
     {
         return new ZProxy(ctx, name, selector, sockets, new ZPump(), null, args);
     }
@@ -260,8 +259,8 @@ public class ZProxy
      * @return the created proxy.
      */
     // creates a new low-level proxy
-    public static ZProxy newProxy(ZContext ctx, String name,
-            SelectorCreator selector, Proxy sockets, String motdelafin, Object... args)
+    public static ZProxy newProxy(ZContext ctx, String name, SelectorCreator selector, Proxy sockets, String motdelafin,
+                                  Object... args)
     {
         return new ZProxy(ctx, name, selector, sockets, new ZmqPump(), motdelafin, args);
     }
@@ -418,11 +417,7 @@ public class ZProxy
         }
         else {
             msg.add(Boolean.toString(true));
-            // FIXME better way to append 1 message into another ?
-            for (int index = 0; index < hot.size(); ++index) {
-                ZFrame frame = hot.pop();
-                msg.add(frame);
-            }
+            msg.append(hot);
         }
 
         String status = EXITED;
@@ -570,12 +565,12 @@ public class ZProxy
     }
 
     // state responses from the control pipe
-    public static final String STARTED  = State.STARTED.name();
-    public static final String PAUSED   = State.PAUSED.name();
-    public static final String STOPPED  = State.STOPPED.name();
-    public static final String EXITED   = State.EXITED.name();
+    public static final String STARTED = State.STARTED.name();
+    public static final String PAUSED  = State.PAUSED.name();
+    public static final String STOPPED = State.STOPPED.name();
+    public static final String EXITED  = State.EXITED.name();
     // defines the very first time where no command changing the state has been issued
-    public static final String ALIVE    = State.ALIVE.name();
+    public static final String ALIVE = State.ALIVE.name();
 
     private static final AtomicInteger counter = new AtomicInteger();
 
@@ -591,8 +586,7 @@ public class ZProxy
      * @param selector the creator of the selector used for the proxy.
      * @param creator the creator of the sockets of the proxy.
      */
-    public ZProxy(SelectorCreator selector, Proxy creator,
-            String motdelafin, Object ... args)
+    public ZProxy(SelectorCreator selector, Proxy creator, String motdelafin, Object... args)
     {
         this(null, null, selector, creator, null, motdelafin, args);
     }
@@ -604,8 +598,7 @@ public class ZProxy
      * @param selector the creator of the selector used for the proxy.
      * @param creator the creator of the sockets of the proxy.
      */
-    public ZProxy(String name, SelectorCreator selector,
-            Proxy creator, String motdelafin, Object... args)
+    public ZProxy(String name, SelectorCreator selector, Proxy creator, String motdelafin, Object... args)
     {
         this(null, name, selector, creator, null, motdelafin, args);
     }
@@ -621,8 +614,8 @@ public class ZProxy
      * @param sockets the creator of the sockets of the proxy.
      * @param pump the pump used for the proxy
      */
-    public ZProxy(ZContext ctx, String name, SelectorCreator selector,
-            Proxy sockets, Pump pump, String motdelafin, Object... args)
+    public ZProxy(ZContext ctx, String name, SelectorCreator selector, Proxy sockets, Pump pump, String motdelafin,
+            Object... args)
     {
         super();
 
@@ -674,8 +667,7 @@ public class ZProxy
          *
          * @return false in case of error or interruption, true if successfully transferred the message
          */
-        boolean flow(Plug src, Socket source, Socket capture,
-                Plug dst, Socket destination);
+        boolean flow(Plug src, Socket source, Socket capture, Plug dst, Socket destination);
     }
 
     // acts in background to proxy messages
@@ -748,9 +740,9 @@ public class ZProxy
             this.args = new Object[args.length - 1];
             System.arraycopy(args, 1, this.args, 0, this.args.length);
 
-            frontend = provider.create(ctx, Plug.FRONT,   this.args);
-            capture  = provider.create(ctx, Plug.CAPTURE, this.args);
-            backend  = provider.create(ctx, Plug.BACK,    this.args);
+            frontend = provider.create(ctx, Plug.FRONT, this.args);
+            capture = provider.create(ctx, Plug.CAPTURE, this.args);
+            backend = provider.create(ctx, Plug.BACK, this.args);
 
             assert (frontend != null);
             assert (backend != null);
@@ -837,9 +829,9 @@ public class ZProxy
             if (!state.started) {
                 state.started = true;
 
-                provider.configure(frontend, Plug.FRONT,   args);
-                provider.configure(backend,  Plug.BACK,    args);
-                provider.configure(capture,  Plug.CAPTURE, args);
+                provider.configure(frontend, Plug.FRONT, args);
+                provider.configure(backend, Plug.BACK, args);
+                provider.configure(capture, Plug.CAPTURE, args);
             }
             pause(poller, false);
             return true;
@@ -899,22 +891,15 @@ public class ZProxy
 
         // a message has been received for the proxy to process
         @Override
-        public boolean stage(Socket socket, Socket pipe, ZPoller poller,
-                int events)
+        public boolean stage(Socket socket, Socket pipe, ZPoller poller, int events)
         {
             if (socket == frontend) {
                 //  Process a request.
-                return transport.flow(
-                        Plug.FRONT, frontend,
-                        capture,
-                        Plug.BACK, backend);
+                return transport.flow(Plug.FRONT, frontend, capture, Plug.BACK, backend);
             }
             if (socket == backend) {
                 //  Process a reply.
-                return transport.flow(
-                        Plug.BACK, backend,
-                        capture,
-                        Plug.FRONT, frontend);
+                return transport.flow(Plug.BACK, backend, capture, Plug.FRONT, frontend);
             }
             return false;
         }
@@ -939,10 +924,10 @@ public class ZProxy
                     cold = provider.restart(dup, frontend, Plug.FRONT, this.args);
                     dup.destroy();
                     dup = cfg.duplicate();
-                    cold |= provider.restart(dup, backend,  Plug.BACK,    this.args);
+                    cold |= provider.restart(dup, backend, Plug.BACK, this.args);
                     dup.destroy();
                     dup = cfg.duplicate();
-                    cold |= provider.restart(dup, capture,  Plug.CAPTURE, this.args);
+                    cold |= provider.restart(dup, capture, Plug.CAPTURE, this.args);
                     dup.destroy();
                     cfg.destroy();
 
@@ -1016,8 +1001,7 @@ public class ZProxy
         }
 
         @Override
-        public boolean flow(Plug splug, Socket source, Socket capture,
-                            Plug dplug, Socket destination)
+        public boolean flow(Plug splug, Socket source, Socket capture, Plug dplug, Socket destination)
         {
             boolean success = false;
 
@@ -1033,7 +1017,7 @@ public class ZProxy
                 // TODO what if the transformer modifies or destroys the original message ?
                 ZMsg cpt = transformer.transform(msg, splug, Plug.CAPTURE);
 
-//                boolean destroy = !msg.equals(cpt); // TODO ?? which one
+                //                boolean destroy = !msg.equals(cpt); // TODO ?? which one
                 boolean destroy = msg != cpt;
                 success = cpt.send(capture, destroy);
                 if (!success) {
@@ -1060,8 +1044,7 @@ public class ZProxy
     {
         // transfers each message as a whole by sending each packet received to the capture socket
         @Override
-        public boolean flow(Plug splug, Socket source, Socket capture,
-                Plug dplug, Socket destination)
+        public boolean flow(Plug splug, Socket source, Socket capture, Plug dplug, Socket destination)
         {
             boolean rc;
 

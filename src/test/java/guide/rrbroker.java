@@ -9,14 +9,16 @@ import org.zeromq.ZMQ.Socket;
 * Simple request-reply broker
 *
 */
-public class rrbroker{
+public class rrbroker
+{
 
-    public static void main (String[] args) {
+    public static void main(String[] args)
+    {
         //  Prepare our context and sockets
         Context context = ZMQ.context(1);
 
         Socket frontend = context.socket(ZMQ.ROUTER);
-        Socket backend  = context.socket(ZMQ.DEALER);
+        Socket backend = context.socket(ZMQ.DEALER);
         frontend.bind("tcp://*:5559");
         backend.bind("tcp://*:5560");
 
@@ -43,7 +45,7 @@ public class rrbroker{
 
                     // Broker it
                     backend.send(message, more ? ZMQ.SNDMORE : 0);
-                    if(!more){
+                    if (!more) {
                         break;
                     }
                 }
@@ -54,8 +56,8 @@ public class rrbroker{
                     message = backend.recv(0);
                     more = backend.hasReceiveMore();
                     // Broker it
-                    frontend.send(message,  more ? ZMQ.SNDMORE : 0);
-                    if(!more){
+                    frontend.send(message, more ? ZMQ.SNDMORE : 0);
+                    if (!more) {
                         break;
                     }
                 }

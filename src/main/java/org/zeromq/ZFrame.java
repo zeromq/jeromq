@@ -20,8 +20,8 @@ import org.zeromq.ZMQ.Socket;
 
 public class ZFrame
 {
-    public static final int MORE  =   ZMQ.SNDMORE;
-    public static final int REUSE =   128;     // no effect at java
+    public static final int MORE     = ZMQ.SNDMORE;
+    public static final int REUSE    = 128;         // no effect at java
     public static final int DONTWAIT = ZMQ.DONTWAIT;
 
     private boolean more;
@@ -367,7 +367,7 @@ public class ZFrame
     public static ZFrame recvFrame(Socket socket, int flags)
     {
         ZFrame f = new ZFrame();
-        byte [] data = f.recv(socket, flags);
+        byte[] data = f.recv(socket, flags);
         if (data == null) {
             return null;
         }
@@ -382,7 +382,7 @@ public class ZFrame
         if (prefix != null) {
             pw.printf("%s", prefix);
         }
-        byte []data = getData();
+        byte[] data = getData();
         int size = size();
 
         boolean isBin = false;

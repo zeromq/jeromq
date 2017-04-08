@@ -13,29 +13,32 @@ import org.zeromq.ZMQ.Socket;
  * @author Danish Shrestha <dshrestha06@gmail.com>
  *
  */
-public class clonecli1 {
-	private static Map<String, kvsimple> kvMap = new HashMap<String, kvsimple>();
-	private static AtomicLong sequence = new AtomicLong();
+public class clonecli1
+{
+    private static Map<String, kvsimple> kvMap    = new HashMap<String, kvsimple>();
+    private static AtomicLong            sequence = new AtomicLong();
 
-	public void run() {
-		ZContext ctx = new ZContext();
-		Socket subscriber = ctx.createSocket(ZMQ.SUB);
-		subscriber.connect("tcp://localhost:5556");
-		subscriber.subscribe(ZMQ.SUBSCRIPTION_ALL);
+    public void run()
+    {
+        ZContext ctx = new ZContext();
+        Socket subscriber = ctx.createSocket(ZMQ.SUB);
+        subscriber.connect("tcp://localhost:5556");
+        subscriber.subscribe(ZMQ.SUBSCRIPTION_ALL);
 
-		while (true) {
-			kvsimple kvMsg = kvsimple.recv(subscriber);
+        while (true) {
+            kvsimple kvMsg = kvsimple.recv(subscriber);
             if (kvMsg == null)
                 break;
 
             clonecli1.kvMap.put(kvMsg.getKey(), kvMsg);
             System.out.println("receiving " + kvMsg);
             sequence.incrementAndGet();
-		}
-        ctx.destroy();
-	}
+        }
+        ctx.close();
+    }
 
-	public static void main(String[] args) {
-		new clonecli1().run();
-	}
+    public static void main(String[] args)
+    {
+        new clonecli1().run();
+    }
 }

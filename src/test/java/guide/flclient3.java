@@ -1,16 +1,12 @@
 package guide;
 
-import org.zeromq.ZContext;
-import org.zeromq.ZMQ;
-import org.zeromq.ZMQ.PollItem;
-import org.zeromq.ZMQ.Socket;
 import org.zeromq.ZMsg;
 
 //  Freelance client - Model 3
 //  Uses flcliapi class to encapsulate Freelance pattern
 public class flclient3
 {
-    public static void main (String[] argv)
+    public static void main(String[] argv)
     {
         //  Create new freelance client object
         flcliapi client = new flcliapi();
@@ -33,8 +29,7 @@ public class flclient3
             }
             reply.destroy();
         }
-        System.out.printf("Average round trip cost: %d usec\n",
-                (int) (System.currentTimeMillis() - start) / 10);
+        System.out.printf("Average round trip cost: %d usec\n", (int) (System.currentTimeMillis() - start) / 10);
 
         client.destroy();
     }

@@ -15,10 +15,12 @@ import org.zeromq.ZMQ.Socket;
  * @author Danish Shrestha <dshrestha06@gmail.com>
  *
  */
-public class clonesrv3 {
+public class clonesrv3
+{
     private static Map<String, kvsimple> kvMap = new LinkedHashMap<String, kvsimple>();
 
-    public void run() {
+    public void run()
+    {
 
         ZContext ctx = new ZContext();
 
@@ -38,12 +40,12 @@ public class clonesrv3 {
         long sequence = 0;
         while (!Thread.currentThread().isInterrupted()) {
             if (poller.poll(1000) < 0)
-                break;              //  Context has been shut down
+                break; //  Context has been shut down
 
             // apply state updates from main thread
             if (poller.pollin(0)) {
                 kvsimple kvMsg = kvsimple.recv(collector);
-                if (kvMsg == null)  //  Interrupted
+                if (kvMsg == null) //  Interrupted
                     break;
                 kvMsg.setSequence(++sequence);
                 kvMsg.send(publisher);
@@ -55,7 +57,7 @@ public class clonesrv3 {
             if (poller.pollin(1)) {
                 byte[] identity = snapshot.recv(0);
                 if (identity == null)
-                    break;      //  Interrupted
+                    break; //  Interrupted
                 String request = snapshot.recvStr();
 
                 if (!request.equals("ICANHAZ?")) {
@@ -78,16 +80,18 @@ public class clonesrv3 {
                 message.send(snapshot);
             }
         }
-        System.out.printf (" Interrupted\n%d messages handled\n", sequence);
-        ctx.destroy();
+        System.out.printf(" Interrupted\n%d messages handled\n", sequence);
+        ctx.close();
     }
 
-    private void sendMessage(kvsimple msg, byte[] identity, Socket snapshot) {
+    private void sendMessage(kvsimple msg, byte[] identity, Socket snapshot)
+    {
         snapshot.send(identity, ZMQ.SNDMORE);
         msg.send(snapshot);
     }
 
-	public static void main(String[] args) {
-		new clonesrv3().run();
-	}
+    public static void main(String[] args)
+    {
+        new clonesrv3().run();
+    }
 }

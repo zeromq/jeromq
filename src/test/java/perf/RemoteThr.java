@@ -15,7 +15,7 @@ public class RemoteThr
     {
         String connectTo;
         long messageCount;
-        int  messageSize;
+        int messageSize;
         Ctx ctx;
         SocketBase s;
         boolean rc;

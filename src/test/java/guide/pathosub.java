@@ -1,10 +1,10 @@
 package guide;
 
+import java.util.Random;
+
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQ.Socket;
-
-import java.util.Random;
 
 //  Pathological subscriber
 //  Subscribes to one random topic and prints received messages
@@ -16,8 +16,7 @@ public class pathosub
         Socket subscriber = context.createSocket(ZMQ.SUB);
         if (args.length == 1)
             subscriber.connect(args[0]);
-        else
-            subscriber.connect("tcp://localhost:5556");
+        else subscriber.connect("tcp://localhost:5556");
 
         Random rand = new Random(System.currentTimeMillis());
         String subscription = String.format("%03d", rand.nextInt(1000));
@@ -28,9 +27,9 @@ public class pathosub
             if (topic == null)
                 break;
             String data = subscriber.recvStr();
-            assert(topic.equals(subscription));
+            assert (topic.equals(subscription));
             System.out.println(data);
         }
-        context.destroy();
+        context.close();
     }
 }

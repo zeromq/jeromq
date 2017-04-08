@@ -9,6 +9,12 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.charset.Charset;
 import java.util.HashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.LockSupport;
+
+import zmq.io.Metadata;
+import zmq.poll.PollItem;
+import zmq.util.Clock;
 
 public class ZMQ
 {
@@ -17,16 +23,16 @@ public class ZMQ
     /******************************************************************************/
 
     /*  Version macros for compile-time API version detection                     */
-    public static final int ZMQ_VERSION_MAJOR = 3;
-    public static final int ZMQ_VERSION_MINOR = 2;
-    public static final int ZMQ_VERSION_PATCH = 5;
+    public static final int ZMQ_VERSION_MAJOR = 4;
+    public static final int ZMQ_VERSION_MINOR = 1;
+    public static final int ZMQ_VERSION_PATCH = 7;
 
     /*  Context options  */
-    public static final int ZMQ_IO_THREADS = 1;
+    public static final int ZMQ_IO_THREADS  = 1;
     public static final int ZMQ_MAX_SOCKETS = 2;
 
     /*  Default for new contexts                                                  */
-    public static final int ZMQ_IO_THREADS_DFLT = 1;
+    public static final int ZMQ_IO_THREADS_DFLT  = 1;
     public static final int ZMQ_MAX_SOCKETS_DFLT = 1024;
 
     /******************************************************************************/
@@ -34,17 +40,18 @@ public class ZMQ
     /******************************************************************************/
 
     /*  Socket types.                                                             */
-    public static final int ZMQ_PAIR = 0;
-    public static final int ZMQ_PUB = 1;
-    public static final int ZMQ_SUB = 2;
-    public static final int ZMQ_REQ = 3;
-    public static final int ZMQ_REP = 4;
+    public static final int ZMQ_PAIR   = 0;
+    public static final int ZMQ_PUB    = 1;
+    public static final int ZMQ_SUB    = 2;
+    public static final int ZMQ_REQ    = 3;
+    public static final int ZMQ_REP    = 4;
     public static final int ZMQ_DEALER = 5;
     public static final int ZMQ_ROUTER = 6;
-    public static final int ZMQ_PULL = 7;
-    public static final int ZMQ_PUSH = 8;
-    public static final int ZMQ_XPUB = 9;
-    public static final int ZMQ_XSUB = 10;
+    public static final int ZMQ_PULL   = 7;
+    public static final int ZMQ_PUSH   = 8;
+    public static final int ZMQ_XPUB   = 9;
+    public static final int ZMQ_XSUB   = 10;
+    public static final int ZMQ_STREAM = 11;
 
     /*  Deprecated aliases                                                        */
     @Deprecated
@@ -52,97 +59,127 @@ public class ZMQ
     @Deprecated
     public static final int ZMQ_XREP = ZMQ_ROUTER;
 
+    private static final int ZMQ_CUSTOM_OPTION = 1000;
+
     /*  Socket options.                                                           */
-    public static final int ZMQ_AFFINITY = 4;
-    public static final int ZMQ_IDENTITY = 5;
-    public static final int ZMQ_SUBSCRIBE = 6;
-    public static final int ZMQ_UNSUBSCRIBE = 7;
-    public static final int ZMQ_RATE = 8;
-    public static final int ZMQ_RECOVERY_IVL = 9;
-    public static final int ZMQ_SNDBUF = 11;
-    public static final int ZMQ_RCVBUF = 12;
-    public static final int ZMQ_RCVMORE = 13;
-    public static final int ZMQ_FD = 14;
-    public static final int ZMQ_EVENTS = 15;
-    public static final int ZMQ_TYPE = 16;
-    public static final int ZMQ_LINGER = 17;
-    public static final int ZMQ_RECONNECT_IVL = 18;
-    public static final int ZMQ_BACKLOG = 19;
-    public static final int ZMQ_RECONNECT_IVL_MAX = 21;
-    public static final int ZMQ_MAXMSGSIZE = 22;
-    public static final int ZMQ_SNDHWM = 23;
-    public static final int ZMQ_RCVHWM = 24;
-    public static final int ZMQ_MULTICAST_HOPS = 25;
-    public static final int ZMQ_RCVTIMEO = 27;
-    public static final int ZMQ_SNDTIMEO = 28;
-    public static final int ZMQ_IPV4ONLY = 31;
-    public static final int ZMQ_LAST_ENDPOINT = 32;
-    public static final int ZMQ_ROUTER_MANDATORY = 33;
-    public static final int ZMQ_TCP_KEEPALIVE = 34;
-    public static final int ZMQ_TCP_KEEPALIVE_CNT = 35;
-    public static final int ZMQ_TCP_KEEPALIVE_IDLE = 36;
+    public static final int ZMQ_AFFINITY            = 4;
+    public static final int ZMQ_IDENTITY            = 5;
+    public static final int ZMQ_SUBSCRIBE           = 6;
+    public static final int ZMQ_UNSUBSCRIBE         = 7;
+    public static final int ZMQ_RATE                = 8;
+    public static final int ZMQ_RECOVERY_IVL        = 9;
+    public static final int ZMQ_SNDBUF              = 11;
+    public static final int ZMQ_RCVBUF              = 12;
+    public static final int ZMQ_RCVMORE             = 13;
+    public static final int ZMQ_FD                  = 14;
+    public static final int ZMQ_EVENTS              = 15;
+    public static final int ZMQ_TYPE                = 16;
+    public static final int ZMQ_LINGER              = 17;
+    public static final int ZMQ_RECONNECT_IVL       = 18;
+    public static final int ZMQ_BACKLOG             = 19;
+    public static final int ZMQ_RECONNECT_IVL_MAX   = 21;
+    public static final int ZMQ_MAXMSGSIZE          = 22;
+    public static final int ZMQ_SNDHWM              = 23;
+    public static final int ZMQ_RCVHWM              = 24;
+    public static final int ZMQ_MULTICAST_HOPS      = 25;
+    public static final int ZMQ_RCVTIMEO            = 27;
+    public static final int ZMQ_SNDTIMEO            = 28;
+    public static final int ZMQ_LAST_ENDPOINT       = 32;
+    public static final int ZMQ_ROUTER_MANDATORY    = 33;
+    public static final int ZMQ_TCP_KEEPALIVE       = 34;
+    public static final int ZMQ_TCP_KEEPALIVE_CNT   = 35;
+    public static final int ZMQ_TCP_KEEPALIVE_IDLE  = 36;
     public static final int ZMQ_TCP_KEEPALIVE_INTVL = 37;
-    public static final int ZMQ_TCP_ACCEPT_FILTER = 38;
-    public static final int ZMQ_DELAY_ATTACH_ON_CONNECT = 39;
-    public static final int ZMQ_XPUB_VERBOSE = 40;
-    public static final int ZMQ_REQ_CORRELATE = 52;
-    public static final int ZMQ_REQ_RELAXED = 53;
+    public static final int ZMQ_IMMEDIATE           = 39 + ZMQ_CUSTOM_OPTION; // for compatibility with ZMQ_DELAY_ATTACH_ON_CONNECT
+    public static final int ZMQ_XPUB_VERBOSE        = 40;
+    public static final int ZMQ_ROUTER_RAW          = 41;
+    public static final int ZMQ_IPV6                = 42;
+    public static final int ZMQ_MECHANISM           = 43;
+    public static final int ZMQ_PLAIN_SERVER        = 44;
+    public static final int ZMQ_PLAIN_USERNAME      = 45;
+    public static final int ZMQ_PLAIN_PASSWORD      = 46;
+    public static final int ZMQ_CURVE_SERVER        = 47;
+    public static final int ZMQ_CURVE_PUBLICKEY     = 48;
+    public static final int ZMQ_CURVE_SECRETKEY     = 49;
+    public static final int ZMQ_CURVE_SERVERKEY     = 50;
+    public static final int ZMQ_PROBE_ROUTER        = 51;
+    public static final int ZMQ_REQ_CORRELATE       = 52;
+    public static final int ZMQ_REQ_RELAXED         = 53;
+    public static final int ZMQ_CONFLATE            = 54;
+    public static final int ZMQ_ZAP_DOMAIN          = 55;
     // TODO: more constants
-    public static final int ZMQ_ROUTER_HANDOVER = 56;
-    public static final int ZMQ_XPUB_NODROP = 69;
-    public static final int ZMQ_BLOCKY = 70;
+    public static final int ZMQ_ROUTER_HANDOVER          = 56;
+    public static final int ZMQ_TOS                      = 57;
+    public static final int ZMQ_CONNECT_RID              = 61;
+    public static final int ZMQ_GSSAPI_SERVER            = 62;
+    public static final int ZMQ_GSSAPI_PRINCIPAL         = 63;
+    public static final int ZMQ_GSSAPI_SERVICE_PRINCIPAL = 64;
+    public static final int ZMQ_GSSAPI_PLAINTEXT         = 65;
+    public static final int ZMQ_HANDSHAKE_IVL            = 66;
+    public static final int ZMQ_SOCKS_PROXY              = 67;
+    public static final int ZMQ_XPUB_NODROP              = 69;
+    public static final int ZMQ_BLOCKY                   = 70;
+    @Deprecated
     public static final int ZMQ_XPUB_VERBOSE_UNSUBSCRIBE = 78;
 
     /* Custom options */
-    public static final int ZMQ_ENCODER = 1001;
-    public static final int ZMQ_DECODER = 1002;
-    public static final int ZMQ_MSG_ALLOCATOR = 1003;
+    @Deprecated
+    public static final int ZMQ_ENCODER                       = ZMQ_CUSTOM_OPTION + 1;
+    @Deprecated
+    public static final int ZMQ_DECODER                       = ZMQ_CUSTOM_OPTION + 2;
+    @Deprecated
+    public static final int ZMQ_MSG_ALLOCATOR                 = ZMQ_CUSTOM_OPTION + 3;
+    public static final int ZMQ_MSG_ALLOCATION_HEAP_THRESHOLD = ZMQ_CUSTOM_OPTION + 4;
 
     /*  Message options                                                           */
     public static final int ZMQ_MORE = 1;
 
     /*  Send/recv options.                                                        */
     public static final int ZMQ_DONTWAIT = 1;
-    public static final int ZMQ_SNDMORE = 2;
+    public static final int ZMQ_SNDMORE  = 2;
 
     /*  Deprecated aliases                                                        */
-    public static final int ZMQ_NOBLOCK = ZMQ_DONTWAIT;
-    public static final int ZMQ_FAIL_UNROUTABLE = ZMQ_ROUTER_MANDATORY;
-    public static final int ZMQ_ROUTER_BEHAVIOR = ZMQ_ROUTER_MANDATORY;
+    @Deprecated
+    public static final int ZMQ_TCP_ACCEPT_FILTER       = 38;
+    @Deprecated
+    public static final int ZMQ_IPV4ONLY                = 31;
+    @Deprecated
+    public static final int ZMQ_DELAY_ATTACH_ON_CONNECT = 39;
+    @Deprecated
+    public static final int ZMQ_NOBLOCK                 = ZMQ_DONTWAIT;
+    @Deprecated
+    public static final int ZMQ_FAIL_UNROUTABLE         = ZMQ_ROUTER_MANDATORY;
+    @Deprecated
+    public static final int ZMQ_ROUTER_BEHAVIOR         = ZMQ_ROUTER_MANDATORY;
 
     /******************************************************************************/
     /*  0MQ socket events and monitoring                                          */
     /******************************************************************************/
 
     /*  Socket transport events (tcp and ipc only)                                */
-    public static final int ZMQ_EVENT_CONNECTED = 1;
+    public static final int ZMQ_EVENT_CONNECTED       = 1;
     public static final int ZMQ_EVENT_CONNECT_DELAYED = 2;
     public static final int ZMQ_EVENT_CONNECT_RETRIED = 4;
-
-    public static final int ZMQ_EVENT_LISTENING = 8;
-    public static final int ZMQ_EVENT_BIND_FAILED = 16;
-
-    public static final int ZMQ_EVENT_ACCEPTED = 32;
-    public static final int ZMQ_EVENT_ACCEPT_FAILED = 64;
-
-    public static final int ZMQ_EVENT_CLOSED = 128;
-    public static final int ZMQ_EVENT_CLOSE_FAILED = 256;
-    public static final int ZMQ_EVENT_DISCONNECTED = 512;
+    public static final int ZMQ_EVENT_LISTENING       = 8;
+    public static final int ZMQ_EVENT_BIND_FAILED     = 16;
+    public static final int ZMQ_EVENT_ACCEPTED        = 32;
+    public static final int ZMQ_EVENT_ACCEPT_FAILED   = 64;
+    public static final int ZMQ_EVENT_CLOSED          = 128;
+    public static final int ZMQ_EVENT_CLOSE_FAILED    = 256;
+    public static final int ZMQ_EVENT_DISCONNECTED    = 512;
     public static final int ZMQ_EVENT_MONITOR_STOPPED = 1024;
+    public static final int ZMQ_EVENT_ALL             = 0xffff;
 
-    public static final int ZMQ_EVENT_ALL = ZMQ_EVENT_CONNECTED | ZMQ_EVENT_CONNECT_DELAYED |
-                ZMQ_EVENT_CONNECT_RETRIED | ZMQ_EVENT_LISTENING |
-                ZMQ_EVENT_BIND_FAILED | ZMQ_EVENT_ACCEPTED |
-                ZMQ_EVENT_ACCEPT_FAILED | ZMQ_EVENT_CLOSED |
-                ZMQ_EVENT_CLOSE_FAILED | ZMQ_EVENT_DISCONNECTED | ZMQ_EVENT_MONITOR_STOPPED;
-
-    public static final int ZMQ_POLLIN = 1;
+    public static final int ZMQ_POLLIN  = 1;
     public static final int ZMQ_POLLOUT = 2;
     public static final int ZMQ_POLLERR = 4;
 
-    public static final int ZMQ_STREAMER = 1;
+    @Deprecated
+    public static final int ZMQ_STREAMER  = 1;
+    @Deprecated
     public static final int ZMQ_FORWARDER = 2;
-    public static final int ZMQ_QUEUE = 3;
+    @Deprecated
+    public static final int ZMQ_QUEUE     = 3;
 
     public static final byte[] MESSAGE_SEPARATOR = new byte[0];
 
@@ -155,10 +192,10 @@ public class ZMQ
         private static final int VALUE_INTEGER = 1;
         private static final int VALUE_CHANNEL = 2;
 
-        public final int event;
+        public final int    event;
         public final String addr;
         public final Object arg;
-        private final int flag;
+        private final int   flag;
 
         public Event(int event, String addr, Object arg)
         {
@@ -208,7 +245,7 @@ public class ZMQ
 
             int event = buffer.getInt();
             int len = buffer.get();
-            byte [] addr = new byte [len];
+            byte[] addr = new byte[len];
             buffer.get(addr);
             int flag = buffer.get();
             Object arg = null;
@@ -234,28 +271,34 @@ public class ZMQ
         return ctx;
     }
 
-    private static void destroyContext(Ctx ctx)
+    private static void checkContext(Ctx ctx)
     {
         if (ctx == null || !ctx.checkTag()) {
             throw new IllegalStateException();
         }
+    }
 
+    private static void destroyContext(Ctx ctx)
+    {
+        checkContext(ctx);
         ctx.terminate();
+    }
+
+    private static void shutdownContext(Ctx ctx)
+    {
+        checkContext(ctx);
+        ctx.shutdown();
     }
 
     public static void setContextOption(Ctx ctx, int option, int optval)
     {
-        if (ctx == null || !ctx.checkTag()) {
-            throw new IllegalStateException();
-        }
+        checkContext(ctx);
         ctx.set(option, optval);
     }
 
     public static int getContextOption(Ctx ctx, int option)
     {
-        if (ctx == null || !ctx.checkTag()) {
-            throw new IllegalStateException();
-        }
+        checkContext(ctx);
         return ctx.get(option);
     }
 
@@ -267,7 +310,7 @@ public class ZMQ
             setContextOption(ctx, ZMQ_IO_THREADS, ioThreads);
             return ctx;
         }
-        throw new IllegalArgumentException("io_threds must not be negative");
+        throw new IllegalArgumentException("io_threads must not be negative");
     }
 
     public static void term(Ctx ctx)
@@ -278,38 +321,41 @@ public class ZMQ
     // Sockets
     public static SocketBase socket(Ctx ctx, int type)
     {
-        if (ctx == null || !ctx.checkTag()) {
-            throw new IllegalStateException();
-        }
+        checkContext(ctx);
         SocketBase s = ctx.createSocket(type);
         return s;
     }
 
-    public static void close(SocketBase s)
+    private static void checkSocket(SocketBase s)
     {
         if (s == null || !s.checkTag()) {
             throw new IllegalStateException();
         }
+    }
+
+    public static void closeZeroLinger(SocketBase s)
+    {
+        checkSocket(s);
+        s.setSocketOpt(ZMQ.ZMQ_LINGER, 0);
         s.close();
     }
 
-    public static void setSocketOption(SocketBase s, int option, Object optval)
+    public static void close(SocketBase s)
     {
-        if (s == null || !s.checkTag()) {
-            throw new IllegalStateException();
-        }
+        checkSocket(s);
+        s.close();
+    }
 
-        s.setSocketOpt(option, optval);
-
+    public static boolean setSocketOption(SocketBase s, int option, Object optval)
+    {
+        checkSocket(s);
+        return s.setSocketOpt(option, optval);
     }
 
     public static Object getSocketOptionExt(SocketBase s, int option)
     {
-        if (s == null || !s.checkTag()) {
-            throw new IllegalStateException();
-        }
-
-        return s.getsockoptx(option);
+        checkSocket(s);
+        return s.getSocketOptx(option);
     }
 
     public static int getSocketOption(SocketBase s, int opt)
@@ -319,50 +365,40 @@ public class ZMQ
 
     public static boolean monitorSocket(SocketBase s, final String addr, int events)
     {
-        if (s == null || !s.checkTag()) {
-            throw new IllegalStateException();
-        }
+        checkSocket(s);
 
         return s.monitor(addr, events);
     }
 
     public static boolean bind(SocketBase s, final String addr)
     {
-        if (s == null || !s.checkTag()) {
-            throw new IllegalStateException();
-        }
+        checkSocket(s);
 
         return s.bind(addr);
     }
 
     public static boolean connect(SocketBase s, String addr)
     {
-        if (s == null || !s.checkTag()) {
-            throw new IllegalStateException();
-        }
+        checkSocket(s);
         return s.connect(addr);
     }
 
     public static boolean unbind(SocketBase s, String addr)
     {
-        if (s == null || !s.checkTag()) {
-            throw new IllegalStateException();
-        }
+        checkSocket(s);
         return s.termEndpoint(addr);
     }
 
     public static boolean disconnect(SocketBase s, String addr)
     {
-        if (s == null || !s.checkTag()) {
-            throw new IllegalStateException();
-        }
+        checkSocket(s);
         return s.termEndpoint(addr);
     }
 
     // Sending functions.
     public static int send(SocketBase s, String str, int flags)
     {
-        byte [] data = str.getBytes(CHARSET);
+        byte[] data = str.getBytes(CHARSET);
         return send(s, data, data.length, flags);
     }
 
@@ -378,9 +414,7 @@ public class ZMQ
 
     public static int send(SocketBase s, byte[] buf, int len, int flags)
     {
-        if (s == null || !s.checkTag()) {
-            throw new IllegalStateException();
-        }
+        checkSocket(s);
 
         Msg msg = new Msg(len);
         msg.put(buf, 0, len);
@@ -401,9 +435,7 @@ public class ZMQ
     //
     public int sendiov(SocketBase s, byte[][] a, int count, int flags)
     {
-        if (s == null || !s.checkTag()) {
-            throw new IllegalStateException();
-        }
+        checkSocket(s);
         int rc = 0;
         Msg msg;
 
@@ -414,12 +446,28 @@ public class ZMQ
             }
             rc = sendMsg(s, msg, flags);
             if (rc < 0) {
-               rc = -1;
-               break;
+                rc = -1;
+                break;
             }
         }
         return rc;
 
+    }
+
+    public static boolean sendMsg(SocketBase socket, byte[]... data)
+    {
+        int rc = 0;
+        if (data.length == 0) {
+            return false;
+        }
+        for (int idx = 0; idx < data.length - 1; ++idx) {
+            rc = send(socket, new Msg(data[idx]), ZMQ_MORE);
+            if (rc < 0) {
+                return false;
+            }
+        }
+        rc = send(socket, new Msg(data[data.length - 1]), 0);
+        return rc >= 0;
     }
 
     public static int sendMsg(SocketBase s, Msg msg, int flags)
@@ -435,9 +483,7 @@ public class ZMQ
     // Receiving functions.
     public static Msg recv(SocketBase s, int flags)
     {
-        if (s == null || !s.checkTag()) {
-            throw new IllegalStateException();
-        }
+        checkSocket(s);
         Msg msg = recvMsg(s, flags);
         if (msg == null) {
             return null;
@@ -450,31 +496,29 @@ public class ZMQ
         return msg;
     }
 
-     // Receive a multi-part message
-     //
-     // Receives up to *count_ parts of a multi-part message.
-     // Sets *count_ to the actual number of parts read.
-     // ZMQ_RCVMORE is set to indicate if a complete multi-part message was read.
-     // Returns number of message parts read, or -1 on error.
-     //
-     // Note: even if -1 is returned, some parts of the message
-     // may have been read. Therefore the client must consult
-     // *count_ to retrieve message parts successfully read,
-     // even if -1 is returned.
-     //
-     // The iov_base* buffers of each iovec *a_ filled in by this
-     // function may be freed using free().
-     //
-     // Implementation note: We assume zmq::msg_t buffer allocated
-     // by zmq::recvmsg can be freed by free().
-     // We assume it is safe to steal these buffers by simply
-     // not closing the zmq::msg_t.
-     //
+    // Receive a multi-part message
+    //
+    // Receives up to *count_ parts of a multi-part message.
+    // Sets *count_ to the actual number of parts read.
+    // ZMQ_RCVMORE is set to indicate if a complete multi-part message was read.
+    // Returns number of message parts read, or -1 on error.
+    //
+    // Note: even if -1 is returned, some parts of the message
+    // may have been read. Therefore the client must consult
+    // *count_ to retrieve message parts successfully read,
+    // even if -1 is returned.
+    //
+    // The iov_base* buffers of each iovec *a_ filled in by this
+    // function may be freed using free().
+    //
+    // Implementation note: We assume zmq::msg_t buffer allocated
+    // by zmq::recvmsg can be freed by free().
+    // We assume it is safe to steal these buffers by simply
+    // not closing the zmq::msg_t.
+    //
     public int recviov(SocketBase s, byte[][] a, int count, int flags)
     {
-        if (s == null || !s.checkTag()) {
-            throw new IllegalStateException();
-        }
+        checkSocket(s);
 
         int nread = 0;
         boolean recvmore = true;
@@ -520,39 +564,32 @@ public class ZMQ
     public static int getMessageOption(Msg msg, int option)
     {
         switch (option) {
-            case ZMQ_MORE:
-                return msg.hasMore() ? 1 : 0;
-            default:
-                throw new IllegalArgumentException();
-        }
-    }
-
-    public static void sleep(int s)
-    {
-        try {
-            Thread.sleep(s * (1000L));
-        }
-        catch (InterruptedException e) {
-        }
-    }
-
-    //  The proxy functionality
-    public static boolean proxy(SocketBase frontend, SocketBase backend, SocketBase control)
-    {
-        if (frontend == null || backend == null) {
+        case ZMQ_MORE:
+            return msg.hasMore() ? 1 : 0;
+        default:
             throw new IllegalArgumentException();
         }
-        return Proxy.proxy(
-            frontend,
-            backend,
-            control);
     }
 
-    @Deprecated
-    public static boolean device(int device, SocketBase insocket,
-            SocketBase outsocket)
+    //  Get message metadata string
+    public static String getMessageMetadata(Msg msg, String property)
     {
-        return Proxy.proxy(insocket, outsocket, null);
+        String data = null;
+        Metadata metadata = msg.getMetadata();
+        if (metadata != null) {
+            data = metadata.get(property);
+        }
+        return data;
+    }
+
+    public static void sleep(int seconds)
+    {
+        LockSupport.parkNanos(TimeUnit.NANOSECONDS.convert(seconds, TimeUnit.SECONDS));
+    }
+
+    public static void msleep(int milliseconds)
+    {
+        LockSupport.parkNanos(TimeUnit.NANOSECONDS.convert(milliseconds, TimeUnit.MILLISECONDS));
     }
 
     /**
@@ -568,6 +605,7 @@ public class ZMQ
     {
         return poll(selector, items, items.length, timeout);
     }
+
     /**
      * Polling on items with given selector
      * CAUTION: This could be affected by jdk epoll bug
@@ -587,11 +625,7 @@ public class ZMQ
             if (timeout <= 0) {
                 return 0;
             }
-            try {
-                Thread.sleep(timeout);
-            }
-            catch (InterruptedException e) {
-            }
+            LockSupport.parkNanos(TimeUnit.NANOSECONDS.convert(timeout, TimeUnit.MILLISECONDS));
             return 0;
         }
         long now = 0L;
@@ -721,6 +755,31 @@ public class ZMQ
             }
         }
         return nevents;
+    }
+
+    //  The proxy functionality
+    public static boolean proxy(SocketBase frontend, SocketBase backend, SocketBase capture)
+    {
+        if (frontend == null || backend == null) {
+            throw new IllegalArgumentException();
+        }
+        return Proxy.proxy(frontend, backend, capture, null);
+    }
+
+    public static boolean proxy(SocketBase frontend, SocketBase backend, SocketBase capture, SocketBase control)
+    {
+        if (frontend == null || backend == null) {
+            throw new IllegalArgumentException();
+        }
+        return Proxy.proxy(frontend, backend, capture, control);
+    }
+
+    public static boolean device(int device, SocketBase frontend, SocketBase backend)
+    {
+        if (frontend == null || backend == null) {
+            throw new IllegalArgumentException();
+        }
+        return Proxy.proxy(frontend, backend, null, null);
     }
 
     public static long startStopwatch()

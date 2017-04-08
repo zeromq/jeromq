@@ -28,8 +28,8 @@ public class TestZPoller
 
     static class Server extends Thread
     {
-        private final int port;
-        private final Socket socket;
+        private final int     port;
+        private final Socket  socket;
         private final ZPoller poller;
 
         public Server(ZContext context, int port)

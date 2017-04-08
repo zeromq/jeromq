@@ -5,8 +5,8 @@ import java.util.List;
 import java.util.UUID;
 
 import org.junit.Assert;
-import org.junit.Test;
 import org.junit.Ignore;
+import org.junit.Test;
 import org.zeromq.ZActor.Actor;
 import org.zeromq.ZMQ.Socket;
 
@@ -42,7 +42,8 @@ public class TestZActor
             }
         };
         ZContext context = new ZContext();
-        ZActor actor = new ZActor(context, new ZAgent.VerySimpleSelectorCreator(), acting, "LOCK", Arrays.asList("TEST").toArray());
+        ZActor actor = new ZActor(context, new ZAgent.VerySimpleSelectorCreator(), acting, "LOCK",
+                Arrays.asList("TEST").toArray());
         Socket pipe = actor.pipe();
         boolean rc = pipe.send("HELLO");
         Assert.assertTrue("Unable to send a message through pipe", rc);
@@ -69,7 +70,7 @@ public class TestZActor
         }
         catch (ZMQException e) {
             int errno = e.getErrorCode();
-            Assert.assertEquals("Expected exception has the wrong code",  ZError.ETERM, errno);
+            Assert.assertEquals("Expected exception has the wrong code", ZError.ETERM, errno);
         }
 
         context.close();
@@ -118,7 +119,8 @@ public class TestZActor
             }
         };
         ZContext context = new ZContext();
-        ZActor actor = new ZActor(context, new ZAgent.VerySimpleSelectorCreator(), acting, UUID.randomUUID().toString(), Arrays.asList("TEST").toArray());
+        ZActor actor = new ZActor(context, new ZAgent.VerySimpleSelectorCreator(), acting, UUID.randomUUID().toString(),
+                Arrays.asList("TEST").toArray());
         ZAgent agent = actor.agent();
 
         agent = actor;
@@ -158,7 +160,7 @@ public class TestZActor
         }
         catch (ZMQException e) {
             int errno = e.getErrorCode();
-            Assert.assertEquals("Expected exception has the wrong code",  ZError.ETERM, errno);
+            Assert.assertEquals("Expected exception has the wrong code", ZError.ETERM, errno);
         }
 
         context.close();

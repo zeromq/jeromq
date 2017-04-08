@@ -1,13 +1,14 @@
 package guide;
 
+import java.nio.channels.Selector;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.zeromq.ZContext;
 import org.zeromq.ZFrame;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQ.Poller;
 import org.zeromq.ZMQ.Socket;
-
-import java.util.HashMap;
-import java.util.Map;
 
 //  Last value cache
 //  Uses XPUB subscription messages to re-send data
@@ -16,6 +17,7 @@ public class lvcache
     public static void main(String[] args)
     {
         ZContext context = new ZContext();
+        Selector selector = context.createSelector();
         Socket frontend = context.createSocket(ZMQ.SUB);
         frontend.bind("tcp://*:5557");
         Socket backend = context.createSocket(ZMQ.XPUB);
@@ -37,7 +39,7 @@ public class lvcache
         //  if anything:
         while (true) {
             if (poller.poll(1000) == -1)
-                break;              //  Interrupted
+                break; //  Interrupted
 
             //  Any new topic data we cache and then forward
             if (poller.pollin(0)) {
@@ -58,9 +60,9 @@ public class lvcache
                     break;
                 //  Event is one byte 0=unsub or 1=sub, followed by topic
                 byte[] event = frame.getData();
-                if (event [0] == 1) {
-                    String topic = new String(event, 1, event.length -1, ZMQ.CHARSET);
-                    System.out.printf ("Sending cached topic %s\n", topic);
+                if (event[0] == 1) {
+                    String topic = new String(event, 1, event.length - 1, ZMQ.CHARSET);
+                    System.out.printf("Sending cached topic %s\n", topic);
                     String previous = cache.get(topic);
                     if (previous != null) {
                         backend.sendMore(topic);
@@ -70,6 +72,6 @@ public class lvcache
                 frame.destroy();
             }
         }
-        context.destroy();
+        context.close();
     }
 }

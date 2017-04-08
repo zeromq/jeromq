@@ -8,7 +8,8 @@ import org.zeromq.ZMQ.Context;
 import org.zeromq.ZMQ.Poller;
 import org.zeromq.ZMQ.Socket;
 
-public class lbbroker {
+public class lbbroker
+{
 
     private static final int NBR_CLIENTS = 10;
     private static final int NBR_WORKERS = 3;
@@ -23,14 +24,14 @@ public class lbbroker {
             Context context = ZMQ.context(1);
 
             //  Prepare our context and sockets
-            Socket client  = context.socket(ZMQ.REQ);
-            ZHelper.setId (client);     //  Set a printable identity
+            Socket client = context.socket(ZMQ.REQ);
+            ZHelper.setId(client); //  Set a printable identity
 
             client.connect("ipc://frontend.ipc");
 
             //  Send request, get reply
             client.send("HELLO");
-            String reply = client.recvStr ();
+            String reply = client.recvStr();
             System.out.println("Client: " + reply);
 
             client.close();
@@ -50,30 +51,29 @@ public class lbbroker {
         {
             Context context = ZMQ.context(1);
             //  Prepare our context and sockets
-            Socket worker  = context.socket(ZMQ.REQ);
-            ZHelper.setId (worker);     //  Set a printable identity
+            Socket worker = context.socket(ZMQ.REQ);
+            ZHelper.setId(worker); //  Set a printable identity
 
             worker.connect("ipc://backend.ipc");
 
             //  Tell backend we're ready for work
             worker.send("READY");
 
-            while(!Thread.currentThread ().isInterrupted ())
-            {
-                String address = worker.recvStr ();
-                String empty = worker.recvStr ();
+            while (!Thread.currentThread().isInterrupted()) {
+                String address = worker.recvStr();
+                String empty = worker.recvStr();
                 assert (empty.length() == 0);
 
                 //  Get request, send reply
-                String request = worker.recvStr ();
+                String request = worker.recvStr();
                 System.out.println("Worker: " + request);
 
-                worker.sendMore (address);
-                worker.sendMore ("");
+                worker.sendMore(address);
+                worker.sendMore("");
                 worker.send("OK");
             }
-            worker.close ();
-            context.term ();
+            worker.close();
+            context.term();
         }
     }
 
@@ -84,11 +84,12 @@ public class lbbroker {
      * a response back to a client. The load-balancing data structure is
      * just a queue of next available workers.
      */
-    public static void main (String[] args) {
+    public static void main(String[] args)
+    {
         Context context = ZMQ.context(1);
         //  Prepare our context and sockets
-        Socket frontend  = context.socket(ZMQ.ROUTER);
-        Socket backend  = context.socket(ZMQ.ROUTER);
+        Socket frontend = context.socket(ZMQ.ROUTER);
+        Socket backend = context.socket(ZMQ.ROUTER);
         frontend.bind("ipc://frontend.ipc");
         backend.bind("ipc://backend.ipc");
 
@@ -121,32 +122,32 @@ public class lbbroker {
             items.register(backend, Poller.POLLIN);
 
             //  Poll front-end only if we have available workers
-            if(workerQueue.size() > 0)
+            if (workerQueue.size() > 0)
                 items.register(frontend, Poller.POLLIN);
 
             if (items.poll() < 0)
-                break;      //  Interrupted
+                break; //  Interrupted
 
             //  Handle worker activity on backend
             if (items.pollin(0)) {
 
                 //  Queue worker address for LRU routing
-                workerQueue.add (backend.recvStr ());
+                workerQueue.add(backend.recvStr());
 
                 //  Second frame is empty
-                String empty = backend.recvStr ();
+                String empty = backend.recvStr();
                 assert (empty.length() == 0);
 
                 //  Third frame is READY or else a client reply address
-                String clientAddr = backend.recvStr ();
+                String clientAddr = backend.recvStr();
 
                 //  If client reply, send rest back to frontend
                 if (!clientAddr.equals("READY")) {
 
-                    empty = backend.recvStr ();
+                    empty = backend.recvStr();
                     assert (empty.length() == 0);
 
-                    String reply = backend.recvStr ();
+                    String reply = backend.recvStr();
                     frontend.sendMore(clientAddr);
                     frontend.sendMore("");
                     frontend.send(reply);
@@ -160,20 +161,20 @@ public class lbbroker {
             if (items.pollin(1)) {
                 //  Now get next client request, route to LRU worker
                 //  Client request is [address][empty][request]
-                String clientAddr = frontend.recvStr ();
+                String clientAddr = frontend.recvStr();
 
-                String empty = frontend.recvStr ();
+                String empty = frontend.recvStr();
                 assert (empty.length() == 0);
 
-                String request = frontend.recvStr ();
+                String request = frontend.recvStr();
 
                 String workerAddr = workerQueue.poll();
 
-                backend.sendMore (workerAddr);
-                backend.sendMore ("");
-                backend.sendMore (clientAddr );
-                backend.sendMore ("");
-                backend.send (request);
+                backend.sendMore(workerAddr);
+                backend.sendMore("");
+                backend.sendMore(clientAddr);
+                backend.sendMore("");
+                backend.send(request);
 
             }
         }

@@ -1,5 +1,8 @@
 package zmq;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -9,8 +12,12 @@ import java.nio.channels.WritableByteChannel;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
-import static org.junit.Assert.assertThat;
-import static org.hamcrest.CoreMatchers.is;
+
+import zmq.io.IOThread;
+import zmq.io.SessionBase;
+import zmq.io.net.Address;
+import zmq.pipe.Pipe;
+import zmq.util.Errno;
 
 public class Helper
 {
@@ -26,7 +33,7 @@ public class Helper
 
     public static class DummySocketChannel implements WritableByteChannel
     {
-        private int bufsize;
+        private int    bufsize;
         private byte[] buf;
 
         public DummySocketChannel()
@@ -106,21 +113,20 @@ public class Helper
 
         public DummySession()
         {
-            this(new DummyIOThread(),  false, new DummySocket(), new Options(), new Address("tcp", "localhost:9090", false));
+            this(new DummyIOThread(), false, new DummySocket(), new Options(), new Address("tcp", "localhost:9090"));
         }
 
-        public DummySession(IOThread ioThread, boolean connect,
-                SocketBase socket, Options options, Address addr)
+        public DummySession(IOThread ioThread, boolean connect, SocketBase socket, Options options, Address addr)
         {
             super(ioThread, connect, socket, options, addr);
         }
 
         @Override
-        public int pushMsg(Msg msg)
+        public boolean pushMsg(Msg msg)
         {
             System.out.println("session.write " + msg);
             out.add(msg);
-            return 0;
+            return true;
         }
 
         @Override
@@ -166,13 +172,96 @@ public class Helper
         msg = ZMQ.recv(sc, 0);
         assert (rc == 32);
         rcvmore = ZMQ.getSocketOption(sc, ZMQ.ZMQ_RCVMORE);
-        assertThat(rcvmore , is(1L));
-        msg = ZMQ.recv(sc,  0);
+        assertThat(rcvmore, is(1L));
+        msg = ZMQ.recv(sc, 0);
         assert (rc == 32);
         rcvmore = ZMQ.getSocketOption(sc, ZMQ.ZMQ_RCVMORE);
-        assertThat(rcvmore , is(0L));
+        assertThat(rcvmore, is(0L));
         //  Check whether the message is still the same.
         //assert (memcmp (buf2, content, 32) == 0);
+    }
+
+    public static void expectBounceFail(SocketBase server, SocketBase client)
+    {
+        final byte[] content = "12345678ABCDEFGH12345678abcdefgh".getBytes(ZMQ.CHARSET);
+        final int timeout = 250;
+        final Errno errno = new Errno();
+
+        //  Send message from client to server
+        ZMQ.setSocketOption(client, ZMQ.ZMQ_SNDTIMEO, timeout);
+
+        int rc = ZMQ.send(client, content, 32, ZMQ.ZMQ_SNDMORE);
+        assert ((rc == 32) || ((rc == -1) && errno.is(ZError.EAGAIN)));
+        rc = ZMQ.send(client, content, 32, 0);
+        assert ((rc == 32) || ((rc == -1) && errno.is(ZError.EAGAIN)));
+
+        //  Receive message at server side (should not succeed)
+        ZMQ.setSocketOption(server, ZMQ.ZMQ_RCVTIMEO, timeout);
+
+        Msg msg = ZMQ.recv(server, 0);
+        assert (msg == null);
+        assert errno.is(ZError.EAGAIN);
+
+        //  Send message from server to client to test other direction
+        //  If connection failed, send may block, without a timeout
+        ZMQ.setSocketOption(server, ZMQ.ZMQ_SNDTIMEO, timeout);
+
+        rc = ZMQ.send(server, content, 32, ZMQ.ZMQ_SNDMORE);
+        assert (rc == 32 || ((rc == -1) && errno.is(ZError.EAGAIN)));
+        rc = ZMQ.send(server, content, 32, 0);
+        assert (rc == 32 || ((rc == -1) && errno.is(ZError.EAGAIN)));
+
+        //  Receive message at client side (should not succeed)
+        ZMQ.setSocketOption(client, ZMQ.ZMQ_RCVTIMEO, timeout);
+        msg = ZMQ.recv(client, 0);
+        assert (msg == null);
+        assert errno.is(ZError.EAGAIN);
+    }
+
+    public static int send(SocketBase socket, String data)
+    {
+        return ZMQ.send(socket, data, 0);
+    }
+
+    public static int sendMore(SocketBase socket, String data)
+    {
+        return ZMQ.send(socket, data, ZMQ.ZMQ_MORE);
+    }
+
+    public static String recv(SocketBase socket)
+    {
+        Msg msg = ZMQ.recv(socket, 0);
+        assert (msg != null);
+        return new String(msg.data(), ZMQ.CHARSET);
+    }
+
+    //  Sends a message composed of frames that are C strings or null frames.
+    //  The list must be terminated by SEQ_END.
+    //  Example: s_send_seq (req, "ABC", 0, "DEF", SEQ_END);
+    public static void sendSeq(SocketBase socket, String... data)
+    {
+        int rc = 0;
+        for (int idx = 0; idx < data.length - 1; ++idx) {
+            rc = sendMore(socket, data[idx]);
+            assert (rc == data[idx].length());
+        }
+        rc = send(socket, data[data.length - 1]);
+        assert (rc == data[data.length - 1].length());
+    }
+
+    //  Receives message a number of frames long and checks that the frames have
+    //  the given data which can be either C strings or 0 for a null frame.
+    //  The list must be terminated by SEQ_END.
+    //  Example: s_recv_seq (rep, "ABC", 0, "DEF", SEQ_END);
+    public static void recvSeq(SocketBase socket, String... data)
+    {
+        String rc;
+        for (int idx = 0; idx < data.length - 1; ++idx) {
+            rc = recv(socket);
+            assert (data[idx].equals(rc));
+        }
+        rc = recv(socket);
+        assert (data[data.length - 1].equals(rc));
     }
 
     public static void send(Socket sa, String data) throws IOException

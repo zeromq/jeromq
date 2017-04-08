@@ -33,12 +33,13 @@ public class lpserver
             if (cycles > 3 && rand.nextInt(3) == 0) {
                 System.out.println("I: simulating a crash");
                 break;
-            } else if (cycles > 3 && rand.nextInt(3) == 0) {
+            }
+            else if (cycles > 3 && rand.nextInt(3) == 0) {
                 System.out.println("I: simulating CPU overload");
                 Thread.sleep(2000);
             }
             System.out.printf("I: normal request (%s)\n", request);
-            Thread.sleep(1000);              //  Do some heavy work
+            Thread.sleep(1000); //  Do some heavy work
             server.send(request);
         }
         server.close();

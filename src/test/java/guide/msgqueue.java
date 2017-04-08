@@ -8,9 +8,11 @@ import org.zeromq.ZMQ.Socket;
 * Simple message queuing broker
 * Same as request-reply broker but using QUEUE device.
 */
-public class msgqueue{
+public class msgqueue
+{
 
-    public static void main (String[] args) {
+    public static void main(String[] args)
+    {
         //  Prepare our context and sockets
         Context context = ZMQ.context(1);
 
@@ -23,7 +25,7 @@ public class msgqueue{
         backend.bind("tcp://*:5560");
 
         //  Start the proxy
-        ZMQ.proxy (frontend, backend, null);
+        ZMQ.proxy(frontend, backend, null);
 
         //  We never get here but clean up anyhow
         frontend.close();

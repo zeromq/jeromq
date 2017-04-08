@@ -21,7 +21,7 @@ public class flserver3
         Socket server = ctx.createSocket(ZMQ.ROUTER);
         server.setIdentity(connectEndpoint.getBytes(ZMQ.CHARSET));
         server.bind(bindEndpoint);
-        System.out.printf ("I: service is ready at %s\n", bindEndpoint);
+        System.out.printf("I: service is ready at %s\n", bindEndpoint);
 
         while (!Thread.currentThread().isInterrupted()) {
             ZMsg request = ZMsg.recvMsg(server);
@@ -29,7 +29,7 @@ public class flserver3
                 request.dump(System.out);
 
             if (request == null)
-                break;          //  Interrupted
+                break; //  Interrupted
 
             //  Frame 0: identity of client
             //  Frame 1: PING, or client control frame
@@ -50,8 +50,8 @@ public class flserver3
             reply.send(server);
         }
         if (Thread.currentThread().isInterrupted())
-            System.out.printf ("W: interrupted\n");
+            System.out.printf("W: interrupted\n");
 
-        ctx.destroy();
+        ctx.close();
     }
 }

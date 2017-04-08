@@ -15,6 +15,7 @@ public class InprocLat
     {
         private Ctx ctx;
         private int roundtripCount;
+
         Worker(Ctx ctx, int roundtripCount)
         {
             this.ctx = ctx;
@@ -67,8 +68,8 @@ public class InprocLat
             return;
         }
 
-        int messageSize = atoi(argv [0]);
-        int roundtripCount = atoi(argv [1]);
+        int messageSize = atoi(argv[0]);
+        int roundtripCount = atoi(argv[1]);
 
         Ctx ctx = ZMQ.init(1);
         if (ctx == null) {
@@ -138,7 +139,7 @@ public class InprocLat
         System.out.println(string);
     }
 
-    private static void printf(String string, Object ... args)
+    private static void printf(String string, Object... args)
     {
         System.out.println(String.format(string, args));
     }

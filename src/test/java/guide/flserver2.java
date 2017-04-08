@@ -20,11 +20,11 @@ public class flserver2
         Socket server = ctx.createSocket(ZMQ.REP);
         server.bind(args[0]);
 
-        System.out.printf ("I: echo service is ready at %s\n", args[0]);
+        System.out.printf("I: echo service is ready at %s\n", args[0]);
         while (true) {
             ZMsg request = ZMsg.recvMsg(server);
             if (request == null)
-                break;          //  Interrupted
+                break; //  Interrupted
 
             //  Fail nastily if run against wrong client
             assert (request.size() == 2);
@@ -38,8 +38,8 @@ public class flserver2
             reply.send(server);
         }
         if (Thread.currentThread().isInterrupted())
-            System.out.printf ("W: interrupted\n");
+            System.out.printf("W: interrupted\n");
 
-        ctx.destroy();
+        ctx.close();
     }
 }

@@ -1,14 +1,14 @@
 package org.zeromq;
 
+import static org.junit.Assert.assertEquals;
+
 import java.io.IOException;
 import java.net.InetAddress;
-
-import org.junit.Test;
-import org.zeromq.ZBeacon.Listener;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.Test;
+import org.zeromq.ZBeacon.Listener;
 
 public class ZBeaconTest
 {

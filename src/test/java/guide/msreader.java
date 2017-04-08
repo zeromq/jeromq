@@ -6,9 +6,11 @@ import org.zeromq.ZMQ;
 //  Reading from multiple sockets in Java
 //  This version uses a simple recv loop
 //
-public class msreader {
+public class msreader
+{
 
-    public static void main (String[] args) throws Exception {
+    public static void main(String[] args) throws Exception
+    {
         //  Prepare our context and sockets
         ZMQ.Context context = ZMQ.context(1);
 
@@ -23,10 +25,10 @@ public class msreader {
 
         //  Process messages from both sockets
         //  We prioritize traffic from the task ventilator
-        while (!Thread.currentThread ().isInterrupted ()) {
+        while (!Thread.currentThread().isInterrupted()) {
             //  Process any waiting tasks
             byte[] task;
-            while((task = receiver.recv(ZMQ.DONTWAIT)) != null) {
+            while ((task = receiver.recv(ZMQ.DONTWAIT)) != null) {
                 System.out.println("process task");
             }
             //  Process any waiting weather updates
@@ -37,8 +39,8 @@ public class msreader {
             //  No activity, so sleep for 1 msec
             Thread.sleep(1000);
         }
-        receiver.close ();
-        subscriber.close ();
-        context.term ();
+        receiver.close();
+        subscriber.close();
+        context.term();
     }
 }

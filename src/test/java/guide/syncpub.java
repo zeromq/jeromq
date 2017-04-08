@@ -7,13 +7,15 @@ import org.zeromq.ZMQ.Socket;
 /**
 * Synchronized publisher.
 */
-public class syncpub{
+public class syncpub
+{
     /**
      * We wait for 10 subscribers
      */
     protected static int SUBSCRIBERS_EXPECTED = 10;
 
-    public static void main (String[] args) {
+    public static void main(String[] args)
+    {
         Context context = ZMQ.context(1);
 
         //  Socket to talk to clients
@@ -39,10 +41,10 @@ public class syncpub{
             subscribers++;
         }
         //  Now broadcast exactly 1M updates followed by END
-        System.out.println ("Broadcasting messages");
+        System.out.println("Broadcasting messages");
 
         int update_nbr;
-        for (update_nbr = 0; update_nbr < 1000000; update_nbr++){
+        for (update_nbr = 0; update_nbr < 1000000; update_nbr++) {
             publisher.send("Rhubarb", 0);
         }
 
