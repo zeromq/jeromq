@@ -11,24 +11,28 @@ import org.zeromq.ZMsg;
  * Majordomo Protocol Client API, asynchronous Java version. Implements the
  * MDP/Worker spec at http://rfc.zeromq.org/spec:7.
  */
-public class mdcliapi2 {
+public class mdcliapi2
+{
 
-    private String broker;
-    private ZContext ctx;
+    private String     broker;
+    private ZContext   ctx;
     private ZMQ.Socket client;
-    private long timeout = 2500;
-    private boolean verbose;
-    private Formatter log = new Formatter(System.out);
+    private long       timeout = 2500;
+    private boolean    verbose;
+    private Formatter  log     = new Formatter(System.out);
 
-    public long getTimeout() {
+    public long getTimeout()
+    {
         return timeout;
     }
 
-    public void setTimeout(long timeout) {
+    public void setTimeout(long timeout)
+    {
         this.timeout = timeout;
     }
 
-    public mdcliapi2(String broker, boolean verbose) {
+    public mdcliapi2(String broker, boolean verbose)
+    {
         this.broker = broker;
         this.verbose = verbose;
         ctx = new ZContext();
@@ -38,7 +42,8 @@ public class mdcliapi2 {
     /**
      * Connect or reconnect to broker
      */
-    void reconnectToBroker() {
+    void reconnectToBroker()
+    {
         if (client != null) {
             ctx.destroySocket(client);
         }
@@ -53,7 +58,8 @@ public class mdcliapi2 {
      * to recover from a broker failure, this is not possible without storing
      * all unanswered requests and resending them all…
      */
-    public ZMsg recv() {
+    public ZMsg recv()
+    {
         ZMsg reply = null;
 
         // Poll socket for a reply, with timeout
@@ -91,7 +97,8 @@ public class mdcliapi2 {
      * Send request to broker and get reply by hook or crook Takes ownership of
      * request message and destroys it when sent.
      */
-    public boolean send(String service, ZMsg request) {
+    public boolean send(String service, ZMsg request)
+    {
         assert (request != null);
 
         // Prefix request with protocol frames
@@ -108,7 +115,8 @@ public class mdcliapi2 {
         return request.send(client);
     }
 
-    public void destroy() {
+    public void destroy()
+    {
         ctx.destroy();
     }
 }

@@ -7,9 +7,11 @@ import org.zeromq.ZMsg;
  * all MDP aspects
  */
 
-public class mdclient2 {
+public class mdclient2
+{
 
-    public static void main(String[] args) {
+    public static void main(String[] args)
+    {
         boolean verbose = (args.length > 0 && "-v".equals(args[0]));
         mdcliapi2 clientSession = new mdcliapi2("tcp://localhost:5555", verbose);
 
@@ -23,8 +25,7 @@ public class mdclient2 {
             ZMsg reply = clientSession.recv();
             if (reply != null)
                 reply.destroy();
-            else
-                break; // Interrupt or failure
+            else break; // Interrupt or failure
         }
 
         System.out.printf("%d requests/replies processed\n", count);

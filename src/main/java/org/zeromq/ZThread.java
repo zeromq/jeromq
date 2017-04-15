@@ -21,13 +21,13 @@ public class ZThread
 
     private static class ShimThread extends Thread
     {
-        private ZContext ctx;
+        private ZContext          ctx;
         private IAttachedRunnable attachedRunnable;
         private IDetachedRunnable detachedRunnable;
-        private Object[] args;
-        private Socket pipe;
+        private Object[]          args;
+        private Socket            pipe;
 
-        protected ShimThread(ZContext ctx, IAttachedRunnable runnable, Object [] args, Socket pipe)
+        protected ShimThread(ZContext ctx, IAttachedRunnable runnable, Object[] args, Socket pipe)
         {
             assert (ctx != null);
             assert (pipe != null);
@@ -71,7 +71,7 @@ public class ZThread
     //  and is used to simulate a separate process. It gets no ctx, and no
     //  pipe.
 
-    public static void start(IDetachedRunnable runnable, Object ... args)
+    public static void start(IDetachedRunnable runnable, Object... args)
     {
         //  Prepare child thread
         Thread shim = new ShimThread(runnable, args);
@@ -84,7 +84,7 @@ public class ZThread
     //  pipe back to its parent. It must monitor its pipe, and exit if the
     //  pipe becomes unreadable. Returns pipe, or null if there was an error.
 
-    public static Socket fork(ZContext ctx, IAttachedRunnable runnable, Object ... args)
+    public static Socket fork(ZContext ctx, IAttachedRunnable runnable, Object... args)
     {
         Socket pipe = ctx.createSocket(ZMQ.PAIR);
 

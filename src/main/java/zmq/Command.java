@@ -1,13 +1,15 @@
 package zmq;
 
 //  This structure defines the commands that can be sent between threads.
-class Command
+public class Command
 {
     //  Object to process the command.
-    private final ZObject destination;
-    private final Type type;
+    final ZObject destination;
+    final Type    type;
+    final Object  arg;
 
-    public enum Type {
+    public enum Type
+    {
         //  Sent to I/O thread to let it know that it should
         //  terminate itself.
         STOP,
@@ -49,38 +51,34 @@ class Command
         REAP,
         //  Closed socket notifies the reaper that it's already deallocated.
         REAPED,
+        // TODO V4 provide a description for Command#INPROC_CONNECTED
+        INPROC_CONNECTED,
         //  Sent by reaper thread to the term thread when all the sockets
         //  are successfully deallocated.
         DONE
     }
 
-    Object arg;
-
-    public Command(ZObject destination, Type type)
+    Command(ZObject destination, Type type)
     {
         this(destination, type, null);
     }
 
-    public Command(ZObject destination, Type type, Object arg)
+    Command(ZObject destination, Type type, Object arg)
     {
         this.destination = destination;
         this.type = type;
         this.arg = arg;
     }
 
-    public ZObject destination()
+    public final void process()
     {
-        return destination;
-    }
-
-    public Type type()
-    {
-        return type;
+        destination.processCommand(this);
     }
 
     @Override
     public String toString()
     {
-        return "Cmd" + "[" + destination + ", " + destination.getTid() + ", " + type + (arg == null ? "" : ", " + arg) + "]";
+        return "Cmd" + "[" + destination + ", " + (destination == null ? "Reaper" : destination.getTid() + ", ") + type
+                + (arg == null ? "" : ", " + arg) + "]";
     }
 }

@@ -7,31 +7,35 @@ import org.zeromq.ZMQ.Socket;
 /**
  * Multi threaded Hello World server
  */
-public class mtserver {
+public class mtserver
+{
 
     private static class Worker extends Thread
     {
         private Context context;
 
-        private Worker (Context context)
+        private Worker(Context context)
         {
             this.context = context;
         }
+
         @Override
-        public void run() {
+        public void run()
+        {
             ZMQ.Socket socket = context.socket(ZMQ.REP);
-            socket.connect ("inproc://workers");
+            socket.connect("inproc://workers");
 
             while (true) {
 
                 //  Wait for next request from client (C string)
-                String request = socket.recvStr (0);
-                System.out.println ( Thread.currentThread().getName() + " Received request: [" + request + "]");
+                String request = socket.recvStr(0);
+                System.out.println(Thread.currentThread().getName() + " Received request: [" + request + "]");
 
                 //  Do some 'work'
                 try {
-                    Thread.sleep (1000);
-                } catch (InterruptedException e) {
+                    Thread.sleep(1000);
+                }
+                catch (InterruptedException e) {
                 }
 
                 //  Send reply back to client (C string)
@@ -40,22 +44,23 @@ public class mtserver {
         }
     }
 
-    public static void main (String[] args) {
+    public static void main(String[] args)
+    {
 
         Context context = ZMQ.context(1);
 
         Socket clients = context.socket(ZMQ.ROUTER);
-        clients.bind ("tcp://*:5555");
+        clients.bind("tcp://*:5555");
 
         Socket workers = context.socket(ZMQ.DEALER);
-        workers.bind ("inproc://workers");
+        workers.bind("inproc://workers");
 
-        for(int thread_nbr = 0; thread_nbr < 5; thread_nbr++) {
-            Thread worker = new Worker (context);
+        for (int thread_nbr = 0; thread_nbr < 5; thread_nbr++) {
+            Thread worker = new Worker(context);
             worker.start();
         }
         //  Connect work threads to client threads via a queue
-        ZMQ.proxy (clients, workers, null);
+        ZMQ.proxy(clients, workers, null);
 
         //  We never get here but clean up anyhow
         clients.close();

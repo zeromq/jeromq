@@ -1,12 +1,12 @@
 package org.zeromq;
 
+import java.nio.charset.Charset;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import zmq.Msg;
 import zmq.SocketBase;
 import zmq.ZError;
 import zmq.ZMQ;
-
-import java.nio.charset.Charset;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * ZeroMQ sockets present an abstraction of an asynchronous message queue, with the exact queuing
@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class ZSocket implements AutoCloseable
 {
     public static final Charset UTF8 = Charset.forName("UTF-8");
-    private final SocketBase socketBase;
+    private final SocketBase    socketBase;
 
     private final AtomicBoolean isClosed = new AtomicBoolean(false);
 
@@ -243,7 +243,7 @@ public class ZSocket implements AutoCloseable
 
     private Object getOption(int option)
     {
-        return socketBase.getsockoptx(option);
+        return socketBase.getSocketOptx(option);
     }
 
     /**

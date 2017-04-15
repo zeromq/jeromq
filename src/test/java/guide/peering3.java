@@ -1,5 +1,6 @@
 package guide;
 
+import java.nio.channels.Selector;
 import java.util.ArrayList;
 import java.util.Random;
 
@@ -16,9 +17,9 @@ import org.zeromq.ZMsg;
 public class peering3
 {
 
-    private static final int NBR_CLIENTS = 10;
-    private static final int NBR_WORKERS = 5;
-    private static final String WORKER_READY = "\001";      //  Signals worker is ready
+    private static final int    NBR_CLIENTS  = 10;
+    private static final int    NBR_WORKERS  = 5;
+    private static final String WORKER_READY = "\001"; //  Signals worker is ready
 
     //  Our own name; in practice this would be configured per node
     private static String self;
@@ -34,6 +35,7 @@ public class peering3
         public void run()
         {
             ZContext ctx = new ZContext();
+            Selector selector = ctx.createSelector();
             Socket client = ctx.createSocket(ZMQ.REQ);
             client.connect(String.format("ipc://%s-localfe.ipc", self));
             Socket monitor = ctx.createSocket(ZMQ.PUSH);
@@ -47,7 +49,8 @@ public class peering3
 
                 try {
                     Thread.sleep(rand.nextInt(5) * 1000);
-                } catch (InterruptedException e1) {
+                }
+                catch (InterruptedException e1) {
                 }
                 int burst = rand.nextInt(15);
 
@@ -59,19 +62,19 @@ public class peering3
                     //  Wait max ten seconds for a reply, then complain
                     int rc = poller.poll(10 * 1000);
                     if (rc == -1)
-                        break;          //  Interrupted
+                        break; //  Interrupted
 
                     if (poller.pollin(0)) {
                         String reply = client.recvStr(0);
                         if (reply == null)
-                            break;              //  Interrupted
+                            break; //  Interrupted
                         //  Worker is supposed to answer us with our task id
                         assert (reply.equals(taskId));
                         monitor.send(String.format("%s", reply), 0);
-                    } else {
-                        monitor.send(
-                                String.format("E: CLIENT EXIT - lost task %s", taskId), 0);
-                        ctx.destroy();
+                    }
+                    else {
+                        monitor.send(String.format("E: CLIENT EXIT - lost task %s", taskId), 0);
+                        ctx.close();
                         return;
                     }
                     burst--;
@@ -101,18 +104,19 @@ public class peering3
                 //  Send request, get reply
                 ZMsg msg = ZMsg.recvMsg(worker, 0);
                 if (msg == null)
-                    break;              //  Interrupted
+                    break; //  Interrupted
 
                 //  Workers are busy for 0/1 seconds
                 try {
                     Thread.sleep(rand.nextInt(2) * 1000);
-                } catch (InterruptedException e) {
+                }
+                catch (InterruptedException e) {
                 }
 
                 msg.send(worker);
 
             }
-            ctx.destroy();
+            ctx.close();
         }
     }
 
@@ -137,13 +141,13 @@ public class peering3
         Random rand = new Random(System.nanoTime());
 
         ZContext ctx = new ZContext();
+        Selector selector = ctx.createSelector();
 
         //  Prepare local frontend and backend
         Socket localfe = ctx.createSocket(ZMQ.ROUTER);
         localfe.bind(String.format("ipc://%s-localfe.ipc", self));
         Socket localbe = ctx.createSocket(ZMQ.ROUTER);
         localbe.bind(String.format("ipc://%s-localbe.ipc", self));
-
 
         //  Bind cloud frontend to endpoint
         Socket cloudfe = ctx.createSocket(ZMQ.ROUTER);
@@ -212,18 +216,17 @@ public class peering3
             //  If we have no workers anyhow, wait indefinitely
             int rc = primary.poll(localCapacity > 0 ? 1000 : -1);
             if (rc == -1)
-                break;              //  Interrupted
+                break; //  Interrupted
 
             //  Track if capacity changes during this iteration
             int previous = localCapacity;
-
 
             //  Handle reply from local worker
             ZMsg msg = null;
             if (primary.pollin(0)) {
                 msg = ZMsg.recvMsg(localbe);
                 if (msg == null)
-                    break;          //  Interrupted
+                    break; //  Interrupted
                 ZFrame address = msg.unwrap();
                 workers.add(address);
                 localCapacity++;
@@ -239,7 +242,7 @@ public class peering3
             else if (primary.pollin(1)) {
                 msg = ZMsg.recvMsg(cloudbe);
                 if (msg == null)
-                    break;          //  Interrupted
+                    break; //  Interrupted
                 //  We don't use peer broker address for anything
                 ZFrame address = msg.unwrap();
                 address.destroy();
@@ -282,10 +285,11 @@ public class peering3
 
                 if (secondary.pollin(0)) {
                     msg = ZMsg.recvMsg(localfe);
-                } else if (localCapacity > 0 && secondary.pollin(1)) {
+                }
+                else if (localCapacity > 0 && secondary.pollin(1)) {
                     msg = ZMsg.recvMsg(cloudfe);
-                } else
-                    break;      //  No work, go back to backends
+                }
+                else break; //  No work, go back to backends
 
                 if (localCapacity > 0) {
                     ZFrame frame = workers.remove(0);
@@ -293,7 +297,8 @@ public class peering3
                     msg.send(localbe);
                     localCapacity--;
 
-                } else {
+                }
+                else {
                     //  Route to random broker peer
                     int random_peer = rand.nextInt(argv.length - 1) + 1;
                     msg.push(argv[random_peer]);
@@ -317,6 +322,6 @@ public class peering3
             frame.destroy();
         }
 
-        ctx.destroy();
+        ctx.close();
     }
 }

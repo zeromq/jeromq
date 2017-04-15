@@ -1,13 +1,6 @@
 package guide;
 
-import org.zeromq.ZContext;
-import org.zeromq.ZMQ;
-import org.zeromq.ZMQ.Socket;
-
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Clone client model 6
@@ -15,7 +8,9 @@ import java.util.concurrent.atomic.AtomicLong;
 public class clonecli6
 {
     private final static String SUBTREE = "/client/";
-	public void run() {
+
+    public void run()
+    {
 
         //  Create distributed hash instance
         clone clone = new clone();
@@ -30,17 +25,19 @@ public class clonecli6
         while (!Thread.currentThread().isInterrupted()) {
             //  Set random value, check it was stored
             String key = String.format("%s%d", SUBTREE, rand.nextInt(10000));
-            String value= String.format("%d", rand.nextInt(1000000));
+            String value = String.format("%d", rand.nextInt(1000000));
             clone.set(key, value, rand.nextInt(30));
             try {
                 Thread.sleep(1000);
-            } catch (InterruptedException e) {
+            }
+            catch (InterruptedException e) {
             }
         }
         clone.destroy();
-	}
+    }
 
-	public static void main(String[] args) {
-		new clonecli6().run();
-	}
+    public static void main(String[] args)
+    {
+        new clonecli6().run();
+    }
 }

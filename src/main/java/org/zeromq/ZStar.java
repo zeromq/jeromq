@@ -293,8 +293,8 @@ public class ZStar implements ZAgent
      * @param motdelafin the final word used to mark the end of the star. Null to disable this mechanism.
      * @param bags       the optional arguments that will be passed to the distant star
      */
-    public ZStar(final ZContext context, final SelectorCreator selector,
-            final Fortune fortune, String motdelafin, final Object[] bags)
+    public ZStar(final ZContext context, final SelectorCreator selector, final Fortune fortune, String motdelafin,
+            final Object[] bags)
     {
         super();
         assert (fortune != null);
@@ -329,7 +329,7 @@ public class ZStar implements ZAgent
             }
         }
         if (set == null) {
-           set = new SimpleSet();
+            set = new SimpleSet();
         }
 
         final List<Object> train = new ArrayList<Object>(6 + bags.length);
@@ -383,9 +383,7 @@ public class ZStar implements ZAgent
         private final CountDownLatch exit = new CountDownLatch(1);
 
         @Override
-        public void run(final Object[] train,
-                        final ZContext chef,
-                        final Socket mic)
+        public void run(final Object[] train, final ZContext chef, final Socket mic)
         {
             final int mandat = 6;
 
@@ -394,8 +392,8 @@ public class ZStar implements ZAgent
 
             final Entourage entourage = (Entourage) train[4];
 
-            final ZContext        producer = (ZContext) train[3];
-            final SelectorCreator feather  = (SelectorCreator) train[2];
+            final ZContext producer = (ZContext) train[3];
+            final SelectorCreator feather = (SelectorCreator) train[2];
 
             final Set set = (Set) train[0];
             // the word informing the world that the plateau is closed and the star vanished
@@ -477,8 +475,8 @@ public class ZStar implements ZAgent
         /******************************************************************************/
 
         // starts the performance
-        private void showMustGoOn(final ZContext chef, final Set set, final Selector story,
-                                  final Socket  phone, final Fortune fortune, final Object[] bags)
+        private void showMustGoOn(final ZContext chef, final Set set, final Selector story, final Socket phone,
+                                  final Fortune fortune, final Object[] bags)
         {
             int shows = 0;
             /** on the spot lights, the star in only an actor **/
@@ -508,8 +506,7 @@ public class ZStar implements ZAgent
                         break;
                     }
                 }
-            }
-            while (actor.renews());
+            } while (actor.renews());
             // star is leaving the Plateau and the show
         }
 
@@ -583,12 +580,6 @@ public class ZStar implements ZAgent
     public boolean sign()
     {
         return agent.sign();
-    }
-
-    @Override
-    public void nova()
-    {
-        agent.nova();
     }
 
     public static interface Set

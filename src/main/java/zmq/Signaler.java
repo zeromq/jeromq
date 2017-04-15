@@ -3,61 +3,60 @@ package zmq;
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.channels.ClosedChannelException;
+import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.Pipe;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import zmq.util.Errno;
+import zmq.util.Utils;
+
 //  This is a cross-platform equivalent to signal_fd. However, as opposed
 //  to signal_fd there can be at most one signal in the signaler at any
 //  given moment. Attempt to send a signal before receiving the previous
 //  one will result in undefined behaviour.
-
-public class Signaler
-        implements Closeable
+final class Signaler implements Closeable
 {
     //  Underlying write & read file descriptor.
-    private final Pipe.SinkChannel w;
+    private final Pipe.SinkChannel   w;
     private final Pipe.SourceChannel r;
-    private final Selector selector;
-    private final ByteBuffer rdummy = ByteBuffer.allocate(1);
+    private final Selector           selector;
+    private final ByteBuffer         wdummy = ByteBuffer.allocate(1);
+    private final ByteBuffer         rdummy = ByteBuffer.allocate(1);
 
     // Selector.selectNow at every sending message doesn't show enough performance
     private final AtomicInteger wcursor = new AtomicInteger(0);
-    private int rcursor = 0;
+    private int                 rcursor = 0;
 
-    public Signaler()
+    private final Errno errno;
+    private final int   pid;
+    private final Ctx   ctx;
+
+    Signaler(Ctx ctx, int pid, Errno errno)
     {
-        //  Create the socketpair for signaling.
-        Pipe pipe;
+        this.ctx = ctx;
+        this.pid = pid;
+        this.errno = errno;
+        //  Create the socket pair for signaling.
 
         try {
-            pipe = Pipe.open();
-        }
-        catch (IOException e) {
-            throw new ZError.IOException(e);
-        }
-        r = pipe.source();
-        w = pipe.sink();
+            Pipe pipe = Pipe.open();
 
-        //  Set both fds to non-blocking mode.
-        try {
-            Utils.unblockSocket(w);
-            Utils.unblockSocket(r);
-        }
-        catch (IOException e) {
-            throw new ZError.IOException(e);
-        }
+            r = pipe.source();
+            w = pipe.sink();
 
-        try {
-            selector = Selector.open();
+            //  Set both fds to non-blocking mode.
+            Utils.unblockSocket(w, r);
+
+            selector = ctx.createSelector();
             r.register(selector, SelectionKey.OP_READ);
         }
         catch (IOException e) {
             throw new ZError.IOException(e);
         }
-
     }
 
     @Override
@@ -68,41 +67,38 @@ public class Signaler
             r.close();
         }
         catch (IOException e) {
+            e.printStackTrace();
             exception = e;
         }
         try {
             w.close();
         }
         catch (IOException e) {
+            e.printStackTrace();
             exception = e;
         }
-        try {
-            selector.close();
-        }
-        catch (IOException e) {
-            exception = e;
-        }
+        ctx.closeSelector(selector);
         if (exception != null) {
             throw exception;
         }
     }
 
-    public SelectableChannel getFd()
+    SelectableChannel getFd()
     {
         return r;
     }
 
-    public void send()
+    void send()
     {
         int nbytes = 0;
-        ByteBuffer dummy = ByteBuffer.allocate(1);
 
         while (true) {
             try {
-                Thread.interrupted();
-                nbytes = w.write(dummy);
+                wdummy.clear();
+                nbytes = w.write(wdummy);
             }
             catch (IOException e) {
+                e.printStackTrace();
                 throw new ZError.IOException(e);
             }
             if (nbytes == 0) {
@@ -114,16 +110,22 @@ public class Signaler
         }
     }
 
-    public boolean waitEvent(long timeout)
+    boolean waitEvent(long timeout)
     {
         int rc = 0;
-
+        boolean brc = (rcursor < wcursor.get());
+        if (brc) {
+            return true;
+        }
         try {
             if (timeout == 0) {
                 // waitEvent(0) is called every read/send of SocketBase
                 // instant readiness is not strictly required
                 // On the other hand, we can save lots of system call and increase performance
-                return rcursor < wcursor.get();
+                if (!brc) {
+                    errno.set(ZError.EAGAIN);
+                }
+                return brc;
 
             }
             else if (timeout < 0) {
@@ -133,11 +135,14 @@ public class Signaler
                 rc = selector.select(timeout);
             }
         }
-        catch (IOException e) {
-            throw new ZError.IOException(e);
+        catch (ClosedSelectorException | IOException e) {
+            e.printStackTrace();
+            errno.set(ZError.EINTR);
+            return false;
         }
 
         if (rc == 0) {
+            errno.set(ZError.EAGAIN);
             return false;
         }
 
@@ -146,19 +151,31 @@ public class Signaler
         return true;
     }
 
-    public void recv()
+    void recv()
     {
         int nbytes = 0;
+        // On windows, there may be a need to try several times until it succeeds
         while (nbytes == 0) {
             try {
+                rdummy.clear();
                 nbytes = r.read(rdummy);
-                rdummy.rewind();
-                // assert nbytes == 1; This was introduced in 0.3.5 and fails on windows causing tests to hang
+            }
+            catch (ClosedChannelException e) {
+                e.printStackTrace();
+                errno.set(ZError.EINTR);
+                return;
             }
             catch (IOException e) {
                 throw new ZError.IOException(e);
             }
         }
+        assert (nbytes == 1);
         rcursor++;
+    }
+
+    @Override
+    public String toString()
+    {
+        return "Signaler[" + pid + "]";
     }
 }

@@ -23,7 +23,7 @@ public class ZContext implements Closeable
     /**
      * Reference to underlying Context object
      */
-    private volatile Context context;  //  Created lazily, use getContext() to access.
+    private volatile Context context; //  Created lazily, use getContext() to access.
 
     /**
      * List of sockets managed by this ZContext

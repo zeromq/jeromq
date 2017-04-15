@@ -1,6 +1,7 @@
 package guide;
 
 import java.util.Random;
+
 import org.zeromq.ZMQ;
 
 //
@@ -8,9 +9,11 @@ import org.zeromq.ZMQ;
 //  Binds PUSH socket to tcp://localhost:5557
 //  Sends batch of tasks to workers via that socket
 //
-public class taskvent {
+public class taskvent
+{
 
-    public static void main (String[] args) throws Exception {
+    public static void main(String[] args) throws Exception
+    {
         ZMQ.Context context = ZMQ.context(1);
 
         //  Socket to send messages on
@@ -33,7 +36,7 @@ public class taskvent {
 
         //  Send 100 tasks
         int task_nbr;
-        int total_msec = 0;     //  Total expected cost in msecs
+        int total_msec = 0; //  Total expected cost in msecs
         for (task_nbr = 0; task_nbr < 100; task_nbr++) {
             int workload;
             //  Random workload from 1 to 100msecs
@@ -44,7 +47,7 @@ public class taskvent {
             sender.send(string, 0);
         }
         System.out.println("Total expected cost: " + total_msec + " msec");
-        Thread.sleep(1000);              //  Give 0MQ time to deliver
+        Thread.sleep(1000); //  Give 0MQ time to deliver
 
         sink.close();
         sender.close();

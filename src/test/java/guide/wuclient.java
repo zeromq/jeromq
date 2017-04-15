@@ -1,6 +1,7 @@
 package guide;
 
 import java.util.StringTokenizer;
+
 import org.zeromq.ZMQ;
 
 //
@@ -8,9 +9,11 @@ import org.zeromq.ZMQ;
 //  Connects SUB socket to tcp://localhost:5556
 //  Collects weather updates and finds avg temp in zipcode
 //
-public class wuclient {
+public class wuclient
+{
 
-    public static void main (String[] args) {
+    public static void main(String[] args)
+    {
         ZMQ.Context context = ZMQ.context(1);
 
         //  Socket to talk to server
@@ -37,9 +40,8 @@ public class wuclient {
             total_temp += temperature;
 
         }
-        System.out.println("Average temperature for zipcode '"
-                + filter + "' was " + (int) (total_temp / update_nbr));
-        
+        System.out.println("Average temperature for zipcode '" + filter + "' was " + (int) (total_temp / update_nbr));
+
         subscriber.close();
         context.term();
     }

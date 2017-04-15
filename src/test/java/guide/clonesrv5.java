@@ -1,5 +1,10 @@
 package guide;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
+
 import org.zeromq.ZContext;
 import org.zeromq.ZLoop;
 import org.zeromq.ZLoop.IZLoopHandler;
@@ -7,22 +12,17 @@ import org.zeromq.ZMQ;
 import org.zeromq.ZMQ.PollItem;
 import org.zeromq.ZMQ.Socket;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Map.Entry;
-
 //  Clone server - Model Five
 public class clonesrv5
 {
-    private ZContext ctx;               //  Context wrapper
-    private Map<String, kvmsg> kvmap;   //  Key-value store
-    private ZLoop loop;                 //  zloop reactor
-    private int port;                   //  Main port we're working on
-    private long sequence;              //  How many updates we're at
-    private Socket snapshot;            //  Handle snapshot requests
-    private Socket publisher;           //  Publish updates to clients
-    private Socket collector;           //  Collect updates from clients
+    private ZContext           ctx;       //  Context wrapper
+    private Map<String, kvmsg> kvmap;     //  Key-value store
+    private ZLoop              loop;      //  zloop reactor
+    private int                port;      //  Main port we're working on
+    private long               sequence;  //  How many updates we're at
+    private Socket             snapshot;  //  Handle snapshot requests
+    private Socket             publisher; //  Publish updates to clients
+    private Socket             collector; //  Collect updates from clients
 
     //  .split snapshot handler
     //  This is the reactor handler for the snapshot socket; it accepts
@@ -44,12 +44,11 @@ public class clonesrv5
                 if (request.equals("ICANHAZ?")) {
                     subtree = socket.recvStr();
                 }
-                else
-                    System.out.printf("E: bad request, aborting\n");
+                else System.out.printf("E: bad request, aborting\n");
 
                 if (subtree != null) {
                     //  Send state socket to client
-                    for (Entry<String, kvmsg> entry: srv.kvmap.entrySet()) {
+                    for (Entry<String, kvmsg> entry : srv.kvmap.entrySet()) {
                         sendSingle(entry.getValue(), identity, subtree, socket);
                     }
 
@@ -84,8 +83,7 @@ public class clonesrv5
                 msg.send(srv.publisher);
                 int ttl = Integer.parseInt(msg.getProp("ttl"));
                 if (ttl > 0)
-                    msg.setProp("ttl",
-                            "%d", System.currentTimeMillis() + ttl * 1000);
+                    msg.setProp("ttl", "%d", System.currentTimeMillis() + ttl * 1000);
                 msg.store(srv.kvmap);
                 System.out.printf("I: publishing update=%d\n", srv.sequence);
             }
@@ -101,7 +99,7 @@ public class clonesrv5
         {
             clonesrv5 srv = (clonesrv5) arg;
             if (srv.kvmap != null) {
-                for (kvmsg msg: new ArrayList<kvmsg>(srv.kvmap.values())) {
+                for (kvmsg msg : new ArrayList<kvmsg>(srv.kvmap.values())) {
                     srv.flushSingle(msg);
                 }
             }
@@ -109,7 +107,7 @@ public class clonesrv5
         }
     }
 
-    public clonesrv5 ()
+    public clonesrv5()
     {
         port = 5556;
         ctx = new ZContext();
@@ -118,7 +116,7 @@ public class clonesrv5
         loop.verbose(false);
 
         //  Set up our clone server sockets
-        snapshot  = ctx.createSocket(ZMQ.ROUTER);
+        snapshot = ctx.createSocket(ZMQ.ROUTER);
         snapshot.bind(String.format("tcp://*:%d", port));
         publisher = ctx.createSocket(ZMQ.PUB);
         publisher.bind(String.format("tcp://*:%d", port + 1));
@@ -144,8 +142,8 @@ public class clonesrv5
     private static void sendSingle(kvmsg msg, byte[] identity, String subtree, Socket socket)
     {
         if (msg.getKey().startsWith(subtree)) {
-            socket.send (identity,    //  Choose recipient
-                            ZMQ.SNDMORE);
+            socket.send(identity, //  Choose recipient
+                    ZMQ.SNDMORE);
             msg.send(socket);
         }
     }

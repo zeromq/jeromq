@@ -1,12 +1,5 @@
 package guide;
 
-import org.zeromq.ZContext;
-import org.zeromq.ZLoop;
-import org.zeromq.ZLoop.IZLoopHandler;
-import org.zeromq.ZMQ;
-import org.zeromq.ZMQ.PollItem;
-import org.zeromq.ZMQ.Socket;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -14,22 +7,29 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.zeromq.ZContext;
+import org.zeromq.ZLoop;
+import org.zeromq.ZLoop.IZLoopHandler;
+import org.zeromq.ZMQ;
+import org.zeromq.ZMQ.PollItem;
+import org.zeromq.ZMQ.Socket;
+
 //  Clone server - Model Six
 public class clonesrv6
 {
-    private ZContext ctx;               //  Context wrapper
-    private Map<String, kvmsg> kvmap;   //  Key-value store
-    private bstar bStar;                //  Bstar reactor core
-    private long sequence;              //  How many updates we're at
-    private int port;                   //  Main port we're working on
-    private int peer;                   //  Main port of our peer
-    private Socket publisher;           //  Publish updates and hugz
-    private Socket collector;           //  Collect updates from clients
-    private Socket subscriber;          //  Get updates from peer
-    private List<kvmsg> pending;       //  Pending updates from clients
-    private boolean primary;            //  TRUE if we're primary
-    private boolean active;             //  TRUE if we're active
-    private boolean passive;            //  TRUE if we're passive
+    private ZContext           ctx;        //  Context wrapper
+    private Map<String, kvmsg> kvmap;      //  Key-value store
+    private bstar              bStar;      //  Bstar reactor core
+    private long               sequence;   //  How many updates we're at
+    private int                port;       //  Main port we're working on
+    private int                peer;       //  Main port of our peer
+    private Socket             publisher;  //  Publish updates and hugz
+    private Socket             collector;  //  Collect updates from clients
+    private Socket             subscriber; //  Get updates from peer
+    private List<kvmsg>        pending;    //  Pending updates from clients
+    private boolean            primary;    //  TRUE if we're primary
+    private boolean            active;     //  TRUE if we're active
+    private boolean            passive;    //  TRUE if we're passive
 
     private static class Snapshots implements IZLoopHandler
     {
@@ -47,12 +47,11 @@ public class clonesrv6
                 if (request.equals("ICANHAZ?")) {
                     subtree = socket.recvStr();
                 }
-                else
-                    System.out.printf("E: bad request, aborting\n");
+                else System.out.printf("E: bad request, aborting\n");
 
                 if (subtree != null) {
                     //  Send state socket to client
-                    for (Entry<String, kvmsg> entry: srv.kvmap.entrySet()) {
+                    for (Entry<String, kvmsg> entry : srv.kvmap.entrySet()) {
                         sendSingle(entry.getValue(), identity, subtree, socket);
                     }
 
@@ -80,25 +79,23 @@ public class clonesrv6
 
             kvmsg msg = kvmsg.recv(socket);
             if (msg != null) {
-                if(srv.active){
+                if (srv.active) {
                     msg.setSequence(++srv.sequence);
                     msg.send(srv.publisher);
                     int ttl = Integer.parseInt(msg.getProp("ttl"));
                     if (ttl > 0)
-                        msg.setProp("ttl",
-                                "%d", System.currentTimeMillis() + ttl * 1000);
+                        msg.setProp("ttl", "%d", System.currentTimeMillis() + ttl * 1000);
                     msg.store(srv.kvmap);
                     System.out.printf("I: publishing update=%d\n", srv.sequence);
-                } else {
+                }
+                else {
                     //  If we already got message from active, drop it, else
                     //  hold on pending list
                     if (srv.wasPending(msg))
                         msg.destroy();
-                    else
-                        srv.pending.add(msg);
+                    else srv.pending.add(msg);
                 }
             }
-
 
             return 0;
         }
@@ -132,7 +129,7 @@ public class clonesrv6
         {
             clonesrv6 srv = (clonesrv6) arg;
             if (srv.kvmap != null) {
-                for (kvmsg msg: new ArrayList<kvmsg>(srv.kvmap.values())) {
+                for (kvmsg msg : new ArrayList<kvmsg>(srv.kvmap.values())) {
                     srv.flushSingle(msg);
                 }
             }
@@ -159,7 +156,7 @@ public class clonesrv6
             srv.bStar.zloop().removePoller(poller);
 
             //  Apply pending list to own hash table
-            for (kvmsg msg: srv.pending) {
+            for (kvmsg msg : srv.pending) {
                 msg.setSequence(++srv.sequence);
                 msg.send(srv.publisher);
                 msg.store(srv.kvmap);
@@ -178,7 +175,7 @@ public class clonesrv6
             clonesrv6 srv = (clonesrv6) arg;
 
             if (srv.kvmap != null) {
-                for (kvmsg msg: srv.kvmap.values())
+                for (kvmsg msg : srv.kvmap.values())
                     msg.destroy();
             }
             srv.active = false;
@@ -208,23 +205,22 @@ public class clonesrv6
                 Socket snapshot = srv.ctx.createSocket(ZMQ.DEALER);
                 snapshot.connect(String.format("tcp://localhost:%d", srv.peer));
 
-                System.out.printf("I: asking for snapshot from: tcp://localhost:%d\n",
-                        srv.peer);
+                System.out.printf("I: asking for snapshot from: tcp://localhost:%d\n", srv.peer);
                 snapshot.sendMore("ICANHAZ?");
                 snapshot.send(""); // blank subtree to get all
 
                 while (true) {
                     kvmsg msg = kvmsg.recv(snapshot);
                     if (msg == null)
-                        break;          //  Interrupted
+                        break; //  Interrupted
                     if (msg.getKey().equals("KTHXBAI")) {
                         srv.sequence = msg.getSequence();
                         msg.destroy();
-                        break;          //  Done
+                        break; //  Done
                     }
                     msg.store(srv.kvmap);
                 }
-                System.out.printf("I: received snapshot=%d\n",srv.sequence);
+                System.out.printf("I: received snapshot=%d\n", srv.sequence);
                 srv.ctx.destroySocket(snapshot);
 
             }
@@ -245,7 +241,7 @@ public class clonesrv6
                 if (msg.getSequence() > srv.sequence) {
                     srv.sequence = msg.getSequence();
                     msg.store(srv.kvmap);
-                    System.out.printf("I: received update=%d\n",srv.sequence);
+                    System.out.printf("I: received update=%d\n", srv.sequence);
                 }
             }
             msg.destroy();
@@ -257,19 +253,16 @@ public class clonesrv6
     public clonesrv6(boolean primary)
     {
         if (primary) {
-            bStar = new bstar(true, "tcp://*:5003",
-                "tcp://localhost:5004");
-            bStar.voter("tcp://*:5556",
-                ZMQ.ROUTER, new Snapshots(), this);
+            bStar = new bstar(true, "tcp://*:5003", "tcp://localhost:5004");
+            bStar.voter("tcp://*:5556", ZMQ.ROUTER, new Snapshots(), this);
 
             port = 5556;
             peer = 5566;
             this.primary = true;
-        } else {
-            bStar = new bstar(false, "tcp://*:5004",
-                    "tcp://localhost:5003");
-            bStar.voter("tcp://*:5566",
-                    ZMQ.ROUTER, new Snapshots(), this);
+        }
+        else {
+            bStar = new bstar(false, "tcp://*:5004", "tcp://localhost:5003");
+            bStar.voter("tcp://*:5566", ZMQ.ROUTER, new Snapshots(), this);
 
             port = 5566;
             peer = 5556;
@@ -289,7 +282,7 @@ public class clonesrv6
         collector = ctx.createSocket(ZMQ.SUB);
         collector.subscribe(ZMQ.SUBSCRIPTION_ALL);
         publisher.bind(String.format("tcp://*:%d", port + 1));
-        collector.bind(String.format("tcp://*:%d", port+2));
+        collector.bind(String.format("tcp://*:%d", port + 2));
 
         //  Set up our own clone client interface to peer
         subscriber = ctx.createSocket(ZMQ.SUB);
@@ -319,11 +312,11 @@ public class clonesrv6
         bStar.start();
 
         //  Interrupted, so shut down
-        for (kvmsg value: pending)
+        for (kvmsg value : pending)
             value.destroy();
 
         bStar.destroy();
-        for (kvmsg value: kvmap.values())
+        for (kvmsg value : kvmap.values())
             value.destroy();
 
         ctx.destroy();
@@ -334,8 +327,8 @@ public class clonesrv6
     private static void sendSingle(kvmsg msg, byte[] identity, String subtree, Socket socket)
     {
         if (msg.getKey().startsWith(subtree)) {
-            socket.send (identity,    //  Choose recipient
-                            ZMQ.SNDMORE);
+            socket.send(identity, //  Choose recipient
+                    ZMQ.SNDMORE);
             msg.send(socket);
         }
     }
@@ -347,11 +340,11 @@ public class clonesrv6
 
     //  If message was already on pending list, remove it and return TRUE,
     //  else return FALSE.
-    boolean wasPending (kvmsg msg)
+    boolean wasPending(kvmsg msg)
     {
         Iterator<kvmsg> it = pending.iterator();
         while (it.hasNext()) {
-            if(java.util.Arrays.equals(msg.UUID(), it.next().UUID())){
+            if (java.util.Arrays.equals(msg.UUID(), it.next().UUID())) {
                 it.remove();
                 return true;
             }
@@ -359,7 +352,6 @@ public class clonesrv6
         }
         return false;
     }
-
 
     //  We purge ephemeral values using exactly the same code as in
     //  the previous clonesrv5 example.
@@ -394,9 +386,11 @@ public class clonesrv6
 
         if (args.length == 1 && "-p".equals(args[0])) {
             srv = new clonesrv6(true);
-        } else if (args.length == 1 && "-b".equals(args[0])) {
+        }
+        else if (args.length == 1 && "-b".equals(args[0])) {
             srv = new clonesrv6(false);
-        } else {
+        }
+        else {
             System.out.printf("Usage: clonesrv4 { -p | -b }\n");
             System.exit(0);
         }

@@ -1,9 +1,12 @@
 package zmq;
 
-import org.junit.Test;
-import static org.junit.Assert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.junit.Assert.assertThat;
+
+import org.junit.Test;
+
+import zmq.util.Utils;
 
 public class TestTermEndpoint
 {
@@ -26,7 +29,7 @@ public class TestTermEndpoint
         assertThat(rc, is(true));
 
         //  Pass one message through to ensure the connection is established.
-        int r = ZMQ.send(push, "ABC",  0);
+        int r = ZMQ.send(push, "ABC", 0);
         assertThat(r, is(3));
         Msg msg = ZMQ.recv(pull, 0);
         assertThat(msg.size(), is(3));
@@ -39,7 +42,7 @@ public class TestTermEndpoint
         ZMQ.sleep(1);
 
         //  Check that sending would block (there's no outbound connection).
-        r = ZMQ.send(push, "ABC",  ZMQ.ZMQ_DONTWAIT);
+        r = ZMQ.send(push, "ABC", ZMQ.ZMQ_DONTWAIT);
         assertThat(r, is(-1));
 
         //  Clean up.
@@ -64,7 +67,7 @@ public class TestTermEndpoint
         assertThat(rc, is(true));
 
         //  Pass one message through to ensure the connection is established.
-        r = ZMQ.send(push, "ABC",  0);
+        r = ZMQ.send(push, "ABC", 0);
         assertThat(r, is(3));
         msg = ZMQ.recv(pull, 0);
         assertThat(msg.size(), is(3));
@@ -77,7 +80,7 @@ public class TestTermEndpoint
         ZMQ.sleep(1);
 
         //  Check that sending would block (there's no outbound connection).
-        r = ZMQ.send(push, "ABC",  ZMQ.ZMQ_DONTWAIT);
+        r = ZMQ.send(push, "ABC", ZMQ.ZMQ_DONTWAIT);
         assertThat(r, is(-1));
 
         //  Clean up.

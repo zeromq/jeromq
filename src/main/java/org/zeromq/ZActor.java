@@ -243,15 +243,13 @@ public class ZActor extends ZStar
         }
 
         @Override
-        public List<Socket> createSockets(final ZContext ctx,
-                final Object[] args)
+        public List<Socket> createSockets(final ZContext ctx, final Object[] args)
         {
             return Collections.emptyList();
         }
 
         @Override
-        public void start(final Socket pipe, final List<Socket> sockets,
-                final ZPoller poller)
+        public void start(final Socket pipe, final List<Socket> sockets, final ZPoller poller)
         {
             // do nothing
         }
@@ -264,16 +262,14 @@ public class ZActor extends ZStar
         }
 
         @Override
-        public boolean backstage(final Socket pipe, final ZPoller poller,
-                final int events)
+        public boolean backstage(final Socket pipe, final ZPoller poller, final int events)
         {
             // stop looping
             return false;
         }
 
         @Override
-        public boolean stage(final Socket socket, final Socket pipe,
-                final ZPoller poller, int events)
+        public boolean stage(final Socket socket, final Socket pipe, final ZPoller poller, int events)
         {
             // stop looping
             return false;
@@ -336,16 +332,14 @@ public class ZActor extends ZStar
         }
 
         @Override
-        public List<Socket> createSockets(final ZContext ctx,
-                final Object[] args)
+        public List<Socket> createSockets(final ZContext ctx, final Object[] args)
         {
             shadow.createSockets(ctx, args);
             return main.createSockets(ctx, args);
         }
 
         @Override
-        public void start(final Socket pipe, final List<Socket> sockets,
-                final ZPoller poller)
+        public void start(final Socket pipe, final List<Socket> sockets, final ZPoller poller)
         {
             shadow.start(pipe, sockets, poller);
             main.start(pipe, sockets, poller);
@@ -359,16 +353,14 @@ public class ZActor extends ZStar
         }
 
         @Override
-        public boolean backstage(final Socket pipe, final ZPoller poller,
-                final int events)
+        public boolean backstage(final Socket pipe, final ZPoller poller, final int events)
         {
             shadow.backstage(pipe, poller, events);
             return main.backstage(pipe, poller, events);
         }
 
         @Override
-        public boolean stage(final Socket socket, final Socket pipe,
-                final ZPoller poller, final int events)
+        public boolean stage(final Socket socket, final Socket pipe, final ZPoller poller, final int events)
         {
             shadow.stage(socket, pipe, poller, events);
             return main.stage(socket, pipe, poller, events);
@@ -446,8 +438,8 @@ public class ZActor extends ZStar
      * @param args
      *            the optional arguments that will be passed to the distant actor
      */
-    public ZActor(final ZContext context, final SelectorCreator selector,
-            final Actor actor, final String motdelafin, final Object[] args)
+    public ZActor(final ZContext context, final SelectorCreator selector, final Actor actor, final String motdelafin,
+            final Object[] args)
     {
         super(context, selector, new ActorFortune(actor), motdelafin, args);
     }
@@ -470,8 +462,7 @@ public class ZActor extends ZStar
         }
 
         @Override
-        public Star create(ZContext ctx, Socket pipe, Selector sel,
-                int count, Star previous, Object[] args)
+        public Star create(ZContext ctx, Socket pipe, Selector sel, int count, Star previous, Object[] args)
         {
             Star star = new ZActor.Double(ctx, pipe, sel, actor, args);
             return star;
@@ -508,8 +499,7 @@ public class ZActor extends ZStar
         private final ZContext context;
 
         // creates a new double
-        public Double(final ZContext ctx, final Socket pipe,
-                final Selector selector, final Actor actor,
+        public Double(final ZContext ctx, final Socket pipe, final Selector selector, final Actor actor,
                 final Object[] args)
         {
             this.context = ctx;

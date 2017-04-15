@@ -1,13 +1,13 @@
 package guide;
 
 import java.io.IOException;
+import java.nio.channels.Selector;
 import java.util.ArrayList;
 import java.util.Random;
 
 import org.zeromq.ZContext;
 import org.zeromq.ZFrame;
 import org.zeromq.ZMQ;
-import org.zeromq.ZMQ.PollItem;
 import org.zeromq.ZMQ.Poller;
 import org.zeromq.ZMQ.Socket;
 import org.zeromq.ZMsg;
@@ -18,9 +18,9 @@ import org.zeromq.ZMsg;
 public class peering2
 {
 
-    private static final int NBR_CLIENTS = 10;
-    private static final int NBR_WORKERS = 3;
-    private static final String WORKER_READY = "\001";      //  Signals worker is ready
+    private static final int    NBR_CLIENTS  = 10;
+    private static final int    NBR_WORKERS  = 3;
+    private static final String WORKER_READY = "\001"; //  Signals worker is ready
 
     //  Our own name; in practice this would be configured per node
     private static String self;
@@ -41,14 +41,15 @@ public class peering2
                 client.send("HELLO", 0);
                 String reply = client.recvStr(0);
                 if (reply == null)
-                    break;              //  Interrupted
+                    break; //  Interrupted
                 System.out.printf("Client: %s\n", reply);
                 try {
                     Thread.sleep(1000);
-                } catch (InterruptedException e) {
+                }
+                catch (InterruptedException e) {
                 }
             }
-            ctx.destroy();
+            ctx.close();
         }
     }
 
@@ -72,13 +73,13 @@ public class peering2
                 //  Send request, get reply
                 ZMsg msg = ZMsg.recvMsg(worker, 0);
                 if (msg == null)
-                    break;              //  Interrupted
+                    break; //  Interrupted
                 msg.getLast().print("Worker: ");
                 msg.getLast().reset("OK");
                 msg.send(worker);
 
             }
-            ctx.destroy();
+            ctx.close();
         }
     }
 
@@ -98,6 +99,7 @@ public class peering2
         Random rand = new Random(System.nanoTime());
 
         ZContext ctx = new ZContext();
+        Selector selector = ctx.createSelector();
 
         //  Bind cloud frontend to endpoint
         Socket cloudfe = ctx.createSocket(ZMQ.ROUTER);
@@ -124,7 +126,8 @@ public class peering2
         System.out.println("Press Enter when all brokers are started: ");
         try {
             System.in.read();
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             e.printStackTrace();
         }
 
@@ -160,13 +163,13 @@ public class peering2
             //  If we have no workers anyhow, wait indefinitely
             int rc = backends.poll(capacity > 0 ? 1000 : -1);
             if (rc == -1)
-                break;              //  Interrupted
+                break; //  Interrupted
             //  Handle reply from local worker
             ZMsg msg = null;
             if (backends.pollin(0)) {
                 msg = ZMsg.recvMsg(localbe);
                 if (msg == null)
-                    break;          //  Interrupted
+                    break; //  Interrupted
                 ZFrame address = msg.unwrap();
                 workers.add(address);
                 capacity++;
@@ -182,7 +185,7 @@ public class peering2
             else if (backends.pollin(1)) {
                 msg = ZMsg.recvMsg(cloudbe);
                 if (msg == null)
-                    break;          //  Interrupted
+                    break; //  Interrupted
                 //  We don't use peer broker address for anything
                 ZFrame address = msg.unwrap();
                 address.destroy();
@@ -213,11 +216,12 @@ public class peering2
                 if (frontends.pollin(1)) {
                     msg = ZMsg.recvMsg(cloudfe);
                     reroutable = 0;
-                } else if (frontends.pollin(0)) {
+                }
+                else if (frontends.pollin(0)) {
                     msg = ZMsg.recvMsg(localfe);
                     reroutable = 1;
-                } else
-                    break;      //  No work, go back to backends
+                }
+                else break; //  No work, go back to backends
 
                 //  If reroutable, send to cloud 20% of the time
                 //  Here we'd normally use cloud status information
@@ -227,7 +231,8 @@ public class peering2
                     int random_peer = rand.nextInt(argv.length - 1) + 1;
                     msg.push(argv[random_peer]);
                     msg.send(cloudbe);
-                } else {
+                }
+                else {
                     ZFrame frame = workers.remove(0);
                     msg.wrap(frame);
                     msg.send(localbe);
@@ -241,6 +246,6 @@ public class peering2
             frame.destroy();
         }
 
-        ctx.destroy();
+        ctx.close();
     }
 }

@@ -16,7 +16,7 @@ import org.zeromq.ZMsg;
 public class spworker
 {
 
-    private final static String WORKER_READY = "\001";      //  Signals worker is ready
+    private final static String WORKER_READY = "\001"; //  Signals worker is ready
 
     public static void main(String[] args) throws Exception
     {
@@ -38,7 +38,7 @@ public class spworker
         while (true) {
             ZMsg msg = ZMsg.recvMsg(worker);
             if (msg == null)
-                break;              //  Interrupted
+                break; //  Interrupted
 
             //  Simulate various problems, after a few cycles
             cycles++;
@@ -46,7 +46,8 @@ public class spworker
                 System.out.printf("I: (%s) simulating a crash\n", identity);
                 msg.destroy();
                 break;
-            } else if (cycles > 3 && rand.nextInt(5) == 0) {
+            }
+            else if (cycles > 3 && rand.nextInt(5) == 0) {
                 System.out.printf("I: (%s) simulating CPU overload\n", identity);
                 Thread.sleep(3000);
             }
@@ -54,7 +55,7 @@ public class spworker
             Thread.sleep(1000); //  Do some heavy work
             msg.send(worker);
         }
-        ctx.destroy();
+        ctx.close();
     }
 
 }

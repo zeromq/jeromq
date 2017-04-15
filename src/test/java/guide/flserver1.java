@@ -19,16 +19,16 @@ public class flserver1
         Socket server = ctx.createSocket(ZMQ.REP);
         server.bind(args[0]);
 
-        System.out.printf ("I: echo service is ready at %s\n", args[0]);
+        System.out.printf("I: echo service is ready at %s\n", args[0]);
         while (true) {
             ZMsg msg = ZMsg.recvMsg(server);
             if (msg == null)
-                break;          //  Interrupted
+                break; //  Interrupted
             msg.send(server);
         }
         if (Thread.currentThread().isInterrupted())
-            System.out.printf ("W: interrupted\n");
+            System.out.printf("W: interrupted\n");
 
-        ctx.destroy();
+        ctx.close();
     }
 }

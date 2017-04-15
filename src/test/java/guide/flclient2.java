@@ -1,5 +1,7 @@
 package guide;
 
+import java.nio.channels.Selector;
+
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQ.Poller;
@@ -17,10 +19,10 @@ public class flclient2
     //  Here is the {{flclient}} class implementation. Each instance has a
     //  context, a DEALER socket it uses to talk to the servers, a counter
     //  of how many servers it's connected to, and a request getSequence number:
-    private ZContext ctx;        //  Our context wrapper
-    private Socket socket;       //  DEALER socket talking to servers
-    private int servers;         //  How many servers we have connected to
-    private int sequence;        //  Number of requests ever sent
+    private ZContext ctx;      //  Our context wrapper
+    private Socket   socket;   //  DEALER socket talking to servers
+    private int      servers;  //  How many servers we have connected to
+    private int      sequence; //  Number of requests ever sent
 
     public flclient2()
     {
@@ -41,6 +43,8 @@ public class flclient2
 
     private ZMsg request(ZMsg request)
     {
+        Selector selector = ctx.createSelector();
+
         //  Prefix request with getSequence number and empty envelope
         String sequenceText = String.format("%d", ++sequence);
         request.push(sequenceText);
@@ -79,10 +83,10 @@ public class flclient2
 
     }
 
-    public static void main (String[] argv)
+    public static void main(String[] argv)
     {
         if (argv.length == 0) {
-            System.out.printf ("I: syntax: flclient2 <endpoint> ...\n");
+            System.out.printf("I: syntax: flclient2 <endpoint> ...\n");
             System.exit(0);
         }
 
@@ -107,8 +111,7 @@ public class flclient2
             }
             reply.destroy();
         }
-        System.out.printf ("Average round trip cost: %d usec\n",
-                (int) (System.currentTimeMillis() - start) / 10);
+        System.out.printf("Average round trip cost: %d usec\n", (int) (System.currentTimeMillis() - start) / 10);
 
         client.destroy();
     }

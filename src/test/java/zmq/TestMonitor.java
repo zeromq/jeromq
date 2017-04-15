@@ -1,17 +1,20 @@
 package zmq;
 
-import org.junit.Test;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+
+import org.junit.Test;
+
+import zmq.util.Utils;
 
 public class TestMonitor
 {
     static class SocketMonitor extends Thread
     {
-        private Ctx ctx;
-        private int events;
+        private Ctx    ctx;
+        private int    events;
         private String monitorAddr;
 
         public SocketMonitor(Ctx ctx, String monitorAddr)
@@ -38,27 +41,16 @@ public class TestMonitor
                 switch (event.event) {
                 // listener specific
                 case ZMQ.ZMQ_EVENT_LISTENING:
-                    events |= ZMQ.ZMQ_EVENT_LISTENING;
-                    break;
                 case ZMQ.ZMQ_EVENT_ACCEPTED:
-                    events |= ZMQ.ZMQ_EVENT_ACCEPTED;
-                    break;
-                // connecter specific
+                    // connecter specific
                 case ZMQ.ZMQ_EVENT_CONNECTED:
-                    events |= ZMQ.ZMQ_EVENT_CONNECTED;
-                    break;
                 case ZMQ.ZMQ_EVENT_CONNECT_DELAYED:
-                    events |= ZMQ.ZMQ_EVENT_CONNECT_DELAYED;
-                    break;
-                // generic - either end of the socket
+                    // generic - either end of the socket
                 case ZMQ.ZMQ_EVENT_CLOSE_FAILED:
-                    events |= ZMQ.ZMQ_EVENT_CLOSE_FAILED;
-                    break;
                 case ZMQ.ZMQ_EVENT_CLOSED:
-                    events |= ZMQ.ZMQ_EVENT_CLOSED;
-                    break;
                 case ZMQ.ZMQ_EVENT_DISCONNECTED:
-                    events |= ZMQ.ZMQ_EVENT_DISCONNECTED;
+                case ZMQ.ZMQ_EVENT_MONITOR_STOPPED:
+                    events |= event.event;
                     break;
                 default:
                     // out of band / unexpected event
@@ -74,27 +66,29 @@ public class TestMonitor
     {
         int port = Utils.findOpenPort();
         String addr = "tcp://127.0.0.1:" + port;
-        SocketMonitor [] threads = new SocketMonitor [3];
+        SocketMonitor[] threads = new SocketMonitor[3];
         //  Create the infrastructure
         Ctx ctx = ZMQ.init(1);
         assertThat(ctx, notNullValue());
         // set socket monitor
         SocketBase rep = ZMQ.socket(ctx, ZMQ.ZMQ_REP);
         assertThat(rep, notNullValue());
-        try {
-            ZMQ.monitorSocket(rep, addr, 0);
-            assertTrue(false);
-        }
-        catch (IllegalArgumentException e) {
-        }
+        boolean rc = ZMQ.monitorSocket(rep, addr, 0);
+        assertThat(rc, is(false));
+        assertThat(rep.errno.get(), is(ZError.EPROTONOSUPPORT));
 
         // REP socket monitor, all events
-        boolean rc = ZMQ.monitorSocket(rep, "inproc://monitor.rep", ZMQ.ZMQ_EVENT_ALL);
+        rc = ZMQ.monitorSocket(rep, "inproc://monitor.rep", ZMQ.ZMQ_EVENT_ALL);
         assertThat(rc, is(true));
 
-        threads [0] = new SocketMonitor(ctx, "inproc://monitor.rep");
-        threads [0].start();
+        threads[0] = new SocketMonitor(ctx, "inproc://monitor.rep");
+        threads[0].start();
+        threads[1] = new SocketMonitor(ctx, "inproc://monitor.req");
+        threads[1].start();
+        threads[2] = new SocketMonitor(ctx, "inproc://monitor.req2");
+        threads[2].start();
 
+        ZMQ.sleep(1);
         rc = ZMQ.bind(rep, addr);
         assertThat(rc, is(true));
 
@@ -104,9 +98,6 @@ public class TestMonitor
         // REQ socket monitor, all events
         rc = ZMQ.monitorSocket(req, "inproc://monitor.req", ZMQ.ZMQ_EVENT_ALL);
         assertThat(rc, is(true));
-
-        threads [1] = new SocketMonitor(ctx, "inproc://monitor.req");
-        threads [1].start();
 
         rc = ZMQ.connect(req, addr);
         assertThat(rc, is(true));
@@ -119,9 +110,6 @@ public class TestMonitor
         rc = ZMQ.monitorSocket(req2, "inproc://monitor.req2", ZMQ.ZMQ_EVENT_CONNECTED);
         assertThat(rc, is(true));
 
-        threads [2] = new SocketMonitor(ctx, "inproc://monitor.req2");
-        threads [2].start();
-
         rc = ZMQ.connect(req2, addr);
         assertThat(rc, is(true));
 
@@ -130,13 +118,17 @@ public class TestMonitor
         // Allow a window for socket events as connect can be async
         ZMQ.sleep(1);
 
+        ZMQ.setSocketOption(rep, ZMQ.ZMQ_LINGER, 0);
         // Close the REP socket
         ZMQ.close(rep);
 
         // Allow some time for detecting error states
         ZMQ.sleep(1);
+
+        ZMQ.setSocketOption(req, ZMQ.ZMQ_LINGER, 0);
         // Close the REQ socket
         ZMQ.close(req);
+        ZMQ.setSocketOption(req2, ZMQ.ZMQ_LINGER, 0);
         // Close the 2nd REQ socket
         ZMQ.close(req2);
 
@@ -147,18 +139,18 @@ public class TestMonitor
 
         // Expected REP socket events
         // We expect to at least observe these events
-        assertTrue((threads[0].events & ZMQ.ZMQ_EVENT_LISTENING)  > 0);
+        assertTrue((threads[0].events & ZMQ.ZMQ_EVENT_LISTENING) > 0);
         assertTrue((threads[0].events & ZMQ.ZMQ_EVENT_ACCEPTED) > 0);
         assertTrue((threads[0].events & ZMQ.ZMQ_EVENT_CLOSED) > 0);
+        assertTrue((threads[0].events & ZMQ.ZMQ_EVENT_MONITOR_STOPPED) > 0);
 
         // Expected REQ socket events
-        assertTrue((threads[1].events & ZMQ.ZMQ_EVENT_CONNECTED)  > 0);
-        assertTrue((threads[1].events & ZMQ.ZMQ_EVENT_DISCONNECTED) > 0);
-        assertTrue((threads[1].events & ZMQ.ZMQ_EVENT_CLOSED) > 0);
+        assertTrue((threads[1].events & ZMQ.ZMQ_EVENT_CONNECT_DELAYED) > 0);
+        assertTrue((threads[1].events & ZMQ.ZMQ_EVENT_CONNECTED) > 0);
+        assertTrue((threads[1].events & ZMQ.ZMQ_EVENT_MONITOR_STOPPED) > 0);
 
         // Expected 2nd REQ socket events
-        assertTrue((threads[2].events & ZMQ.ZMQ_EVENT_CONNECTED) > 0);
-        assertTrue((threads[2].events & ZMQ.ZMQ_EVENT_CLOSED) == 0);
+        assertTrue(threads[2].events == ZMQ.ZMQ_EVENT_CONNECTED);
 
         threads[0].join();
         threads[1].join();

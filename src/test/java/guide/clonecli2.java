@@ -2,7 +2,6 @@ package guide;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicLong;
 
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQ.Context;
@@ -14,37 +13,39 @@ import org.zeromq.ZMQ.Socket;
  * @author Danish Shrestha <dshrestha06@gmail.com>
  * 
  */
-public class clonecli2 {
-	private static Map<String, kvsimple> kvMap = new HashMap<String, kvsimple>();
+public class clonecli2
+{
+    private static Map<String, kvsimple> kvMap = new HashMap<String, kvsimple>();
 
-	public void run() {
-		Context ctx = ZMQ.context(1);
-		Socket snapshot = ctx.socket(ZMQ.DEALER);
-		snapshot.connect("tcp://localhost:5556");
+    public void run()
+    {
+        Context ctx = ZMQ.context(1);
+        Socket snapshot = ctx.socket(ZMQ.DEALER);
+        snapshot.connect("tcp://localhost:5556");
 
-		Socket subscriber = ctx.socket(ZMQ.SUB);
-		subscriber.connect("tcp://localhost:5557");
-		subscriber.subscribe(ZMQ.SUBSCRIPTION_ALL);
+        Socket subscriber = ctx.socket(ZMQ.SUB);
+        subscriber.connect("tcp://localhost:5557");
+        subscriber.subscribe(ZMQ.SUBSCRIPTION_ALL);
 
-		// get state snapshot
-		snapshot.send("ICANHAZ?".getBytes(ZMQ.CHARSET), 0);
+        // get state snapshot
+        snapshot.send("ICANHAZ?".getBytes(ZMQ.CHARSET), 0);
         long sequence = 0;
-		while (true) {
+        while (true) {
             kvsimple kvMsg = kvsimple.recv(snapshot);
             if (kvMsg == null)
                 break;
-			sequence = kvMsg.getSequence();
-			if ("KTHXBAI".equalsIgnoreCase(kvMsg.getKey())) {
-				System.out.println("Received snapshot = " + kvMsg.getSequence());
-				break; // done
-			}
+            sequence = kvMsg.getSequence();
+            if ("KTHXBAI".equalsIgnoreCase(kvMsg.getKey())) {
+                System.out.println("Received snapshot = " + kvMsg.getSequence());
+                break; // done
+            }
 
-			System.out.println("receiving " + kvMsg.getSequence());
-			clonecli2.kvMap.put(kvMsg.getKey(), kvMsg);
-		}
+            System.out.println("receiving " + kvMsg.getSequence());
+            clonecli2.kvMap.put(kvMsg.getKey(), kvMsg);
+        }
 
-		// now apply pending updates, discard out-of-getSequence messages
-		while (true) {
+        // now apply pending updates, discard out-of-getSequence messages
+        while (true) {
             kvsimple kvMsg = kvsimple.recv(subscriber);
 
             if (kvMsg == null)
@@ -55,10 +56,11 @@ public class clonecli2 {
                 System.out.println("receiving " + sequence);
                 clonecli2.kvMap.put(kvMsg.getKey(), kvMsg);
             }
-		}
-	}
+        }
+    }
 
-	public static void main(String[] args) {
-		new clonecli2().run();
-	}
+    public static void main(String[] args)
+    {
+        new clonecli2().run();
+    }
 }

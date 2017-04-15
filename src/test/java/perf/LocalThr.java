@@ -15,7 +15,7 @@ public class LocalThr
     {
         String bindTo;
         long messageCount;
-        int  messageSize;
+        int messageSize;
         Ctx ctx;
         SocketBase s;
         boolean rc;
@@ -30,9 +30,9 @@ public class LocalThr
             printf("usage: local_thr <bind-to> <message-size> <message-count>\n");
             return;
         }
-        bindTo = argv [0];
-        messageSize = atoi(argv [1]);
-        messageCount = atol(argv [2]);
+        bindTo = argv[0];
+        messageSize = atoi(argv[1]);
+        messageCount = atol(argv[2]);
 
         ctx = ZMQ.init(1);
         if (ctx == null) {
@@ -79,8 +79,7 @@ public class LocalThr
             elapsed = 1;
         }
 
-        throughput = (long)
-                ((double) messageCount / (double) elapsed * 1000000L);
+        throughput = (long) ((double) messageCount / (double) elapsed * 1000000L);
         megabits = (double) (throughput * messageSize * 8) / 1000000;
 
         printf("message elapsed: %.3f \n", (double) elapsed / 1000000L);
@@ -94,7 +93,7 @@ public class LocalThr
         ZMQ.term(ctx);
     }
 
-    private static void printf(String str, Object ... args)
+    private static void printf(String str, Object... args)
     {
         // TODO Auto-generated method stub
         System.out.println(String.format(str, args));

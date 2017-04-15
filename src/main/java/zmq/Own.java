@@ -4,9 +4,12 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
+import zmq.io.IOThread;
+import zmq.util.Errno;
+
 //  Base class for objects forming a part of ownership hierarchy.
-//  It handles initialisation and destruction of such objects.
-abstract class Own extends ZObject
+//  It handles initialization and destruction of such objects.
+public abstract class Own extends ZObject
 {
     protected final Options options;
 
@@ -32,12 +35,14 @@ abstract class Own extends ZObject
     //  Number of events we have to get before we can destroy the object.
     private int termAcks;
 
+    public final Errno errno;
+
     //  Note that the owner is unspecified in the constructor.
     //  It'll be supplied later on when the object is plugged in.
 
     //  The object is not living within an I/O thread. It has it's own
     //  thread outside of 0MQ infrastructure.
-    public Own(Ctx parent, int tid)
+    protected Own(Ctx parent, int tid)
     {
         super(parent, tid);
         terminating = false;
@@ -47,11 +52,12 @@ abstract class Own extends ZObject
         termAcks = 0;
 
         options = new Options();
-        owned = new HashSet<Own>();
+        errno = options.errno;
+        owned = new HashSet<>();
     }
 
     //  The object is living within I/O thread.
-    public Own(IOThread ioThread, Options options)
+    protected Own(IOThread ioThread, Options options)
     {
         super(ioThread);
         this.options = options;
@@ -60,11 +66,12 @@ abstract class Own extends ZObject
         processedSeqnum = 0;
         owner = null;
         termAcks = 0;
+        errno = options.errno;
 
-        owned = new HashSet<Own>();
+        owned = new HashSet<>();
     }
 
-    public abstract void destroy();
+    protected abstract void destroy();
 
     //  A place to hook in when phyicallal destruction of the object
     //  is to be delayed.
@@ -82,13 +89,14 @@ abstract class Own extends ZObject
     //  When another owned object wants to send command to this object
     //  it calls this function to let it know it should not shut down
     //  before the command is delivered.
-    void incSeqnum()
+    protected void incSeqnum()
     {
         //  This function may be called from a different thread!
         sendSeqnum.incrementAndGet();
     }
 
-    protected void processSeqnum()
+    @Override
+    protected final void processSeqnum()
     {
         //  Catch up with counter of processed commands.
         processedSeqnum++;
@@ -98,7 +106,7 @@ abstract class Own extends ZObject
     }
 
     //  Launch the supplied object and become its owner.
-    protected void launchChild(Own object)
+    protected final void launchChild(Own object)
     {
         //  Specify the owner of the object.
         object.setOwner(this);
@@ -111,13 +119,13 @@ abstract class Own extends ZObject
     }
 
     //  Terminate owned object
-    protected void termChild(Own object)
+    protected final void termChild(Own object)
     {
         processTermReq(object);
     }
 
     @Override
-    protected void processTermReq(Own object)
+    protected final void processTermReq(Own object)
     {
         //  When shutting down we can ignore termination requests from owned
         //  objects. The termination request was already sent to the object.
@@ -129,11 +137,10 @@ abstract class Own extends ZObject
 
         //  If not found, we assume that termination request was already sent to
         //  the object so we can safely ignore the request.
-        if (!owned.contains(object)) {
+        if (!owned.remove(object)) {
             return;
         }
 
-        owned.remove(object);
         registerTermAcks(1);
 
         //  Note that this object is the root of the (partial shutdown) thus, its
@@ -141,7 +148,8 @@ abstract class Own extends ZObject
         sendTerm(object, options.linger);
     }
 
-    protected void processOwn(Own object)
+    @Override
+    protected final void processOwn(Own object)
     {
         //  If the object is already being shut down, new owned objects are
         //  immediately asked to terminate. Note that linger is set to zero.
@@ -158,7 +166,7 @@ abstract class Own extends ZObject
     //  Ask owner object to terminate this object. It may take a while
     //  while actual termination is started. This function should not be
     //  called more than once.
-    protected void terminate()
+    protected final void terminate()
     {
         //  If termination is already underway, there's no point
         //  in starting it anew.
@@ -178,7 +186,7 @@ abstract class Own extends ZObject
     }
 
     //  Returns true if the object is in process of termination.
-    protected boolean isTerminating()
+    protected final boolean isTerminating()
     {
         return terminating;
     }
@@ -210,12 +218,12 @@ abstract class Own extends ZObject
     //  register_tem_acks functions. When event occurs, call
     //  remove_term_ack. When number of pending acks reaches zero
     //  object will be deallocated.
-    public void registerTermAcks(int count)
+    final void registerTermAcks(int count)
     {
         termAcks += count;
     }
 
-    public void unregisterTermAck()
+    final void unregisterTermAck()
     {
         assert (termAcks > 0);
         termAcks--;
@@ -225,15 +233,14 @@ abstract class Own extends ZObject
     }
 
     @Override
-    protected void processTermAck()
+    protected final void processTermAck()
     {
         unregisterTermAck();
     }
 
     private void checkTermAcks()
     {
-        if (terminating && processedSeqnum == sendSeqnum.get() &&
-              termAcks == 0) {
+        if (terminating && processedSeqnum == sendSeqnum.get() && termAcks == 0) {
             //  Sanity check. There should be no active children at this point.
             assert (owned.isEmpty());
 

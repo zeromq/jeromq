@@ -24,13 +24,12 @@ public class LocalLat
         Msg msg;
 
         if (args.length != 3) {
-            printf("usage: local_lat <bind-to> <message-size> "
-               + "<roundtrip-count>\n");
+            printf("usage: local_lat <bind-to> <message-size> " + "<roundtrip-count>\n");
             return;
         }
-        bindTo = args [0];
-        messageSize = atoi(args [1]);
-        roundtripCount = atoi(args [2]);
+        bindTo = args[0];
+        messageSize = atoi(args[1]);
+        roundtripCount = atoi(args[2]);
 
         ctx = ZMQ.init(1);
         if (ctx == null) {
@@ -84,7 +83,7 @@ public class LocalLat
         System.out.println(string);
     }
 
-    private static void printf(String string, Object ... args)
+    private static void printf(String string, Object... args)
     {
         System.out.println(String.format(string, args));
     }

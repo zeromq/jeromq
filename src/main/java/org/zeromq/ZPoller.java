@@ -62,7 +62,7 @@ import org.zeromq.ZMQ.Socket;
 <p>
  * The motivations of this rewriting are:
  * <br/>
- * - the bare poller use {@link zmq.ZMQ#poll(zmq.PollItem[], int, long) this method} who does not allow
+ * - the bare poller use {@link zmq.ZMQ#poll(zmq.poll.PollItem[], int, long) this method} who does not allow
  * to choose the selector used for polling, relying on a ThreadLocal, which is dangerous.
  * <br/>
  * - the bare poller use algorithms tailored for languages with manual allocation.
@@ -98,7 +98,7 @@ public class ZPoller implements Closeable
     public static interface ItemHolder
     {
         // the inner ZMQ poll item
-        zmq.PollItem item();
+        zmq.poll.PollItem item();
 
         // the related ZeroMQ socket
         Socket socket();
@@ -149,7 +149,7 @@ public class ZPoller implements Closeable
         }
 
         @Override
-        public zmq.PollItem item()
+        public zmq.poll.PollItem item()
         {
             return base();
         }
@@ -233,12 +233,12 @@ public class ZPoller implements Closeable
     /*
      * These values can be ORed to specify what we want to poll for.
      */
-    public static final int POLLIN = Poller.POLLIN;
+    public static final int POLLIN  = Poller.POLLIN;
     public static final int POLLOUT = Poller.POLLOUT;
     public static final int POLLERR = Poller.POLLERR;
 
     // same values with shorter writing
-    public static final int IN = POLLIN;
+    public static final int IN  = POLLIN;
     public static final int OUT = POLLOUT;
     public static final int ERR = POLLERR;
 
@@ -317,7 +317,7 @@ public class ZPoller implements Closeable
     {
         this.creator = creator;
         this.selector = selector;
-        items = new HashMap<Object, Set<ItemHolder>>();
+        items = new HashMap<>();
         all = createContainer(0);
     }
 
@@ -363,8 +363,7 @@ public class ZPoller implements Closeable
      * @param events   the events to listen to, as a mask composed by ORing POLLIN, POLLOUT and POLLERR.
      * @return true if registered, otherwise false
      */
-    public final boolean register(final Socket socket,
-            final EventsHandler handler, final int events)
+    public final boolean register(final Socket socket, final EventsHandler handler, final int events)
     {
         if (socket == null) {
             return false;
@@ -390,8 +389,7 @@ public class ZPoller implements Closeable
      * @param events    the events to listen to, as a mask composed by XORing POLLIN, POLLOUT and POLLERR.
      * @return true if registered, otherwise false
      */
-    public final boolean register(final SelectableChannel channel,
-            final EventsHandler handler, final int events)
+    public final boolean register(final SelectableChannel channel, final EventsHandler handler, final int events)
     {
         if (channel == null) {
             return false;
@@ -475,7 +473,7 @@ public class ZPoller implements Closeable
     {
         // get all the raw items
         final Collection<ItemHolder> all = items();
-        final Set<zmq.PollItem> pollItems = new HashSet<zmq.PollItem>(all.size());
+        final Set<zmq.poll.PollItem> pollItems = new HashSet<zmq.poll.PollItem>(all.size());
         for (ItemHolder holder : all) {
             pollItems.add(holder.item());
         }
@@ -496,13 +494,11 @@ public class ZPoller implements Closeable
     }
 
     // does the effective polling
-    protected int poll(final Selector selector, final long tout,
-            final Collection<zmq.PollItem> items)
+
+    protected int poll(final Selector selector, final long tout, final Collection<zmq.poll.PollItem> items)
     {
         final int size = items.size();
-        return zmq.ZMQ.poll(selector,
-                items.toArray(new zmq.PollItem[size]), size,
-                tout);
+        return zmq.ZMQ.poll(selector, items.toArray(new zmq.poll.PollItem[size]), size, tout);
     }
 
     /**
@@ -525,7 +521,7 @@ public class ZPoller implements Closeable
                 // no handler, short-circuit
                 continue;
             }
-            final zmq.PollItem item = holder.item();
+            final zmq.poll.PollItem item = holder.item();
             final int events = item.readyOps();
 
             if (events <= 0) {
@@ -598,7 +594,7 @@ public class ZPoller implements Closeable
     // checks for read event
     public boolean readable(final Object socketOrChannel)
     {
-        final zmq.PollItem it = filter(socketOrChannel, READABLE);
+        final zmq.poll.PollItem it = filter(socketOrChannel, READABLE);
         if (it == null) {
             return false;
         }
@@ -650,7 +646,7 @@ public class ZPoller implements Closeable
     // checks for write event
     public boolean writable(final Object socketOrChannel)
     {
-        final zmq.PollItem it = filter(socketOrChannel, WRITABLE);
+        final zmq.poll.PollItem it = filter(socketOrChannel, WRITABLE);
         if (it == null) {
             return false;
         }
@@ -702,7 +698,7 @@ public class ZPoller implements Closeable
     // checks for error event
     public boolean error(final Object socketOrChannel)
     {
-        final zmq.PollItem it = filter(socketOrChannel, ERR);
+        final zmq.poll.PollItem it = filter(socketOrChannel, ERR);
         if (it == null) {
             return false;
         }
@@ -761,15 +757,13 @@ public class ZPoller implements Closeable
     private static class SimpleCreator implements ItemCreator
     {
         @Override
-        public ItemHolder create(final Socket socket,
-                final EventsHandler handler, final int events)
+        public ItemHolder create(final Socket socket, final EventsHandler handler, final int events)
         {
             return new ZPollItem(socket, handler, events);
         }
 
         @Override
-        public ItemHolder create(final SelectableChannel channel,
-                final EventsHandler handler, final int events)
+        public ItemHolder create(final SelectableChannel channel, final EventsHandler handler, final int events)
         {
             return new ZPollItem(channel, handler, events);
         }
@@ -809,7 +803,7 @@ public class ZPoller implements Closeable
     // create the container of holders
     protected Set<ItemHolder> createContainer(int size)
     {
-        return new HashSet<ItemHolder>(size);
+        return new HashSet<>(size);
     }
 
     // gets all the items of this poller
@@ -829,7 +823,7 @@ public class ZPoller implements Closeable
     }
 
     // filters items to get the first one matching the criteria, or null if none found
-    protected zmq.PollItem filter(final Object socketOrChannel, int events)
+    protected zmq.poll.PollItem filter(final Object socketOrChannel, int events)
     {
         if (socketOrChannel == null) {
             return null;
@@ -837,7 +831,7 @@ public class ZPoller implements Closeable
 
         final Iterable<ItemHolder> items = items(socketOrChannel);
         for (ItemHolder item : items) {
-            final zmq.PollItem it = item.item();
+            final zmq.poll.PollItem it = item.item();
             if ((it.zinterestOps() & events) > 0) {
                 return it;
             }

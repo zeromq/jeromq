@@ -1,7 +1,8 @@
 package zmq;
 
-import org.junit.Test;
 import java.nio.ByteBuffer;
+
+import org.junit.Test;
 
 public class TestMsg
 {

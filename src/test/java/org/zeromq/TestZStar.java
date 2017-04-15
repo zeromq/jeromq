@@ -20,8 +20,7 @@ public class TestZStar
         }
 
         @Override
-        public ZStar.Star create(ZContext ctx, Socket pipe, Selector sel, int count,
-                ZStar.Star previous, Object[] args)
+        public ZStar.Star create(ZContext ctx, Socket pipe, Selector sel, int count, ZStar.Star previous, Object[] args)
         {
             return new NoNo();
         }
@@ -83,8 +82,7 @@ public class TestZStar
         ZStar.Entourage entourage = new ZStar.Entourage()
         {
             @Override
-            public void breakaleg(ZContext ctx, Fortune fortune, Socket phone,
-                    Object[] bags)
+            public void breakaleg(ZContext ctx, Fortune fortune, Socket phone, Object[] bags)
             {
                 // Crepi il lupo!
             }
@@ -101,15 +99,15 @@ public class TestZStar
         };
         ZStar star = new ZStar(fortune, "motdelafin", Arrays.asList("TEST", entourage).toArray());
         ZMsg msg = star.recv();
-        Assert.assertNull("Able to receive a message from a black hole",  msg);
+        Assert.assertNull("Able to receive a message from a black hole", msg);
         boolean rc = star.sign();
-        Assert.assertFalse("Able to detect the presence of a black hole",  rc);
+        Assert.assertFalse("Able to detect the presence of a black hole", rc);
         rc = star.send("whatever");
-        Assert.assertFalse("Able to send a command to a black hole",  rc);
+        Assert.assertFalse("Able to send a command to a black hole", rc);
 
         // don't try it
         // rc = star.pipe().send("boom ?!");
-//        star.retire();
+        //        star.retire();
         System.out.println(".");
     }
 }
