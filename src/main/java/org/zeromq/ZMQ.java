@@ -364,7 +364,7 @@ public class ZMQ
         /**
          * Closes a Selector that was created within this context.
          *
-         * @param the Selector to close.
+         * @param selector the Selector to close.
          * @return true if the selector was closed. otherwise false
          * (mostly because it was not created by the context).
          */
@@ -468,7 +468,7 @@ public class ZMQ
         }
 
         /**
-         * @see #setLinger(long)
+         * @see #setLinger(Number)
          *
          * @return the linger period.
          */
@@ -507,7 +507,7 @@ public class ZMQ
         }
 
         /**
-         * @see #setReconnectIVL(long)
+         * @see #setReconnectIVL(Number)
          *
          * @return the reconnectIVL.
          */
@@ -525,7 +525,7 @@ public class ZMQ
         }
 
         /**
-         * @see #setBacklog(long)
+         * @see #setBacklog(Number)
          *
          * @return the backlog.
          */
@@ -556,7 +556,7 @@ public class ZMQ
         }
 
         /**
-         * @see #setReconnectIVLMax(long)
+         * @see #setReconnectIVLMax(Number)
          *
          * @return the reconnectIVLMax.
          */
@@ -592,7 +592,7 @@ public class ZMQ
         }
 
         /**
-         * @see #setSndHWM(long)
+         * @see #setSndHWM(Number)
          *
          * @return the SndHWM.
          */
@@ -610,7 +610,7 @@ public class ZMQ
         }
 
         /**
-         * @see #setRcvHWM(long)
+         * @see #setRcvHWM(Number)
          *
          * @return the recvHWM period.
          */
@@ -628,7 +628,7 @@ public class ZMQ
         }
 
         /**
-         * @see #setHWM(long)
+         * @see #setHWM(Number)
          *
          * @return the High Water Mark.
          */
@@ -971,7 +971,7 @@ public class ZMQ
         }
 
         /**
-         * @see #setTCPKeepAlive(long)
+         * @see #setTCPKeepAlive(Number)
          *
          * @return the keep alive setting.
          */
@@ -994,7 +994,7 @@ public class ZMQ
         }
 
         /**
-         * @see #setTCPKeepAliveCount(long)
+         * @see #setTCPKeepAliveCount(Number)
          *
          * @return the keep alive count.
          */
@@ -1017,7 +1017,7 @@ public class ZMQ
         }
 
         /**
-         * @see #setTCPKeepAliveInterval(long)
+         * @see #setTCPKeepAliveInterval(Number)
          *
          * @return the keep alive interval.
          */
@@ -1040,7 +1040,7 @@ public class ZMQ
         }
 
         /**
-         * @see #setTCPKeepAliveIdle(long)
+         * @see #setTCPKeepAliveIdle(Number)
          *
          * @return the keep alive idle value.
          */
@@ -1050,7 +1050,7 @@ public class ZMQ
         }
 
         /**
-         * @see #setSendBufferSize(long)
+         * @see #setSendBufferSize(int)
          *
          * @return the kernel send buffer size.
          */
@@ -1075,7 +1075,7 @@ public class ZMQ
         }
 
         /**
-         * @see #setReceiveBufferSize(long)
+         * @see #setReceiveBufferSize(int)
          *
          * @return the kernel receive buffer size.
          */
@@ -1282,7 +1282,7 @@ public class ZMQ
          * @see #setIPv4Only (boolean)
          *
          * @return the IPV4ONLY
-         * @deprecated use {@link #isIPv6()} instead (inverted logic: ipv4 = true <==> ipv6 = false)
+         * @deprecated use {@link #isIpv6()} instead (inverted logic: ipv4 = true <==> ipv6 = false)
          */
         @Deprecated
         public boolean getIPv4Only()
@@ -1318,9 +1318,9 @@ public class ZMQ
          * The 'ZMQ_IPV6' option shall set the underlying native socket type.
          * An IPv6 socket lets applications connect to and accept connections from both IPv4 and IPv6 hosts.
          *
-         * @param v4only A value of true will use IPv6 sockets, while the value of false will use IPv4 sockets
+         * @param v6 A value of true will use IPv6 sockets, while the value of false will use IPv4 sockets
          * @return true if the option was set, otherwise false
-         * @see #isIPv6()
+         * @see #isIpv6()
          */
         public boolean setIPv6(boolean v6)
         {
