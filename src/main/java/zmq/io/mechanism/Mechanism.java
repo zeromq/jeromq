@@ -80,12 +80,17 @@ public abstract class Mechanism
         return userId;
     }
 
-    protected byte[] addProperty(String name, String value)
+    protected void addProperty(ByteBuffer buf, String name, String value)
     {
-        return addProperty(name, value.getBytes(ZMQ.CHARSET));
+        addProperty(buf, name, value.getBytes(ZMQ.CHARSET));
     }
 
-    protected byte[] addProperty(String name, byte[] value)
+    protected void addProperty(Msg msg, String name, String value)
+    {
+        addProperty(msg, name, value.getBytes(ZMQ.CHARSET));
+    }
+
+    protected void addProperty(ByteBuffer buf, String name, byte[] value)
     {
         byte[] nameB = name.getBytes(ZMQ.CHARSET);
         int nameLength = nameB.length;
@@ -94,8 +99,6 @@ public abstract class Mechanism
         int valueLength = value == null ? 0 : value.length;
         assert (valueLength <= Integer.MAX_VALUE);
 
-        ByteBuffer buf = ByteBuffer.allocate(nameLength + valueLength + 1 + 4);
-
         buf.put((byte) nameLength);
         buf.put(nameB);
 
@@ -103,8 +106,24 @@ public abstract class Mechanism
         if (value != null) {
             buf.put(value);
         }
+    }
 
-        return buf.array();
+    protected void addProperty(Msg msg, String name, byte[] value)
+    {
+        byte[] nameB = name.getBytes(ZMQ.CHARSET);
+        int nameLength = nameB.length;
+        assert (nameLength <= 255);
+
+        int valueLength = value == null ? 0 : value.length;
+        assert (valueLength <= Integer.MAX_VALUE);
+
+        msg.put((byte) nameLength);
+        msg.put(nameB);
+
+        Wire.putUInt32(msg, valueLength);
+        if (value != null) {
+            msg.put(value);
+        }
     }
 
     protected int parseMetadata(Msg msg, int offset, boolean zapFlag)

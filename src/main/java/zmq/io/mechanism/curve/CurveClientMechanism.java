@@ -341,11 +341,11 @@ public class CurveClientMechanism extends Mechanism
 
         //  Add socket type property
         String socketType = socketType(options.type);
-        initiatePlaintext.put(addProperty(SOCKET_TYPE, socketType));
+        addProperty(initiatePlaintext, SOCKET_TYPE, socketType);
 
         //  Add identity property
         if (options.type == ZMQ.ZMQ_REQ || options.type == ZMQ.ZMQ_DEALER || options.type == ZMQ.ZMQ_ROUTER) {
-            initiatePlaintext.put(addProperty(IDENTITY, options.identity));
+            addProperty(initiatePlaintext, IDENTITY, options.identity);
         }
 
         int mlen = initiatePlaintext.position();

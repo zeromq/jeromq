@@ -481,11 +481,11 @@ public class CurveServerMechanism extends Mechanism
         readyPlaintext.position(Curve.Size.ZERO.bytes());
         //  Add socket type property
         String socketType = socketType(options.type);
-        readyPlaintext.put(addProperty(SOCKET_TYPE, socketType));
+        addProperty(readyPlaintext, SOCKET_TYPE, socketType);
 
         //  Add identity property
         if (options.type == ZMQ.ZMQ_REQ || options.type == ZMQ.ZMQ_DEALER || options.type == ZMQ.ZMQ_ROUTER) {
-            readyPlaintext.put(addProperty(IDENTITY, options.identity));
+            addProperty(readyPlaintext, IDENTITY, options.identity);
         }
 
         int mlen = readyPlaintext.position();
