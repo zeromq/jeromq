@@ -148,8 +148,9 @@ public class ZProxy
          * @param socket  the socket to configure
          * @param place   the position for the socket in the proxy
          * @param args    the optional array of arguments that has been passed at the creation of the ZProxy.
+         * @return true if successfully configured, otherwise false
          */
-        void configure(Socket socket, Plug place, Object[] args);
+        boolean configure(Socket socket, Plug place, Object[] args);
 
         /**
          * Performs a hot restart of the given socket.
@@ -767,8 +768,12 @@ public class ZProxy
             String cmd = pipe.recvStr();
             // a message has been received from the API
             if (START.equals(cmd)) {
-                start(poller);
-                return status().send(pipe);
+                if (start(poller)) {
+                    return status().send(pipe);
+                }
+                // unable to start the proxy, exit
+                state.restart = false;
+                return false;
             }
             else if (STOP.equals(cmd)) {
                 stop(poller);
@@ -826,15 +831,24 @@ public class ZProxy
         // starts the proxy sockets
         private boolean start(ZPoller poller)
         {
+            boolean success = true;
             if (!state.started) {
-                state.started = true;
-
-                provider.configure(frontend, Plug.FRONT, args);
-                provider.configure(backend, Plug.BACK, args);
-                provider.configure(capture, Plug.CAPTURE, args);
+                try {
+                    success = false;
+                    success |= provider.configure(frontend, Plug.FRONT, args);
+                    success |= provider.configure(backend, Plug.BACK, args);
+                    success |= provider.configure(capture, Plug.CAPTURE, args);
+                    state.started = true;
+                }
+                catch (RuntimeException e) {
+                    // unable to configure proxy, exit
+                    state.restart = false;
+                    state.started = false;
+                    return false;
+                }
             }
             pause(poller, false);
-            return true;
+            return success;
         }
 
         // pauses the proxy sockets
@@ -921,15 +935,21 @@ public class ZProxy
                     boolean cold = false;
                     ZMsg dup = cfg.duplicate();
 
-                    cold = provider.restart(dup, frontend, Plug.FRONT, this.args);
-                    dup.destroy();
-                    dup = cfg.duplicate();
-                    cold |= provider.restart(dup, backend, Plug.BACK, this.args);
-                    dup.destroy();
-                    dup = cfg.duplicate();
-                    cold |= provider.restart(dup, capture, Plug.CAPTURE, this.args);
-                    dup.destroy();
-                    cfg.destroy();
+                    try {
+                        cold = provider.restart(dup, frontend, Plug.FRONT, this.args);
+                        dup.destroy();
+                        dup = cfg.duplicate();
+                        cold |= provider.restart(dup, backend, Plug.BACK, this.args);
+                        dup.destroy();
+                        dup = cfg.duplicate();
+                        cold |= provider.restart(dup, capture, Plug.CAPTURE, this.args);
+                        dup.destroy();
+                        cfg.destroy();
+                    }
+                    catch (RuntimeException e) {
+                        state.restart = false;
+                        return false;
+                    }
 
                     // cold restart means the loop has to stop.
                     return !cold;

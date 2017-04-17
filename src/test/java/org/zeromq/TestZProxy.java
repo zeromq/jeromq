@@ -10,21 +10,19 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.zeromq.ZMQ.Socket;
 
+import zmq.ZError;
+
 public class TestZProxy
 {
     private final class ProxyProvider extends ZProxy.Proxy.SimpleProxy
     {
-        private final int frontPort;
-        private final int backPort;
-        private final int capturePort1;
-        private final int capturePort2;
+        private int frontPort;
+        private int backPort;
+        private int capturePort1;
+        private int capturePort2;
 
         public ProxyProvider() throws IOException
         {
-            frontPort = Utils.findOpenPort();
-            backPort = Utils.findOpenPort();
-            capturePort1 = Utils.findOpenPort();
-            capturePort2 = Utils.findOpenPort();
         }
 
         @Override
@@ -41,17 +39,27 @@ public class TestZProxy
         }
 
         @Override
-        public void configure(Socket socket, ZProxy.Plug place, Object[] extrArgs)
+        public boolean configure(Socket socket, ZProxy.Plug place, Object[] extrArgs)
         {
-            if (place == ZProxy.Plug.FRONT) {
-                socket.bind("tcp://127.0.0.1:" + frontPort);
+            try {
+                if (place == ZProxy.Plug.FRONT) {
+                    frontPort = Utils.findOpenPort();
+                    socket.bind("tcp://127.0.0.1:" + frontPort);
+                }
+                if (place == ZProxy.Plug.BACK) {
+                    backPort = Utils.findOpenPort();
+                    socket.bind("tcp://127.0.0.1:" + backPort);
+                }
+                if (place == ZProxy.Plug.CAPTURE && socket != null) {
+                    capturePort1 = Utils.findOpenPort();
+                    socket.bind("tcp://127.0.0.1:" + capturePort1);
+                }
             }
-            if (place == ZProxy.Plug.BACK) {
-                socket.bind("tcp://127.0.0.1:" + backPort);
+            catch (IOException e) {
+                e.printStackTrace();
+                return false;
             }
-            if (place == ZProxy.Plug.CAPTURE && socket != null) {
-                socket.bind("tcp://127.0.0.1:" + capturePort1);
-            }
+            return true;
         }
 
         @Override
@@ -71,7 +79,14 @@ public class TestZProxy
             if (place == ZProxy.Plug.CAPTURE && socket != null) {
                 socket.unbind("tcp://127.0.0.1:" + capturePort1);
                 waitSomeTime();
-                socket.bind("tcp://127.0.0.1:" + capturePort2);
+                try {
+                    capturePort2 = Utils.findOpenPort();
+                    socket.bind("tcp://127.0.0.1:" + capturePort2);
+                }
+                catch (IOException e) {
+                    e.printStackTrace();
+                    throw new ZError.IOException(e);
+                }
             }
             String msg = cfg.popString();
             return "COLD".equals(msg);
