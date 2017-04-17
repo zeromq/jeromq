@@ -7,10 +7,15 @@ Pure Java implementation of libzmq (http://zeromq.org).
 
 ## Features
 
-* Based on libzmq 3.2.5.
-* ZMTP/2.0 (http://rfc.zeromq.org/spec:15).
+* Based on libzmq 4.1.7.
+* ZMTP/3.0 (http://rfc.zeromq.org/spec:23).
 * tcp:// protocol and inproc:// is compatible with zeromq.
 * ipc:// protocol works only between jeromq (uses tcp://127.0.0.1:port internally).
+
+* Securities
+ * [PLAIN](http://rfc.zeromq.org/spec:24).
+ * [CURVE](http://rfc.zeromq.org/spec:25). (Installation of libsodium is required)
+ 
 * Not too bad performance compared to zeromq.
  * 4.5M messages (100B) per sec.
  * [Performance](https://github.com/zeromq/jeromq/wiki/Performance).
@@ -20,12 +25,8 @@ Pure Java implementation of libzmq (http://zeromq.org).
 
 * ipc:// protocol with zeromq. Java doesn't support UNIX domain socket.
 * pgm:// protocol. Cannot find a pgm Java implementation.
-
-## Extended Features
-
-* Build your own StreamEngine's Decoder/Encoder:
- * [TestProxyTcp](https://github.com/zeromq/jeromq/blob/master/src/test/java/zmq/TestProxyTcp.java)
- * [Proxy](https://github.com/zeromq/jeromq/blob/master/src/main/java/org/jeromq/codec/Proxy.java)
+* norm:// protocol. Cannot find a Java implementation.
+* tipc:// protocol. Cannot find a Java implementation.
 
 ## Contributing
 
@@ -41,14 +42,14 @@ Add it to your Maven project's `pom.xml`:
     <dependency>
       <groupId>org.zeromq</groupId>
       <artifactId>jeromq</artifactId>
-      <version>0.3.5</version>
+      <version>0.4.0</version>
     </dependency>
 
     <!-- for the latest SNAPSHOT -->
     <dependency>
       <groupId>org.zeromq</groupId>
       <artifactId>jeromq</artifactId>
-      <version>0.3.6-SNAPSHOT</version>
+      <version>0.4.1-SNAPSHOT</version>
     </dependency>
 
     <!-- If you can't find the latest snapshot -->
