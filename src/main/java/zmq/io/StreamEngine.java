@@ -738,7 +738,6 @@ public class StreamEngine implements IEngine, IPollEvents
                 greetingSend.limit(SIGNATURE_SIZE + 1);
                 greetingSend.put(revisionPos, Protocol.V3.revision); //  Major version number
                 outsize += 1;
-                continue;
             }
 
             if (greetingRecv.position() > SIGNATURE_SIZE) {
