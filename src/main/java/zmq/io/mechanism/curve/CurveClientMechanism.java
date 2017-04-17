@@ -124,7 +124,7 @@ public class CurveClientMechanism extends Mechanism
         assert (state == State.CONNECTED);
 
         byte flags = 0;
-        if ((msg.flags() & Msg.MORE) != 0) {
+        if (msg.hasMore()) {
             flags |= 0x01;
         }
 

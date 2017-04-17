@@ -109,25 +109,19 @@ public abstract class Mechanism
 
     protected int parseMetadata(Msg msg, int offset, boolean zapFlag)
     {
-        byte[] dest = new byte[msg.size() - offset];
-        System.arraycopy(msg.data(), offset, dest, 0, dest.length);
-        return parseMetadata(dest, zapFlag);
+        return parseMetadata(msg.buf(), offset, zapFlag);
     }
 
     protected int parseMetadata(ByteBuffer msg, int offset, boolean zapFlag)
     {
-        byte[] dest = new byte[msg.limit() - offset];
-        System.arraycopy(msg.array(), offset, dest, 0, dest.length);
-        return parseMetadata(dest, zapFlag);
-    }
+        ByteBuffer data = msg.duplicate();
 
-    int parseMetadata(byte[] data, boolean zapFlag)
-    {
-        int bytesLeft = data.length;
-        int index = 0;
+        data.position(offset);
+        int bytesLeft = data.remaining();
+        int index = offset;
 
         while (bytesLeft > 1) {
-            byte nameLength = data[index];
+            byte nameLength = data.get(index);
             index++;
             bytesLeft -= 1;
 
@@ -135,7 +129,7 @@ public abstract class Mechanism
                 break;
             }
 
-            String name = new String(data, index, nameLength);
+            String name = build(data, index, nameLength);
             index += nameLength;
             bytesLeft -= nameLength;
 
@@ -151,7 +145,7 @@ public abstract class Mechanism
                 break;
             }
 
-            String value = new String(data, index, valueLength);
+            String value = build(data, index, valueLength);
             index += valueLength;
             bytesLeft -= valueLength;
 
@@ -180,6 +174,16 @@ public abstract class Mechanism
             return ZError.EPROTO;
         }
         return 0;
+    }
+
+    private String build(ByteBuffer buf, int offset, int length)
+    {
+        byte[] bytes = new byte[length];
+        int position = buf.position();
+        buf.position(offset);
+        buf.get(bytes, 0, length);
+        buf.position(position);
+        return new String(bytes, ZMQ.CHARSET);
     }
 
     protected int property(String name, String value)
@@ -356,7 +360,7 @@ public abstract class Mechanism
         setUserId(msgs.get(5).data());
 
         //  Process metadata frame
-        int rc = parseMetadata(msgs.get(6).data(), true);
+        int rc = parseMetadata(msgs.get(6), 0, true);
 
         return rc;
     }

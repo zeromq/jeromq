@@ -154,7 +154,7 @@ public class Msg
         }
     }
 
-    public Msg(Msg src, ByteArrayOutputStream out)
+    private Msg(Msg src, ByteArrayOutputStream out)
     {
         this(ByteBuffer.wrap(out.toByteArray()));
         this.type = src.type;

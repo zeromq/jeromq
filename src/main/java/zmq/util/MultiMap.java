@@ -95,23 +95,6 @@ public final class MultiMap<K extends Comparable<? super K>, V>
         assert (old == null);
     }
 
-    private void putAll(K key, Collection<V> values)
-    {
-        getList(key).addAll(values);
-
-        for (V value : values) {
-            K old = inverse.put(value, key);
-            assert (old == null);
-        }
-    }
-
-    public void putAll(MultiMap<K, V> src)
-    {
-        for (Entry<K, List<V>> entry : src.data.entrySet()) {
-            putAll(entry.getKey(), entry.getValue());
-        }
-    }
-
     public Collection<V> remove(K key)
     {
         List<V> removed = data.remove(key);
