@@ -37,8 +37,6 @@ public class TestProxy
 
             Socket socket = ctx.socket(ZMQ.REQ);
             boolean rc;
-//            rc = socket.setImmediate(false);
-//            assertThat(rc, is(true));
             rc = socket.setIdentity(name.getBytes(ZMQ.CHARSET));
             assertThat(rc, is(true));
 
@@ -109,8 +107,6 @@ public class TestProxy
 
             Socket socket = ctx.socket(ZMQ.DEALER);
             boolean rc;
-//            rc = socket.setImmediate(false);
-//            assertThat(rc, is(true));
             rc = socket.setIdentity(name.getBytes(ZMQ.CHARSET));
             assertThat(rc, is(true));
             rc = socket.connect("tcp://127.0.0.1:" + port);
@@ -186,12 +182,10 @@ public class TestProxy
 
             assertThat(frontend, notNullValue());
             frontend.bind("tcp://127.0.0.1:" + frontendPort);
-//            frontend.setImmediate(false);
 
             Socket backend = ctx.socket(ZMQ.DEALER);
             assertThat(backend, notNullValue());
             backend.bind("tcp://127.0.0.1:" + backendPort);
-//            backend.setImmediate(false);
 
             Socket control = ctx.socket(ZMQ.PAIR);
             assertThat(control, notNullValue());
@@ -217,13 +211,14 @@ public class TestProxy
 
         Proxy proxy = new Proxy(frontendPort, backendPort, controlPort);
         proxy.start();
-        Thread.sleep(1000);
 
         CountDownLatch latch = new CountDownLatch(4);
         Dealer d1 = new Dealer("Dealer-A", backendPort, latch);
         Dealer d2 = new Dealer("Dealer-B", backendPort, latch);
         d1.start();
         d2.start();
+
+        Thread.sleep(1000);
 
         Client c1 = new Client("Client-X", frontendPort, latch);
         c1.start();
