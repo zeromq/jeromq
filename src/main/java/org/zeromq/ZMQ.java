@@ -318,12 +318,17 @@ public class ZMQ
             return ctx.set(zmq.ZMQ.ZMQ_BLOCKY, block ? 1 : 0);
         }
 
-        public boolean isIpv6()
+        public boolean isIPv6()
         {
             return ctx.get(zmq.ZMQ.ZMQ_IPV6) != 0;
         }
 
-        public boolean setIpv6(boolean ipv6)
+        public boolean getIPv6()
+        {
+            return isIPv6();
+        }
+
+        public boolean setIPv6(boolean ipv6)
         {
             return ctx.set(zmq.ZMQ.ZMQ_IPV6, ipv6 ? 1 : 0);
         }
@@ -468,11 +473,17 @@ public class ZMQ
         }
 
         /**
-         * @see #setLinger(Number)
+         * The 'ZMQ_LINGER' option shall retrieve the period for pending outbound
+         * messages to linger in memory after closing the socket. Value of -1 means
+         * infinite. Pending messages will be kept until they are fully transferred to
+         * the peer. Value of 0 means that all the pending messages are dropped immediately
+         * when socket is closed. Positive value means number of milliseconds to keep
+         * trying to send the pending messages before discarding them.
          *
          * @return the linger period.
+         * @see #setLinger(int)
          */
-        public long getLinger()
+        public int getLinger()
         {
             return base.getSocketOpt(zmq.ZMQ.ZMQ_LINGER);
         }
@@ -490,44 +501,109 @@ public class ZMQ
         }
 
         /**
-         * The 'ZMQ_LINGER' option shall retrieve the period for pending outbound
-         * messages to linger in memory after closing the socket. Value of -1 means
-         * infinite. Pending messages will be kept until they are fully transferred to
-         * the peer. Value of 0 means that all the pending messages are dropped immediately
-         * when socket is closed. Positive value means number of milliseconds to keep
-         * trying to send the pending messages before discarding them.
+         * The ZMQ_LINGER option shall set the linger period for the specified socket.
+         * The linger period determines how long pending messages which have yet to be sent to a peer
+         * shall linger in memory after a socket is disconnected with disconnect or closed with close,
+         * and further affects the termination of the socket's context with Ctx#term.
+         * The following outlines the different behaviours: A value of -1 specifies an infinite linger period.
+         * Pending messages shall not be discarded after a call to disconnect() or close();
+         * attempting to terminate the socket's context with Ctx#term() shall block until all pending messages have been sent to a peer.
+         * The value of 0 specifies no linger period. Pending messages shall be discarded immediately after a call to disconnect() or close().
+         * Positive values specify an upper bound for the linger period in milliseconds.
+         * Pending messages shall not be discarded after a call to disconnect() or close();
+         * attempting to terminate the socket's context with Ctx#term() shall block until either all pending messages have been sent to a peer,
+         * or the linger period expires, after which any pending messages shall be discarded.
          *
          * @param value
          *            the linger period in milliseconds.
          * @return true if the option was set, otherwise false
+         * @deprecated the linger option has only integer range, use {@link #setLinger(int)} instead
+         * @see #getLinger()
          */
-        public boolean setLinger(Number value)
+        @Deprecated
+        public boolean setLinger(long value)
         {
-            return base.setSocketOpt(zmq.ZMQ.ZMQ_LINGER, value.intValue());
+            return setLinger(Long.valueOf(value).intValue());
         }
 
         /**
-         * @see #setReconnectIVL(Number)
+         * The ZMQ_LINGER option shall set the linger period for the specified socket.
+         * The linger period determines how long pending messages which have yet to be sent to a peer
+         * shall linger in memory after a socket is disconnected with disconnect or closed with close,
+         * and further affects the termination of the socket's context with Ctx#term.
+         * The following outlines the different behaviours: A value of -1 specifies an infinite linger period.
+         * Pending messages shall not be discarded after a call to disconnect() or close();
+         * attempting to terminate the socket's context with Ctx#term() shall block until all pending messages have been sent to a peer.
+         * The value of 0 specifies no linger period. Pending messages shall be discarded immediately after a call to disconnect() or close().
+         * Positive values specify an upper bound for the linger period in milliseconds.
+         * Pending messages shall not be discarded after a call to disconnect() or close();
+         * attempting to terminate the socket's context with Ctx#term() shall block until either all pending messages have been sent to a peer,
+         * or the linger period expires, after which any pending messages shall be discarded.
+         *
+         * @param value
+         *            the linger period in milliseconds.
+         * @return true if the option was set, otherwise false
+         * @see #getLinger()
+         */
+        public boolean setLinger(int value)
+        {
+            return base.setSocketOpt(zmq.ZMQ.ZMQ_LINGER, value);
+        }
+
+        /**
+         * The ZMQ_RECONNECT_IVL option shall retrieve the initial reconnection interval for the specified socket.
+         * The reconnection interval is the period ØMQ shall wait between attempts to reconnect
+         * disconnected peers when using connection-oriented transports.
+         * The value -1 means no reconnection.
+         *
+         * CAUTION: The reconnection interval may be randomized by ØMQ to prevent reconnection storms in topologies with a large number of peers per socket.
          *
          * @return the reconnectIVL.
+         * @see #setReconnectIVL(int)
          */
-        public long getReconnectIVL()
+        public int getReconnectIVL()
         {
             return base.getSocketOpt(zmq.ZMQ.ZMQ_RECONNECT_IVL);
         }
 
         /**
+         * The ZMQ_RECONNECT_IVL option shall set the initial reconnection interval for the specified socket.
+         * The reconnection interval is the period ØMQ shall wait between attempts
+         * to reconnect disconnected peers when using connection-oriented transports.
+         * The value -1 means no reconnection.
+         *
          * @return true if the option was set, otherwise false
+         * @deprecated reconnect interval option uses integer range, use {@link #setReconnectIVL(int)} instead
+         * @see #getReconnectIVL()
          */
-        public boolean setReconnectIVL(Number value)
+        @Deprecated
+        public boolean setReconnectIVL(long value)
         {
-            return base.setSocketOpt(zmq.ZMQ.ZMQ_RECONNECT_IVL, value.intValue());
+            return setReconnectIVL(Long.valueOf(value).intValue());
         }
 
         /**
-         * @see #setBacklog(Number)
+         * The ZMQ_RECONNECT_IVL option shall set the initial reconnection interval for the specified socket.
+         * The reconnection interval is the period ØMQ shall wait between attempts
+         * to reconnect disconnected peers when using connection-oriented transports.
+         * The value -1 means no reconnection.
          *
-         * @return the backlog.
+         * @return true if the option was set, otherwise false.
+         * @see #getReconnectIVL()
+         */
+        public boolean setReconnectIVL(int value)
+        {
+            return base.setSocketOpt(zmq.ZMQ.ZMQ_RECONNECT_IVL, value);
+        }
+
+        /**
+         * The ZMQ_BACKLOG option shall retrieve the maximum length of the queue
+         * of outstanding peer connections for the specified socket;
+         * this only applies to connection-oriented transports.
+         * For details refer to your operating system documentation for the listen function.
+         *
+         * @return the the maximum length of the queue of outstanding peer connections.
+         * @see #setBacklog(int)
          */
         public int getBacklog()
         {
@@ -535,20 +611,90 @@ public class ZMQ
         }
 
         /**
-         * @return true if the option was set, otherwise false
+         * The ZMQ_BACKLOG option shall set the maximum length
+         * of the queue of outstanding peer connections for the specified socket;
+         * this only applies to connection-oriented transports.
+         * For details refer to your operating system documentation for the listen function.
+         *
+         * @param value the maximum length of the queue of outstanding peer connections.
+         * @return true if the option was set, otherwise false.
+         * @deprecated this option uses integer range, use {@link #setBacklog(int)} instead.
+         * @see #getBacklog()
          */
-        public boolean setBacklog(Number value)
+        @Deprecated
+        public boolean setBacklog(long value)
         {
-            return setSocketOpt(zmq.ZMQ.ZMQ_BACKLOG, value.intValue());
+            return setBacklog(Long.valueOf(value).intValue());
         }
 
+        /**
+         * The ZMQ_BACKLOG option shall set the maximum length
+         * of the queue of outstanding peer connections for the specified socket;
+         * this only applies to connection-oriented transports.
+         * For details refer to your operating system documentation for the listen function.
+         *
+         * @param value the maximum length of the queue of outstanding peer connections.
+         * @return true if the option was set, otherwise false.
+         * @see #getBacklog()
+         */
+        public boolean setBacklog(int value)
+        {
+            return setSocketOpt(zmq.ZMQ.ZMQ_BACKLOG, value);
+        }
+
+        /**
+         * The ZMQ_HANDSHAKE_IVL option shall retrieve the maximum handshake interval
+         * for the specified socket.
+         * Handshaking is the exchange of socket configuration information
+         * (socket type, identity, security) that occurs when a connection is first opened,
+         * only for connection-oriented transports.
+         * If handshaking does not complete within the configured time,
+         * the connection shall be closed. The value 0 means no handshake time limit.
+         *
+         * @return the maximum handshake interval.
+         * @see #setHandshakeIvl(int)
+         */
+        public int getHandshakeIvl()
+        {
+            return base.getSocketOpt(zmq.ZMQ.ZMQ_HANDSHAKE_IVL);
+        }
+
+        /**
+         * The ZMQ_HANDSHAKE_IVL option shall set the maximum handshake interval for the specified socket.
+         * Handshaking is the exchange of socket configuration information (socket type, identity, security)
+         * that occurs when a connection is first opened, only for connection-oriented transports.
+         * If handshaking does not complete within the configured time, the connection shall be closed.
+         * The value 0 means no handshake time limit.
+         *
+         * @param maxHandshakeIvl the maximum handshake interval
+         * @return true if the option was set, otherwise false
+         * @see #getHandshakeIvl()
+         */
+        public boolean setHandshakeIvl(int maxHandshakeIvl)
+        {
+            return setSocketOpt(zmq.ZMQ.ZMQ_HANDSHAKE_IVL, maxHandshakeIvl);
+        }
+
+        /**
+         * Retrieve the IP_TOS option for the socket.
+         *
+         * @return the value of the Type-Of-Service set for the socket.
+         * @see #setTos(int)
+         */
         public int getTos()
         {
             return base.getSocketOpt(zmq.ZMQ.ZMQ_TOS);
         }
 
         /**
-         * @return true if the option was set, otherwise false
+         * Sets the ToS fields (Differentiated services (DS)
+         * and Explicit Congestion Notification (ECN) field of the IP header.
+         * The ToS field is typically used to specify a packets priority.
+         * The availability of this option is dependent on intermediate network equipment
+         * that inspect the ToS field andprovide a path for low-delay, high-throughput, highly-reliable service, etc.
+         *
+         * @return true if the option was set, otherwise false.
+         * @see #getTos()
          */
         public boolean setTos(int value)
         {
@@ -556,27 +702,59 @@ public class ZMQ
         }
 
         /**
-         * @see #setReconnectIVLMax(Number)
+         * The ZMQ_RECONNECT_IVL_MAX option shall retrieve the maximum reconnection interval for the specified socket.
+         * This is the maximum period ØMQ shall wait between attempts to reconnect.
+         * On each reconnect attempt, the previous interval shall be doubled untill ZMQ_RECONNECT_IVL_MAX is reached.
+         * This allows for exponential backoff strategy.
+         * Default value means no exponential backoff is performed and reconnect interval calculations are only based on ZMQ_RECONNECT_IVL.
          *
          * @return the reconnectIVLMax.
+         * @see #setReconnectIVLMax(int)
          */
-        public long getReconnectIVLMax()
+        public int getReconnectIVLMax()
         {
             return base.getSocketOpt(zmq.ZMQ.ZMQ_RECONNECT_IVL_MAX);
         }
 
         /**
+         * The ZMQ_RECONNECT_IVL_MAX option shall set the maximum reconnection interval for the specified socket.
+         * This is the maximum period ØMQ shall wait between attempts to reconnect.
+         * On each reconnect attempt, the previous interval shall be doubled until ZMQ_RECONNECT_IVL_MAX is reached.
+         * This allows for exponential backoff strategy.
+         * Default value means no exponential backoff is performed and reconnect interval calculations are only based on ZMQ_RECONNECT_IVL.
+         *
          * @return true if the option was set, otherwise false
+         * @deprecated this option uses integer range, use {@link #setReconnectIVLMax(int)} instead
+         * @see #getReconnectIVLMax()
          */
-        public boolean setReconnectIVLMax(Number value)
+        @Deprecated
+        public boolean setReconnectIVLMax(long value)
         {
-            return setSocketOpt(zmq.ZMQ.ZMQ_RECONNECT_IVL_MAX, value.intValue());
+            return setReconnectIVLMax(Long.valueOf(value).intValue());
         }
 
         /**
-         * @see #setMaxMsgSize(long)
+         * The ZMQ_RECONNECT_IVL_MAX option shall set the maximum reconnection interval for the specified socket.
+         * This is the maximum period ØMQ shall wait between attempts to reconnect.
+         * On each reconnect attempt, the previous interval shall be doubled until ZMQ_RECONNECT_IVL_MAX is reached.
+         * This allows for exponential backoff strategy.
+         * Default value means no exponential backoff is performed and reconnect interval calculations are only based on ZMQ_RECONNECT_IVL.
+         *
+         * @return true if the option was set, otherwise false
+         * @see #getReconnectIVLMax()
+         */
+        public boolean setReconnectIVLMax(int value)
+        {
+            return setSocketOpt(zmq.ZMQ.ZMQ_RECONNECT_IVL_MAX, value);
+        }
+
+        /**
+         * The option shall retrieve limit for the inbound messages.
+         * If a peer sends a message larger than ZMQ_MAXMSGSIZE it is disconnected.
+         * Value of -1 means no limit.
          *
          * @return the maxMsgSize.
+         * @see #setMaxMsgSize(long)
          */
         public long getMaxMsgSize()
         {
@@ -584,7 +762,12 @@ public class ZMQ
         }
 
         /**
+         * Limits the size of the inbound message.
+         * If a peer sends a message larger than ZMQ_MAXMSGSIZE it is disconnected.
+         * Value of -1 means no limit.
+         *
          * @return true if the option was set, otherwise false
+         * @see #getMaxMsgSize()
          */
         public boolean setMaxMsgSize(long value)
         {
@@ -592,9 +775,16 @@ public class ZMQ
         }
 
         /**
-         * @see #setSndHWM(Number)
+         * The ZMQ_SNDHWM option shall return the high water mark for outbound messages on the specified socket.
+         * The high water mark is a hard limit on the maximum number of outstanding messages ØMQ
+         * shall queue in memory for any single peer that the specified socket is communicating with.
+         * A value of zero means no limit.
+         * If this limit has been reached the socket shall enter an exceptional state and depending on the socket type,
+         * ØMQ shall take appropriate action such as blocking or dropping sent messages.
+         * Refer to the individual socket descriptions in zmq_socket(3) for details on the exact action taken for each socket type.
          *
          * @return the SndHWM.
+         * @see #setSndHWM(int)
          */
         public int getSndHWM()
         {
@@ -602,17 +792,59 @@ public class ZMQ
         }
 
         /**
-         * @return true if the option was set, otherwise false
+         * The ZMQ_SNDHWM option shall set the high water mark for outbound messages on the specified socket.
+         * The high water mark is a hard limit on the maximum number of outstanding messages ØMQ
+         * shall queue in memory for any single peer that the specified socket is communicating with.
+         * A value of zero means no limit.
+         * If this limit has been reached the socket shall enter an exceptional state and depending on the socket type,
+         * ØMQ shall take appropriate action such as blocking or dropping sent messages.
+         * Refer to the individual socket descriptions in zmq_socket(3) for details on the exact action taken for each socket type.
+         *
+         * CAUTION: ØMQ does not guarantee that the socket will accept as many as ZMQ_SNDHWM messages,
+         * and the actual limit may be as much as 60-70% lower depending on the flow of messages on the socket.
+         *
+         * @return true if the option was set, otherwise false.
+         * @deprecated this option uses integer range, use {@link #setSndHWM(int)} instead
+         * @see #getSndHWM()
          */
-        public boolean setSndHWM(Number value)
+        @Deprecated
+        public boolean setSndHWM(long value)
         {
-            return setSocketOpt(zmq.ZMQ.ZMQ_SNDHWM, value.intValue());
+            return setSndHWM(Long.valueOf(value).intValue());
         }
 
         /**
-         * @see #setRcvHWM(Number)
+         * The ZMQ_SNDHWM option shall set the high water mark for outbound messages on the specified socket.
+         * The high water mark is a hard limit on the maximum number of outstanding messages ØMQ
+         * shall queue in memory for any single peer that the specified socket is communicating with.
+         * A value of zero means no limit.
+         * If this limit has been reached the socket shall enter an exceptional state and depending on the socket type,
+         * ØMQ shall take appropriate action such as blocking or dropping sent messages.
+         * Refer to the individual socket descriptions in zmq_socket(3) for details on the exact action taken for each socket type.
+         *
+         * CAUTION: ØMQ does not guarantee that the socket will accept as many as ZMQ_SNDHWM messages,
+         * and the actual limit may be as much as 60-70% lower depending on the flow of messages on the socket.
+         *
+         * @param value
+         * @return true if the option was set, otherwise false.
+         * @see #getSndHWM()
+         */
+        public boolean setSndHWM(int value)
+        {
+            return setSocketOpt(zmq.ZMQ.ZMQ_SNDHWM, value);
+        }
+
+        /**
+         * The ZMQ_RCVHWM option shall return the high water mark for inbound messages on the specified socket.
+         * The high water mark is a hard limit on the maximum number of outstanding messages ØMQ
+         * shall queue in memory for any single peer that the specified socket is communicating with.
+         * A value of zero means no limit.
+         * If this limit has been reached the socket shall enter an exceptional state and depending on the socket type,
+         * ØMQ shall take appropriate action such as blocking or dropping sent messages.
+         * Refer to the individual socket descriptions in zmq_socket(3) for details on the exact action taken for each socket type.
          *
          * @return the recvHWM period.
+         * @see #setRcvHWM(int)
          */
         public int getRcvHWM()
         {
@@ -620,20 +852,49 @@ public class ZMQ
         }
 
         /**
+         * The ZMQ_RCVHWM option shall set the high water mark for inbound messages on the specified socket.
+         * The high water mark is a hard limit on the maximum number of outstanding messages ØMQ
+         * shall queue in memory for any single peer that the specified socket is communicating with.
+         * A value of zero means no limit.
+         * If this limit has been reached the socket shall enter an exceptional state and depending on the socket type,
+         * ØMQ shall take appropriate action such as blocking or dropping sent messages.
+         * Refer to the individual socket descriptions in zmq_socket(3) for details on the exact action taken for each socket type.
+         *
          * @return true if the option was set, otherwise false
+         * @deprecated this option uses integer range, use {@link #setRcvHWM(int)} instead
+         * @see #getRcvHWM()
          */
-        public boolean setRcvHWM(Number value)
+        @Deprecated
+        public boolean setRcvHWM(long value)
         {
-            return setSocketOpt(zmq.ZMQ.ZMQ_RCVHWM, value.intValue());
+            return setRcvHWM(Long.valueOf(value).intValue());
         }
 
         /**
-         * @see #setHWM(Number)
+         * The ZMQ_RCVHWM option shall set the high water mark for inbound messages on the specified socket.
+         * The high water mark is a hard limit on the maximum number of outstanding messages ØMQ
+         * shall queue in memory for any single peer that the specified socket is communicating with.
+         * A value of zero means no limit.
+         * If this limit has been reached the socket shall enter an exceptional state and depending on the socket type,
+         * ØMQ shall take appropriate action such as blocking or dropping sent messages.
+         * Refer to the individual socket descriptions in zmq_socket(3) for details on the exact action taken for each socket type.
+         *
+         * @param value
+         * @return true if the option was set, otherwise false.
+         * @see #getRcvHWM()
+         */
+        public boolean setRcvHWM(int value)
+        {
+            return setSocketOpt(zmq.ZMQ.ZMQ_RCVHWM, value);
+        }
+
+        /**
+         * @see #setHWM(int)
          *
          * @return the High Water Mark.
          */
         @Deprecated
-        public long getHWM()
+        public int getHWM()
         {
             return -1;
         }
@@ -650,9 +911,33 @@ public class ZMQ
          *
          * @param hwm
          *            the number of messages to queue.
+         * @return true if the option was set, otherwise false.
+         * @deprecated this option uses integer range, use {@link #setHWM(int)} instead
+         */
+        @Deprecated
+        public boolean setHWM(long hwm)
+        {
+            boolean set = true;
+            set |= setSndHWM(hwm);
+            set |= setRcvHWM(hwm);
+            return set;
+        }
+
+        /**
+         * The 'ZMQ_HWM' option shall set the high water mark for the specified 'socket'. The high
+         * water mark is a hard limit on the maximum number of outstanding messages 0MQ shall queue
+         * in memory for any single peer that the specified 'socket' is communicating with.
+         *
+         * If this limit has been reached the socket shall enter an exceptional state and depending
+         * on the socket type, 0MQ shall take appropriate action such as blocking or dropping sent
+         * messages. Refer to the individual socket descriptions in the man page of zmq_socket[3] for
+         * details on the exact action taken for each socket type.
+         *
+         * @param hwm
+         *            the number of messages to queue.
          * @return true if the option was set, otherwise false
          */
-        public boolean setHWM(Number hwm)
+        public boolean setHWM(int hwm)
         {
             boolean set = true;
             set |= setSndHWM(hwm);
@@ -672,14 +957,50 @@ public class ZMQ
             return -1L;
         }
 
+        /**
+         * If set, a socket shall keep only one message in its inbound/outbound queue,
+         * this message being the last message received/the last message to be sent.
+         * Ignores ZMQ_RCVHWM and ZMQ_SNDHWM options.
+         * Does not support multi-part messages, in particular,
+         * only one part of it is kept in the socket internal queue.
+         *
+         * @param conflate true to keep only one message, false for standard behaviour.
+         * @return true if the option was set, otherwise false.
+         * @see #isConflate()
+         */
         public boolean setConflate(boolean conflate)
         {
             return setSocketOpt(zmq.ZMQ.ZMQ_CONFLATE, conflate);
         }
 
+        /**
+         * If in conflate mode, a socket shall keep only one message in its inbound/outbound queue,
+         * this message being the last message received/the last message to be sent.
+         * Ignores ZMQ_RCVHWM and ZMQ_SNDHWM options.
+         * Does not support multi-part messages, in particular,
+         * only one part of it is kept in the socket internal queue.
+         *
+         * @return true to keep only one message, false for standard behaviour.
+         * @see #setConflate(boolean)
+         */
         public boolean isConflate()
         {
             return base.getSocketOpt(zmq.ZMQ.ZMQ_CONFLATE) != 0;
+        }
+
+        /**
+         * If in conflate mode, a socket shall keep only one message in its inbound/outbound queue,
+         * this message being the last message received/the last message to be sent.
+         * Ignores ZMQ_RCVHWM and ZMQ_SNDHWM options.
+         * Does not support multi-part messages, in particular,
+         * only one part of it is kept in the socket internal queue.
+         *
+         * @return true to keep only one message, false for standard behaviour.
+         * @see #setConflate(boolean)
+         */
+        public boolean getConflate()
+        {
+            return isConflate();
         }
 
         /**
@@ -786,9 +1107,12 @@ public class ZMQ
         }
 
         /**
-         * @see #setRecoveryInterval(long)
+         * The ZMQ_RECOVERY_IVL option shall retrieve the recovery interval for multicast transports
+         * using the specified socket. The recovery interval determines the maximum time in milliseconds
+         * that a receiver can be absent from a multicast group before unrecoverable data loss will occur.
          *
          * @return the RecoveryIntervall.
+         * @see #setRecoveryInterval(long)
          */
         public long getRecoveryInterval()
         {
@@ -801,12 +1125,13 @@ public class ZMQ
          * seconds that a receiver can be absent from a multicast group before unrecoverable data
          * loss will occur.
          *
-         * CAUTION: Excersize care when setting large recovery intervals as the data needed for
+         * CAUTION: Exercise care when setting large recovery intervals as the data needed for
          * recovery will be held in memory. For example, a 1 minute recovery interval at a data rate
          * of 1Gbps requires a 7GB in-memory buffer. {Purpose of this Method}
          *
          * @param value recovery interval for multicast in milliseconds, default 10000
-         * @return true if the option was set, otherwise false
+         * @return true if the option was set, otherwise false.
+         * @see #getRecoveryInterval()
          */
         public boolean setRecoveryInterval(long value)
         {
@@ -814,13 +1139,17 @@ public class ZMQ
         }
 
         /**
-         * The 'ZMQ_REQ_CORRELATE' option causes a socket to send a request ID
-         * frame with every message. This means that the outgoing message
-         * is [request id, (empty frame), payload]. Any message not having those
-         * first two frames is discarded.
+         * The default behavior of REQ sockets is to rely on the ordering of messages
+         * to match requests and responses and that is usually sufficient.
+         * When this option is set to true, the REQ socket will prefix outgoing messages
+         * with an extra frame containing a request id.
+         * That means the full message is (request id, identity, 0, user frames…).
+         * The REQ socket will discard all incoming messages that don't begin with these two frames.
          * See also ZMQ_REQ_RELAXED.
+         *
          * @param correlate Whether to enable outgoing request ids.
          * @return true if the option was set, otherwise false
+         * @see #getReqCorrelate()
          */
         public boolean setReqCorrelate(boolean correlate)
         {
@@ -828,8 +1157,15 @@ public class ZMQ
         }
 
         /**
-         * @see #setReqCorrelate(boolean)
+         * The default behavior of REQ sockets is to rely on the ordering of messages
+         * to match requests and responses and that is usually sufficient.
+         * When this option is set to true, the REQ socket will prefix outgoing messages
+         * with an extra frame containing a request id.
+         * That means the full message is (request id, identity, 0, user frames…).
+         * The REQ socket will discard all incoming messages that don't begin with these two frames.
+         *
          * @return state of the ZMQ_REQ_CORRELATE option.
+         * @see #setReqCorrelate(boolean)
          */
         public boolean getReqCorrelate()
         {
@@ -837,12 +1173,18 @@ public class ZMQ
         }
 
         /**
-         * The 'ZMQ_REQ_RELAXED' option relaxes the strict lock-step requirement
-         * of REQ sockets. Instead, it allows for several requests to be sent
-         * sequentially. If enabled, also enable ZMQ_REQ_CORRELATE in order to
-         * receive the correct responses to requests.
-          @param relaxed
+         * By default, a REQ socket does not allow initiating a new request with zmq_send(3)
+         * until the reply to the previous one has been received.
+         * When set to true, sending another message is allowed and has the effect of disconnecting
+         * the underlying connection to the peer from which the reply was expected,
+         * triggering a reconnection attempt on transports that support it.
+         * The request-reply state machine is reset and a new request is sent to the next available peer.
+         * If set to true, also enable ZMQ_REQ_CORRELATE to ensure correct matching of requests and replies.
+         * Otherwise a late reply to an aborted request can be reported as the reply to the superseding request.
+         *
+         * @param relaxed
          * @return true if the option was set, otherwise false
+         * @see #getReqRelaxed()
          */
         public boolean setReqRelaxed(boolean relaxed)
         {
@@ -850,8 +1192,17 @@ public class ZMQ
         }
 
         /**
-         * @see #setReqRelaxed(boolean)
+         * By default, a REQ socket does not allow initiating a new request with zmq_send(3)
+         * until the reply to the previous one has been received.
+         * When set to true, sending another message is allowed and has the effect of disconnecting
+         * the underlying connection to the peer from which the reply was expected,
+         * triggering a reconnection attempt on transports that support it.
+         * The request-reply state machine is reset and a new request is sent to the next available peer.
+         * If set to true, also enable ZMQ_REQ_CORRELATE to ensure correct matching of requests and replies.
+         * Otherwise a late reply to an aborted request can be reported as the reply to the superseding request.
+         *
          * @return state of the ZMQ_REQ_RELAXED option.
+         * @see #setReqRelaxed(boolean)
          */
         public boolean getReqRelaxed()
         {
@@ -908,9 +1259,15 @@ public class ZMQ
         }
 
         /**
-         * @see #setReceiveTimeOut(int)
+         * Retrieve the timeout for recv operation on the socket.
+         * If the value is 0, recv will return immediately,
+         * with null if there is no message to receive.
+         * If the value is -1, it will block until a message is available.
+         * For all other values, it will wait for a message for that amount of time
+         * before returning with a null and an EAGAIN error.
          *
          * @return the Receive Timeout  in milliseconds.
+         * @see #setReceiveTimeOut(int)
          */
         public int getReceiveTimeOut()
         {
@@ -925,7 +1282,8 @@ public class ZMQ
          * a null and an EAGAIN error.
          *
          * @param value Timeout for receive operation in milliseconds. Default -1 (infinite)
-         * @return true if the option was set, otherwise false
+         * @return true if the option was set, otherwise false.
+         * @see #getReceiveTimeOut()
          */
         public boolean setReceiveTimeOut(int value)
         {
@@ -933,9 +1291,13 @@ public class ZMQ
         }
 
         /**
-         * @see #setSendTimeOut(int)
+         * Retrieve the timeout for send operation on the socket.
+         * If the value is 0, send will return immediately, with a false and an EAGAIN error if the message cannot be sent.
+         * If the value is -1, it will block until the message is sent.
+         * For all other values, it will try to send the message for that amount of time before returning with false and an EAGAIN error.
          *
          * @return the Send Timeout in milliseconds.
+         * @see #setSendTimeOut(int)
          */
         public int getSendTimeOut()
         {
@@ -950,7 +1312,8 @@ public class ZMQ
          * returning with false and an EAGAIN error.
          *
          * @param value Timeout for send operation in milliseconds. Default -1 (infinite)
-         * @return true if the option was set, otherwise false
+         * @return true if the option was set, otherwise false.
+         * @see #getSendTimeOut()
          */
         public boolean setSendTimeOut(int value)
         {
@@ -962,16 +1325,16 @@ public class ZMQ
         * connection. Possible values are -1, 0, 1. The default value -1 will skip all overrides and do the OS default.
         *
         * @param value The value of 'ZMQ_TCP_KEEPALIVE' to turn TCP keepalives on (1) or off (0).
-         * @return true if the option was set, otherwise false
+        * @return true if the option was set, otherwise false.
         */
         @Deprecated
-        public boolean setTCPKeepAlive(Number value)
+        public boolean setTCPKeepAlive(long value)
         {
-            return setTCPKeepAlive(value.intValue());
+            return setTCPKeepAlive(Long.valueOf(value).intValue());
         }
 
         /**
-         * @see #setTCPKeepAlive(Number)
+         * @see #setTCPKeepAlive(long)
          *
          * @return the keep alive setting.
          */
@@ -986,15 +1349,15 @@ public class ZMQ
          * do the OS default.
          *
          * @param value The value of 'ZMQ_TCP_KEEPALIVE_CNT' defines the number of keepalives before death.
-         * @return true if the option was set, otherwise false
+         * @return true if the option was set, otherwise false.
          */
-        public boolean setTCPKeepAliveCount(Number value)
+        public boolean setTCPKeepAliveCount(long value)
         {
-            return setSocketOpt(zmq.ZMQ.ZMQ_TCP_KEEPALIVE_CNT, value.intValue());
+            return setSocketOpt(zmq.ZMQ.ZMQ_TCP_KEEPALIVE_CNT, Long.valueOf(value).intValue());
         }
 
         /**
-         * @see #setTCPKeepAliveCount(Number)
+         * @see #setTCPKeepAliveCount(long)
          *
          * @return the keep alive count.
          */
@@ -1009,15 +1372,15 @@ public class ZMQ
          *
          * @param value The value of 'ZMQ_TCP_KEEPALIVE_INTVL' defines the interval between keepalives. Unit is OS
          *            dependent.
-         * @return true if the option was set, otherwise false
+         * @return true if the option was set, otherwise false.
          */
-        public boolean setTCPKeepAliveInterval(Number value)
+        public boolean setTCPKeepAliveInterval(long value)
         {
-            return setSocketOpt(zmq.ZMQ.ZMQ_TCP_KEEPALIVE_INTVL, value.intValue());
+            return setSocketOpt(zmq.ZMQ.ZMQ_TCP_KEEPALIVE_INTVL, Long.valueOf(value).intValue());
         }
 
         /**
-         * @see #setTCPKeepAliveInterval(Number)
+         * @see #setTCPKeepAliveInterval(long)
          *
          * @return the keep alive interval.
          */
@@ -1034,13 +1397,13 @@ public class ZMQ
          *            over the socket and the first keepalive probe. Unit is OS dependent.
          * @return true if the option was set, otherwise false
          */
-        public boolean setTCPKeepAliveIdle(Number value)
+        public boolean setTCPKeepAliveIdle(long value)
         {
-            return setSocketOpt(zmq.ZMQ.ZMQ_TCP_KEEPALIVE_IDLE, value.intValue());
+            return setSocketOpt(zmq.ZMQ.ZMQ_TCP_KEEPALIVE_IDLE, Long.valueOf(value).intValue());
         }
 
         /**
-         * @see #setTCPKeepAliveIdle(Number)
+         * @see #setTCPKeepAliveIdle(long)
          *
          * @return the keep alive idle value.
          */
@@ -1050,9 +1413,11 @@ public class ZMQ
         }
 
         /**
-         * @see #setSendBufferSize(int)
+         * The ZMQ_SNDBUF option shall retrieve the underlying kernel transmit buffer size for the specified socket.
+         * For details refer to your operating system documentation for the SO_SNDBUF socket option.
          *
          * @return the kernel send buffer size.
+         * @see #setSendBufferSize(int)
          */
         public int getSendBufferSize()
         {
@@ -1068,6 +1433,25 @@ public class ZMQ
          * @param value underlying kernel transmit buffer size for the 'socket' in bytes
          *              A value of zero means leave the OS default unchanged.
          * @return true if the option was set, otherwise false
+         * @deprecated this option uses integer range, use {@link #setSendBufferSize(int)} instead
+         * @see #getSendBufferSize()
+         */
+        @Deprecated
+        public boolean setSendBufferSize(long value)
+        {
+            return setSendBufferSize(Long.valueOf(value).intValue());
+        }
+
+        /**
+         * The 'ZMQ_SNDBUF' option shall set the underlying kernel transmit buffer size for the
+         * 'socket' to the specified size in bytes. A value of zero means leave the OS default
+         * unchanged. For details please refer to your operating system documentation for the
+         * 'SO_SNDBUF' socket option.
+         *
+         * @param value underlying kernel transmit buffer size for the 'socket' in bytes
+         *              A value of zero means leave the OS default unchanged.
+         * @return true if the option was set, otherwise false
+         * @see #getSendBufferSize()
          */
         public boolean setSendBufferSize(int value)
         {
@@ -1075,9 +1459,11 @@ public class ZMQ
         }
 
         /**
-         * @see #setReceiveBufferSize(int)
+         * The ZMQ_RCVBUF option shall retrieve the underlying kernel receive buffer size for the specified socket.
+         * For details refer to your operating system documentation for the SO_RCVBUF socket option.
          *
          * @return the kernel receive buffer size.
+         * @see #setReceiveBufferSize(int)
          */
         public int getReceiveBufferSize()
         {
@@ -1093,6 +1479,25 @@ public class ZMQ
          * @param value Underlying kernel receive buffer size for the 'socket' in bytes.
          *              A value of zero means leave the OS default unchanged.
          * @return true if the option was set, otherwise false
+         * @deprecated this option uses integer range, use {@link #setReceiveBufferSize(int)} instead
+         * @see #getReceiveBufferSize()
+         */
+        @Deprecated
+        public boolean setReceiveBufferSize(long value)
+        {
+            return setReceiveBufferSize(Long.valueOf(value).intValue());
+        }
+
+        /**
+         * The 'ZMQ_RCVBUF' option shall set the underlying kernel receive buffer size for the
+         * 'socket' to the specified size in bytes.
+         * For details refer to your operating system documentation for the 'SO_RCVBUF'
+         * socket option.
+         *
+         * @param value Underlying kernel receive buffer size for the 'socket' in bytes.
+         *              A value of zero means leave the OS default unchanged.
+         * @return true if the option was set, otherwise false
+         * @see #getReceiveBufferSize()
          */
         public boolean setReceiveBufferSize(int value)
         {
@@ -1159,6 +1564,19 @@ public class ZMQ
             return setSocketOpt(zmq.ZMQ.ZMQ_SUBSCRIBE, topic);
         }
 
+        /**
+         * The 'ZMQ_SUBSCRIBE' option shall establish a new message filter on a 'ZMQ_SUB' socket.
+         * Newly created 'ZMQ_SUB' sockets shall filter out all incoming messages, therefore you
+         * should call this option to establish an initial message filter.
+         *
+         * An empty 'option_value' of length zero shall subscribe to all incoming messages. A
+         * non-empty 'option_value' shall subscribe to all messages beginning with the specified
+         * prefix. Mutiple filters may be attached to a single 'ZMQ_SUB' socket, in which case a
+         * message shall be accepted if it matches at least one filter.
+         *
+         * @param topic
+         * @return true if the option was set, otherwise false
+         */
         public boolean subscribe(String topic)
         {
             return setSocketOpt(zmq.ZMQ.ZMQ_SUBSCRIBE, topic);
@@ -1179,6 +1597,16 @@ public class ZMQ
             return setSocketOpt(zmq.ZMQ.ZMQ_UNSUBSCRIBE, topic);
         }
 
+        /**
+         * The 'ZMQ_UNSUBSCRIBE' option shall remove an existing message filter on a 'ZMQ_SUB'
+         * socket. The filter specified must match an existing filter previously established with
+         * the 'ZMQ_SUBSCRIBE' option. If the socket has several instances of the same filter
+         * attached the 'ZMQ_UNSUBSCRIBE' option shall remove only one instance, leaving the rest in
+         * place and functional.
+         *
+         * @param topic
+         * @return true if the option was set, otherwise false
+         */
         public boolean unsubscribe(String topic)
         {
             return setSocketOpt(zmq.ZMQ.ZMQ_UNSUBSCRIBE, topic);
@@ -1206,31 +1634,95 @@ public class ZMQ
             return setSocketOpt(zmq.ZMQ.ZMQ_DECODER, cls);
         }
 
+        /**
+         * Sets the limit threshold where messages of a given size will be allocated using Direct ByteBuffer.
+         * It means that after this limit, there will be a slight penalty cost at the creation,
+         * but the subsequent operations will be faster.
+         * Set to 0 or negative to disable the threshold mechanism.
+         * @param threshold the threshold to set for the size limit of messages. 0 or negative to disable this system.
+         * @return true if the option was set, otherwise false.
+         */
         public boolean setMsgAllocationHeapThreshold(int threshold)
         {
             return setSocketOpt(zmq.ZMQ.ZMQ_MSG_ALLOCATION_HEAP_THRESHOLD, threshold);
         }
 
+        /**
+         * Gets the limit threshold where messages of a given size will be allocated using Direct ByteBuffer.
+         * It means that after this limit, there will be a slight penalty cost at the creation,
+         * but the subsequent operations will be faster.
+         * @return the threshold
+         */
         public int getMsgAllocationHeapThreshold()
         {
             return base.getSocketOpt(zmq.ZMQ.ZMQ_MSG_ALLOCATION_HEAP_THRESHOLD);
         }
 
+        /**
+         * The ZMQ_CONNECT_RID option sets the peer id of the next host connected via the connect() call,
+         * and immediately readies that connection for data transfer with the named id.
+         * This option applies only to the first subsequent call to connect(),
+         * calls thereafter use default connection behavior.
+         * Typical use is to set this socket option ahead of each connect() attempt to a new host.
+         * Each connection MUST be assigned a unique name. Assigning a name that is already in use is not allowed.
+         * Useful when connecting ROUTER to ROUTER, or STREAM to STREAM, as it allows for immediate sending to peers.
+         * Outbound id framing requirements for ROUTER and STREAM sockets apply.
+         * The peer id should be from 1 to 255 bytes long and MAY NOT start with binary zero.
+         *
+         * @param rid the peer id of the next host.
+         * @return true if the option was set, otherwise false.
+         */
         public boolean setConnectRid(String rid)
         {
             return setSocketOpt(zmq.ZMQ.ZMQ_CONNECT_RID, rid);
         }
 
+        /**
+         * The ZMQ_CONNECT_RID option sets the peer id of the next host connected via the connect() call,
+         * and immediately readies that connection for data transfer with the named id.
+         * This option applies only to the first subsequent call to connect(),
+         * calls thereafter use default connection behavior.
+         * Typical use is to set this socket option ahead of each connect() attempt to a new host.
+         * Each connection MUST be assigned a unique name. Assigning a name that is already in use is not allowed.
+         * Useful when connecting ROUTER to ROUTER, or STREAM to STREAM, as it allows for immediate sending to peers.
+         * Outbound id framing requirements for ROUTER and STREAM sockets apply.
+         * The peer id should be from 1 to 255 bytes long and MAY NOT start with binary zero.
+         *
+         * @param rid the peer id of the next host.
+         * @return true if the option was set, otherwise false.
+         */
         public boolean setConnectRid(byte[] rid)
         {
             return setSocketOpt(zmq.ZMQ.ZMQ_CONNECT_RID, rid);
         }
 
+        /**
+         * Sets the raw mode on the ROUTER, when set to true.
+         * When the ROUTER socket is in raw mode, and when using the tcp:// transport,
+         * it will read and write TCP data without ØMQ framing.
+         * This lets ØMQ applications talk to non-ØMQ applications.
+         * When using raw mode, you cannot set explicit identities,
+         * and the ZMQ_SNDMORE flag is ignored when sending data messages.
+         * In raw mode you can close a specific connection by sending it a zero-length message (following the identity frame).
+         *
+         * @param raw true to set the raw mode on the ROUTER.
+         * @return true if the option was set, otherwise false.
+         */
         public boolean setRouterRaw(boolean raw)
         {
             return setSocketOpt(zmq.ZMQ.ZMQ_ROUTER_RAW, raw);
         }
 
+        /**
+         * When set to true, the socket will automatically send
+         * an empty message when a new connection is made or accepted.
+         * You may set this on REQ, DEALER, or ROUTER sockets connected to a ROUTER socket.
+         * The application must filter such empty messages.
+         * The ZMQ_PROBE_ROUTER option in effect provides the ROUTER application with an event signaling the arrival of a new peer.
+         *
+         * @param probe true to send automatically an empty message when a new connection is made or accepted.
+         * @return true if the option was set, otherwise false.
+         */
         public boolean setProbeRouter(boolean probe)
         {
             return setSocketOpt(zmq.ZMQ.ZMQ_PROBE_ROUTER, probe);
@@ -1238,23 +1730,31 @@ public class ZMQ
 
         /**
          * Sets the ROUTER socket behavior when an unroutable message is encountered.
+         * A value of false is the default and discards the message silently
+         * when it cannot be routed or the peers SNDHWM is reached.
+         * A value of true returns an EHOSTUNREACH error code if the message cannot be routed
+         * or EAGAIN error code if the SNDHWM is reached and ZMQ_DONTWAIT was used.
+         * Without ZMQ_DONTWAIT it will block until the SNDTIMEO is reached or a spot in the send queue opens up.
          *
          * @param mandatory A value of false is the default and discards the message silently when it cannot be routed.
          *                  A value of true returns an EHOSTUNREACH error code if the message cannot be routed.
-         * @return true if the option was set, otherwise false
+         * @return true if the option was set, otherwise false.
          */
         public boolean setRouterMandatory(boolean mandatory)
         {
-            return base.setSocketOpt(zmq.ZMQ.ZMQ_ROUTER_MANDATORY, mandatory);
+            return setSocketOpt(zmq.ZMQ.ZMQ_ROUTER_MANDATORY, mandatory);
         }
 
         /**
-         * If two clients use the same identity when connecting to a ROUTER, the
-         * results shall depend on the ZMQ_ROUTER_HANDOVER option setting
+         * If two clients use the same identity when connecting to a ROUTER,
+         * the results shall depend on the ZMQ_ROUTER_HANDOVER option setting.
+         * If that is not set (or set to the default of false),
+         * the ROUTER socket shall reject clients trying to connect with an already-used identity.
+         * If that option is set to true, the ROUTER socket shall hand-over the connection to the new client and disconnect the existing one.
          *
          * @param handover A value of false, (default) the ROUTER socket shall reject clients trying to connect with an already-used identity
          *                  A value of true, the ROUTER socket shall hand-over the connection to the new client and disconnect the existing one
-         * @return true if the option was set, otherwise false
+         * @return true if the option was set, otherwise false.
          */
         public boolean setRouterHandover(boolean handover)
         {
@@ -1266,13 +1766,21 @@ public class ZMQ
          *
          * @param verbose A value of false is the default and passes only new subscription messages to upstream.
          *                A value of true passes all subscription messages upstream.
-         * @return true if the option was set, otherwise false
+         * @return true if the option was set, otherwise false.
          */
         public boolean setXpubVerbose(boolean verbose)
         {
             return setSocketOpt(zmq.ZMQ.ZMQ_XPUB_VERBOSE, verbose);
         }
 
+        /**
+         * Sets the XPUB socket behaviour to return error EAGAIN if SENDHWM is reached and the message could not be send.
+         * A value of false is the default and drops the message silently when the peers SNDHWM is reached.
+         * A value of true returns an EAGAIN error code if the SNDHWM is reached and ZMQ_DONTWAIT was used.
+         *
+         * @param noDrop
+         * @return true if the option was set, otherwise false.
+         */
         public boolean setXpubNoDrop(boolean noDrop)
         {
             return setSocketOpt(zmq.ZMQ.ZMQ_XPUB_NODROP, noDrop);
@@ -1282,22 +1790,42 @@ public class ZMQ
          * @see #setIPv4Only (boolean)
          *
          * @return the IPV4ONLY
-         * @deprecated use {@link #isIpv6()} instead (inverted logic: ipv4 = true <==> ipv6 = false)
+         * @deprecated use {@link #isIPv6()} instead (inverted logic: ipv4 = true <==> ipv6 = false)
          */
         @Deprecated
         public boolean getIPv4Only()
         {
-            return !isIpv6();
+            return !isIPv6();
         }
 
         /**
-         * @see #setIPv6 (boolean)
+         * Retrieve the IPv6 option for the socket.
+         * A value of true means IPv6 is enabled on the socket,
+         * while false means the socket will use only IPv4.
+         * When IPv6 is enabled the socket will connect to,
+         * or accept connections from, both IPv4 and IPv6 hosts.
          *
-         * @return the IPV6 config
+         * @return the IPV6 configuration.
+         * @see #setIPv6 (boolean)
          */
-        public boolean isIpv6()
+        public boolean isIPv6()
         {
             return (Boolean) base.getSocketOptx(zmq.ZMQ.ZMQ_IPV6);
+        }
+
+        /**
+         * Retrieve the IPv6 option for the socket.
+         * A value of true means IPv6 is enabled on the socket,
+         * while false means the socket will use only IPv4.
+         * When IPv6 is enabled the socket will connect to,
+         * or accept connections from, both IPv4 and IPv6 hosts.
+         *
+         * @return the IPV6 configuration.
+         * @see #setIPv6 (boolean)
+         */
+        public boolean getIPv6()
+        {
+            return isIPv6();
         }
 
         /**
@@ -1315,12 +1843,13 @@ public class ZMQ
         }
 
         /**
-         * The 'ZMQ_IPV6' option shall set the underlying native socket type.
-         * An IPv6 socket lets applications connect to and accept connections from both IPv4 and IPv6 hosts.
+         * Set the IPv6 option for the socket.
+         * A value of true means IPv6 is enabled on the socket, while false means the socket will use only IPv4.
+         * When IPv6 is enabled the socket will connect to, or accept connections from, both IPv4 and IPv6 hosts.
          *
          * @param v6 A value of true will use IPv6 sockets, while the value of false will use IPv4 sockets
          * @return true if the option was set, otherwise false
-         * @see #isIpv6()
+         * @see #isIPv6()
          */
         public boolean setIPv6(boolean v6)
         {
@@ -1378,6 +1907,10 @@ public class ZMQ
         }
 
         /**
+         * Retrieve the state of the attach on connect value.
+         * If false, will delay the attachment of a pipe on connect until the underlying connection has completed.
+         * This will cause the socket to block if there are no other connections, but will prevent queues from filling on pipes awaiting connection.
+         *
          * @see #setImmediate(boolean)
          */
         public boolean isImmediate()
@@ -1386,42 +1919,96 @@ public class ZMQ
         }
 
         /**
+         * Retrieve the state of the attach on connect value.
+         * If false, will delay the attachment of a pipe on connect until the underlying connection has completed.
+         * This will cause the socket to block if there are no other connections, but will prevent queues from filling on pipes awaiting connection.
+         *
+         * @see #setImmediate(boolean)
+         */
+        public boolean getImmediate()
+        {
+            return isImmediate();
+        }
+
+        /**
          * Accept messages immediately or only when connections are made
          *
-         * If set to false, will delay the attachment of a pipe on connect until the underlying connection
-         * has completed. This will cause the socket to block if there are no other connections, but will
-         * prevent queues from filling on pipes awaiting connection
+         * By default queues will fill on outgoing connections even if the connection has not completed.
+         * This can lead to "lost" messages on sockets with round-robin routing (REQ, PUSH, DEALER).
+         * If this option is set to false, messages shall be queued only to completed connections.
+         * This will cause the socket to block if there are no other connections,
+         * but will prevent queues from filling on pipes awaiting connection.
          *
-         * @param value The value of 'ZMQ_IMMEDIATE'. Default false.
-         * @return true if the option was set
+         * @param value The value of 'ZMQ_IMMEDIATE'. Default true.
+         * @return true if the option was set, otherwise false.
+         * @see #isImmediate()
          */
         public boolean setImmediate(boolean value)
         {
             return setSocketOpt(zmq.ZMQ.ZMQ_IMMEDIATE, value);
         }
 
+        /**
+         * Sets the SOCKS5 proxy address that shall be used by the socket for the TCP connection(s).
+         * Does not support SOCKS5 authentication.
+         * If the endpoints are domain names instead of addresses they shall not be resolved
+         * and they shall be forwarded unchanged to the SOCKS proxy service
+         * in the client connection request message (address type 0x03 domain name).
+         *
+         * @param proxy
+         * @return true if the option was set, otherwise false.
+         * @see #getSocksProxy()
+         */
         public boolean setSocksProxy(String proxy)
         {
             return setSocketOpt(zmq.ZMQ.ZMQ_SOCKS_PROXY, proxy);
         }
 
+        /**
+         * Sets the SOCKS5 proxy address that shall be used by the socket for the TCP connection(s).
+         * Does not support SOCKS5 authentication.
+         * If the endpoints are domain names instead of addresses they shall not be resolved
+         * and they shall be forwarded unchanged to the SOCKS proxy service
+         * in the client connection request message (address type 0x03 domain name).
+         *
+         * @param proxy
+         * @return true if the option was set, otherwise false.
+         * @see #getSocksProxy()
+         */
         public boolean setSocksProxy(byte[] proxy)
         {
             return setSocketOpt(zmq.ZMQ.ZMQ_SOCKS_PROXY, proxy);
         }
 
+        /**
+         * The ZMQ_SOCKS_PROXY option shall retrieve the SOCKS5 proxy address in string format.
+         * The returned value MAY be empty.
+         *
+         * @return the SOCKS5 proxy address in string format
+         * @see #setSocksProxy(byte[])
+         */
         public String getSocksProxy()
         {
             return (String) base.getSocketOptx(zmq.ZMQ.ZMQ_SOCKS_PROXY);
         }
 
+        /**
+         * The ZMQ_LAST_ENDPOINT option shall retrieve the last endpoint bound for TCP and IPC transports.
+         * The returned value will be a string in the form of a ZMQ DSN.
+         * Note that if the TCP host is INADDR_ANY, indicated by a *, then the returned address will be 0.0.0.0 (for IPv4).
+         */
         public String getLastEndpoint()
         {
             return (String) base.getSocketOptx(zmq.ZMQ.ZMQ_LAST_ENDPOINT);
         }
 
         /**
-         * Sets the domain used for ZAP authentication
+         * Sets the domain for ZAP (ZMQ RFC 27) authentication.
+         * For NULL security (the default on all tcp:// connections),
+         * ZAP authentication only happens if you set a non-empty domain.
+         * For PLAIN and CURVE security, ZAP requests are always made, if there is a ZAP handler present.
+         * See http://rfc.zeromq.org/spec:27 for more details.
+         *
          * @param domain the domain of ZAP authentication
          * @return true if the option was set
          * @see #getZapDomain()
@@ -1431,13 +2018,26 @@ public class ZMQ
             return setSocketOpt(zmq.ZMQ.ZMQ_ZAP_DOMAIN, domain);
         }
 
+        /**
+         * Sets the domain for ZAP (ZMQ RFC 27) authentication.
+         * For NULL security (the default on all tcp:// connections),
+         * ZAP authentication only happens if you set a non-empty domain.
+         * For PLAIN and CURVE security, ZAP requests are always made, if there is a ZAP handler present.
+         * See http://rfc.zeromq.org/spec:27 for more details.
+         *
+         * @param domain the domain of ZAP authentication
+         * @return true if the option was set
+         * @see #getZapDomain()
+         */
         public boolean setZapDomain(byte[] domain)
         {
             return setSocketOpt(zmq.ZMQ.ZMQ_ZAP_DOMAIN, domain);
         }
 
         /**
-         * Gets the domain used for ZAP authentication
+         * The ZMQ_ZAP_DOMAIN option shall retrieve the last ZAP domain set for the socket.
+         * The returned value MAY be empty.
+         *
          * @return the domain of ZAP authentication
          * @see #setZapDomain(String)
          */
@@ -1447,9 +2047,14 @@ public class ZMQ
         }
 
         /**
-         * Sets the role used for ZAP authentication.
-         * @param server true if the role of the socket should be server ZAP authentication
-         * @return true if the option was set
+         * Defines whether the socket will act as server for PLAIN security, see zmq_plain(7).
+         * A value of true means the socket will act as PLAIN server.
+         * A value of false means the socket will not act as PLAIN server,
+         * and its security role then depends on other option settings.
+         * Setting this to false shall reset the socket security to NULL.
+         *
+         * @param server true if the role of the socket should be server for PLAIN security.
+         * @return true if the option was set, otherwise false.
          * @see #isAsServerPlain()
          */
         public boolean setAsServerPlain(boolean server)
@@ -1458,8 +2063,9 @@ public class ZMQ
         }
 
         /**
-         * Gets the role used for ZAP authentication.
-         * @return true if the role of the socket should be server ZAP authentication
+         * Returns the ZMQ_PLAIN_SERVER option, if any, previously set on the socket.
+         *
+         * @return true if the role of the socket should be server for the PLAIN mechanism.
          * @see #setAsServerPlain(boolean)
          */
         public boolean isAsServerPlain()
@@ -1467,39 +2073,104 @@ public class ZMQ
             return (Boolean) base.getSocketOptx(zmq.ZMQ.ZMQ_PLAIN_SERVER);
         }
 
+        /**
+         * Returns the ZMQ_PLAIN_SERVER option, if any, previously set on the socket.
+         *
+         * @return true if the role of the socket should be server for the PLAIN mechanism.
+         * @see #setAsServerPlain(boolean)
+         */
+        public boolean getAsServerPlain()
+        {
+            return isAsServerPlain();
+        }
+
+        /**
+         * Sets the username for outgoing connections over TCP or IPC.
+         * If you set this to a non-null value, the security mechanism used for connections shall be PLAIN, see zmq_plain(7).
+         * If you set this to a null value, the security mechanism used for connections shall be NULL, see zmq_null(3).
+         *
+         * @param username the username to set.
+         * @return true if the option was set, otherwise false.
+         */
         public boolean setPlainUsername(String username)
         {
             return base.setSocketOpt(zmq.ZMQ.ZMQ_PLAIN_USERNAME, username);
         }
 
+        /**
+         * Sets the password for outgoing connections over TCP or IPC.
+         * If you set this to a non-null value, the security mechanism used for connections
+         * shall be PLAIN, see zmq_plain(7).
+         * If you set this to a null value, the security mechanism used for connections shall be NULL, see zmq_null(3).
+         *
+         * @param password the password to set.
+         * @return true if the option was set, otherwise false.
+         */
         public boolean setPlainPassword(String password)
         {
             return base.setSocketOpt(zmq.ZMQ.ZMQ_PLAIN_PASSWORD, password);
         }
 
+        /**
+         * Sets the username for outgoing connections over TCP or IPC.
+         * If you set this to a non-null value, the security mechanism used for connections shall be PLAIN, see zmq_plain(7).
+         * If you set this to a null value, the security mechanism used for connections shall be NULL, see zmq_null(3).
+         *
+         * @param username the username to set.
+         * @return true if the option was set, otherwise false.
+         */
         public boolean setPlainUsername(byte[] username)
         {
             return base.setSocketOpt(zmq.ZMQ.ZMQ_PLAIN_USERNAME, username);
         }
 
+        /**
+         * Sets the password for outgoing connections over TCP or IPC.
+         * If you set this to a non-null value, the security mechanism used for connections
+         * shall be PLAIN, see zmq_plain(7).
+         * If you set this to a null value, the security mechanism used for connections shall be NULL, see zmq_null(3).
+         *
+         * @param password the password to set.
+         * @return true if the option was set, otherwise false.
+         */
         public boolean setPlainPassword(byte[] password)
         {
             return base.setSocketOpt(zmq.ZMQ.ZMQ_PLAIN_PASSWORD, password);
         }
 
+        /**
+         * The ZMQ_PLAIN_USERNAME option shall retrieve the last username
+         * set for the PLAIN security mechanism.
+         *
+         * @return the plain username.
+         */
         public String getPlainUsername()
         {
             return (String) base.getSocketOptx(zmq.ZMQ.ZMQ_PLAIN_USERNAME);
         }
 
+        /**
+         * The ZMQ_PLAIN_PASSWORD option shall retrieve the last password
+         * set for the PLAIN security mechanism.
+         * The returned value MAY be empty.
+         *
+         * @return the plain password.
+         */
         public String getPlainPassword()
         {
             return (String) base.getSocketOptx(zmq.ZMQ.ZMQ_PLAIN_PASSWORD);
         }
 
         /**
-         * Sets the role used for ZAP authentication.
-         * @param server true if the role of the socket should be server ZAP authentication
+         * Defines whether the socket will act as server for CURVE security, see zmq_curve(7).
+         * A value of true means the socket will act as CURVE server.
+         * A value of false means the socket will not act as CURVE server,
+         * and its security role then depends on other option settings.
+         * Setting this to false shall reset the socket security to NULL.
+         * When you set this you must also set the server's secret key using the ZMQ_CURVE_SECRETKEY option.
+         * A server socket does not need to know its own public key.
+         *
+         * @param server true if the role of the socket should be server for CURVE mechanism
          * @return true if the option was set
          * @see #isAsServerCurve()
          */
@@ -1509,8 +2180,9 @@ public class ZMQ
         }
 
         /**
-         * Gets the role used for ZAP authentication.
-         * @return true if the role of the socket should be server ZAP authentication
+         * Tells if the socket will act as server for CURVE security.
+         *
+         * @return true if the role of the socket should be server for CURVE mechanism.
          * @see #setAsServerCurve(boolean)
          */
         public boolean isAsServerCurve()
@@ -1518,31 +2190,98 @@ public class ZMQ
             return (boolean) base.getSocketOptx(zmq.ZMQ.ZMQ_CURVE_SERVER);
         }
 
+        /**
+         * Tells if the socket will act as server for CURVE security.
+         *
+         * @return true if the role of the socket should be server for CURVE mechanism.
+         * @see #setAsServerCurve(boolean)
+         */
+        public boolean getAsServerCurve()
+        {
+            return isAsServerCurve();
+        }
+
+        /**
+         * Sets the socket's long term public key.
+         * You must set this on CURVE client sockets, see zmq_curve(7).
+         * You can provide the key as 32 binary bytes, or as a 40-character string
+         * encoded in the Z85 encoding format.
+         * The public key must always be used with the matching secret key.
+         * To generate a public/secret key pair,
+         * use {@link zmq.io.mechanism.curve.Curve#keypair()} or {@link zmq.io.mechanism.curve.Curve#keypairZ85()}.
+         *
+         * @param key the curve public key
+         * @return true if the option was set, otherwise false
+         * @see #getCurvePublicKey()
+         */
         public boolean setCurvePublicKey(byte[] key)
         {
             return setSocketOpt(zmq.ZMQ.ZMQ_CURVE_PUBLICKEY, key);
         }
 
+        /**
+         * Sets the socket's long term server key.
+         * You must set this on CURVE client sockets, see zmq_curve(7).
+         * You can provide the key as 32 binary bytes, or as a 40-character string
+         * encoded in the Z85 encoding format.
+         * This key must have been generated together with the server's secret key.
+         * To generate a public/secret key pair,
+         * use {@link zmq.io.mechanism.curve.Curve#keypair()} or {@link zmq.io.mechanism.curve.Curve#keypairZ85()}.
+         *
+         * @param key the curve server key
+         * @return true if the option was set, otherwise false
+         * @see #getCurveServerKey()
+         */
         public boolean setCurveServerKey(byte[] key)
         {
             return setSocketOpt(zmq.ZMQ.ZMQ_CURVE_SERVERKEY, key);
         }
 
+        /**
+         * Sets the socket's long term secret key.
+         * You must set this on both CURVE client and server sockets, see zmq_curve(7).
+         * You can provide the key as 32 binary bytes, or as a 40-character string
+         * encoded in the Z85 encoding format.
+         * To generate a public/secret key pair,
+         * use {@link zmq.io.mechanism.curve.Curve#keypair()} or {@link zmq.io.mechanism.curve.Curve#keypairZ85()}.
+         *
+         * @param key the curve secret key
+         * @return true if the option was set, otherwise false
+         * @see #getCurveSecretKey()
+         */
         public boolean setCurveSecretKey(byte[] key)
         {
             return setSocketOpt(zmq.ZMQ.ZMQ_CURVE_SECRETKEY, key);
         }
 
+        /**
+         * Retrieves the current long term public key for the socket in binary format of 32 bytes.
+         *
+         * @return key the curve public key
+         * @see #setCurvePublicKey(byte[])
+         */
         public byte[] getCurvePublicKey()
         {
             return (byte[]) base.getSocketOptx(zmq.ZMQ.ZMQ_CURVE_PUBLICKEY);
         }
 
+        /**
+         * Retrieves the current server key for the socket in binary format of 32 bytes.
+         *
+         * @return key the curve server key
+         * @see #setCurveServerKey(byte[])
+         */
         public byte[] getCurveServerKey()
         {
             return (byte[]) base.getSocketOptx(zmq.ZMQ.ZMQ_CURVE_SERVERKEY);
         }
 
+        /**
+         * Retrieves the current long term secret key for the socket in binary format of 32 bytes.
+         *
+         * @return key the curve secret key
+         * @see #setCurveSecretKey(byte[])
+         */
         public byte[] getCurveSecretKey()
         {
             return (byte[]) base.getSocketOptx(zmq.ZMQ.ZMQ_CURVE_SECRETKEY);
@@ -1572,6 +2311,11 @@ public class ZMQ
             }
         }
 
+        /**
+         * The ZMQ_MECHANISM option shall retrieve the current security mechanism for the socket.
+         *
+         * @return the current mechanism.
+         */
         public Mechanism getMechanism()
         {
             return Mechanism.find((Mechanisms) base.getSocketOptx(zmq.ZMQ.ZMQ_MECHANISM));
