@@ -96,6 +96,8 @@ public final class Poller extends PollerBase implements Runnable
         }
         catch (InterruptedException e) {
             e.printStackTrace();
+            // Re-interrupt the thread so the caller can handle it.
+            Thread.currentThread().interrupt();
         }
         finally {
             ctx.closeSelector(selector);

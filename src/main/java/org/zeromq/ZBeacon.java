@@ -132,6 +132,8 @@ public class ZBeacon
                         Thread.sleep(broadcastInterval);
                     }
                     catch (InterruptedException interruptedException) {
+                        // Re-interrupt the thread so the caller can handle it.
+                        Thread.currentThread().interrupt();
                         break;
                     }
                     catch (Exception exception) {
