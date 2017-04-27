@@ -80,12 +80,17 @@ public abstract class Mechanism
         return userId;
     }
 
-    protected byte[] addProperty(String name, String value)
+    protected void addProperty(ByteBuffer buf, String name, String value)
     {
-        return addProperty(name, value.getBytes(ZMQ.CHARSET));
+        addProperty(buf, name, value.getBytes(ZMQ.CHARSET));
     }
 
-    protected byte[] addProperty(String name, byte[] value)
+    protected void addProperty(Msg msg, String name, String value)
+    {
+        addProperty(msg, name, value.getBytes(ZMQ.CHARSET));
+    }
+
+    protected void addProperty(ByteBuffer buf, String name, byte[] value)
     {
         byte[] nameB = name.getBytes(ZMQ.CHARSET);
         int nameLength = nameB.length;
@@ -94,8 +99,6 @@ public abstract class Mechanism
         int valueLength = value == null ? 0 : value.length;
         assert (valueLength <= Integer.MAX_VALUE);
 
-        ByteBuffer buf = ByteBuffer.allocate(nameLength + valueLength + 1 + 4);
-
         buf.put((byte) nameLength);
         buf.put(nameB);
 
@@ -103,31 +106,41 @@ public abstract class Mechanism
         if (value != null) {
             buf.put(value);
         }
+    }
 
-        return buf.array();
+    protected void addProperty(Msg msg, String name, byte[] value)
+    {
+        byte[] nameB = name.getBytes(ZMQ.CHARSET);
+        int nameLength = nameB.length;
+        assert (nameLength <= 255);
+
+        int valueLength = value == null ? 0 : value.length;
+        assert (valueLength <= Integer.MAX_VALUE);
+
+        msg.put((byte) nameLength);
+        msg.put(nameB);
+
+        Wire.putUInt32(msg, valueLength);
+        if (value != null) {
+            msg.put(value);
+        }
     }
 
     protected int parseMetadata(Msg msg, int offset, boolean zapFlag)
     {
-        byte[] dest = new byte[msg.size() - offset];
-        System.arraycopy(msg.data(), offset, dest, 0, dest.length);
-        return parseMetadata(dest, zapFlag);
+        return parseMetadata(msg.buf(), offset, zapFlag);
     }
 
     protected int parseMetadata(ByteBuffer msg, int offset, boolean zapFlag)
     {
-        byte[] dest = new byte[msg.limit() - offset];
-        System.arraycopy(msg.array(), offset, dest, 0, dest.length);
-        return parseMetadata(dest, zapFlag);
-    }
+        ByteBuffer data = msg.duplicate();
 
-    int parseMetadata(byte[] data, boolean zapFlag)
-    {
-        int bytesLeft = data.length;
-        int index = 0;
+        data.position(offset);
+        int bytesLeft = data.remaining();
+        int index = offset;
 
         while (bytesLeft > 1) {
-            byte nameLength = data[index];
+            byte nameLength = data.get(index);
             index++;
             bytesLeft -= 1;
 
@@ -135,7 +148,7 @@ public abstract class Mechanism
                 break;
             }
 
-            String name = new String(data, index, nameLength);
+            String name = build(data, index, nameLength);
             index += nameLength;
             bytesLeft -= nameLength;
 
@@ -151,7 +164,7 @@ public abstract class Mechanism
                 break;
             }
 
-            String value = new String(data, index, valueLength);
+            String value = build(data, index, valueLength);
             index += valueLength;
             bytesLeft -= valueLength;
 
@@ -180,6 +193,16 @@ public abstract class Mechanism
             return ZError.EPROTO;
         }
         return 0;
+    }
+
+    private String build(ByteBuffer buf, int offset, int length)
+    {
+        byte[] bytes = new byte[length];
+        int position = buf.position();
+        buf.position(offset);
+        buf.get(bytes, 0, length);
+        buf.position(position);
+        return new String(bytes, ZMQ.CHARSET);
     }
 
     protected int property(String name, String value)
@@ -356,7 +379,7 @@ public abstract class Mechanism
         setUserId(msgs.get(5).data());
 
         //  Process metadata frame
-        int rc = parseMetadata(msgs.get(6).data(), true);
+        int rc = parseMetadata(msgs.get(6), 0, true);
 
         return rc;
     }

@@ -412,6 +412,11 @@ public class ZMQ
         return rc;
     }
 
+    public static int send(SocketBase s, byte[] buf, int flags)
+    {
+        return send(s, buf, buf.length, flags);
+    }
+
     public static int send(SocketBase s, byte[] buf, int len, int flags)
     {
         checkSocket(s);

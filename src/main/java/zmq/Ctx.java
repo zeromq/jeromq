@@ -128,6 +128,9 @@ public class Ctx
     //  Synchronization of access to context options.
     private final Lock optSync;
 
+    //  Synchronization of access to selectors.
+    private final Lock selectorSync = new ReentrantLock();
+
     static final int         TERM_TID   = 0;
     private static final int REAPER_TID = 1;
 
@@ -173,12 +176,18 @@ public class Ctx
         }
         ioThreads.clear();
 
-        for (Selector selector : selectors) {
-            if (selector != null) {
-                selector.close();
+        selectorSync.lock();
+        try {
+            for (Selector selector : selectors) {
+                if (selector != null) {
+                    selector.close();
+                }
             }
+            selectors.clear();
         }
-        selectors.clear();
+        finally {
+            selectorSync.unlock();
+        }
 
         //  Deallocate the reaper thread object.
         if (reaper != null) {
@@ -460,6 +469,7 @@ public class Ctx
     // Creates a Selector that will be closed when the context is destroyed.
     public Selector createSelector()
     {
+        selectorSync.lock();
         try {
             Selector selector = Selector.open();
             assert (selector != null);
@@ -469,20 +479,29 @@ public class Ctx
         catch (IOException e) {
             throw new ZError.IOException(e);
         }
+        finally {
+            selectorSync.unlock();
+        }
     }
 
     public boolean closeSelector(Selector selector)
     {
-        boolean rc = selectors.remove(selector);
-        if (rc) {
-            try {
-                selector.close();
+        selectorSync.lock();
+        try {
+            boolean rc = selectors.remove(selector);
+            if (rc) {
+                try {
+                    selector.close();
+                }
+                catch (IOException e) {
+                    throw new ZError.IOException(e);
+                }
             }
-            catch (IOException e) {
-                throw new ZError.IOException(e);
-            }
+            return rc;
         }
-        return rc;
+        finally {
+            selectorSync.unlock();
+        }
     }
 
     //  Returns reaper thread object.

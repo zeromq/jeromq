@@ -69,11 +69,11 @@ class NullMechanism extends Mechanism
 
         //  Add socket type property
         String socketType = socketType(options.type);
-        msg.put(addProperty(SOCKET_TYPE, socketType));
+        addProperty(msg, SOCKET_TYPE, socketType);
 
         //  Add identity property
         if (options.type == ZMQ.ZMQ_REQ || options.type == ZMQ.ZMQ_DEALER || options.type == ZMQ.ZMQ_ROUTER) {
-            msg.put(addProperty(IDENTITY, options.identity));
+            addProperty(msg, IDENTITY, options.identity);
         }
         readyCommandSent = true;
 

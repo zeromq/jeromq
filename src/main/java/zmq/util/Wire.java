@@ -71,6 +71,16 @@ public class Wire
         return buf;
     }
 
+    public static Msg putUInt32(Msg msg, int value)
+    {
+        msg.put((byte) ((value >>> 24) & 0xff));
+        msg.put((byte) ((value >>> 16) & 0xff));
+        msg.put((byte) ((value >>> 8) & 0xff));
+        msg.put((byte) ((value & 0xff)));
+
+        return msg;
+    }
+
     public static ByteBuffer putUInt64(ByteBuffer buf, long value)
     {
         buf.put((byte) ((value >>> 56) & 0xff));

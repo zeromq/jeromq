@@ -163,7 +163,7 @@ public class SessionBase extends Own implements Pipe.IPipeEvents, IPollEvents
         }
         boolean rc = zapPipe.write(msg);
         assert (rc);
-        if ((msg.flags() & ZMQ.ZMQ_SNDMORE) == 0) {
+        if (!msg.hasMore()) {
             zapPipe.flush();
         }
         return true;

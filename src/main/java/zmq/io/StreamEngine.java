@@ -738,7 +738,6 @@ public class StreamEngine implements IEngine, IPollEvents
                 greetingSend.limit(SIGNATURE_SIZE + 1);
                 greetingSend.put(revisionPos, Protocol.V3.revision); //  Major version number
                 outsize += 1;
-                continue;
             }
 
             if (greetingRecv.position() > SIGNATURE_SIZE) {
@@ -748,11 +747,7 @@ public class StreamEngine implements IEngine, IPollEvents
                     }
                     // We read a further byte, which indicates the ZMTP version.
                     byte protocol = greetingRecv.get(revisionPos);
-                    if (protocol == Protocol.V0.revision) {
-                        // TODO V4: we should never lead here...
-                        break;
-                    }
-                    else if (protocol == Protocol.V1.revision || protocol == Protocol.V2.revision) {
+                    if (protocol == Protocol.V1.revision || protocol == Protocol.V2.revision) {
                         // If this is 1 or 2, we have a ZMTP 2.0 peer.
                         greetingSend.limit(V2_GREETING_SIZE);
                         greetingSend.position(SIGNATURE_SIZE + 1);
