@@ -29,6 +29,10 @@ Pure Java implementation of libzmq (http://zeromq.org).
 * norm:// protocol. Cannot find a Java implementation.
 * tipc:// protocol. Cannot find a Java implementation.
 
+* GSSAPI mechanism is not yet implemented.
+
+* TCP KeepAlive Count, Idle, Interval cannot be set via Java but as OS level.
+
 ## Contributing
 
 Contributions welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for details about the contribution process and useful development tasks.
