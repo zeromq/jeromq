@@ -44,7 +44,7 @@ public class FQ
         current = 0;
         more = false;
 
-        pipes = new ArrayList<Pipe>();
+        pipes = new ArrayList<>();
     }
 
     public void attach(Pipe pipe)
