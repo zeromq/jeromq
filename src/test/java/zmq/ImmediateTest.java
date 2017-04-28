@@ -11,9 +11,9 @@ import zmq.util.Utils;
 public class ImmediateTest
 {
     @Test
-    public void testImmediate1() throws Exception
+    public void testImmediateTrue() throws Exception
     {
-        System.out.println("Scenario 1");
+        System.out.println("Immediate = true");
         // TEST 1.
         // First we're going to attempt to send messages to two
         // pipes, one connected, the other not. We should see
@@ -39,6 +39,9 @@ public class ImmediateTest
         // Create a socket pushing to two endpoints - only 1 message should arrive.
         SocketBase from = ZMQ.socket(context, ZMQ.ZMQ_PUSH);
         assertThat(from, notNullValue());
+
+        rc = ZMQ.setSocketOption(from, ZMQ.ZMQ_IMMEDIATE, true);
+        assertThat(rc, is(true));
 
         val = 0;
         rc = ZMQ.setSocketOption(from, ZMQ.ZMQ_LINGER, val);
@@ -81,9 +84,9 @@ public class ImmediateTest
     }
 
     @Test
-    public void testConnectDelay2() throws Exception
+    public void testImmediateFalse() throws Exception
     {
-        System.out.println("Scenario 2");
+        System.out.println("Immediate = false");
         // TEST 2
         // This time we will do the same thing, connect two pipes,
         // one of which will succeed in connecting to a bound
@@ -149,9 +152,9 @@ public class ImmediateTest
     }
 
     @Test
-    public void testConnectDelay3() throws Exception
+    public void testImmediateFalseWithBrokenConnection() throws Exception
     {
-        System.out.print("Scenario 3");
+        System.out.print("Immediate = false with broken connection");
         // TEST 3
         // This time we want to validate that the same blocking behaviour
         // occurs with an existing connection that is broken. We will send

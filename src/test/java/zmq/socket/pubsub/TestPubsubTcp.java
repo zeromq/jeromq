@@ -31,16 +31,21 @@ public class TestPubsubTcp
         SocketBase subConnect = ZMQ.socket(ctx, ZMQ.ZMQ_SUB);
         assertThat(subConnect, notNullValue());
 
-        subConnect.setSocketOpt(ZMQ.ZMQ_SUBSCRIBE, "topic");
+        rc = subConnect.setSocketOpt(ZMQ.ZMQ_SUBSCRIBE, "topic");
+        assertThat(rc, is(true));
+
         rc = ZMQ.connect(subConnect, "tcp://127.0.0.1:" + port);
         assertThat(rc, is(true));
 
         ZMQ.sleep(1);
 
         System.out.print("Send");
-        pubBind.send(new Msg("topic abc".getBytes(ZMQ.CHARSET)), 0);
-        pubBind.send(new Msg("topix defg".getBytes(ZMQ.CHARSET)), 0);
-        pubBind.send(new Msg("topic defgh".getBytes(ZMQ.CHARSET)), 0);
+        rc = pubBind.send(new Msg("topic abc".getBytes(ZMQ.CHARSET)), 0);
+        assertThat(rc, is(true));
+        rc = pubBind.send(new Msg("topix defg".getBytes(ZMQ.CHARSET)), 0);
+        assertThat(rc, is(true));
+        rc = pubBind.send(new Msg("topic defgh".getBytes(ZMQ.CHARSET)), 0);
+        assertThat(rc, is(true));
 
         System.out.print(".Recv.");
         Msg msg = subConnect.recv(0);
