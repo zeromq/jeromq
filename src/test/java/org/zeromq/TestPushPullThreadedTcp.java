@@ -9,14 +9,12 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 /**
  * Tests a PUSH-PULL dialog with several methods, each component being on a
  * separate thread.
  */
-@Ignore
 public class TestPushPullThreadedTcp
 {
     private class Worker implements Runnable
@@ -139,5 +137,48 @@ public class TestPushPullThreadedTcp
         assertThat(worker.finished.get(), is(true));
         assertThat(client.finished.get(), is(true));
         System.out.println("Test done in " + (end - start) + " millis.");
+    }
+
+    @Test
+    public void testIssue338() throws InterruptedException, IOException
+    {
+        try (
+             final ZSocket pull = new ZSocket(ZMQ.PULL);
+             final ZSocket push = new ZSocket(ZMQ.PUSH)) {
+            final String host = "tcp://localhost:" + Utils.findOpenPort();
+            pull.bind(host);
+            push.connect(host);
+
+            final ExecutorService executor = Executors.newFixedThreadPool(1);
+            final int messagesNumber = 300000;
+            Runnable receiver = new Runnable()
+            {
+                @Override
+                public void run()
+                {
+                    String actual = null;
+                    int count = messagesNumber;
+                    while (count-- > 0) {
+                        actual = pull.receiveStringUtf8();
+                    }
+                    System.out.println("last message: " + actual);
+                }
+            };
+            executor.submit(receiver);
+
+            final String expected = "hello";
+            final long start = System.currentTimeMillis();
+
+            for (int idx = 0; idx < messagesNumber; idx++) {
+                push.sendStringUtf8(expected + "_" + idx);
+            }
+            long end = System.currentTimeMillis();
+            System.out.println("push time :" + (end - start) + " millisec.");
+
+            executor.shutdown();
+            executor.awaitTermination(40, TimeUnit.SECONDS);
+            end = System.currentTimeMillis();
+            System.out.println("all time :" + (end - start) + " millisec.");
+        }
     }
 }

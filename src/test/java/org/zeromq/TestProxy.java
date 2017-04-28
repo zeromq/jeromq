@@ -4,7 +4,8 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertThat;
 
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -14,19 +15,16 @@ import org.zeromq.ZMQ.Socket;
 
 public class TestProxy
 {
-    static class Client extends Thread
+    static class Client implements Runnable
     {
-        private final int            port;
-        private final String         name;
-        private final AtomicBoolean  result = new AtomicBoolean();
-        private final CountDownLatch latch;
+        private final String        frontend;
+        private final String        name;
+        private final AtomicBoolean result = new AtomicBoolean();
 
-        public Client(String name, int port, CountDownLatch latch)
+        public Client(String name, String frontend)
         {
-            this.latch = latch;
-
             this.name = name;
-            this.port = port;
+            this.frontend = frontend;
         }
 
         @Override
@@ -41,13 +39,12 @@ public class TestProxy
             assertThat(rc, is(true));
 
             System.out.println("Start " + name);
-            setName(name);
+            Thread.currentThread().setName(name);
 
-            rc = socket.connect("tcp://127.0.0.1:" + port);
+            rc = socket.connect(frontend);
             assertThat(rc, is(true));
 
             result.set(process(socket));
-            latch.countDown();
             socket.close();
             ctx.close();
             System.out.println("Stop " + name);
@@ -81,19 +78,16 @@ public class TestProxy
         }
     }
 
-    static class Dealer extends Thread
+    static class Dealer implements Runnable
     {
-        private final int            port;
-        private final String         name;
-        private final AtomicBoolean  result = new AtomicBoolean();
-        private final CountDownLatch latch;
+        private final String        backend;
+        private final String        name;
+        private final AtomicBoolean result = new AtomicBoolean();
 
-        public Dealer(String name, int port, CountDownLatch latch)
+        public Dealer(String name, String backend)
         {
-            this.latch = latch;
-
             this.name = name;
-            this.port = port;
+            this.backend = backend;
         }
 
         @Override
@@ -102,18 +96,17 @@ public class TestProxy
             Context ctx = ZMQ.context(1);
             assertThat(ctx, notNullValue());
 
-            setName(name);
+            Thread.currentThread().setName(name);
             System.out.println("Start " + name);
 
             Socket socket = ctx.socket(ZMQ.DEALER);
             boolean rc;
             rc = socket.setIdentity(name.getBytes(ZMQ.CHARSET));
             assertThat(rc, is(true));
-            rc = socket.connect("tcp://127.0.0.1:" + port);
+            rc = socket.connect(backend);
             assertThat(rc, is(true));
 
             result.set(process(socket));
-            latch.countDown();
             socket.close();
             ctx.close();
             System.out.println("Stop " + name);
@@ -159,16 +152,16 @@ public class TestProxy
 
     static class Proxy extends Thread
     {
-        private final int           frontendPort;
-        private final int           backendPort;
-        private final int           controlPort;
+        private final String        frontend;
+        private final String        backend;
+        private final String        control;
         private final AtomicBoolean result = new AtomicBoolean();
 
-        Proxy(int frontendPort, int backendPort, int controlPort)
+        Proxy(String frontend, String backend, String control)
         {
-            this.frontendPort = frontendPort;
-            this.backendPort = backendPort;
-            this.controlPort = controlPort;
+            this.frontend = frontend;
+            this.backend = backend;
+            this.control = control;
         }
 
         @Override
@@ -181,15 +174,15 @@ public class TestProxy
             Socket frontend = ctx.socket(ZMQ.ROUTER);
 
             assertThat(frontend, notNullValue());
-            frontend.bind("tcp://127.0.0.1:" + frontendPort);
+            frontend.bind(this.frontend);
 
             Socket backend = ctx.socket(ZMQ.DEALER);
             assertThat(backend, notNullValue());
-            backend.bind("tcp://127.0.0.1:" + backendPort);
+            backend.bind(this.backend);
 
             Socket control = ctx.socket(ZMQ.PAIR);
             assertThat(control, notNullValue());
-            control.bind("tcp://127.0.0.1:" + controlPort);
+            control.bind(this.control);
 
             ZMQ.proxy(frontend, backend, null, control);
 
@@ -205,36 +198,31 @@ public class TestProxy
     @Test
     public void testProxy() throws Exception
     {
-        int frontendPort = Utils.findOpenPort();
-        int backendPort = Utils.findOpenPort();
-        int controlPort = Utils.findOpenPort();
+        String frontend = "tcp://localhost:" + Utils.findOpenPort();
+        String backend = "tcp://localhost:" + Utils.findOpenPort();
+        String controlEndpoint = "tcp://localhost:" + Utils.findOpenPort();
 
-        Proxy proxy = new Proxy(frontendPort, backendPort, controlPort);
+        Proxy proxy = new Proxy(frontend, backend, controlEndpoint);
         proxy.start();
 
-        CountDownLatch latch = new CountDownLatch(4);
-        Dealer d1 = new Dealer("Dealer-A", backendPort, latch);
-        Dealer d2 = new Dealer("Dealer-B", backendPort, latch);
-        d1.start();
-        d2.start();
+        ExecutorService executor = Executors.newFixedThreadPool(4);
+        Dealer d1 = new Dealer("Dealer-A", backend);
+        Dealer d2 = new Dealer("Dealer-B", backend);
+        executor.submit(d1);
+        executor.submit(d2);
 
         Thread.sleep(1000);
+        Client c1 = new Client("Client-X", frontend);
+        Client c2 = new Client("Client-Y", frontend);
+        executor.submit(c1);
+        executor.submit(c2);
 
-        Client c1 = new Client("Client-X", frontendPort, latch);
-        c1.start();
-
-        Client c2 = new Client("Client-Y", frontendPort, latch);
-        c2.start();
-
-        try {
-            latch.await(40, TimeUnit.SECONDS);
-        }
-        catch (Exception e) {
-        }
+        executor.shutdown();
+        executor.awaitTermination(40, TimeUnit.SECONDS);
 
         Context ctx = ZMQ.context(1);
         Socket control = ctx.socket(ZMQ.PAIR);
-        control.connect("tcp://127.0.0.1:" + controlPort);
+        control.connect(controlEndpoint);
         control.send("TERMINATE");
         proxy.join();
         control.close();
@@ -245,5 +233,14 @@ public class TestProxy
         assertThat(d1.result.get(), is(true));
         assertThat(d2.result.get(), is(true));
         assertThat(proxy.result.get(), is(true));
+    }
+
+    public void testRepeated() throws Exception
+    {
+        for (int idx = 0; idx < 470; ++idx) {
+            System.out.println("---------- " + idx);
+            testProxy();
+            Thread.sleep(1000);
+        }
     }
 }
