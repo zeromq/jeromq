@@ -10,6 +10,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.zeromq.ZMQ.Context;
 
@@ -83,6 +84,7 @@ public class DealerDealerTest
     }
 
     @Test
+    @Ignore
     public void testIssue335() throws InterruptedException, IOException
     {
         final boolean verbose = false;
