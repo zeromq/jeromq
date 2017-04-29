@@ -9,7 +9,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-// custom implementation of a collection mapping multiple values, tailored for use in the lib
+// custom implementation of a collection mapping multiple values, tailored for use in the lib.
+// this class is definitely not thread-safe, and allows only one mapping per key-value
+// aka if the same value is correlated to a new key, the old mapping is removed.
 public final class MultiMap<K extends Comparable<? super K>, V>
 {
     // sorts entries according to the natural order of the keys
@@ -77,7 +79,7 @@ public final class MultiMap<K extends Comparable<? super K>, V>
         return inverse.isEmpty();
     }
 
-    private List<V> getList(K key)
+    private List<V> getValues(K key)
     {
         List<V> list = data.get(key);
         if (list == null) {
@@ -87,12 +89,17 @@ public final class MultiMap<K extends Comparable<? super K>, V>
         return list;
     }
 
-    public void insert(K key, V value)
+    public boolean insert(K key, V value)
     {
-        getList(key).add(value);
-
-        K old = inverse.put(value, key);
-        assert (old == null);
+        K old = inverse.get(value);
+        if (old != null) {
+            getValues(old).remove(value);
+        }
+        boolean inserted = getValues(key).add(value);
+        if (inserted) {
+            inverse.put(value, key);
+        }
+        return inserted;
     }
 
     public Collection<V> remove(K key)
@@ -110,21 +117,21 @@ public final class MultiMap<K extends Comparable<? super K>, V>
     {
         K key = inverse.remove(value);
         if (key != null) {
-            return getList(key).remove(value);
+            return getValues(key).remove(value);
         }
         return false;
     }
 
-    public void remove(Entry<V, K> entry)
+    public boolean remove(Entry<V, K> entry)
     {
         K key = entry.getValue();
         V value = entry.getKey();
 
-        List<V> list = data.get(key);
-        if (list != null) {
-            list.remove(value);
+        boolean removed = getValues(key).remove(value);
+        if (removed) {
+            inverse.remove(value);
         }
-        inverse.remove(value);
+        return removed;
     }
 
     @Override

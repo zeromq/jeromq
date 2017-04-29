@@ -38,6 +38,12 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
             this.endpoint = endpoint;
             this.pipe = pipe;
         }
+
+        @Override
+        public String toString()
+        {
+            return "EndpointPipe [endpoint=" + endpoint + ", pipe=" + pipe + "]";
+        }
     }
 
     //  Map of open endpoints.
