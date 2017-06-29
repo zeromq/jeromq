@@ -38,9 +38,9 @@
       <scope>test</scope>
     </dependency>
 	<dependency>
-		<groupId>org.abstractj.kalium</groupId>
-		<artifactId>kalium</artifactId>
-		<version>0.5.0</version>
+	  <groupId>org.zeromq</groupId>
+	  <artifactId>jnacl</artifactId>
+	  <version>0.1.0</version>
 	</dependency>
   </dependencies>
   <distributionManagement>
