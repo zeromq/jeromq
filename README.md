@@ -15,7 +15,7 @@ Pure Java implementation of libzmq (http://zeromq.org).
 
 * Securities
  * [PLAIN](http://rfc.zeromq.org/spec:24).
- * [CURVE](http://rfc.zeromq.org/spec:25). (Installation of libsodium is required)
+ * [CURVE](http://rfc.zeromq.org/spec:25).
  
 * Not too bad performance compared to zeromq.
  * 4.5M messages (100B) per sec.
