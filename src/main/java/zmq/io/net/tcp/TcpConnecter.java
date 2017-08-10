@@ -2,7 +2,6 @@ package zmq.io.net.tcp;
 
 import java.io.IOException;
 import java.net.SocketAddress;
-import java.net.StandardProtocolFamily;
 import java.nio.channels.SocketChannel;
 
 import zmq.Options;
@@ -14,6 +13,7 @@ import zmq.io.IOThread;
 import zmq.io.SessionBase;
 import zmq.io.StreamEngine;
 import zmq.io.net.Address;
+import zmq.io.net.StandardProtocolFamily;
 import zmq.poll.IPollEvents;
 import zmq.poll.Poller;
 import zmq.util.Utils;

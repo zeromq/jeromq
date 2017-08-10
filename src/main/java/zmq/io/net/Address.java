@@ -1,7 +1,6 @@
 package zmq.io.net;
 
 import java.net.InetSocketAddress;
-import java.net.ProtocolFamily;
 import java.net.SocketAddress;
 
 import zmq.io.net.ipc.IpcAddress;
