@@ -2,12 +2,12 @@ package zmq.io.net.ipc;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.ProtocolFamily;
 import java.net.SocketAddress;
-import java.net.StandardProtocolFamily;
 import java.net.UnknownHostException;
 
 import zmq.io.net.Address;
+import zmq.io.net.ProtocolFamily;
+import zmq.io.net.StandardProtocolFamily;
 import zmq.io.net.tcp.TcpAddress;
 
 public class IpcAddress implements Address.IZAddress

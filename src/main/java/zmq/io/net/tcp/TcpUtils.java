@@ -1,10 +1,9 @@
 package zmq.io.net.tcp;
 
 import java.io.IOException;
+import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketException;
-import java.net.SocketOption;
-import java.net.StandardSocketOptions;
 import java.nio.channels.NetworkChannel;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SocketChannel;
@@ -14,70 +13,105 @@ import zmq.io.net.Address;
 
 public class TcpUtils
 {
+    private static interface OptionSetter
+    {
+        void setOption(Socket socket) throws SocketException;
+    }
+
     private TcpUtils()
     {
     }
 
     public static void tuneTcpSocket(SocketChannel channel) throws IOException
     {
-        setOption(channel, StandardSocketOptions.TCP_NODELAY, true);
-        //  Disable Nagle's algorithm. We are doing data batching on 0MQ level,
-        //  so using Nagle wouldn't improve throughput in anyway, but it would
-        //  hurt latency.
-        try {
-            channel.socket().setTcpNoDelay(true);
-        }
-        catch (SocketException e) {
-        }
+        // Disable Nagle's algorithm. We are doing data batching on 0MQ level,
+        // so using Nagle wouldn't improve throughput in anyway, but it would
+        // hurt latency.
+        setOption(channel, new OptionSetter()
+        {
+            @Override
+            public void setOption(Socket socket) throws SocketException
+            {
+                socket.setTcpNoDelay(true);
+            }
+        });
     }
 
     public static void tuneTcpKeepalives(SocketChannel channel, int tcpKeepAlive, int tcpKeepAliveCnt,
                                          int tcpKeepAliveIdle, int tcpKeepAliveIntvl)
             throws IOException
     {
-        boolean keepAlive = tcpKeepAlive == 1;
-        setOption(channel, StandardSocketOptions.SO_KEEPALIVE, keepAlive);
-        try {
-            channel.socket().setKeepAlive(keepAlive);
-        }
-        catch (SocketException e) {
-        }
+        final boolean keepAlive = tcpKeepAlive == 1;
+        setOption(channel, new OptionSetter()
+        {
+            @Override
+            public void setOption(Socket socket) throws SocketException
+            {
+                socket.setKeepAlive(keepAlive);
+            }
+        });
     }
 
-    public static boolean setTcpReceiveBuffer(NetworkChannel channel, int rcvbuf)
+    public static boolean setTcpReceiveBuffer(NetworkChannel channel, final int rcvbuf)
     {
-        return setOption(channel, StandardSocketOptions.SO_RCVBUF, rcvbuf);
+        return setOption(channel, new OptionSetter()
+        {
+            @Override
+            public void setOption(Socket socket) throws SocketException
+            {
+                socket.setReceiveBufferSize(rcvbuf);
+            }
+        });
     }
 
-    public static boolean setTcpSendBuffer(NetworkChannel channel, int sndbuf)
+    public static boolean setTcpSendBuffer(NetworkChannel channel, final int sndbuf)
     {
-        return setOption(channel, StandardSocketOptions.SO_SNDBUF, sndbuf);
+        return setOption(channel, new OptionSetter()
+        {
+            @Override
+            public void setOption(Socket socket) throws SocketException
+            {
+                socket.setSendBufferSize(sndbuf);
+            }
+        });
     }
 
-    public static boolean setIpTypeOfService(NetworkChannel channel, int tos)
+    public static boolean setIpTypeOfService(NetworkChannel channel, final int tos)
     {
-        return setOption(channel, StandardSocketOptions.IP_TOS, tos);
+        return setOption(channel, new OptionSetter()
+        {
+            @Override
+            public void setOption(Socket socket) throws SocketException
+            {
+                socket.setTrafficClass(tos);
+            }
+        });
     }
 
-    public static boolean setReuseAddress(NetworkChannel channel, boolean reuse)
+    public static boolean setReuseAddress(NetworkChannel channel, final boolean reuse)
     {
-        return setOption(channel, StandardSocketOptions.SO_REUSEADDR, reuse);
+        return setOption(channel, new OptionSetter()
+        {
+            @Override
+            public void setOption(Socket socket) throws SocketException
+            {
+                socket.setReuseAddress(reuse);
+            }
+        });
     }
 
-    private static <T> boolean setOption(NetworkChannel channel, SocketOption<T> option, T value)
+    private static <T> boolean setOption(NetworkChannel channel, OptionSetter setter)
     {
-        try {
-            if (channel.supportedOptions().contains(option)) {
-                channel.setOption(option, value);
+        if (channel instanceof SocketChannel) {
+            try {
+                setter.setOption(((SocketChannel) channel).socket());
                 return true;
             }
-            else {
-                return false;
+            catch (SocketException e) {
+                throw new ZError.IOException(e);
             }
         }
-        catch (IOException e) {
-            throw new ZError.IOException(e);
-        }
+        return false;
     }
 
     public static void unblockSocket(SelectableChannel... channels) throws IOException
