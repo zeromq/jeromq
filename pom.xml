@@ -3,7 +3,7 @@
   <groupId>org.zeromq</groupId>
   <artifactId>jeromq</artifactId>
   <packaging>jar</packaging>
-  <version>0.4.1-SNAPSHOT</version>
+  <version>0.4.3-SNAPSHOT</version>
   <name>JeroMQ</name>
   <description>Pure Java implementation of libzmq</description>
   <url>https://github.com/zeromq/jeromq</url>
@@ -38,9 +38,9 @@
       <scope>test</scope>
     </dependency>
 	<dependency>
-		<groupId>org.abstractj.kalium</groupId>
-		<artifactId>kalium</artifactId>
-		<version>0.5.0</version>
+	  <groupId>org.zeromq</groupId>
+	  <artifactId>jnacl</artifactId>
+	  <version>0.1.0</version>
 	</dependency>
   </dependencies>
   <distributionManagement>
