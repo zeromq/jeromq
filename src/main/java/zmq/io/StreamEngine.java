@@ -371,7 +371,7 @@ public class StreamEngine implements IEngine, IPollEvents
                 assert (metadata == null);
                 // Compile metadata
                 metadata = new Metadata();
-                metadata.set("Peer-Address", peerAddress.address());
+                metadata.set(Metadata.PEER_ADDRESS, peerAddress.address());
             }
 
             //  For raw sockets, send an initial 0-length message to the
@@ -1036,7 +1036,7 @@ public class StreamEngine implements IEngine, IPollEvents
 
         //  If we have a peer_address, add it to metadata
         if (peerAddress != null && !peerAddress.address().isEmpty()) {
-            metadata.set("Peer-Address", peerAddress.address());
+            metadata.set(Metadata.PEER_ADDRESS, peerAddress.address());
         }
         //  Add ZAP properties.
         metadata.set(mechanism.zapProperties);
