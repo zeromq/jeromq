@@ -1,5 +1,8 @@
 package zmq.io.mechanism.curve;
 
+import static zmq.io.Metadata.IDENTITY;
+import static zmq.io.Metadata.SOCKET_TYPE;
+
 import java.nio.ByteBuffer;
 
 import zmq.Msg;

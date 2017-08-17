@@ -5,6 +5,14 @@ import java.util.Properties;
 
 public class Metadata
 {
+    public static final String IDENTITY = "Identity";
+
+    public static final String SOCKET_TYPE = "Socket-Type";
+
+    public static final String USER_ID = "User-Id";
+
+    public static final String PEER_ADDRESS = "Peer-Address";
+
     //  Dictionary holding metadata.
     private final Properties dictionary = new Properties();
 
