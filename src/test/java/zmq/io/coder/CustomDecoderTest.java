@@ -64,12 +64,6 @@ public class CustomDecoderTest
             nextStep(header, 10, readHeader);
             return Step.Result.DECODED;
         }
-
-        @Override
-        protected long binarySize(Msg msg)
-        {
-            return msg.size();
-        }
     }
 
     @Test

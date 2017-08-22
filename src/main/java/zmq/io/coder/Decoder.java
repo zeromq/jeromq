@@ -59,7 +59,6 @@ public abstract class Decoder extends DecoderBase
 
     // the message decoded so far
     protected Msg inProgress;
-    protected int msgFlags;
 
     protected final Step oneByteSizeReady   = new OneByteSizeReady();
     protected final Step eightByteSizeReady = new EightByteSizeReady();
@@ -99,7 +98,7 @@ public abstract class Decoder extends DecoderBase
         return Step.Result.MORE_DATA;
     }
 
-    protected final Msg allocate(final long size)
+    protected Msg allocate(final long size)
     {
         Msg msg;
         if (allocationHeapThreshold > 0 && size > allocationHeapThreshold) {
@@ -108,7 +107,6 @@ public abstract class Decoder extends DecoderBase
         else {
             msg = new Msg((int) size);
         }
-        msg.setFlags(msgFlags);
 
         return msg;
     }
@@ -143,6 +141,4 @@ public abstract class Decoder extends DecoderBase
     {
         return inProgress;
     }
-
-    protected abstract long binarySize(Msg msg);
 }

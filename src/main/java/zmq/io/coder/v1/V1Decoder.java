@@ -78,10 +78,8 @@ public class V1Decoder extends Decoder
     protected Step.Result flagsReady()
     {
         //  Store the flags from the wire into the message structure.
-        msgFlags = 0;
         int first = tmpbuf.get(0) & 0xff;
         if ((first & V1Protocol.MORE_FLAG) > 0) {
-            msgFlags |= Msg.MORE;
             inProgress.setFlags(Msg.MORE);
         }
 
@@ -101,11 +99,5 @@ public class V1Decoder extends Decoder
         nextStep(tmpbuf, oneByteSizeReady);
 
         return Step.Result.DECODED;
-    }
-
-    @Override
-    protected long binarySize(Msg msg)
-    {
-        return msg.size() + (msg.size() > 255 ? 1 : 0) + tmpbuf.limit() + 1;
     }
 }

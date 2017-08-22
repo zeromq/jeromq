@@ -161,12 +161,6 @@ public class ProxyTcpTest
             nextStep(header, 4, readHeader);
             return Step.Result.DECODED;
         }
-
-        @Override
-        protected long binarySize(Msg msg)
-        {
-            return msg.size();
-        }
     }
 
     public static class ProxyEncoder extends EncoderBase
