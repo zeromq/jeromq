@@ -57,6 +57,10 @@ public class TestReqCorrelateRelaxed
         // Test what happens when a bad request ID is sent back.
         origRequestId = testReqSentFrames(dealer, reqClient);
         testReqRecvBadRequestId(dealer, reqClient, origRequestId);
+
+        ZMQ.close(reqClient);
+        ZMQ.close(dealer);
+        ZMQ.term(ctx);
     }
 
     /**

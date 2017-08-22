@@ -1,6 +1,7 @@
 package org.zeromq;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertThat;
 
 import java.io.IOException;
@@ -10,6 +11,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.Test;
+import org.zeromq.ZMQ.Socket;
 
 /**
  * Tests a PUSH-PULL dialog with several methods, each component being on a
@@ -19,67 +21,50 @@ public class TestPushPullThreadedTcp
 {
     private class Worker implements Runnable
     {
-        private final String host;
         private final int    count;
-        final AtomicBoolean  finished = new AtomicBoolean();
+        private final AtomicBoolean  finished = new AtomicBoolean();
         private int          idx;
+        private final Socket receiver;
 
-        public Worker(String host, int count)
+        public Worker(Socket receiver, int count)
         {
-            this.host = host;
+            this.receiver = receiver;
             this.count = count;
         }
 
         @Override
         public void run()
         {
-            ZContext ctx = new ZContext();
-
-            ZMQ.Socket receiver = ctx.createSocket(ZMQ.PULL);
-            receiver.setImmediate(false);
-            receiver.bind(host);
-
             idx = 0;
             while (idx < count) {
                 if (idx % 5000 == 10) {
-                    zmq.ZMQ.sleep(1);
+                    zmq.ZMQ.msleep(100);
                 }
                 ZMsg msg = ZMsg.recvMsg(receiver);
                 msg.destroy();
                 idx++;
             }
-
-            // Clean up.
-            ctx.destroySocket(receiver);
-            ctx.close();
-
             finished.set(true);
         }
     }
 
     private class Client implements Runnable
     {
-        private final String host;
+        private final Socket sender;
 
-        final AtomicBoolean finished = new AtomicBoolean();
+        private final AtomicBoolean finished = new AtomicBoolean();
 
         private final int count;
 
-        public Client(String host, int count)
+        public Client(Socket sender, int count)
         {
-            this.host = host;
+            this.sender = sender;
             this.count = count;
         }
 
         @Override
         public void run()
         {
-            ZContext ctx = new ZContext();
-
-            ZMQ.Socket sender = ctx.createSocket(ZMQ.PUSH);
-            sender.setImmediate(false);
-            sender.connect(host);
-
             int idx = 0;
             while (idx++ < count) {
                 ZMsg msg = new ZMsg();
@@ -87,12 +72,18 @@ public class TestPushPullThreadedTcp
                 boolean sent = msg.send(sender);
                 assertThat(sent, is(true));
             }
-            zmq.ZMQ.sleep(2);
-            // Clean up.
-            ctx.destroySocket(sender);
-            ctx.close();
-
             finished.set(true);
+        }
+    }
+
+//    @Test
+    public void testRepeated() throws Exception
+    {
+        for (int idx = 0; idx < 2000; ++idx) {
+            System.out.println("+++++++++++ " + idx);
+            testPushPull1();
+            testPushPull500();
+            testPushPullWithWatermark();
         }
     }
 
@@ -119,23 +110,38 @@ public class TestPushPullThreadedTcp
     private void test(int count) throws IOException, InterruptedException
     {
         long start = System.currentTimeMillis();
-        int port = Utils.findOpenPort();
-        String host = "tcp://localhost:" + port;
 
         ExecutorService threadPool = Executors.newFixedThreadPool(2);
 
-        Worker worker = new Worker(host, count);
-        Client client = new Client(host, count);
+        ZContext ctx = new ZContext();
+
+        ZMQ.Socket receiver = ctx.createSocket(ZMQ.PULL);
+        assertThat(receiver, notNullValue());
+        receiver.setImmediate(false);
+        final int port = receiver.bindToRandomPort("tcp://localhost");
+
+        ZMQ.Socket sender = ctx.createSocket(ZMQ.PUSH);
+        assertThat(sender, notNullValue());
+        boolean rc = sender.connect("tcp://localhost:" + port);
+        assertThat(rc, is(true));
+
+        Worker worker = new Worker(receiver, count);
+        Client client = new Client(sender, count);
 
         threadPool.submit(worker);
         threadPool.submit(client);
 
         threadPool.shutdown();
-        threadPool.awaitTermination(20, TimeUnit.SECONDS);
+        threadPool.awaitTermination(10, TimeUnit.SECONDS);
         long end = System.currentTimeMillis();
         System.out.println("Worker received " + worker.idx + " messages");
-        assertThat(worker.finished.get(), is(true));
-        assertThat(client.finished.get(), is(true));
+        assertThat("Unable to send messages", client.finished.get(), is(true));
+        assertThat("Unable to receive messages", worker.finished.get(), is(true));
+
+        ctx.destroySocket(receiver);
+        ctx.destroySocket(sender);
+        ctx.close();
+
         System.out.println("Test done in " + (end - start) + " millis.");
     }
 

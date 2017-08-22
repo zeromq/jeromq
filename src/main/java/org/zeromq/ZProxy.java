@@ -1,5 +1,6 @@
 package org.zeromq;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -150,7 +151,7 @@ public class ZProxy
          * @param args    the optional array of arguments that has been passed at the creation of the ZProxy.
          * @return true if successfully configured, otherwise false
          */
-        boolean configure(Socket socket, Plug place, Object[] args);
+        boolean configure(Socket socket, Plug place, Object[] args) throws IOException;
 
         /**
          * Performs a hot restart of the given socket.
@@ -163,7 +164,7 @@ public class ZProxy
          * @return true to perform a cold restart instead, false to do nothing. All the results will be collected from calls for all plugs.
          * If any of them returns true, the cold restart is performed.
          */
-        boolean restart(ZMsg cfg, Socket socket, Plug place, Object[] args);
+        boolean restart(ZMsg cfg, Socket socket, Plug place, Object[] args) throws IOException;
 
         /**
          * Configures the proxy with a custom message.
@@ -200,7 +201,7 @@ public class ZProxy
         public abstract static class SimpleProxy implements Proxy
         {
             @Override
-            public boolean restart(ZMsg cfg, Socket socket, Plug place, Object[] args)
+            public boolean restart(ZMsg cfg, Socket socket, Plug place, Object[] args) throws IOException
             {
                 return true;
             }
@@ -413,7 +414,8 @@ public class ZProxy
         ZMsg msg = new ZMsg();
         msg.add(RESTART);
 
-        if (hot == null) {
+        final boolean cold = hot == null;
+        if (cold) {
             msg.add(Boolean.toString(false));
         }
         else {
@@ -677,6 +679,12 @@ public class ZProxy
         // the states container of the proxy
         private static final class State
         {
+            @Override
+            public String toString()
+            {
+                return "State [alive=" + alive + ", started=" + started + ", paused=" + paused + ", restart=" + restart
+                        + ", hot=" + hot + "]";
+            }
             // are we alive ?
             private boolean alive = false;
             // are we started ?
@@ -840,7 +848,8 @@ public class ZProxy
                     success |= provider.configure(capture, Plug.CAPTURE, args);
                     state.started = true;
                 }
-                catch (RuntimeException e) {
+                catch (RuntimeException | IOException e) {
+                    e.printStackTrace();
                     // unable to configure proxy, exit
                     state.restart = false;
                     state.started = false;
@@ -946,7 +955,8 @@ public class ZProxy
                         dup.destroy();
                         cfg.destroy();
                     }
-                    catch (RuntimeException e) {
+                    catch (RuntimeException | IOException e) {
+                        e.printStackTrace();
                         state.restart = false;
                         return false;
                     }
