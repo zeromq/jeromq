@@ -4,6 +4,8 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertThat;
 
+import java.util.Arrays;
+import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -35,7 +37,7 @@ public class TestProxy
 
             Socket socket = ctx.socket(ZMQ.REQ);
             boolean rc;
-            rc = socket.setIdentity(name.getBytes(ZMQ.CHARSET));
+            rc = socket.setIdentity(id(name));
             assertThat(rc, is(true));
 
             System.out.println("Start " + name);
@@ -101,7 +103,7 @@ public class TestProxy
 
             Socket socket = ctx.socket(ZMQ.DEALER);
             boolean rc;
-            rc = socket.setIdentity(name.getBytes(ZMQ.CHARSET));
+            rc = socket.setIdentity(id(name));
             assertThat(rc, is(true));
             rc = socket.connect(backend);
             assertThat(rc, is(true));
@@ -116,32 +118,35 @@ public class TestProxy
         {
             int count = 0;
             while (count < 2) {
-                String msg = socket.recvStr(0);
-                if (msg == null || !msg.startsWith("Client-")) {
-                    System.out.println(name + " Wrong identity " + msg);
+                byte[] msg = socket.recv(0);
+                String msgAsString = new String(msg, ZMQ.CHARSET);
+                if (msg == null || !msgAsString.startsWith("Client-")) {
+                    System.out.println(name + " Wrong identity " + msgAsString);
                     return false;
                 }
-                final String identity = msg;
-                System.out.println(name + " received client identity " + identity);
+                final byte[] identity = msg;
+                System.out.println(name + " received client identity " + msgAsString);
 
-                msg = socket.recvStr(0);
-                if (msg == null || !msg.isEmpty()) {
-                    System.out.println("Not bottom " + msg);
+                msg = socket.recv(0);
+                msgAsString = new String(msg, ZMQ.CHARSET);
+                if (msg == null || msg.length != 0) {
+                    System.out.println("Not bottom " + Arrays.toString(msg));
                     return false;
                 }
-                System.out.println(name + " received bottom " + msg);
+                System.out.println(name + " received bottom " + msgAsString);
 
-                msg = socket.recvStr(0);
+                msg = socket.recv(0);
                 if (msg == null) {
                     System.out.println(name + " Not data " + msg);
                     return false;
                 }
-                System.out.println(name + " received data " + msg);
+                msgAsString = new String(msg, ZMQ.CHARSET);
+                System.out.println(name + " received data " + msgAsString);
 
                 socket.send(identity, ZMQ.SNDMORE);
                 socket.send((byte[]) null, ZMQ.SNDMORE);
 
-                String response = "OK " + msg + " " + name;
+                String response = "OK " + msgAsString + " " + name;
 
                 socket.send(response, 0);
                 count++;
@@ -192,7 +197,15 @@ public class TestProxy
             ctx.close();
             result.set(true);
         }
+    }
 
+    private static byte[] id(String name)
+    {
+        Random random = new Random();
+        byte[] id = new byte[10 + random.nextInt(245)];
+        random.nextBytes(id);
+        System.arraycopy(name.getBytes(ZMQ.CHARSET), 0, id, 0, name.length());
+        return id;
     }
 
     @Test
