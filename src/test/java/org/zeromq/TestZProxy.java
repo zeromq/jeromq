@@ -10,8 +10,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.zeromq.ZMQ.Socket;
 
-import zmq.ZError;
-
 public class TestZProxy
 {
     private final class ProxyProvider extends ZProxy.Proxy.SimpleProxy
@@ -39,54 +37,38 @@ public class TestZProxy
         }
 
         @Override
-        public boolean configure(Socket socket, ZProxy.Plug place, Object[] extrArgs)
+        public boolean configure(Socket socket, ZProxy.Plug place, Object[] extrArgs) throws IOException
         {
-            try {
-                if (place == ZProxy.Plug.FRONT) {
-                    frontPort = Utils.findOpenPort();
-                    socket.bind("tcp://127.0.0.1:" + frontPort);
-                }
-                if (place == ZProxy.Plug.BACK) {
-                    backPort = Utils.findOpenPort();
-                    socket.bind("tcp://127.0.0.1:" + backPort);
-                }
-                if (place == ZProxy.Plug.CAPTURE && socket != null) {
-                    capturePort1 = Utils.findOpenPort();
-                    socket.bind("tcp://127.0.0.1:" + capturePort1);
-                }
+            if (place == ZProxy.Plug.FRONT) {
+                frontPort = socket.bindToRandomPort("tcp://127.0.0.1");
             }
-            catch (IOException e) {
-                e.printStackTrace();
-                return false;
+            if (place == ZProxy.Plug.BACK) {
+                backPort = socket.bindToRandomPort("tcp://127.0.0.1");
+            }
+            if (place == ZProxy.Plug.CAPTURE && socket != null) {
+                capturePort1 = socket.bindToRandomPort("tcp://127.0.0.1");
             }
             return true;
         }
 
         @Override
-        public boolean restart(ZMsg cfg, Socket socket, ZProxy.Plug place, Object[] extraArgs)
+        public boolean restart(ZMsg cfg, Socket socket, ZProxy.Plug place, Object[] extraArgs) throws IOException
         {
             //            System.out.println("HOT restart msg : " + cfg);
             if (place == ZProxy.Plug.FRONT) {
                 socket.unbind("tcp://127.0.0.1:" + frontPort);
                 waitSomeTime();
-                socket.bind("tcp://127.0.0.1:" + frontPort);
+                frontPort = socket.bindToRandomPort("tcp://127.0.0.1");
             }
             if (place == ZProxy.Plug.BACK) {
                 socket.unbind("tcp://127.0.0.1:" + backPort);
                 waitSomeTime();
-                socket.bind("tcp://127.0.0.1:" + backPort);
+                backPort = socket.bindToRandomPort("tcp://127.0.0.1");
             }
             if (place == ZProxy.Plug.CAPTURE && socket != null) {
                 socket.unbind("tcp://127.0.0.1:" + capturePort1);
                 waitSomeTime();
-                try {
-                    capturePort2 = Utils.findOpenPort();
-                    socket.bind("tcp://127.0.0.1:" + capturePort2);
-                }
-                catch (IOException e) {
-                    e.printStackTrace();
-                    throw new ZError.IOException(e);
-                }
+                capturePort2 = socket.bindToRandomPort("tcp://127.0.0.1");
             }
             String msg = cfg.popString();
             return "COLD".equals(msg);
@@ -107,6 +89,20 @@ public class TestZProxy
         {
             // TODO test custom commands
             return super.custom(pipe, cmd, frontend, backend, capture, args);
+        }
+    }
+
+//    @Test
+    public void testRepeated() throws IOException
+    {
+        for (int idx = 0; idx < 2500; ++idx) {
+            System.out.println("+++++++++++ " + idx);
+            testAllOptionsAsync();
+            testAllOptionsAsyncNew();
+            testAllOptionsSync();
+            testAllOptionsSyncNew();
+            testAllOptionsSyncNewCold();
+            testAllOptionsSyncNewHot();
         }
     }
 
