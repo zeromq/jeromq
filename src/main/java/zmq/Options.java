@@ -473,28 +473,33 @@ public class Options
             // TODO V4 setting a curve key as null does change the mechanism type ?
             result.set(false);
             return null;
-        }
-        else {
-            String val = parseString(option, optval);
+        } else {
             byte[] key = null;
-            int length = val.length();
-            if (length == CURVE_KEYSIZE_Z85) {
-                key = Z85.decode(val);
+            // if the optval is already the key don't do any parsing
+            if (optval instanceof byte[] && ((byte[]) optval).length == CURVE_KEYSIZE) {
+                key = (byte[]) optval;
                 result.set(true);
                 errno.set(0);
-            }
-            else if (length == CURVE_KEYSIZE) {
-                key = val.getBytes(ZMQ.CHARSET);
-                result.set(true);
-                errno.set(0);
-            }
-            else {
-                result.set(false);
-                errno.set(ZError.EINVAL);
+            } else {
+                String val = parseString(option, optval);
+                int length = val.length();
+                if (length == CURVE_KEYSIZE_Z85) {
+                    key = Z85.decode(val);
+                    result.set(true);
+                    errno.set(0);
+                } else if (length == CURVE_KEYSIZE) {
+                    key = val.getBytes(ZMQ.CHARSET);
+                    result.set(true);
+                    errno.set(0);
+                } else {
+                    result.set(false);
+                    errno.set(ZError.EINVAL);
+                }
             }
             if (key != null) {
                 mechanism = Mechanisms.CURVE;
             }
+
             return key;
         }
     }
