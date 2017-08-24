@@ -62,7 +62,7 @@ import org.zeromq.ZMQ.Socket;
 <p>
  * The motivations of this rewriting are:
  * <br/>
- * - the bare poller use {@link zmq.ZMQ#poll(zmq.poll.PollItem[], int, long) this method} who does not allow
+ * - the bare poller used zmq.ZMQ#poll(zmq.poll.PollItem[], int, long). This method did not allow
  * to choose the selector used for polling, relying on a ThreadLocal, which is dangerous.
  * <br/>
  * - the bare poller use algorithms tailored for languages with manual allocation.

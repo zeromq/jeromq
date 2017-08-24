@@ -407,7 +407,7 @@ public class ZMQ
         }
     }
 
-    public static final class Socket implements Closeable
+    public static class Socket implements Closeable
     {
         //  This port range is defined by IANA for dynamic or private ports
         //  We use this when choosing a port for dynamic binding.

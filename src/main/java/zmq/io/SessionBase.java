@@ -29,7 +29,7 @@ public class SessionBase extends Own implements Pipe.IPipeEvents, IPollEvents
 {
     //  If true, this session (re)connects to the peer. Otherwise, it's
     //  a transient session created by the listener.
-    private boolean active;
+    private final boolean active;
 
     //  Pipe connecting the session to its socket.
     private Pipe pipe;

@@ -38,7 +38,7 @@ import zmq.SocketBase;
  *  <br/>
  * <li>Proxy mechanism ensured by pluggable pumps
  *    <ul>
- *      <li>with built-in low-level {@link ZmqPump} (zmq.ZMQ): useful for performances
+ *      <li>with built-in low-level {@link org.zeromq.ZProxy.ZmqPump} (zmq.ZMQ): useful for performances
  *      <li>with built-in high-level  {@link org.zeromq.ZProxy.ZPump}  (ZeroMQ): useful for {@link org.zeromq.ZProxy.ZPump.Transformer message transformation}, lower performances
  *      <li>with your own-custom proxy pump implementing a {@link Pump 1-method interface}
  *    </ul>
