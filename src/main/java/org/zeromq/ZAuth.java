@@ -463,7 +463,7 @@ public class ZAuth implements Closeable
         assert (actorName != null);
         assert (auths != null);
         final AuthActor actor = new AuthActor(actorName, auths);
-        final ZActor zactor = new ZActor(ctx, null, actor, UUID.randomUUID().toString());
+        final ZActor zactor = new ZActor(ctx, actor, UUID.randomUUID().toString());
         agent = zactor.agent();
         exit = zactor.exit();
 

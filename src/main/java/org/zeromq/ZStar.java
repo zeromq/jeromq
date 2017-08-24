@@ -1,6 +1,5 @@
 package org.zeromq;
 
-import java.io.IOException;
 import java.nio.channels.Selector;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -167,8 +166,27 @@ public class ZStar implements ZAgent
          * @param args      the arguments passed as parameters of the star constructor
          *
          * @return a new star is born!
+         *
+         * @deprecated use {@link #create(ZContext, Socket, int, Star, Object...)} instead.
          */
-        Star create(ZContext ctx, Socket mic, Selector sel, int count, Star previous, Object... args);
+        @Deprecated
+        default Star create(ZContext ctx, Socket mic, Selector sel, int count, Star previous, Object... args)
+        {
+            return this.create(ctx, mic, count, previous, args);
+        }
+
+        /**
+         * Creates a star.
+         *
+         * @param ctx       the context used for the creation of the sockets
+         * @param mic       the pipe to the Corbeille side
+         * @param count     the number of times a star was created.
+         * @param previous  the previous star if any (null at the first creation)
+         * @param args      the arguments passed as parameters of the star constructor
+         *
+         * @return a new star is born!
+         */
+        Star create(ZContext ctx, Socket mic, int count, Star previous, Object... args);
 
         /**
          * The show is over.
@@ -263,26 +281,28 @@ public class ZStar implements ZAgent
     /**
      * Creates a new ZStar.
      *
-     * @param actor    the creator of stars on the Plateau
-     * @param lock     the final word used to mark the end of the star. Null to disable this mechanism.
-     * @param args     the optional arguments that will be passed to the distant star
+     * @param selector   the creator of the selector used on the Plateau.
+     * @param fortune    the creator of stars on the Plateau
+     * @param motdelafin the final word used to mark the end of the star. Null to disable this mechanism.
+     * @param bags       the optional arguments that will be passed to the distant star
+     * @deprecated use {@link ZStar#ZStar(Fortune, String, Object...)} instead.
      */
-    public ZStar(Fortune actor, String lock, Object... args)
+    @Deprecated
+    public ZStar(SelectorCreator selector, Fortune fortune, String motdelafin, Object... bags)
     {
-        this(new VerySimpleSelectorCreator(), actor, lock, args);
+        this(fortune, motdelafin, bags);
     }
 
     /**
      * Creates a new ZStar.
      *
-     * @param selector   the creator of the selector used on the Plateau.
      * @param fortune    the creator of stars on the Plateau
      * @param motdelafin the final word used to mark the end of the star. Null to disable this mechanism.
-     * @param args       the optional arguments that will be passed to the distant star
+     * @param bags       the optional arguments that will be passed to the distant star
      */
-    public ZStar(SelectorCreator selector, Fortune fortune, String motdelafin, Object... args)
+    public ZStar(final Fortune fortune, String motdelafin, final Object... bags)
     {
-        this(null, selector, fortune, motdelafin, args);
+        this((ZContext) null, fortune, motdelafin, bags);
     }
 
     /**
@@ -297,11 +317,30 @@ public class ZStar implements ZAgent
      * @param fortune    the creator of stars on the Plateau
      * @param motdelafin the final word used to mark the end of the star. Null to disable this mechanism.
      * @param bags       the optional arguments that will be passed to the distant star
+     * @deprecated use {@link ZStar#ZStar(ZContext, Fortune, String, Object...)} instead.
      */
+    @Deprecated
     public ZStar(final ZContext context, final SelectorCreator selector, final Fortune fortune, String motdelafin,
             final Object... bags)
     {
-        this(context, selector, fortune, ZAgent.Creator::create, motdelafin, bags);
+        this(context, fortune, ZAgent.Creator::create, motdelafin, bags);
+    }
+
+    /**
+     * Creates a new ZStar.
+     *
+     * @param context
+     *            the main context used. If null, a new context will be created
+     *            and closed at the stop of the operation.
+     * <b>If not null, it is the responsibility of the caller to close it.</b>
+     *
+     * @param fortune    the creator of stars on the Plateau
+     * @param motdelafin the final word used to mark the end of the star. Null to disable this mechanism.
+     * @param bags       the optional arguments that will be passed to the distant star
+     */
+    public ZStar(final ZContext context, final Fortune fortune, String motdelafin, final Object... bags)
+    {
+        this(context, fortune, ZAgent.Creator::create, motdelafin, bags);
     }
 
     /**
@@ -317,21 +356,35 @@ public class ZStar implements ZAgent
      * @param agent      the creator of the agent. Not null.
      * @param motdelafin the final word used to mark the end of the star. Null to disable this mechanism.
      * @param bags       the optional arguments that will be passed to the distant star
+     * @deprecated use {@link ZStar#ZStar(ZContext, Fortune, BiFunction, String, Object...)} instead.
      */
+    @Deprecated
     public ZStar(final ZContext context, final SelectorCreator selector, final Fortune fortune,
             BiFunction<Socket, String, ZAgent> agent, String motdelafin, final Object... bags)
+    {
+        this(context, fortune, agent, motdelafin, bags);
+    }
+
+    /**
+     * Creates a new ZStar.
+     *
+     * @param context
+     *            the main context used. If null, a new context will be created
+     *            and closed at the stop of the operation.
+     * <b>If not null, it is the responsibility of the caller to close it.</b>
+     *
+     * @param fortune    the creator of stars on the Plateau. Not null.
+     * @param agent      the creator of the agent. Not null.
+     * @param motdelafin the final word used to mark the end of the star. Null to disable this mechanism.
+     * @param bags       the optional arguments that will be passed to the distant star
+     */
+    public ZStar(final ZContext context, final Fortune fortune, BiFunction<Socket, String, ZAgent> agent,
+            String motdelafin, final Object... bags)
     {
         super();
         assert (agent != null);
         assert (fortune != null);
         // entering platform to load trucks
-
-        // the story writer
-        SelectorCreator feather = selector;
-        if (selector == null) {
-            // initialize selector
-            feather = new VerySimpleSelectorCreator();
-        }
 
         // initialize the context
         ZContext chef = context;
@@ -342,6 +395,7 @@ public class ZStar implements ZAgent
             // it will be destroyed, so this is the main context
             producer = chef;
         }
+
         this.context = chef;
         assert (this.context != null);
 
@@ -364,11 +418,10 @@ public class ZStar implements ZAgent
 
         train.add(set);
         train.add(fortune);
-        train.add(feather);
         train.add(producer);
         train.add(entourage);
         train.add(motdelafin);
-        // 6 mandatory wagons
+        // 5 mandatory wagons
         train.addAll(Arrays.asList(bags));
 
         // now going to the plateau
@@ -421,19 +474,18 @@ public class ZStar implements ZAgent
         @Override
         public void run(final Object[] train, final ZContext chef, final Socket mic)
         {
-            final int mandat = 6;
+            final int mandat = 5;
 
             // end of a trip can be a bit messy...
             Fortune star = (Fortune) train[1];
 
-            final Entourage entourage = (Entourage) train[4];
+            final Entourage entourage = (Entourage) train[3];
 
-            final ZContext producer = (ZContext) train[3];
-            final SelectorCreator feather = (SelectorCreator) train[2];
+            final ZContext producer = (ZContext) train[2];
 
             final Set set = (Set) train[0];
             // the word informing the world that the plateau is closed and the star vanished
-            final String gossip = (String) train[5];
+            final String gossip = (String) train[4];
 
             // prune our mandatory transit variables from the arguments
             final Object[] bags = new Object[train.length - mandat];
@@ -444,25 +496,16 @@ public class ZStar implements ZAgent
                 entourage.breakaleg(chef, star, mic, bags);
             }
 
-            Selector story = null;
             // now entering artistic zone
             try {
-                // create the selector used for polling operations
-                story = feather.create();
-
                 // Premiere !
                 String name = star.premiere(mic, bags);
                 // put the name of the performance on the front door with lightnings
                 set.lights(name, number);
 
                 // star is entering the wings
-                showMustGoOn(chef, set, story, mic, star, bags);
+                showMustGoOn(chef, set, mic, star, bags);
                 // star is leaving the plateau
-            }
-            catch (Throwable e) {
-                // Who stole the story? There is no play if there is no story! C'est un scandale!
-                e.printStackTrace();
-                // TODO enhance error
             }
             finally {
                 try {
@@ -494,11 +537,6 @@ public class ZStar implements ZAgent
                         // this is a self-generated context, destroy it
                         producer.close();
                     }
-                    feather.destroy(story);
-                }
-                catch (IOException e) {
-                    e.printStackTrace();
-                    // TODO enhance error
                 }
                 finally {
                     exit.countDown();
@@ -511,8 +549,8 @@ public class ZStar implements ZAgent
         /******************************************************************************/
 
         // starts the performance
-        private void showMustGoOn(final ZContext chef, final Set set, final Selector story, final Socket phone,
-                                  final Fortune fortune, final Object... bags)
+        private void showMustGoOn(final ZContext chef, final Set set, final Socket phone, final Fortune fortune,
+                                  final Object... bags)
         {
             int shows = 0;
             /** on the spot lights, the star in only an actor **/
@@ -520,7 +558,7 @@ public class ZStar implements ZAgent
             /** double-while-loop enables the restarting of a new star for the same acting on the same stage **/
             /// so existing sockets can be closed and recreated in order to perform a cold restart or a stop **/
             do {
-                actor = fortune.create(chef, phone, story, shows++, actor, bags);
+                actor = fortune.create(chef, phone, shows++, actor, bags);
                 /** a new star is born! And an acting one! **/
 
                 actor.prepare();

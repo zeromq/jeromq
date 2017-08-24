@@ -116,6 +116,7 @@ import zmq.SocketBase;
  *
  */
 // Proxy for 0MQ.
+@SuppressWarnings("deprecation")
 public class ZProxy
 {
     /**
@@ -232,20 +233,36 @@ public class ZProxy
      * @param name       the name of the proxy. Possibly null.
      * @param selector   the creator of the selector used for the internal polling. Not null.
      * @param sockets    the sockets creator of the proxy. Not null.
+     * @param motdelafin the final word used to mark the end of the proxy. Null to disable this mechanism.
+     * @param args       an optional array of arguments that will be passed at the creation.
+     *
+     * @return the created proxy.
+     * @deprecated use {@link #newZProxy(ZContext, String, Proxy, String, Object...)} instead.
+     */
+    @Deprecated
+    public static ZProxy newZProxy(ZContext ctx, String name, SelectorCreator selector, Proxy sockets,
+                                   String motdelafin, Object... args)
+    {
+        return newZProxy(ctx, name, sockets, motdelafin, args);
+    }
+
+    /**
+     * Creates a new proxy in a ZeroMQ way.
+     * This proxy will be less efficient than the
+     * {@link #newZProxy(ZContext, String, org.zeromq.ZProxy.Proxy, String, Object...) low-level one}.
+     *
+     * @param ctx        the context used for the proxy.
+     * Possibly null, in this case a new context will be created and automatically destroyed afterwards.
+     * @param name       the name of the proxy. Possibly null.
+     * @param sockets    the sockets creator of the proxy. Not null.
+     * @param motdelafin the final word used to mark the end of the proxy. Null to disable this mechanism.
      * @param args       an optional array of arguments that will be passed at the creation.
      *
      * @return the created proxy.
      */
-    // creates a new proxy
-    public static ZProxy newZProxy(ZContext ctx, String name, SelectorCreator selector, Proxy sockets,
-                                   String motdelafin, Object... args)
-    {
-        return new ZProxy(ctx, name, selector, sockets, new ZPump(), motdelafin, args);
-    }
-
     public static ZProxy newZProxy(ZContext ctx, String name, Proxy sockets, String motdelafin, Object... args)
     {
-        return new ZProxy(ctx, name, null, sockets, new ZPump(), motdelafin, args);
+        return new ZProxy(ctx, name, sockets, new ZPump(), motdelafin, args);
     }
 
     /**
@@ -256,20 +273,35 @@ public class ZProxy
      * @param name       the name of the proxy. Possibly null.
      * @param selector   the creator of the selector used for the internal polling. Not null.
      * @param sockets    the sockets creator of the proxy. Not null.
+     * @param motdelafin the final word used to mark the end of the proxy. Null to disable this mechanism.
+     * @param args       an optional array of arguments that will be passed at the creation.
+     *
+     * @return the created proxy.
+     * @deprecated use {@link #newProxy(ZContext, String, Proxy, String, Object...)} instead.
+     */
+    // creates a new low-level proxy
+    @Deprecated
+    public static ZProxy newProxy(ZContext ctx, String name, SelectorCreator selector, Proxy sockets, String motdelafin,
+                                  Object... args)
+    {
+        return newProxy(ctx, name, sockets, motdelafin, args);
+    }
+
+    /**
+     * Creates a new low-level proxy for better performances.
+     *
+     * @param ctx        the context used for the proxy.
+     * Possibly null, in this case a new context will be created and automatically destroyed afterwards.
+     * @param name       the name of the proxy. Possibly null.
+     * @param sockets    the sockets creator of the proxy. Not null.
+     * @param motdelafin the final word used to mark the end of the proxy. Null to disable this mechanism.
      * @param args       an optional array of arguments that will be passed at the creation.
      *
      * @return the created proxy.
      */
-    // creates a new low-level proxy
-    public static ZProxy newProxy(ZContext ctx, String name, SelectorCreator selector, Proxy sockets, String motdelafin,
-                                  Object... args)
-    {
-        return new ZProxy(ctx, name, selector, sockets, new ZmqPump(), motdelafin, args);
-    }
-
     public static ZProxy newProxy(ZContext ctx, String name, Proxy sockets, String motdelafin, Object... args)
     {
-        return new ZProxy(ctx, name, null, sockets, new ZmqPump(), motdelafin, args);
+        return new ZProxy(ctx, name, sockets, new ZmqPump(), motdelafin, args);
     }
 
     /**
@@ -582,24 +614,57 @@ public class ZProxy
     /**
      * Creates a new unnamed proxy.
      *
-     * @param selector the creator of the selector used for the proxy.
-     * @param creator the creator of the sockets of the proxy.
+     * @param selector   the creator of the selector used for the proxy.
+     * @param creator    the creator of the sockets of the proxy.
+     * @param motdelafin the final word used to mark the end of the proxy. Null to disable this mechanism.
+     * @param args       an optional array of arguments that will be passed at the creation.
+     * @deprecated use {@link #ZProxy(Proxy, String, Object...)} instead.
      */
+    @Deprecated
     public ZProxy(SelectorCreator selector, Proxy creator, String motdelafin, Object... args)
     {
-        this(null, null, selector, creator, null, motdelafin, args);
+        this(creator, motdelafin, args);
+    }
+
+    /**
+     * Creates a new unnamed proxy.
+     *
+     * @param creator    the creator of the sockets of the proxy.
+     * @param motdelafin the final word used to mark the end of the proxy. Null to disable this mechanism.
+     * @param args       an optional array of arguments that will be passed at the creation.
+     */
+    public ZProxy(Proxy creator, String motdelafin, Object... args)
+    {
+        this(null, creator, null, motdelafin, args);
     }
 
     /**
      * Creates a new named proxy.
      *
-     * @param name the name of the proxy (used in threads naming).
-     * @param selector the creator of the selector used for the proxy.
-     * @param creator the creator of the sockets of the proxy.
+     * @param name       the name of the proxy (used in threads naming).
+     * @param selector   the creator of the selector used for the proxy.
+     * @param creator    the creator of the sockets of the proxy.
+     * @param motdelafin the final word used to mark the end of the proxy. Null to disable this mechanism.
+     * @param args       an optional array of arguments that will be passed at the creation.
+     * @deprecated use {@link #ZProxy(String, Proxy, String, Object...)} instead.
      */
+    @Deprecated
     public ZProxy(String name, SelectorCreator selector, Proxy creator, String motdelafin, Object... args)
     {
-        this(null, name, selector, creator, null, motdelafin, args);
+        this(name, creator, motdelafin, args);
+    }
+
+    /**
+     * Creates a new named proxy.
+     *
+     * @param name       the name of the proxy (used in threads naming).
+     * @param creator    the creator of the sockets of the proxy.
+     * @param motdelafin the final word used to mark the end of the proxy. Null to disable this mechanism.
+     * @param args       an optional array of arguments that will be passed at the creation.
+     */
+    public ZProxy(String name, Proxy creator, String motdelafin, Object... args)
+    {
+        this(name, creator, null, motdelafin, args);
     }
 
     /**
@@ -608,13 +673,48 @@ public class ZProxy
      * @param ctx the main context used.
      * If null, a new context will be created and closed at the stop of the operation.
      * <b>If not null, it is the responsibility of the call to close it.</b>
-     * @param name the name of the proxy (used in threads naming).
-     * @param selector the creator of the selector used for the proxy.
-     * @param sockets the creator of the sockets of the proxy.
-     * @param pump the pump used for the proxy
+     * @param name       the name of the proxy (used in threads naming).
+     * @param selector   the creator of the selector used for the proxy.
+     * @param sockets    the creator of the sockets of the proxy.
+     * @param pump       the pump used for the proxy
+     * @param motdelafin the final word used to mark the end of the proxy. Null to disable this mechanism.
+     * @param args       an optional array of arguments that will be passed at the creation.
+     * @deprecated use {@link #ZProxy(ZContext, String, Proxy, Pump, String, Object...)} instead.
      */
+    @Deprecated
     public ZProxy(ZContext ctx, String name, SelectorCreator selector, Proxy sockets, Pump pump, String motdelafin,
             Object... args)
+    {
+        this(ctx, name, sockets, pump, motdelafin, args);
+    }
+
+    /**
+     * Creates a new named proxy. A new context will be created and closed at the stop of the operation.
+     *
+     * @param name       the name of the proxy (used in threads naming).
+     * @param sockets    the creator of the sockets of the proxy.
+     * @param pump       the pump used for the proxy
+     * @param motdelafin the final word used to mark the end of the proxy. Null to disable this mechanism.
+     * @param args       an optional array of arguments that will be passed at the creation.
+     */
+    public ZProxy(String name, Proxy sockets, Pump pump, String motdelafin, Object... args)
+    {
+        this(null, name, sockets, pump, motdelafin, args);
+    }
+
+    /**
+     * Creates a new named proxy.
+     *
+     * @param ctx the main context used.
+     * If null, a new context will be created and closed at the stop of the operation.
+     * <b>If not null, it is the responsibility of the call to close it.</b>
+     * @param name       the name of the proxy (used in threads naming).
+     * @param sockets    the creator of the sockets of the proxy.
+     * @param pump       the pump used for the proxy
+     * @param motdelafin the final word used to mark the end of the proxy. Null to disable this mechanism.
+     * @param args       an optional array of arguments that will be passed at the creation.
+     */
+    public ZProxy(ZContext ctx, String name, Proxy sockets, Pump pump, String motdelafin, Object... args)
     {
         super();
 
@@ -646,7 +746,7 @@ public class ZProxy
             actor = new ZActor.Duo(actor, shadow);
         }
 
-        ZActor zactor = new ZActor(ctx, selector, actor, motdelafin, vars);
+        ZActor zactor = new ZActor(ctx, actor, motdelafin, vars);
         agent = zactor.agent(); // NB: the zactor is also its own agent
         exit = zactor.exit();
     }
