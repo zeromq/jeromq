@@ -1,6 +1,9 @@
 package zmq.io.mechanism;
 
-import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
 
 import java.io.IOException;
@@ -92,13 +95,15 @@ public class SecurityCurveTest
     private String connectionString;
 
     @Before
-    public void before() throws Exception {
+    public void before() throws Exception
+    {
         int port = Utils.findOpenPort();
         connectionString = "tcp://127.0.0.1:" + port;
     }
 
     @Test
-    public void testPlainCurveKeys() throws Exception {
+    public void testPlainCurveKeys() throws Exception
+    {
 
         byte[][] serverKeyPair = new Curve().keypair();
         byte[] serverPublicKey = serverKeyPair[0];
@@ -132,7 +137,8 @@ public class SecurityCurveTest
     }
 
     @Test
-    public void testCurveMechanismSecurity() throws IOException, InterruptedException {
+    public void testCurveMechanismSecurity() throws IOException, InterruptedException
+    {
         Curve cryptoBox = new Curve();
         //  Generate new keypairs for this test
         //  We'll generate random test keys at startup
