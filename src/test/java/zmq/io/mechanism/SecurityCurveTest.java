@@ -9,7 +9,6 @@ import static org.junit.Assert.assertThat;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.Socket;
-import java.util.Arrays;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -128,7 +127,6 @@ public class SecurityCurveTest
 
             byte[] testBytes = "hello-world".getBytes();
 
-            System.out.println("Sending bytes: " + Arrays.toString(testBytes));
             clientSocket.send(testBytes);
 
             byte[] recv = serverSocket.recv();
