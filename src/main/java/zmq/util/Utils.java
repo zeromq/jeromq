@@ -35,10 +35,9 @@ public class Utils
 
     public static int findOpenPort() throws IOException
     {
-        ServerSocket tmpSocket = new ServerSocket(0);
-        int portNumber = tmpSocket.getLocalPort();
-        tmpSocket.close();
-        return portNumber;
+        try (ServerSocket tmpSocket = new ServerSocket(0, 0)) {
+            return tmpSocket.getLocalPort();
+        }
     }
 
     public static void unblockSocket(SelectableChannel... channels) throws IOException
