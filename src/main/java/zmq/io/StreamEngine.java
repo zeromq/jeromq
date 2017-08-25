@@ -178,9 +178,9 @@ public class StreamEngine implements IEngine, IPollEvents
     //  Protocol revisions
     private static enum Protocol
     {
-        V0(0),
-        V1(1),
-        V2(2),
+        V0(-1),
+        V1(0),
+        V2(1),
         V3(3);
 
         private final byte revision;
@@ -748,7 +748,7 @@ public class StreamEngine implements IEngine, IPollEvents
                     // We read a further byte, which indicates the ZMTP version.
                     byte protocol = greetingRecv.get(revisionPos);
                     if (protocol == Protocol.V1.revision || protocol == Protocol.V2.revision) {
-                        // If this is 1 or 2, we have a ZMTP 2.0 peer.
+                        // If this is V1 or V2, we have a ZMTP 2.0 peer.
                         greetingSend.limit(V2_GREETING_SIZE);
                         greetingSend.position(SIGNATURE_SIZE + 1);
                         greetingSend.put((byte) options.type); // Socket type
@@ -902,6 +902,9 @@ public class StreamEngine implements IEngine, IPollEvents
             ioObject.cancelTimer(HANDSHAKE_TIMER_ID);
             hasHandshakeTimer = false;
         }
+
+        socket.eventHandshaken(endpoint, zmtpVersion.ordinal());
+
         return true;
     }
 

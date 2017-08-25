@@ -10,6 +10,7 @@ import zmq.util.Wire;
 public class V2Decoder extends Decoder
 {
     private final ByteBuffer tmpbuf;
+    private int msgFlags;
 
     public V2Decoder(Errno errno, int bufsize, long maxmsgsize, int allocationHeapThreshold)
     {
@@ -20,6 +21,14 @@ public class V2Decoder extends Decoder
 
         //  At the beginning, read one byte and go to ONE_BYTE_SIZE_READY state.
         nextStep(tmpbuf, flagsReady);
+    }
+
+    @Override
+    protected Msg allocate(long size)
+    {
+        Msg msg = super.allocate(size);
+        msg.setFlags(msgFlags);
+        return msg;
     }
 
     @Override
@@ -87,11 +96,5 @@ public class V2Decoder extends Decoder
         nextStep(tmpbuf, flagsReady);
 
         return Step.Result.DECODED;
-    }
-
-    @Override
-    protected long binarySize(Msg msg)
-    {
-        return msg.size() + tmpbuf.limit() + 1;
     }
 }

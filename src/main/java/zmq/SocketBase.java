@@ -1208,6 +1208,11 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
 
     }
 
+    public final void eventHandshaken(String addr, int zmtpVersion)
+    {
+        event(addr, zmtpVersion, ZMQ.ZMQ_EVENT_HANDSHAKEN);
+    }
+
     public final void eventConnected(String addr, SelectableChannel ch)
     {
         event(addr, ch, ZMQ.ZMQ_EVENT_CONNECTED);
@@ -1268,7 +1273,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
         event(addr, ch, ZMQ.ZMQ_EVENT_DISCONNECTED);
     }
 
-    private void event(String addr, SelectableChannel ch, int event)
+    private void event(String addr, Object arg, int event)
     {
         try {
             monitorSync.lock();
@@ -1276,22 +1281,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
                 return;
             }
 
-            monitorEvent(new ZMQ.Event(event, addr, ch));
-        }
-        finally {
-            monitorSync.unlock();
-        }
-    }
-
-    private void event(String addr, int errno, int event)
-    {
-        try {
-            monitorSync.lock();
-            if ((monitorEvents & event) == 0) {
-                return;
-            }
-
-            monitorEvent(new ZMQ.Event(event, addr, errno));
+            monitorEvent(new ZMQ.Event(event, addr, arg));
         }
         finally {
             monitorSync.unlock();

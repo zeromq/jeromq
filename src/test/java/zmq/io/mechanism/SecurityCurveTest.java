@@ -103,7 +103,6 @@ public class SecurityCurveTest
     @Test
     public void testPlainCurveKeys() throws Exception
     {
-
         byte[][] serverKeyPair = new Curve().keypair();
         byte[] serverPublicKey = serverKeyPair[0];
         byte[] serverSecretKey = serverKeyPair[1];
@@ -113,7 +112,6 @@ public class SecurityCurveTest
         byte[] clientSecretKey = clientKeyPair[1];
 
         try (ZContext context = new ZContext()) {
-
             org.zeromq.ZMQ.Socket serverSocket = context.createSocket(ZMQ.ZMQ_DEALER);
             serverSocket.setCurveSecretKey(serverSecretKey);
             serverSocket.setAsServerCurve(true);
