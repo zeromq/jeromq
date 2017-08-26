@@ -107,6 +107,7 @@ public class FQ
                 more = msg.hasMore();
                 if (!more) {
                     lastIn = currentPipe;
+                    assert (active > 0); // happens when multiple threads receive messages
                     current = (current + 1) % active;
                 }
                 return msg;

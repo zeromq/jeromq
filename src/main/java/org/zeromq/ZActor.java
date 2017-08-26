@@ -39,8 +39,8 @@ import org.zeromq.ZPoller.EventsHandler;
  * <br/>
  * The provided {@link Actor} is living on the Plateau.
  * <br/>
- * The Plateau is made of the Stage where {@link Actor#stage(Socket, Socket, ZPoller, int) the effective processing occurs} and of the Backstage
- * where the provided actor can {@link Actor#backstage(Socket, ZPoller, int) send and receive} control messages to and from the ZActor.
+ * The Plateau is made of the Stage where {@link org.zeromq.ZActor.Actor#stage(org.zeromq.ZMQ.Socket, org.zeromq.ZMQ.Socket, org.zeromq.ZPoller, int) the effective processing occurs} and of the Backstage
+ * where the provided actor can {@link org.zeromq.ZActor.Actor#backstage(org.zeromq.ZMQ.Socket, org.zeromq.ZPoller, int) send and receive} control messages to and from the ZActor.
  * <br/>
  * From this side, the work is done via callbacks using the template-method pattern, applied with interfaces (?)
  * <p>

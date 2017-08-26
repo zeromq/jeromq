@@ -7,6 +7,7 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
+import java.nio.channels.ClosedByInterruptException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.DatagramChannel;
 import java.util.Arrays;
@@ -131,7 +132,7 @@ public class ZBeacon
                         broadcastChannel.send(ByteBuffer.wrap(beacon), broadcastInetSocketAddress);
                         Thread.sleep(broadcastInterval);
                     }
-                    catch (InterruptedException interruptedException) {
+                    catch (InterruptedException | ClosedByInterruptException interruptedException) {
                         // Re-interrupt the thread so the caller can handle it.
                         Thread.currentThread().interrupt();
                         break;
