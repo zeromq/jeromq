@@ -1,6 +1,5 @@
 package guide;
 
-import java.nio.channels.Selector;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -238,7 +237,6 @@ public class flcliapi
         public void run(Object[] args, ZContext ctx, Socket pipe)
         {
             Agent agent = new Agent(ctx, pipe);
-            Selector selector = ctx.createSelector();
 
             Poller poller = ctx.createPoller(2);
             poller.register(agent.pipe, Poller.POLLIN);

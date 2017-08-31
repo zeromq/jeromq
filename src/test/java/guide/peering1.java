@@ -1,6 +1,5 @@
 package guide;
 
-import java.nio.channels.Selector;
 import java.util.Random;
 
 import org.zeromq.ZContext;
@@ -28,7 +27,6 @@ public class peering1
         Random rand = new Random(System.nanoTime());
 
         ZContext ctx = new ZContext();
-        Selector selector = ctx.createSelector();
 
         //  Bind state backend to endpoint
         Socket statebe = ctx.createSocket(ZMQ.PUB);

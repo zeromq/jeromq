@@ -1,6 +1,5 @@
 package guide;
 
-import java.nio.channels.Selector;
 import java.util.ArrayList;
 import java.util.Iterator;
 
@@ -84,7 +83,6 @@ public class ppqueue
     public static void main(String[] args)
     {
         ZContext ctx = new ZContext();
-        Selector selector = ctx.createSelector();
         Socket frontend = ctx.createSocket(ZMQ.ROUTER);
         Socket backend = ctx.createSocket(ZMQ.ROUTER);
         frontend.bind("tcp://*:5555"); //  For clients
@@ -156,9 +154,6 @@ public class ppqueue
         }
 
         //  When we're done, clean up properly
-        while (workers.size() > 0) {
-            Worker worker = workers.remove(0);
-        }
         workers.clear();
         ctx.close();
     }

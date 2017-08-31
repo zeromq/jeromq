@@ -1,6 +1,5 @@
 package guide;
 
-import java.nio.channels.Selector;
 import java.util.ArrayList;
 import java.util.Random;
 
@@ -35,7 +34,6 @@ public class peering3
         public void run()
         {
             ZContext ctx = new ZContext();
-            Selector selector = ctx.createSelector();
             Socket client = ctx.createSocket(ZMQ.REQ);
             client.connect(String.format("ipc://%s-localfe.ipc", self));
             Socket monitor = ctx.createSocket(ZMQ.PUSH);
@@ -141,7 +139,6 @@ public class peering3
         Random rand = new Random(System.nanoTime());
 
         ZContext ctx = new ZContext();
-        Selector selector = ctx.createSelector();
 
         //  Prepare local frontend and backend
         Socket localfe = ctx.createSocket(ZMQ.ROUTER);

@@ -1,7 +1,5 @@
 package guide;
 
-import java.nio.channels.Selector;
-
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQ.Poller;
@@ -23,7 +21,6 @@ public class lpclient
     public static void main(String[] argv)
     {
         ZContext ctx = new ZContext();
-        Selector selector = ctx.createSelector();
         System.out.println("I: connecting to server");
         Socket client = ctx.createSocket(ZMQ.REQ);
         assert (client != null);

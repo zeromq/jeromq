@@ -74,7 +74,7 @@ public class tripping
                 msg.send(worker);
             }
 
-            ctx.destroy();
+            ctx.close();
 
         }
 
@@ -129,7 +129,7 @@ public class tripping
 
             System.out.printf(" %d calls/second\n", (1000 * SAMPLE_SIZE) / (System.currentTimeMillis() - start));
 
-            ctx.destroy();
+            ctx.close();
         }
 
     }

@@ -1,6 +1,5 @@
 package guide;
 
-import java.nio.channels.Selector;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -227,7 +226,6 @@ public class clone
         public void run(Object[] args, ZContext ctx, Socket pipe)
         {
             Agent self = new Agent(ctx, pipe);
-            Selector selector = ctx.createSelector();
 
             Poller poller = ctx.createPoller(1);
             poller.register(pipe, Poller.POLLIN);

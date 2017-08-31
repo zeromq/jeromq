@@ -1,7 +1,5 @@
 package guide;
 
-import java.nio.channels.Selector;
-
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQ.Poller;
@@ -43,8 +41,6 @@ public class flclient2
 
     private ZMsg request(ZMsg request)
     {
-        Selector selector = ctx.createSelector();
-
         //  Prefix request with getSequence number and empty envelope
         String sequenceText = String.format("%d", ++sequence);
         request.push(sequenceText);

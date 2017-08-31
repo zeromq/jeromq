@@ -1,7 +1,6 @@
 package guide;
 
 import java.io.IOException;
-import java.nio.channels.Selector;
 import java.util.ArrayList;
 import java.util.Random;
 
@@ -99,7 +98,6 @@ public class peering2
         Random rand = new Random(System.nanoTime());
 
         ZContext ctx = new ZContext();
-        Selector selector = ctx.createSelector();
 
         //  Bind cloud frontend to endpoint
         Socket cloudfe = ctx.createSocket(ZMQ.ROUTER);
