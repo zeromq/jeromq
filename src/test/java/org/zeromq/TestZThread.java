@@ -1,10 +1,17 @@
 package org.zeromq;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.junit.Assert.assertThat;
+
 import java.util.concurrent.CountDownLatch;
 
-import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.zeromq.ZMQ.Socket;
+import org.zeromq.ZThread.IAttachedRunnable;
+
+import zmq.ZError;
 
 public class TestZThread
 {
@@ -18,10 +25,10 @@ public class TestZThread
             public void run(Object[] args)
             {
                 ZContext ctx = new ZContext();
-                assert (ctx != null);
 
                 Socket push = ctx.createSocket(ZMQ.PUSH);
-                assert (push != null);
+                assertThat(push, notNullValue());
+
                 ctx.close();
                 stopped.countDown();
             }
@@ -40,7 +47,7 @@ public class TestZThread
     @Test
     public void testFork()
     {
-        ZContext ctx = new ZContext();
+        final ZContext ctx = new ZContext();
 
         ZThread.IAttachedRunnable attached = new ZThread.IAttachedRunnable()
         {
@@ -55,14 +62,51 @@ public class TestZThread
         };
 
         Socket pipe = ZThread.fork(ctx, attached);
-        assert (pipe != null);
+        assertThat(pipe, notNullValue());
 
         pipe.send("ping");
         String pong = pipe.recvStr();
 
-        Assert.assertEquals(pong, "pong");
+        assertThat(pong, is("pong"));
 
         //  Everything should be cleanly closed now
-        ctx.destroy();
+        ctx.close();
+    }
+
+    @Test
+    @Ignore
+    public void testClosePipe()
+    {
+        ZContext ctx = new ZContext();
+        IAttachedRunnable runnable = new IAttachedRunnable()
+        {
+            @Override
+            public void run(Object[] args, ZContext ctx, Socket pipe)
+            {
+                pipe.recvStr();
+                pipe.send("pong");
+            }
+        };
+        Socket pipe = ZThread.fork(ctx, runnable);
+
+        assertThat(pipe, notNullValue());
+
+        boolean rc = pipe.send("ping");
+        assertThat(rc, is(true));
+
+        String pong = pipe.recvStr();
+
+        assertThat(pong, is("pong"));
+
+        try {
+            rc = pipe.send("boom ?!");
+            assertThat("pipe was closed pretty fast", rc, is(true));
+        }
+        catch (ZMQException e) {
+            int errno = e.getErrorCode();
+            assertThat("Expected exception has the wrong code", ZError.ETERM, is(errno));
+        }
+
+        ctx.close();
     }
 }
