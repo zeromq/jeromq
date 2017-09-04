@@ -45,7 +45,7 @@ public final class MultiMap<K extends Comparable<? super K>, V>
 
     public Collection<Entry<V, K>> entries()
     {
-        ArrayList<Entry<V, K>> list = new ArrayList<>(inverse.entrySet());
+        List<Entry<V, K>> list = new ArrayList<>(inverse.entrySet());
         Collections.sort(list, comparator);
         return list;
     }
@@ -83,7 +83,7 @@ public final class MultiMap<K extends Comparable<? super K>, V>
     {
         List<V> list = data.get(key);
         if (list == null) {
-            list = new ArrayList<V>();
+            list = new ArrayList<>();
             data.put(key, list);
         }
         return list;
@@ -93,7 +93,7 @@ public final class MultiMap<K extends Comparable<? super K>, V>
     {
         K old = inverse.get(value);
         if (old != null) {
-            getValues(old).remove(value);
+            removeData(old, value);
         }
         boolean inserted = getValues(key).add(value);
         if (inserted) {
@@ -117,19 +117,29 @@ public final class MultiMap<K extends Comparable<? super K>, V>
     {
         K key = inverse.remove(value);
         if (key != null) {
-            return getValues(key).remove(value);
+            return removeData(key, value);
         }
         return false;
     }
 
-    public boolean remove(Entry<V, K> entry)
+    public boolean remove(K key, V value)
     {
-        K key = entry.getValue();
-        V value = entry.getKey();
-
-        boolean removed = getValues(key).remove(value);
+        boolean removed = removeData(key, value);
         if (removed) {
             inverse.remove(value);
+        }
+        return removed;
+    }
+
+    private boolean removeData(K key, V value)
+    {
+        boolean removed = false;
+        List<V> list = data.get(key);
+        if (list != null) {
+            removed = list.remove(value);
+            if (list.isEmpty()) {
+                data.remove(key);
+            }
         }
         return removed;
     }

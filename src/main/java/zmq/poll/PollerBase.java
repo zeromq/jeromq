@@ -54,13 +54,32 @@ abstract class PollerBase implements Runnable
     // the thread where all events will be dispatched. So, the actual IO or Reaper threads.
     protected final Thread worker;
 
+    // did timers expiration add timer ?
+    private boolean changed;
+
     protected PollerBase(String name)
     {
-        worker = new Thread(this, name);
-        worker.setDaemon(true);
+        worker = createWorker(name);
 
         load = new AtomicInteger(0);
         timers = new MultiMap<>();
+    }
+
+    Thread createWorker(String name)
+    {
+        Thread worker = new Thread(this, name);
+        worker.setDaemon(true);
+        return worker;
+    }
+
+    long clock()
+    {
+        return Clock.nowMS();
+    }
+
+    final boolean isEmpty()
+    {
+        return timers.isEmpty();
     }
 
     //  Returns load of the poller. Note that this function can be
@@ -83,9 +102,11 @@ abstract class PollerBase implements Runnable
     {
         assert (Thread.currentThread() == worker);
 
-        final long expiration = Clock.nowMS() + timeout;
+        final long expiration = clock() + timeout;
         TimerInfo info = new TimerInfo(sink, id);
         timers.insert(expiration, info);
+
+        changed = true;
     }
 
     //  Cancel the timer created by sink_ object with ID equal to id_.
@@ -108,19 +129,21 @@ abstract class PollerBase implements Runnable
     {
         assert (Thread.currentThread() == worker);
 
+        changed = false;
+
         //  Fast track.
         if (timers.isEmpty()) {
             return 0L;
         }
 
         //  Get the current time.
-        long current = Clock.nowMS();
+        long current = clock();
 
         //   Execute the timers that are already due.
         for (Entry<TimerInfo, Long> entry : timers.entries()) {
             final TimerInfo timerInfo = entry.getKey();
             if (timerInfo.cancelled) {
-                timers.remove(entry);
+                timers.remove(entry.getValue(), timerInfo);
                 continue;
             }
             //  If we have to wait to execute the item, same will be true about
@@ -135,14 +158,15 @@ abstract class PollerBase implements Runnable
             }
 
             //  Trigger the timer.
-            if (!timerInfo.cancelled) {
-                timerInfo.sink.timerEvent(timerInfo.id);
-            }
+            timerInfo.sink.timerEvent(timerInfo.id);
 
             //  Remove it from the list of active timers.
-            timers.remove(entry);
+            timers.remove(key, timerInfo);
         }
 
+        if (changed) {
+            return executeTimers();
+        }
         //  There are no more timers.
         return 0L;
     }
