@@ -92,7 +92,7 @@ class NullMechanism extends Mechanism
         }
         int dataSize = msg.size();
 
-        int rc = 0;
+        int rc;
         if (dataSize >= 6 && compare(msg, READY, true)) {
             rc = processReadyCommand(msg);
         }

@@ -268,8 +268,7 @@ public class ZMQ
     public static Ctx createContext()
     {
         //  Create 0MQ context.
-        Ctx ctx = new Ctx();
-        return ctx;
+        return new Ctx();
     }
 
     private static void checkContext(Ctx ctx)
@@ -323,8 +322,7 @@ public class ZMQ
     public static SocketBase socket(Ctx ctx, int type)
     {
         checkContext(ctx);
-        SocketBase s = ctx.createSocket(type);
-        return s;
+        return ctx.createSocket(type);
     }
 
     private static void checkSocket(SocketBase s)
@@ -462,7 +460,7 @@ public class ZMQ
 
     public static boolean sendMsg(SocketBase socket, byte[]... data)
     {
-        int rc = 0;
+        int rc;
         if (data.length == 0) {
             return false;
         }
@@ -694,7 +692,7 @@ public class ZMQ
 
             //  Wait for events.
             try {
-                int rc = 0;
+                int rc;
                 if (waitMillis < 0) {
                     rc = selector.select(0);
                 }

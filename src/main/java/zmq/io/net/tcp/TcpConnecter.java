@@ -144,7 +144,7 @@ public class TcpConnecter extends Own implements IPollEvents
         //        socket.setFd(channel);
 
         //  Create the engine object for this connection.
-        StreamEngine engine = null;
+        StreamEngine engine;
         try {
             engine = new StreamEngine(channel, options, addr.toString());
         }
@@ -152,7 +152,6 @@ public class TcpConnecter extends Own implements IPollEvents
             // TODO V4 socket.eventConnectDelayed(addr.toString(), -1);
             return;
         }
-        assert (engine != null);
 
         this.fd = null;
 
@@ -311,7 +310,7 @@ public class TcpConnecter extends Own implements IPollEvents
         }
 
         //  Connect to the remote peer.
-        boolean rc = false;
+        boolean rc;
         try {
             rc = fd.connect(sa);
             if (rc) {

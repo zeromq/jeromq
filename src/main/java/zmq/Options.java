@@ -97,10 +97,10 @@ public class Options
 
     // TCP accept() filters
     //typedef std::vector <tcp_address_mask_t> tcp_accept_filters_t;
-    public final List<TcpAddress.TcpAddressMask> tcpAcceptFilters = new ArrayList<TcpAddress.TcpAddressMask>();
+    public final List<TcpAddress.TcpAddressMask> tcpAcceptFilters = new ArrayList<>();
 
     // IPC accept() filters
-    final List<IpcAddress.IpcAddressMask> ipcAcceptFilters = new ArrayList<IpcAddress.IpcAddressMask>();
+    final List<IpcAddress.IpcAddressMask> ipcAcceptFilters = new ArrayList<>();
 
     //  Security mechanism for all connections on this socket
     public Mechanisms mechanism = Mechanisms.NULL;
@@ -652,7 +652,7 @@ public class Options
             return (Boolean) optval;
         }
         else if (optval instanceof Integer) {
-            return (Integer) optval != 0 ? true : false;
+            return (Integer) optval != 0;
         }
         throw new IllegalArgumentException(optval + " is neither an integer or a boolean for option " + option);
     }

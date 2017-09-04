@@ -90,7 +90,7 @@ final class Signaler implements Closeable
 
     void send()
     {
-        int nbytes = 0;
+        int nbytes;
 
         while (true) {
             try {
@@ -112,7 +112,7 @@ final class Signaler implements Closeable
 
     boolean waitEvent(long timeout)
     {
-        int rc = 0;
+        int rc;
         boolean brc = (rcursor < wcursor.get());
         if (brc) {
             return true;
@@ -122,10 +122,8 @@ final class Signaler implements Closeable
                 // waitEvent(0) is called every read/send of SocketBase
                 // instant readiness is not strictly required
                 // On the other hand, we can save lots of system call and increase performance
-                if (!brc) {
-                    errno.set(ZError.EAGAIN);
-                }
-                return brc;
+                errno.set(ZError.EAGAIN);
+                return false;
 
             }
             else if (timeout < 0) {

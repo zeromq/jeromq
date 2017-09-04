@@ -197,7 +197,7 @@ public class Stream extends SocketBase
     @Override
     public Msg xrecv()
     {
-        Msg msg = null;
+        Msg msg;
         if (prefetched) {
             if (!identitySent) {
                 msg = prefetchedId;
@@ -212,7 +212,7 @@ public class Stream extends SocketBase
             return msg;
         }
 
-        ValueReference<Pipe> pipe = new ValueReference<Pipe>();
+        ValueReference<Pipe> pipe = new ValueReference<>();
         prefetchedMsg = fq.recvPipe(errno, pipe);
 
         // TODO DIFF V4 we sometimes need to process the commands to receive data, let's just return and give it another chance
@@ -254,7 +254,7 @@ public class Stream extends SocketBase
 
         //  Try to read the next message.
         //  The message, if read, is kept in the pre-fetch buffer.
-        ValueReference<Pipe> pipe = new ValueReference<Pipe>();
+        ValueReference<Pipe> pipe = new ValueReference<>();
         prefetchedMsg = fq.recvPipe(errno, pipe);
         if (prefetchedMsg == null) {
             return false;
@@ -294,7 +294,7 @@ public class Stream extends SocketBase
     {
         //  Always assign identity for raw-socket
 
-        Blob identity = null;
+        Blob identity;
         if (connectRid != null && !connectRid.isEmpty()) {
             identity = Blob.createBlob(connectRid.getBytes(ZMQ.CHARSET));
             connectRid = null;

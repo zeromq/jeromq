@@ -11,12 +11,12 @@ public class ZThread
 
     public interface IAttachedRunnable
     {
-        public void run(Object[] args, ZContext ctx, Socket pipe);
+        void run(Object[] args, ZContext ctx, Socket pipe);
     }
 
     public interface IDetachedRunnable
     {
-        public void run(Object[] args);
+        void run(Object[] args);
     }
 
     private static class ShimThread extends Thread

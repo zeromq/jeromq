@@ -37,7 +37,7 @@ public class ZLoop
             errors = 0;
         }
 
-    };
+    }
 
     private class STimer
     {
@@ -74,10 +74,10 @@ public class ZLoop
         assert (context != null);
         this.context = context;
 
-        pollers = new ArrayList<SPoller>();
-        timers = new ArrayList<STimer>();
-        zombies = new ArrayList<Object>();
-        newTimers = new ArrayList<STimer>();
+        pollers = new ArrayList<>();
+        timers = new ArrayList<>();
+        zombies = new ArrayList<>();
+        newTimers = new ArrayList<>();
     }
 
     public ZLoop(ZContext ctx)

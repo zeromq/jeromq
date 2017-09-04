@@ -96,7 +96,6 @@ public abstract class Mechanism
         assert (nameLength <= 255);
 
         int valueLength = value == null ? 0 : value.length;
-        assert (valueLength <= Integer.MAX_VALUE);
 
         buf.put((byte) nameLength);
         buf.put(nameB);
@@ -114,7 +113,6 @@ public abstract class Mechanism
         assert (nameLength <= 255);
 
         int valueLength = value == null ? 0 : value.length;
-        assert (valueLength <= Integer.MAX_VALUE);
 
         msg.put((byte) nameLength);
         msg.put(nameB);
@@ -224,7 +222,7 @@ public abstract class Mechanism
         boolean comparison = includeLength ? msg.get(0) == data.length() : true;
         if (comparison) {
             for (int idx = start; idx < data.length(); ++idx) {
-                comparison &= (msg.get(idx) == data.charAt(idx - start));
+                comparison = (msg.get(idx) == data.charAt(idx - start));
                 if (!comparison) {
                     break;
                 }
@@ -240,7 +238,7 @@ public abstract class Mechanism
         }
         boolean comparison = true;
         for (int idx = 0; idx < length; ++idx) {
-            comparison |= a1.get(idx + offset) == b[idx];
+            comparison = a1.get(idx + offset) == b[idx];
             if (!comparison) {
                 break;
             }
@@ -377,9 +375,8 @@ public abstract class Mechanism
         setUserId(msgs.get(5).data());
 
         //  Process metadata frame
-        int rc = parseMetadata(msgs.get(6), 0, true);
 
-        return rc;
+        return parseMetadata(msgs.get(6), 0, true);
     }
 
     protected final void puts(String msg)

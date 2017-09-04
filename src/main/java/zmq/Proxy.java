@@ -16,7 +16,7 @@ class Proxy
         return new Proxy().start(frontend, backend, capture, control);
     }
 
-    public static enum State
+    public enum State
     {
         ACTIVE,
         PAUSED,
@@ -38,7 +38,6 @@ class Proxy
         //  TODO: The current implementation drops messages when
         //  any of the pipes becomes full.
 
-        boolean success = true;
         int rc;
         int more;
         Msg msg;
@@ -89,7 +88,7 @@ class Proxy
                     }
 
                     //  Copy message to capture socket if any
-                    success = capture(capture, msg, more);
+                    boolean success = capture(capture, msg, more);
                     if (!success) {
                         return false;
                     }

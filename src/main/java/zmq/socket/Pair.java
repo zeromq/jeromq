@@ -88,7 +88,7 @@ public class Pair extends SocketBase
     protected Msg xrecv()
     {
         //  Deallocate old content of the message.
-        Msg msg = null;
+        Msg msg;
         if (pipe == null) {
             //  Initialize the output parameter to be a 0-byte message.
             errno.set(ZError.EAGAIN);

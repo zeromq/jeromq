@@ -70,5 +70,5 @@ public enum Mechanisms
         byte[] name = name().getBytes(ZMQ.CHARSET);
         byte[] comp = Arrays.copyOf(name, 20);
         return Arrays.equals(dst, comp);
-    };
+    }
 }

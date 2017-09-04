@@ -7,7 +7,7 @@ import zmq.util.Utils;
 
 class Trie
 {
-    public static interface ITrieHandler
+    public interface ITrieHandler
     {
         void added(byte[] data, int size, Pipe arg);
     }

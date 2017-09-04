@@ -137,7 +137,7 @@ public class XSub extends SocketBase
     @Override
     protected Msg xrecv()
     {
-        Msg msg = null;
+        Msg msg;
 
         //  If there's already a message prepared by a previous call to zmq_poll,
         //  return it straight ahead.

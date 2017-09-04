@@ -51,7 +51,7 @@ public class Router extends SocketBase
             this.pipe = pipe;
             this.active = active;
         }
-    };
+    }
 
     //  We keep a set of pipes that have not been identified yet.
     private final Set<Pipe> anonymousPipes;
@@ -288,7 +288,7 @@ public class Router extends SocketBase
     @Override
     protected Msg xrecv()
     {
-        Msg msg = null;
+        Msg msg;
         if (prefetched) {
             if (!identitySent) {
                 msg = prefetchedId;
@@ -304,7 +304,7 @@ public class Router extends SocketBase
             return msg;
         }
 
-        ValueReference<Pipe> pipe = new ValueReference<Pipe>();
+        ValueReference<Pipe> pipe = new ValueReference<>();
         msg = fq.recvPipe(errno, pipe);
 
         //  It's possible that we receive peer's identity. That happens
@@ -368,7 +368,7 @@ public class Router extends SocketBase
 
         //  Try to read the next message.
         //  The message, if read, is kept in the pre-fetch buffer.
-        ValueReference<Pipe> pipe = new ValueReference<Pipe>();
+        ValueReference<Pipe> pipe = new ValueReference<>();
         prefetchedMsg = fq.recvPipe(errno, pipe);
 
         //  It's possible that we receive peer's identity. That happens

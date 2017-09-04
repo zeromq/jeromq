@@ -32,7 +32,7 @@ public class PlainClientMechanism extends Mechanism
     @Override
     public int nextHandshakeCommand(Msg msg)
     {
-        int rc = 0;
+        int rc;
         switch (state) {
         case SENDING_HELLO:
             rc = produceHello(msg);
@@ -57,7 +57,7 @@ public class PlainClientMechanism extends Mechanism
     @Override
     public int processHandshakeCommand(Msg msg)
     {
-        int rc = 0;
+        int rc;
 
         int dataSize = msg.size();
         if (dataSize >= 8 && compare(msg, "WELCOME", true)) {
