@@ -38,6 +38,11 @@ public class ZBeacon
 
     public ZBeacon(String host, int port, byte[] beacon, boolean ignoreLocalAddress)
     {
+        this(host, port, beacon, ignoreLocalAddress, false);
+    }
+
+    public ZBeacon(String host, int port, byte[] beacon, boolean ignoreLocalAddress, boolean blocking)
+    {
         this.port = port;
         this.beacon = beacon;
         try {
@@ -47,7 +52,7 @@ public class ZBeacon
             throw new RuntimeException(unknownHostException);
         }
 
-        broadcastServer = new BroadcastServer(ignoreLocalAddress);
+        broadcastServer = new BroadcastServer(ignoreLocalAddress, blocking);
         broadcastServer.setDaemon(true);
         broadcastClient = new BroadcastClient();
         broadcastClient.setDaemon(true);
@@ -165,13 +170,13 @@ public class ZBeacon
         private DatagramChannel handle;            // Socket for send/recv
         private final boolean   ignoreLocalAddress;
 
-        public BroadcastServer(boolean ignoreLocalAddress)
+        public BroadcastServer(boolean ignoreLocalAddress, boolean blocking)
         {
             this.ignoreLocalAddress = ignoreLocalAddress;
             try {
                 // Create UDP socket
                 handle = DatagramChannel.open();
-                handle.configureBlocking(false);
+                handle.configureBlocking(blocking);
                 DatagramSocket sock = handle.socket();
                 sock.setReuseAddress(true);
                 sock.bind(new InetSocketAddress(InetAddress.getByAddress(new byte[] { 0, 0, 0, 0 }), port));
