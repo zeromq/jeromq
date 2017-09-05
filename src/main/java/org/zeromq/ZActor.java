@@ -76,7 +76,7 @@ import org.zeromq.ZPoller.EventsHandler;
  * {@code
         Actor acting = new ZActor.SimpleActor()
         {
-            public List<Socket> createSockets(ZContext ctx, Object[] args)
+            public List<Socket> createSockets(ZContext ctx, Object ... args)
             {
                 assert ("TEST".equals(args[0]));
                 return Arrays.asList(ctx.createSocket(ZMQ.PUB));
@@ -141,7 +141,7 @@ public class ZActor extends ZStar
          * @param args   the arguments passed as parameters of the ZActor
          * @return a list of created sockets that will be managed by the double. Not null.
          */
-        List<Socket> createSockets(ZContext ctx, Object[] args);
+        List<Socket> createSockets(ZContext ctx, Object... args);
 
         /**
          * Called when the double is started, before the first loop.
@@ -173,7 +173,7 @@ public class ZActor extends ZStar
          * @param pipe    the backstage control pipe receiving the message
          * @param poller  the poller of the double.
          * @param events  the events source of the call
-         * @return true in case of success, <b>false to stop the double</b>.
+         * @return true in case of success, <b>false to stop the actor</b>.
          */
         boolean backstage(Socket pipe, ZPoller poller, int events);
 
@@ -185,7 +185,7 @@ public class ZActor extends ZStar
          * @param pipe    the backstage control pipe
          * @param poller  the poller of the double.
          * @param events  the events source of the call
-         * @return true in case of success, <b>false to stop the double</b>.
+         * @return true in case of success, <b>false to stop the actor</b>.
          */
         boolean stage(Socket socket, Socket pipe, ZPoller poller, int events);
 
@@ -195,7 +195,7 @@ public class ZActor extends ZStar
          *
          * @param pipe   the backstage control pipe
          * @param poller the poller of the double.
-         * @return true to continue with the current double, <b>false to stop it</b>.
+         * @return true to continue with the current doppelganger, <b>false to stop it</b>.
          */
         boolean looped(Socket pipe, ZPoller poller);
 
@@ -243,7 +243,7 @@ public class ZActor extends ZStar
         }
 
         @Override
-        public List<Socket> createSockets(final ZContext ctx, final Object[] args)
+        public List<Socket> createSockets(final ZContext ctx, final Object... args)
         {
             return Collections.emptyList();
         }
@@ -306,6 +306,7 @@ public class ZActor extends ZStar
     /**
      * Another actor will be called just before the main one,
      * without participating to the decisions.
+     * This is interesting as a shadowed observer of the actor's behavior.
      */
     // contract implementation for a duo actor on the stage
     public static class Duo implements Actor
@@ -332,7 +333,7 @@ public class ZActor extends ZStar
         }
 
         @Override
-        public List<Socket> createSockets(final ZContext ctx, final Object[] args)
+        public List<Socket> createSockets(final ZContext ctx, final Object... args)
         {
             shadow.createSockets(ctx, args);
             return main.createSockets(ctx, args);
@@ -439,9 +440,27 @@ public class ZActor extends ZStar
      *            the optional arguments that will be passed to the distant actor
      */
     public ZActor(final ZContext context, final SelectorCreator selector, final Actor actor, final String motdelafin,
-            final Object[] args)
+            final Object... args)
     {
         super(context, selector, new ActorFortune(actor), motdelafin, args);
+    }
+
+    /**
+     * Creates a new ZActor.
+     *
+     * @param context
+     *            the main context used. If null, a new context will be created
+     *            and closed at the stop of the operation.
+     * <b>If not null, it is the responsibility of the caller to close it.</b>
+     *
+     * @param actor
+     *            the actor handling messages from either stage and backstage
+     * @param args
+     *            the optional arguments that will be passed to the distant actor
+     */
+    public ZActor(final ZContext context, final Actor actor, final String motdelafin, final Object... args)
+    {
+        super(context, null, new ActorFortune(actor), motdelafin, args);
     }
 
     // actor creator
@@ -456,13 +475,13 @@ public class ZActor extends ZStar
         }
 
         @Override
-        public String premiere(Socket mic, Object[] args)
+        public String premiere(Socket mic, Object... args)
         {
             return actor.premiere(mic);
         }
 
         @Override
-        public Star create(ZContext ctx, Socket pipe, Selector sel, int count, Star previous, Object[] args)
+        public Star create(ZContext ctx, Socket pipe, Selector sel, int count, Star previous, Object... args)
         {
             return new ZActor.Double(ctx, pipe, sel, actor, args);
         }
@@ -499,7 +518,7 @@ public class ZActor extends ZStar
 
         // creates a new double
         public Double(final ZContext ctx, final Socket pipe, final Selector selector, final Actor actor,
-                final Object[] args)
+                final Object... args)
         {
             this.context = ctx;
             this.pipe = pipe;

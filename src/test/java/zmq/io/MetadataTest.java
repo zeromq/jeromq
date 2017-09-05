@@ -5,7 +5,10 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.UUID;
 
 import org.junit.Test;
 
@@ -139,5 +142,22 @@ public class MetadataTest
         ZMQ.term(ctx);
         //  Wait until ZAP handler terminates
         thread.join();
+    }
+
+    @Test
+    public void testWriteRead() throws IOException
+    {
+        Metadata src = new Metadata();
+        src.set("key", "value");
+        src.set(UUID.randomUUID().toString(), UUID.randomUUID().toString());
+
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        src.write(stream);
+        byte[] array = stream.toByteArray();
+
+        Metadata dst = new Metadata();
+        dst.read(ByteBuffer.wrap(array), 0, null);
+
+        assertThat(dst, is(src));
     }
 }

@@ -6,16 +6,17 @@ import org.zeromq.ZMQ.Socket;
 
 public class TestZContext
 {
+    @SuppressWarnings("deprecation")
     @Test
     public void testZContext()
     {
         ZContext ctx = new ZContext();
-        Socket s1 = ctx.createSocket(ZMQ.PAIR);
-        Socket s2 = ctx.createSocket(ZMQ.XREQ);
-        Socket s3 = ctx.createSocket(ZMQ.REQ);
-        Socket s4 = ctx.createSocket(ZMQ.REP);
-        Socket s5 = ctx.createSocket(ZMQ.PUB);
-        Socket s6 = ctx.createSocket(ZMQ.SUB);
+        ctx.createSocket(ZMQ.PAIR);
+        ctx.createSocket(ZMQ.XREQ);
+        ctx.createSocket(ZMQ.REQ);
+        ctx.createSocket(ZMQ.REP);
+        ctx.createSocket(ZMQ.PUB);
+        ctx.createSocket(ZMQ.SUB);
         ctx.close();
         Assert.assertEquals(0, ctx.getSockets().size());
     }

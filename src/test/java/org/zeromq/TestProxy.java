@@ -14,6 +14,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.Test;
 import org.zeromq.ZMQ.Context;
 import org.zeromq.ZMQ.Socket;
+import org.zeromq.util.ZData;
 
 public class TestProxy
 {
@@ -125,7 +126,7 @@ public class TestProxy
                     return false;
                 }
                 final byte[] identity = msg;
-                System.out.println(name + " received client identity " + msgAsString);
+                System.out.println(name + " received client identity " + ZData.strhex(identity));
 
                 msg = socket.recv(0);
                 msgAsString = new String(msg, ZMQ.CHARSET);

@@ -88,6 +88,11 @@ public interface ZAgent
      */
     Socket pipe();
 
+    /**
+     * Closes the pipe.
+     */
+    void close();
+
     class Creator
     {
         private Creator()
@@ -132,6 +137,12 @@ public interface ZAgent
         {
             return !locked;
         }
+        @Override
+        public void close()
+        {
+            locked = true;
+            pipe.close();
+        }
 
         @Override
         public ZMsg recv()
@@ -146,7 +157,7 @@ public interface ZAgent
                 return null;
             }
             try {
-                ZMsg msg = ZMsg.recvMsg(pipe, wait ? 0 : ZMQ.DONTWAIT);
+                ZMsg msg = ZMsg.recvMsg(pipe, wait);
                 if (msg == null) {
                     return null;
                 }
