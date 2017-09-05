@@ -154,7 +154,7 @@ public class ZStar implements ZAgent
          *
          * @return the name of the upcoming performance.
          */
-        String premiere(Socket mic, Object[] args);
+        String premiere(Socket mic, Object ... args);
 
         /**
          * Creates a star.
@@ -168,7 +168,7 @@ public class ZStar implements ZAgent
          *
          * @return a new star is born!
          */
-        Star create(ZContext ctx, Socket mic, Selector sel, int count, Star previous, Object[] args);
+        Star create(ZContext ctx, Socket mic, Selector sel, int count, Star previous, Object ... args);
 
         /**
          * The show is over.
@@ -186,6 +186,11 @@ public class ZStar implements ZAgent
      */
     public interface Exit
     {
+        /**
+         * Causes the current thread to wait in blocking mode until the end of the remote operations.
+         */
+        void awaitSilent();
+
         /**
          * Causes the current thread to wait in blocking mode until the end of the remote operations,
          * unless the thread is interrupted.
@@ -294,7 +299,7 @@ public class ZStar implements ZAgent
      * @param bags       the optional arguments that will be passed to the distant star
      */
     public ZStar(final ZContext context, final SelectorCreator selector, final Fortune fortune, String motdelafin,
-            final Object[] bags)
+            final Object ... bags)
     {
         super();
         assert (fortune != null);
@@ -476,7 +481,7 @@ public class ZStar implements ZAgent
 
         // starts the performance
         private void showMustGoOn(final ZContext chef, final Set set, final Selector story, final Socket phone,
-                                  final Fortune fortune, final Object[] bags)
+                                  final Fortune fortune, final Object ... bags)
         {
             int shows = 0;
             /** on the spot lights, the star in only an actor **/
@@ -514,6 +519,17 @@ public class ZStar implements ZAgent
         /* | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | | |*/
         /******************************************************************************/
         // NB: never use green color on the stage floor of a french theater. Or something bad will happen...
+
+        @Override
+        public void awaitSilent()
+        {
+            try {
+                exit.await();
+            }
+            catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
 
         @Override
         public void await() throws InterruptedException
@@ -635,7 +651,7 @@ public class ZStar implements ZAgent
          * @param phone      the socket used to communicate with the Agent
          * @param bags       the optional arguments that were passed at the creation
          */
-        void breakaleg(ZContext ctx, Fortune fortune, Socket phone, Object[] bags);
+        void breakaleg(ZContext ctx, Fortune fortune, Socket phone, Object ... bags);
 
         // well ...
     }

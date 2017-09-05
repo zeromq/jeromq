@@ -94,9 +94,15 @@ public class PollItem
         return interest;
     }
 
+    @Deprecated
     public final int zinterestOps()
     {
         return zinterest;
+    }
+
+    public final boolean hasEvent(int events)
+    {
+        return (zinterest & events) > 0;
     }
 
     public final int interestOps(int ops)
