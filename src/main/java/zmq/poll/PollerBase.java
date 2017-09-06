@@ -1,7 +1,6 @@
 package zmq.poll;
 
 import java.util.Map.Entry;
-import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import zmq.util.Clock;
@@ -18,6 +17,7 @@ abstract class PollerBase implements Runnable
 
         public TimerInfo(IPollEvents sink, int id)
         {
+            assert (sink != null);
             this.sink = sink;
             this.id = id;
         }
@@ -25,17 +25,27 @@ abstract class PollerBase implements Runnable
         @Override
         public int hashCode()
         {
-            return Objects.hash(id, sink);
+            final int prime = 31;
+            int result = 1;
+            result = prime * result + id;
+            result = prime * result + sink.hashCode();
+            return result;
         }
 
         @Override
-        public boolean equals(Object obj)
+        public boolean equals(Object other)
         {
-            if (obj instanceof TimerInfo) {
-                TimerInfo other = (TimerInfo) obj;
-                return this.id == other.id && Objects.equals(this.sink, other.sink);
+            if (this == other) {
+                return true;
             }
-            return false;
+            if (other == null) {
+                return false;
+            }
+            if (!(other instanceof TimerInfo)) {
+                return false;
+            }
+            TimerInfo that = (TimerInfo) other;
+            return this.id == that.id && this.sink.equals(that.sink);
         }
 
         @Override

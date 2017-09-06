@@ -9,7 +9,6 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -31,6 +30,8 @@ public final class Poller extends PollerBase implements Runnable
 
         public Handle(SelectableChannel fd, IPollEvents handler)
         {
+            assert (fd != null);
+            assert (handler != null);
             this.fd = fd;
             this.handler = handler;
         }
@@ -38,23 +39,27 @@ public final class Poller extends PollerBase implements Runnable
         @Override
         public int hashCode()
         {
-            return Objects.hash(fd, handler);
+            final int prime = 31;
+            int result = 1;
+            result = prime * result + fd.hashCode();
+            result = prime * result + handler.hashCode();
+            return result;
         }
 
         @Override
-        public boolean equals(Object obj)
+        public boolean equals(Object other)
         {
-            if (this == obj) {
+            if (this == other) {
                 return true;
             }
-            if (obj == null) {
+            if (other == null) {
                 return false;
             }
-            if (!(obj instanceof Handle)) {
+            if (!(other instanceof Handle)) {
                 return false;
             }
-            Handle other = (Handle) obj;
-            return Objects.equals(fd, other.fd) && Objects.equals(handler, other.handler);
+            Handle that = (Handle) other;
+            return this.fd.equals(that.fd) && this.handler.equals(that.handler);
         }
 
         @Override
