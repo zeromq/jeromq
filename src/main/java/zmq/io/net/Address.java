@@ -20,7 +20,7 @@ public class Address
         SocketAddress address();
 
         SocketAddress sourceAddress();
-    };
+    }
 
     private final NetProtocol protocol;
     private final String      address;

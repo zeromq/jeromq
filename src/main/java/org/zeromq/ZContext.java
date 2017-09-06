@@ -61,7 +61,7 @@ public class ZContext implements Closeable
 
     private ZContext(Context context, boolean main, int ioThreads)
     {
-        sockets = new CopyOnWriteArrayList<Socket>();
+        sockets = new CopyOnWriteArrayList<>();
         this.context = context;
         this.ioThreads = ioThreads;
         this.main = main;

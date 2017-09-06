@@ -35,7 +35,7 @@ public final class Mailbox implements Closeable
     public Mailbox(Ctx ctx, String name, int tid)
     {
         this.errno = ctx.errno();
-        cpipe = new YPipe<Command>(Config.COMMAND_PIPE_GRANULARITY.getValue());
+        cpipe = new YPipe<>(Config.COMMAND_PIPE_GRANULARITY.getValue());
         sync = new ReentrantLock();
         signaler = new Signaler(ctx, tid, errno);
 
@@ -74,7 +74,7 @@ public final class Mailbox implements Closeable
 
     public Command recv(long timeout)
     {
-        Command cmd = null;
+        Command cmd;
         //  Try to get the command straight away.
         if (active) {
             cmd = cpipe.read();

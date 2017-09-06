@@ -37,7 +37,7 @@ public class PlainServerMechanism extends Mechanism
     @Override
     public int nextHandshakeCommand(Msg msg)
     {
-        int rc = 0;
+        int rc;
         switch (state) {
         case SENDING_WELCOME:
             rc = produceWelcome(msg);
@@ -68,7 +68,7 @@ public class PlainServerMechanism extends Mechanism
     @Override
     public int processHandshakeCommand(Msg msg)
     {
-        int rc = 0;
+        int rc;
         switch (state) {
         case WAITING_FOR_HELLO:
             rc = produceHello(msg);
@@ -156,7 +156,7 @@ public class PlainServerMechanism extends Mechanism
         msg.getBytes(index, tmp, 0, length);
         byte[] password = tmp;
         bytesLeft -= length;
-        index += length;
+        //        index += length;
 
         if (bytesLeft > 0) {
             //  Temporary support for security debugging

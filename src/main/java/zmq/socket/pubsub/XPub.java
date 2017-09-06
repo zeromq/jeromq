@@ -93,7 +93,7 @@ public class XPub extends SocketBase
     protected void xreadActivated(Pipe pipe)
     {
         //  There are some subscriptions waiting. Let's process them.
-        Msg sub = null;
+        Msg sub;
         while ((sub = pipe.read()) != null) {
             //  Apply the subscription to the trie
             byte[] data = sub.data();

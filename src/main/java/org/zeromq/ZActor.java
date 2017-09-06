@@ -464,8 +464,7 @@ public class ZActor extends ZStar
         @Override
         public Star create(ZContext ctx, Socket pipe, Selector sel, int count, Star previous, Object[] args)
         {
-            Star star = new ZActor.Double(ctx, pipe, sel, actor, args);
-            return star;
+            return new ZActor.Double(ctx, pipe, sel, actor, args);
         }
 
         @Override
@@ -509,7 +508,7 @@ public class ZActor extends ZStar
             final List<Socket> created = actor.createSockets(ctx, args);
             assert (created != null);
 
-            sockets = new ArrayList<Socket>(created);
+            sockets = new ArrayList<>(created);
 
             poller = new ZPoller(selector);
             poller.setGlobalHandler(this);

@@ -14,7 +14,7 @@ public class SocksConnecter extends TcpConnecter
 
     private Address proxyAddress;
 
-    private static enum Status
+    private enum Status
     {
         UNPLUGGED,
         WAITING_FOR_RECONNECT_TIME,

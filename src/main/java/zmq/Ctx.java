@@ -59,7 +59,7 @@ public class Ctx
         }
     }
 
-    private static enum Side
+    private enum Side
     {
         CONNECT,
         BIND
@@ -337,7 +337,7 @@ public class Ctx
 
     public int get(int option)
     {
-        int rc = 0;
+        int rc;
         if (option == ZMQ.ZMQ_MAX_SOCKETS) {
             rc = maxSockets;
         }

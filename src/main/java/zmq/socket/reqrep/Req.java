@@ -111,7 +111,7 @@ public class Req extends Dealer
 
         boolean rc = super.xsend(msg);
         if (!rc) {
-            return rc;
+            return false;
         }
 
         //  If the request was fully sent, flip the FSM into reply-receiving state.
@@ -226,7 +226,7 @@ public class Req extends Dealer
     private Msg recvReplyPipe()
     {
         while (true) {
-            ValueReference<Pipe> pipe = new ValueReference<Pipe>();
+            ValueReference<Pipe> pipe = new ValueReference<>();
             Msg msg = super.recvpipe(pipe);
             if (msg == null) {
                 return null;
@@ -244,7 +244,7 @@ public class Req extends Dealer
         {
             BOTTOM,
             BODY
-        };
+        }
 
         private State state;
 

@@ -29,7 +29,7 @@ public class YPipe<T> implements YPipeBase<T>
 
     public YPipe(int qsize)
     {
-        queue = new YQueue<T>(qsize);
+        queue = new YQueue<>(qsize);
         int pos = queue.backPos();
         f = pos;
         r = pos;

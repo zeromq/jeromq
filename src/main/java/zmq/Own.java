@@ -73,7 +73,7 @@ public abstract class Own extends ZObject
 
     protected abstract void destroy();
 
-    //  A place to hook in when phyicallal destruction of the object
+    //  A place to hook in when physical destruction of the object
     //  is to be delayed.
     protected void processDestroy()
     {
@@ -101,7 +101,7 @@ public abstract class Own extends ZObject
         //  Catch up with counter of processed commands.
         processedSeqnum++;
 
-        //  We may have catched up and still have pending terms acks.
+        //  We may have caught up and still have pending terms acks.
         checkTermAcks();
     }
 
@@ -174,7 +174,7 @@ public abstract class Own extends ZObject
             return;
         }
 
-        //  As for the root of the ownership tree, there's noone to terminate it,
+        //  As for the root of the ownership tree, there's no one to terminate it,
         //  so it has to terminate itself.
         if (owner == null) {
             processTerm(options.linger);
@@ -191,7 +191,7 @@ public abstract class Own extends ZObject
         return terminating;
     }
 
-    //  Term handler is protocted rather than private so that it can
+    //  Term handler is protected rather than private so that it can
     //  be intercepted by the derived class. This is useful to add custom
     //  steps to the beginning of the termination process.
     @Override

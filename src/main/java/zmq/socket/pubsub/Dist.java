@@ -37,7 +37,7 @@ class Dist
         active = 0;
         eligible = 0;
         more = false;
-        pipes = new ArrayList<Pipe>();
+        pipes = new ArrayList<>();
     }
 
     //  Adds the pipe to the distributor object.

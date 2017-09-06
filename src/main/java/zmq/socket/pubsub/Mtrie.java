@@ -50,7 +50,7 @@ class Mtrie
         if (size == 0) {
             boolean result = pipes == null;
             if (pipes == null) {
-                pipes = new HashSet<Pipe>();
+                pipes = new HashSet<>();
             }
             pipes.add(pipe);
             return result;

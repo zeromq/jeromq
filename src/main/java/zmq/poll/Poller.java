@@ -192,7 +192,7 @@ public final class Poller extends PollerBase implements Runnable
             //  Execute any due timers.
             long timeout = executeTimers();
 
-            if (retired == true) {
+            if (retired) {
                 retired = false;
                 Iterator<Handle> iter = fdTable.iterator();
                 while (iter.hasNext()) {

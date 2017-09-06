@@ -210,6 +210,9 @@ public class ZSocket implements AutoCloseable
     public byte[] receive(int flags)
     {
         final Msg msg = socketBase.recv(flags);
+        if (msg == null) {
+            return null;
+        }
         return msg.data();
     }
 

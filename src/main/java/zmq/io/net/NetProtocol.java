@@ -18,7 +18,7 @@ public enum NetProtocol
     public final boolean  valid;
     private List<Sockets> compatibles;
 
-    private NetProtocol(boolean implemented, Sockets... compatibles)
+    NetProtocol(boolean implemented, Sockets... compatibles)
     {
         valid = implemented;
         this.compatibles = Arrays.asList(compatibles);

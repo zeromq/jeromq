@@ -38,7 +38,7 @@ public class Rep extends Router
         //  Push message to the reply pipe.
         boolean rc = super.xsend(msg);
         if (!rc) {
-            return rc;
+            return false;
         }
 
         //  If the reply is complete flip the FSM back to request receiving state.
@@ -57,7 +57,7 @@ public class Rep extends Router
             errno.set(ZError.EFSM);
         }
 
-        Msg msg = null;
+        Msg msg;
         //  First thing to do when receiving a request is to copy all the labels
         //  to the reply pipe.
         if (requestBegins) {

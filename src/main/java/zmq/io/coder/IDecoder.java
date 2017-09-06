@@ -7,9 +7,9 @@ import zmq.util.ValueReference;
 
 public interface IDecoder
 {
-    public static interface Step
+    interface Step
     {
-        public static enum Result
+        enum Result
         {
             MORE_DATA(0),
             DECODED(1),
@@ -19,7 +19,7 @@ public interface IDecoder
             // reminder for c++ equivalent
             private final int code;
 
-            private Result(int code)
+            Result(int code)
             {
                 this.code = code;
             }

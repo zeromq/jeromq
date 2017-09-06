@@ -124,9 +124,9 @@ public class Pipe extends ZObject
         //   Creates two pipe objects. These objects are connected by two ypipes,
         //   each to pass messages in one direction.
 
-        YPipeBase<Msg> upipe1 = conflates[0] ? new YPipeConflate<Msg>()
+        YPipeBase<Msg> upipe1 = conflates[0] ? new YPipeConflate<>()
                 : new YPipe<Msg>(Config.MESSAGE_PIPE_GRANULARITY.getValue());
-        YPipeBase<Msg> upipe2 = conflates[1] ? new YPipeConflate<Msg>()
+        YPipeBase<Msg> upipe2 = conflates[1] ? new YPipeConflate<>()
                 : new YPipe<Msg>(Config.MESSAGE_PIPE_GRANULARITY.getValue());
 
         pipes[0] = new Pipe(parents[0], upipe1, upipe2, hwms[1], hwms[0], conflates[0]);
@@ -332,7 +332,7 @@ public class Pipe extends ZObject
         //  migrated to this thread.
         assert (outpipe != null);
         outpipe.flush();
-        Msg msg = null;
+        Msg msg;
         while ((msg = outpipe.read()) != null) {
             if (!msg.hasMore()) {
                 msgsWritten--;
@@ -562,10 +562,10 @@ public class Pipe extends ZObject
 
         //  Create new inpipe.
         if (conflate) {
-            inpipe = new YPipeConflate<Msg>();
+            inpipe = new YPipeConflate<>();
         }
         else {
-            inpipe = new YPipe<Msg>(Config.MESSAGE_PIPE_GRANULARITY.getValue());
+            inpipe = new YPipe<>(Config.MESSAGE_PIPE_GRANULARITY.getValue());
         }
         inActive = true;
 

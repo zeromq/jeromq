@@ -67,7 +67,7 @@ public enum Config
 
     private final int value;
 
-    private Config(int value)
+    Config(int value)
     {
         this.value = value;
     }

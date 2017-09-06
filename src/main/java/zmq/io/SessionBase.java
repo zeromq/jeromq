@@ -338,7 +338,7 @@ public class SessionBase extends Own implements Pipe.IPipeEvents, IPollEvents
     protected boolean zapEnabled()
     {
         return options.mechanism != Mechanisms.NULL
-                || (options.mechanism == Mechanisms.NULL && options.zapDomain != null && !options.zapDomain.isEmpty());
+                || (options.zapDomain != null && !options.zapDomain.isEmpty());
     }
 
     @Override

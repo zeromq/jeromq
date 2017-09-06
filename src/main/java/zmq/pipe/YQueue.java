@@ -20,7 +20,7 @@ class YQueue<T>
                 memoryPtr++;
             }
         }
-    };
+    }
 
     //  Back position may point to invalid memory if the queue is empty,
     //  while begin & end positions are always valid. Begin position is
@@ -44,7 +44,7 @@ class YQueue<T>
     {
         this.size = size;
         memoryPtr = 0;
-        beginChunk = new Chunk<T>(size, memoryPtr);
+        beginChunk = new Chunk<>(size, memoryPtr);
         memoryPtr += size;
         beginPos = 0;
         backPos = 0;
@@ -96,7 +96,7 @@ class YQueue<T>
             sc.prev = endChunk;
         }
         else {
-            endChunk.next = new Chunk<T>(size, memoryPtr);
+            endChunk.next = new Chunk<>(size, memoryPtr);
             memoryPtr += size;
             endChunk.next.prev = endChunk;
         }

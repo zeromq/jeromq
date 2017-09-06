@@ -32,7 +32,7 @@ class ManagedContext
     {
         this.ctx = ZMQ.init(ZMQ.ZMQ_IO_THREADS_DFLT);
         this.lock = new ReentrantLock();
-        this.sockets = new HashSet<SocketBase>();
+        this.sockets = new HashSet<>();
     }
 
     static ManagedContext getInstance()

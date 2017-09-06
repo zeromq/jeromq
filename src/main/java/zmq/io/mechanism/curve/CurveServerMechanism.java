@@ -75,7 +75,7 @@ public class CurveServerMechanism extends Mechanism
     @Override
     public int nextHandshakeCommand(Msg msg)
     {
-        int rc = 0;
+        int rc;
         switch (state) {
         case SEND_WELCOME:
             rc = produceWelcome(msg);
@@ -106,7 +106,7 @@ public class CurveServerMechanism extends Mechanism
     @Override
     public int processHandshakeCommand(Msg msg)
     {
-        int rc = 0;
+        int rc;
         switch (state) {
         case EXPECT_HELLO:
             rc = processHello(msg);

@@ -11,7 +11,7 @@ import zmq.util.Z85;
 // wrapper around the wrapper of libsodium (ahem), for shorter names.
 public class Curve
 {
-    static enum Size
+    enum Size
     {
         NONCE {
             @Override

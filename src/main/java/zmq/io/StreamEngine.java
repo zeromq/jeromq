@@ -153,7 +153,7 @@ public class StreamEngine implements IEngine, IPollEvents
     }
 
     // used to implement FSM actions
-    private static interface MessageProcessor
+    private interface MessageProcessor
     {
         Msg nextMsg();
 
@@ -176,7 +176,7 @@ public class StreamEngine implements IEngine, IPollEvents
     }
 
     //  Protocol revisions
-    private static enum Protocol
+    private enum Protocol
     {
         V0(-1),
         V1(0),
@@ -191,7 +191,7 @@ public class StreamEngine implements IEngine, IPollEvents
         }
     }
 
-    public static enum ErrorReason
+    public enum ErrorReason
     {
         PROTOCOL,
         CONNECTION,
@@ -630,7 +630,7 @@ public class StreamEngine implements IEngine, IPollEvents
         assert (session != null);
         assert (decoder != null);
 
-        boolean rc = false;
+        boolean rc;
         Msg msg = decoder.msg();
         rc = processMsg.processMsg(msg);
         if (!rc) {

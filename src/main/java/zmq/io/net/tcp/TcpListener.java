@@ -22,7 +22,7 @@ public class TcpListener extends Own implements IPollEvents
     private static boolean isWindows;
     static {
         String os = System.getProperty("os.name").toLowerCase();
-        isWindows = os.indexOf("win") >= 0;
+        isWindows = os.contains("win");
     }
 
     //  Address to listen on.
@@ -78,7 +78,7 @@ public class TcpListener extends Own implements IPollEvents
     @Override
     public void acceptEvent()
     {
-        SocketChannel channel = null;
+        SocketChannel channel;
 
         try {
             channel = accept();
@@ -229,7 +229,6 @@ public class TcpListener extends Own implements IPollEvents
                 return null;
             }
         }
-        // TODO V4 Set the IP Type-Of-Service priority for this client socket
         if (options.tos != 0) {
             TcpUtils.setIpTypeOfService(sock, options.tos);
         }

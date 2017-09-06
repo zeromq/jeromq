@@ -939,7 +939,7 @@ public class ZMQ
          */
         public boolean setHWM(int hwm)
         {
-            boolean set = true;
+            boolean set = false;
             set |= setSndHWM(hwm);
             set |= setRcvHWM(hwm);
             return set;
@@ -2287,7 +2287,7 @@ public class ZMQ
             return (byte[]) base.getSocketOptx(zmq.ZMQ.ZMQ_CURVE_SECRETKEY);
         }
 
-        public static enum Mechanism
+        public enum Mechanism
         {
             NULL(Mechanisms.NULL),
             PLAIN(Mechanisms.PLAIN),
@@ -2650,7 +2650,7 @@ public class ZMQ
             timeout = -1L;
             next = 0;
 
-            freeSlots = new LinkedList<Integer>();
+            freeSlots = new LinkedList<>();
         }
 
         /**
@@ -2744,7 +2744,7 @@ public class ZMQ
          */
         private int registerInternal(PollItem item)
         {
-            int pos = -1;
+            int pos;
 
             if (!freeSlots.isEmpty()) {
                 // If there are free slots in our array, remove one

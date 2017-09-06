@@ -121,15 +121,15 @@ public class ZProxy
     /**
      * Possible places for sockets in the proxy.
      */
-    public static enum Plug
+    public enum Plug
     {
         FRONT, // The position of the frontend socket.
         BACK, // The position of the backend socket.
-        CAPTURE; // The position of the capture socket.
+        CAPTURE // The position of the capture socket.
     }
 
     // Contract for socket creation and customizable configuration in proxy threading.
-    public static interface Proxy
+    public interface Proxy
     {
         /**
          * Creates and initializes (bind, options ...) the socket for the given plug in the proxy.
@@ -240,7 +240,7 @@ public class ZProxy
     public static ZProxy newZProxy(ZContext ctx, String name, SelectorCreator selector, Proxy sockets,
                                    String motdelafin, Object... args)
     {
-        return new ZProxy(ctx, name, selector, sockets, new ZPump(), null, args);
+        return new ZProxy(ctx, name, selector, sockets, new ZPump(), motdelafin, args);
     }
 
     public static ZProxy newZProxy(ZContext ctx, String name, Proxy sockets, String motdelafin, Object... args)
@@ -537,7 +537,7 @@ public class ZProxy
     }
 
     // to handle commands in a more java-centric way
-    public static enum Command
+    public enum Command
     {
         START,
         PAUSE,
@@ -545,7 +545,7 @@ public class ZProxy
         RESTART,
         EXIT,
         STATUS,
-        CONFIG;
+        CONFIG
     }
 
     // commands for the control pipe
@@ -558,13 +558,13 @@ public class ZProxy
     private static final String CONFIG  = Command.CONFIG.name();
 
     // to handle states in a more java-centric way
-    public static enum State
+    public enum State
     {
         ALIVE,
         STARTED,
         PAUSED,
         STOPPED,
-        EXITED;
+        EXITED
     }
 
     // state responses from the control pipe
@@ -629,8 +629,7 @@ public class ZProxy
         int count = 1;
         count += args.length;
 
-        Object[] vars = null;
-        vars = new Object[count];
+        Object[] vars = new Object[count];
 
         vars[0] = sockets;
         Actor shadow = null;
@@ -657,7 +656,7 @@ public class ZProxy
     }
 
     // defines a pump that will flow messages from one socket to another
-    public static interface Pump
+    public interface Pump
     {
         /**
          * Transfers a message from one source to one destination, with an optional capture.
@@ -784,7 +783,7 @@ public class ZProxy
                 return false;
             }
             else if (STOP.equals(cmd)) {
-                stop(poller);
+                stop();
                 return status().send(pipe);
             }
             else if (PAUSE.equals(cmd)) {
@@ -794,7 +793,7 @@ public class ZProxy
             else if (RESTART.equals(cmd)) {
                 String val = pipe.recvStr();
                 boolean hot = Boolean.parseBoolean(val);
-                return restart(pipe, poller, hot);
+                return restart(pipe, hot);
             }
             else if (STATUS.equals(cmd)) {
                 return status().send(pipe);
@@ -877,7 +876,7 @@ public class ZProxy
             return true;
         }
 
-        private boolean stop(ZPoller poller)
+        private boolean stop()
         {
             // restart the actor in stopped state
             state.started = false;
@@ -888,7 +887,7 @@ public class ZProxy
         }
 
         // handles the restart command in both modes
-        private boolean restart(Socket pipe, ZPoller poller, boolean hot)
+        private boolean restart(Socket pipe, boolean hot)
         {
             state.restart = true;
             if (hot) {
@@ -941,7 +940,7 @@ public class ZProxy
                     state.hot = null;
 
                     // we perform a cold restart if the provider says so
-                    boolean cold = false;
+                    boolean cold;
                     ZMsg dup = cfg.duplicate();
 
                     try {
@@ -995,7 +994,7 @@ public class ZProxy
         private final Transformer transformer;
 
         // transforms one message into another
-        public static interface Transformer
+        public interface Transformer
         {
             /**
              * Transforms a ZMsg into another ZMsg.
@@ -1033,7 +1032,7 @@ public class ZProxy
         @Override
         public boolean flow(Plug splug, Socket source, Socket capture, Plug dplug, Socket destination)
         {
-            boolean success = false;
+            boolean success;
 
             // we read the whole message
             ZMsg msg = ZMsg.recvMsg(source);
