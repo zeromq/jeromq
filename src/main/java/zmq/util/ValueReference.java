@@ -1,7 +1,5 @@
 package zmq.util;
 
-import java.util.Objects;
-
 public class ValueReference<V>
 {
     private V value;
@@ -28,6 +26,6 @@ public class ValueReference<V>
     @Override
     public String toString()
     {
-        return Objects.toString(value);
+        return value == null ? "null" : value.toString();
     }
 }

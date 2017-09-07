@@ -1,6 +1,5 @@
 package zmq.io;
 
-import java.util.Objects;
 import java.util.Properties;
 
 public class Metadata
@@ -41,17 +40,23 @@ public class Metadata
     @Override
     public int hashCode()
     {
-        return Objects.hashCode(dictionary);
+        return dictionary.hashCode();
     }
 
     @Override
-    public boolean equals(Object obj)
+    public boolean equals(Object other)
     {
-        if (obj instanceof Metadata) {
-            Metadata other = (Metadata) obj;
-            return dictionary.equals(other.dictionary);
+        if (this == other) {
+            return true;
         }
-        return false;
+        if (other == null) {
+            return false;
+        }
+        if (!(other instanceof Metadata)) {
+            return false;
+        }
+        Metadata that = (Metadata) other;
+        return this.dictionary.equals(that.dictionary);
     }
 
     public final void set(Metadata zapProperties)

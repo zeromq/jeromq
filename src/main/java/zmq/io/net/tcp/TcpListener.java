@@ -187,7 +187,8 @@ public class TcpListener extends Own implements IPollEvents
             }
 
             //  Bind the socket to the network interface and port.
-            fd.bind(address.address(), options.backlog);
+            // NB: fd.socket().bind(...) for Android environments
+            fd.socket().bind(address.address(), options.backlog);
         }
         catch (IOException e) {
             close();
