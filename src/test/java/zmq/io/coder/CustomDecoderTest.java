@@ -7,12 +7,12 @@ import java.nio.ByteBuffer;
 
 import org.junit.Test;
 
-import zmq.Config;
 import zmq.Ctx;
 import zmq.Msg;
 import zmq.SocketBase;
 import zmq.ZMQ;
 import zmq.io.coder.IDecoder.Step;
+import zmq.msg.MsgAllocatorThreshold;
 import zmq.util.Errno;
 import zmq.util.ValueReference;
 
@@ -43,7 +43,7 @@ public class CustomDecoderTest
 
         public CustomDecoder(int bufsize, long maxmsgsize)
         {
-            super(new Errno(), bufsize, maxmsgsize, Config.MSG_ALLOCATION_HEAP_THRESHOLD.getValue());
+            super(new Errno(), bufsize, maxmsgsize, new MsgAllocatorThreshold());
             nextStep(header, 10, readHeader);
         }
 

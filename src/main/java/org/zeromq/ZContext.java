@@ -238,4 +238,14 @@ public class ZContext implements Closeable
     {
         destroy();
     }
+
+    public boolean isClosed()
+    {
+        synchronized (this) {
+            if (context == null) {
+                return true;
+            }
+            return context.isClosed();
+        }
+    }
 }

@@ -832,7 +832,7 @@ public class ZPoller implements Closeable
         final Iterable<ItemHolder> items = items(socketOrChannel);
         for (ItemHolder item : items) {
             final zmq.poll.PollItem it = item.item();
-            if ((it.zinterestOps() & events) > 0) {
+            if (it.hasEvent(events)) {
                 return it;
             }
         }

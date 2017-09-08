@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.junit.Assert;
- import org.junit.Test;
+import org.junit.Test;
 import org.zeromq.ZActor.Actor;
 import org.zeromq.ZMQ.Socket;
 
@@ -17,7 +17,7 @@ public class TestZActor
         Actor acting = new ZActor.SimpleActor()
         {
             @Override
-            public List<Socket> createSockets(ZContext ctx, Object[] args)
+            public List<Socket> createSockets(ZContext ctx, Object... args)
             {
                 assert ("TEST".equals(args[0]));
                 return Arrays.asList(ctx.createSocket(ZMQ.PUB));
@@ -72,7 +72,7 @@ public class TestZActor
             private int counter = 0;
 
             @Override
-            public List<Socket> createSockets(ZContext ctx, Object[] args)
+            public List<Socket> createSockets(ZContext ctx, Object... args)
             {
                 ++counter;
                 System.out.print(".Acting Ready for a hello world.");

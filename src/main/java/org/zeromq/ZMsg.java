@@ -205,6 +205,19 @@ public class ZMsg implements Iterable<ZFrame>, Deque<ZFrame>
 
     /**
      * Receives message from socket, returns ZMsg object or null if the
+     * recv was interrupted.
+     * @param   socket
+     * @param   wait true to wait for next message, false to do a non-blocking recv.
+     * @return
+     *          ZMsg object, null if interrupted
+     */
+    public static ZMsg recvMsg(Socket socket, boolean wait)
+    {
+        return recvMsg(socket, wait ? 0 : ZMQ.DONTWAIT);
+    }
+
+    /**
+     * Receives message from socket, returns ZMsg object or null if the
      * recv was interrupted. Setting the flag to ZMQ.DONTWAIT does a non-blocking recv.
      * @param   socket
      * @param   flag see ZMQ constants

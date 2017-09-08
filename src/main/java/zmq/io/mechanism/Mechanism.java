@@ -12,6 +12,7 @@ import zmq.Options;
 import zmq.ZError;
 import zmq.ZMQ;
 import zmq.io.Metadata;
+import zmq.io.Metadata.ParseListener;
 import zmq.io.SessionBase;
 import zmq.io.net.Address;
 import zmq.socket.Sockets;
@@ -130,75 +131,30 @@ public abstract class Mechanism
 
     protected final int parseMetadata(ByteBuffer msg, int offset, boolean zapFlag)
     {
-        ByteBuffer data = msg.duplicate();
-
-        data.position(offset);
-        int bytesLeft = data.remaining();
-        int index = offset;
-
-        while (bytesLeft > 1) {
-            final byte nameLength = data.get(index);
-            index++;
-            bytesLeft -= 1;
-
-            if (bytesLeft < nameLength) {
-                break;
-            }
-            final String name = new String(bytes(data, index, nameLength), ZMQ.CHARSET);
-            index += nameLength;
-            bytesLeft -= nameLength;
-
-            if (bytesLeft < 4) {
-                break;
-            }
-
-            final int valueLength = Wire.getUInt32(data, index);
-            index += 4;
-            bytesLeft -= 4;
-
-            if (bytesLeft < valueLength) {
-                break;
-            }
-
-            final byte[] value = bytes(data, index, valueLength);
-            final String valueAsString = new String(value, ZMQ.CHARSET);
-            index += valueLength;
-            bytesLeft -= valueLength;
-            if (IDENTITY.equals(name) && options.recvIdentity) {
-                setPeerIdentity(value);
-            }
-            else if (SOCKET_TYPE.equals(name)) {
-                if (!Sockets.compatible(options.type, valueAsString)) {
-                    return ZError.EINVAL;
+        Metadata meta = zapFlag ? zapProperties : zmtpProperties;
+        return meta.read(msg, offset, new ParseListener()
+        {
+            @Override
+            public int parsed(String name, byte[] value, String valueAsString)
+            {
+                if (IDENTITY.equals(name) && options.recvIdentity) {
+                    setPeerIdentity(value);
                 }
-            }
-            else {
-                int rc = property(name, value);
-                if (rc == -1) {
-                    return -1;
+                else if (SOCKET_TYPE.equals(name)) {
+                    if (!Sockets.compatible(options.type, valueAsString)) {
+                        return ZError.EINVAL;
+                    }
                 }
+                else {
+                    int rc = property(name, value);
+                    if (rc == -1) {
+                        return -1;
+                    }
+                }
+                // continue
+                return 0;
             }
-            if (zapFlag) {
-                zapProperties.set(name, valueAsString);
-            }
-            else {
-                zmtpProperties.set(name, valueAsString);
-            }
-        }
-        if (bytesLeft > 0) {
-            return ZError.EPROTO;
-        }
-        return 0;
-    }
-
-    private byte[] bytes(final ByteBuffer buf, final int position, final int length)
-    {
-        final byte[] bytes = new byte[length];
-        final int current = buf.position();
-        buf.position(position);
-        buf.get(bytes, 0, length);
-        buf.position(current);
-        return bytes;
+        });
     }
 
     protected int property(String name, byte[] value)
@@ -297,9 +253,10 @@ public abstract class Mechanism
         assert (rc);
 
         //  Address frame
-        msg = new Msg(peerAddress.address().length());
+        byte[] host = peerAddress.host().getBytes(ZMQ.CHARSET);
+        msg = new Msg(host.length);
         msg.setFlags(Msg.MORE);
-        msg.put(peerAddress.address().getBytes(ZMQ.CHARSET));
+        msg.put(host);
         rc = session.writeZapMsg(msg);
         assert (rc);
 

@@ -1210,7 +1210,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
 
     public final void eventHandshaken(String addr, int zmtpVersion)
     {
-        event(addr, zmtpVersion, ZMQ.ZMQ_EVENT_HANDSHAKEN);
+        event(addr, zmtpVersion, ZMQ.ZMQ_EVENT_HANDSHAKE_PROTOCOL);
     }
 
     public final void eventConnected(String addr, SelectableChannel ch)

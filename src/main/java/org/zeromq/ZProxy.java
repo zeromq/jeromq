@@ -51,7 +51,7 @@ import zmq.SocketBase;
  * {@code
         final ZProxy.Proxy provider = new ZProxy.SimpleProxy()
         {
-            public Socket create(ZContext ctx, ZProxy.Plug place, Object[] args)
+            public Socket create(ZContext ctx, ZProxy.Plug place, Object ... args)
             {
                 assert ("TEST".equals(args[0]);
                 Socket socket = null;
@@ -64,7 +64,7 @@ import zmq.SocketBase;
                 return socket;
             }
 
-            public void configure(Socket socket, ZProxy.Plug place, Object[] args)
+            public void configure(Socket socket, ZProxy.Plug place, Object ... args)
             {
                 assert ("TEST".equals(args[0]);
                 int port = -1;
@@ -141,7 +141,7 @@ public class ZProxy
          * @param args   the optional array of arguments that has been passed at the creation of the ZProxy.
          * @return the created socket. Possibly null only for capture.
          */
-        Socket create(ZContext ctx, Plug place, Object[] args);
+        Socket create(ZContext ctx, Plug place, Object... args);
 
         /**
          * Configures the given socket.
@@ -151,7 +151,7 @@ public class ZProxy
          * @param args    the optional array of arguments that has been passed at the creation of the ZProxy.
          * @return true if successfully configured, otherwise false
          */
-        boolean configure(Socket socket, Plug place, Object[] args) throws IOException;
+        boolean configure(Socket socket, Plug place, Object... args) throws IOException;
 
         /**
          * Performs a hot restart of the given socket.
@@ -164,7 +164,7 @@ public class ZProxy
          * @return true to perform a cold restart instead, false to do nothing. All the results will be collected from calls for all plugs.
          * If any of them returns true, the cold restart is performed.
          */
-        boolean restart(ZMsg cfg, Socket socket, Plug place, Object[] args) throws IOException;
+        boolean restart(ZMsg cfg, Socket socket, Plug place, Object... args) throws IOException;
 
         /**
          * Configures the proxy with a custom message.
@@ -179,7 +179,7 @@ public class ZProxy
          * @param args      the optional array of arguments that has been passed at the creation of the ZProxy.
          * @return true to continue the proxy, false to exit
          */
-        boolean configure(Socket pipe, ZMsg cfg, Socket frontend, Socket backend, Socket capture, Object[] args);
+        boolean configure(Socket pipe, ZMsg cfg, Socket frontend, Socket backend, Socket capture, Object... args);
 
         /**
          * Handles a custom command not recognized by the proxy.
@@ -195,27 +195,27 @@ public class ZProxy
          *
          * @return true to continue the proxy, false to exit
          */
-        boolean custom(Socket pipe, String cmd, Socket frontend, Socket backend, Socket capture, Object[] args);
+        boolean custom(Socket pipe, String cmd, Socket frontend, Socket backend, Socket capture, Object... args);
 
         // this may be useful
         public abstract static class SimpleProxy implements Proxy
         {
             @Override
-            public boolean restart(ZMsg cfg, Socket socket, Plug place, Object[] args) throws IOException
+            public boolean restart(ZMsg cfg, Socket socket, Plug place, Object... args) throws IOException
             {
                 return true;
             }
 
             @Override
             public boolean configure(Socket pipe, ZMsg cfg, Socket frontend, Socket backend, Socket capture,
-                                     Object[] args)
+                                     Object... args)
             {
                 return true;
             }
 
             @Override
             public boolean custom(Socket pipe, String cmd, Socket frontend, Socket backend, Socket capture,
-                                  Object[] args)
+                                  Object... args)
             {
                 return true;
             }
@@ -320,12 +320,12 @@ public class ZProxy
      */
     public String command(String command, boolean sync)
     {
-        assert (!command.equals(CONFIG));
-        assert (!command.equals(RESTART));
-        if (command.equals(STATUS)) {
+        assert (!CONFIG.equals(command));
+        assert (!RESTART.equals(command));
+        if (STATUS.equals(command)) {
             return status(sync);
         }
-        if (command.equals(EXIT)) {
+        if (EXIT.equals(command)) {
             return exit();
         }
         // consume the status in the pipe
@@ -684,6 +684,7 @@ public class ZProxy
                 return "State [alive=" + alive + ", started=" + started + ", paused=" + paused + ", restart=" + restart
                         + ", hot=" + hot + "]";
             }
+
             // are we alive ?
             private boolean alive = false;
             // are we started ?
@@ -741,7 +742,7 @@ public class ZProxy
 
         // creates the sockets before the start of the proxy
         @Override
-        public List<Socket> createSockets(ZContext ctx, Object[] args)
+        public List<Socket> createSockets(ZContext ctx, Object... args)
         {
             provider = (Proxy) args[0];
 
