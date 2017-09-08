@@ -35,8 +35,12 @@ public class Utils
 
     public static int findOpenPort() throws IOException
     {
-        try (ServerSocket tmpSocket = new ServerSocket(0, 0)) {
+        final ServerSocket tmpSocket = new ServerSocket(0, 0);
+        try {
             return tmpSocket.getLocalPort();
+        }
+        finally {
+            tmpSocket.close();
         }
     }
 

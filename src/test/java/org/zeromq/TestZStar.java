@@ -8,19 +8,20 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.zeromq.ZMQ.Socket;
 import org.zeromq.ZStar.Fortune;
+import org.zeromq.ZStar.Star;
 
 public class TestZStar
 {
     private final class BlackHole implements ZStar.Fortune
     {
         @Override
-        public String premiere(Socket mic, Object[] args)
+        public String premiere(Socket mic, Object... args)
         {
             return "Test " + Arrays.toString(args);
         }
 
         @Override
-        public ZStar.Star create(ZContext ctx, Socket pipe, Selector sel, int count, ZStar.Star previous, Object[] args)
+        public Star create(ZContext ctx, Socket pipe, Selector sel, int count, Star previous, Object... args)
         {
             return new NoNo();
         }
@@ -82,7 +83,7 @@ public class TestZStar
         ZStar.Entourage entourage = new ZStar.Entourage()
         {
             @Override
-            public void breakaleg(ZContext ctx, Fortune fortune, Socket phone, Object[] bags)
+            public void breakaleg(ZContext ctx, Fortune fortune, Socket phone, Object... bags)
             {
                 // Crepi il lupo!
             }
@@ -107,7 +108,6 @@ public class TestZStar
 
         // don't try it
         // rc = star.pipe().send("boom ?!");
-        //        star.retire();
         System.out.println(".");
     }
 }

@@ -71,6 +71,15 @@ public class Address
         return address;
     }
 
+    public String host()
+    {
+        final int portDelimiter = address.lastIndexOf(':');
+        if (portDelimiter > 0) {
+            return address.substring(0, portDelimiter);
+        }
+        return address;
+    }
+
     public IZAddress resolved()
     {
         return resolved;

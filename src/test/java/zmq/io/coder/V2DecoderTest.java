@@ -4,10 +4,10 @@ import java.nio.ByteBuffer;
 
 import org.junit.Before;
 
-import zmq.Config;
 import zmq.ZMQ;
 import zmq.io.coder.v2.V2Decoder;
 import zmq.io.coder.v2.V2Protocol;
+import zmq.msg.MsgAllocatorThreshold;
 import zmq.util.Errno;
 import zmq.util.Wire;
 
@@ -16,7 +16,7 @@ public class V2DecoderTest extends AbstractDecoderTest
     @Before
     public void setUp()
     {
-        decoder = new V2Decoder(new Errno(), 64, 512, Config.MSG_ALLOCATION_HEAP_THRESHOLD.getValue());
+        decoder = new V2Decoder(new Errno(), 64, 512, new MsgAllocatorThreshold());
     }
 
     // as if it read data from socket

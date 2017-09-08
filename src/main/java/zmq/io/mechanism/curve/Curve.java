@@ -70,6 +70,11 @@ public class Curve
     {
     }
 
+    public static String z85EncodePublic(byte[] publicKey)
+    {
+        return Z85.encode(publicKey, Size.PUBLICKEY.bytes());
+    }
+
     /**
      * Generates a pair of Z85-encoded keys for use with this class.
      *

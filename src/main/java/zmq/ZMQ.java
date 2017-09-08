@@ -127,7 +127,6 @@ public class ZMQ
     public static final int ZMQ_ENCODER                       = ZMQ_CUSTOM_OPTION + 1;
     @Deprecated
     public static final int ZMQ_DECODER                       = ZMQ_CUSTOM_OPTION + 2;
-    @Deprecated
     public static final int ZMQ_MSG_ALLOCATOR                 = ZMQ_CUSTOM_OPTION + 3;
     public static final int ZMQ_MSG_ALLOCATION_HEAP_THRESHOLD = ZMQ_CUSTOM_OPTION + 4;
 
@@ -157,19 +156,19 @@ public class ZMQ
     /******************************************************************************/
 
     /*  Socket transport events (tcp and ipc only)                                */
-    public static final int ZMQ_EVENT_CONNECTED       = 1;
-    public static final int ZMQ_EVENT_CONNECT_DELAYED = 1 << 1;
-    public static final int ZMQ_EVENT_CONNECT_RETRIED = 1 << 2;
-    public static final int ZMQ_EVENT_LISTENING       = 1 << 3;
-    public static final int ZMQ_EVENT_BIND_FAILED     = 1 << 4;
-    public static final int ZMQ_EVENT_ACCEPTED        = 1 << 5;
-    public static final int ZMQ_EVENT_ACCEPT_FAILED   = 1 << 6;
-    public static final int ZMQ_EVENT_CLOSED          = 1 << 7;
-    public static final int ZMQ_EVENT_CLOSE_FAILED    = 1 << 8;
-    public static final int ZMQ_EVENT_DISCONNECTED    = 1 << 9;
-    public static final int ZMQ_EVENT_MONITOR_STOPPED = 1 << 10;
-    public static final int ZMQ_EVENT_HANDSHAKEN      = 1 << 15;
-    public static final int ZMQ_EVENT_ALL             = 0xffff;
+    public static final int ZMQ_EVENT_CONNECTED          = 1;
+    public static final int ZMQ_EVENT_CONNECT_DELAYED    = 1 << 1;
+    public static final int ZMQ_EVENT_CONNECT_RETRIED    = 1 << 2;
+    public static final int ZMQ_EVENT_LISTENING          = 1 << 3;
+    public static final int ZMQ_EVENT_BIND_FAILED        = 1 << 4;
+    public static final int ZMQ_EVENT_ACCEPTED           = 1 << 5;
+    public static final int ZMQ_EVENT_ACCEPT_FAILED      = 1 << 6;
+    public static final int ZMQ_EVENT_CLOSED             = 1 << 7;
+    public static final int ZMQ_EVENT_CLOSE_FAILED       = 1 << 8;
+    public static final int ZMQ_EVENT_DISCONNECTED       = 1 << 9;
+    public static final int ZMQ_EVENT_MONITOR_STOPPED    = 1 << 10;
+    public static final int ZMQ_EVENT_HANDSHAKE_PROTOCOL = 1 << 15;
+    public static final int ZMQ_EVENT_ALL                = 0xffff;
 
     public static final int ZMQ_POLLIN  = 1;
     public static final int ZMQ_POLLOUT = 2;
