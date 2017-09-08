@@ -11,7 +11,6 @@ import java.nio.ByteBuffer;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import zmq.Config;
 import zmq.Ctx;
 import zmq.Helper;
 import zmq.Msg;
@@ -19,6 +18,7 @@ import zmq.SocketBase;
 import zmq.ZMQ;
 import zmq.io.coder.Decoder;
 import zmq.io.coder.EncoderBase;
+import zmq.msg.MsgAllocatorThreshold;
 import zmq.util.Errno;
 import zmq.util.Utils;
 
@@ -128,7 +128,7 @@ public class ProxyTcpTest
 
         public ProxyDecoder(int bufsize, long maxmsgsize)
         {
-            super(new Errno(), bufsize, maxmsgsize, Config.MSG_ALLOCATION_HEAP_THRESHOLD.getValue());
+            super(new Errno(), bufsize, maxmsgsize, new MsgAllocatorThreshold());
             nextStep(header, 4, readHeader);
 
             bottom = new Msg();

@@ -1,9 +1,8 @@
 package zmq.io.coder;
 
-import java.nio.ByteBuffer;
-
 import zmq.Msg;
 import zmq.ZError;
+import zmq.msg.MsgAllocator;
 import zmq.util.Errno;
 
 //  Helper base class for decoders that know the amount of data to read
@@ -65,13 +64,13 @@ public abstract class Decoder extends DecoderBase
     protected final Step flagsReady         = new FlagsReady();
     protected final Step messageReady       = new MessageReady();
 
-    private final int allocationHeapThreshold;
+    private final MsgAllocator allocator;
 
-    public Decoder(Errno errno, int bufsize, long maxmsgsize, int allocationHeapThreshold)
+    public Decoder(Errno errno, int bufsize, long maxmsgsize, MsgAllocator allocator)
     {
         super(errno, bufsize);
         this.maxmsgsize = maxmsgsize;
-        this.allocationHeapThreshold = allocationHeapThreshold;
+        this.allocator = allocator;
     }
 
     protected final Step.Result sizeReady(final long size)
@@ -93,22 +92,14 @@ public abstract class Decoder extends DecoderBase
         //  inProgress is initialized at this point so in theory we should
         //  close it before calling init_size, however, it's a 0-byte
         //  message and thus we can treat it as uninitialized.
-        inProgress = allocate(size);
+        inProgress = allocate((int) size);
 
         return Step.Result.MORE_DATA;
     }
 
-    protected Msg allocate(final long size)
+    protected Msg allocate(final int size)
     {
-        Msg msg;
-        if (allocationHeapThreshold > 0 && size > allocationHeapThreshold) {
-            msg = new Msg(ByteBuffer.allocateDirect((int) size));
-        }
-        else {
-            msg = new Msg((int) size);
-        }
-
-        return msg;
+        return allocator.allocate(size);
     }
 
     protected Step.Result oneByteSizeReady()

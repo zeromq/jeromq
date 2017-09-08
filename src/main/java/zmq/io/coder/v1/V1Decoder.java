@@ -5,6 +5,7 @@ import java.nio.ByteBuffer;
 import zmq.Msg;
 import zmq.ZError;
 import zmq.io.coder.Decoder;
+import zmq.msg.MsgAllocator;
 import zmq.util.Errno;
 import zmq.util.Wire;
 
@@ -12,9 +13,9 @@ public class V1Decoder extends Decoder
 {
     private final ByteBuffer tmpbuf;
 
-    public V1Decoder(Errno errno, int bufsize, long maxmsgsize, int allocationHeapThreshold)
+    public V1Decoder(Errno errno, int bufsize, long maxmsgsize, MsgAllocator allocator)
     {
-        super(errno, bufsize, maxmsgsize, allocationHeapThreshold);
+        super(errno, bufsize, maxmsgsize, allocator);
 
         tmpbuf = ByteBuffer.allocate(8);
         tmpbuf.limit(1);

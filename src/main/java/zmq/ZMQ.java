@@ -127,7 +127,6 @@ public class ZMQ
     public static final int ZMQ_ENCODER                       = ZMQ_CUSTOM_OPTION + 1;
     @Deprecated
     public static final int ZMQ_DECODER                       = ZMQ_CUSTOM_OPTION + 2;
-    @Deprecated
     public static final int ZMQ_MSG_ALLOCATOR                 = ZMQ_CUSTOM_OPTION + 3;
     public static final int ZMQ_MSG_ALLOCATION_HEAP_THRESHOLD = ZMQ_CUSTOM_OPTION + 4;
 
