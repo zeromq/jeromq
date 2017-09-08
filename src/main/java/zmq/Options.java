@@ -10,6 +10,8 @@ import zmq.io.mechanism.Mechanisms;
 import zmq.io.net.ipc.IpcAddress;
 import zmq.io.net.tcp.TcpAddress;
 import zmq.io.net.tcp.TcpAddress.TcpAddressMask;
+import zmq.msg.MsgAllocator;
+import zmq.msg.MsgAllocatorThreshold;
 import zmq.util.Errno;
 import zmq.util.ValueReference;
 import zmq.util.Z85;
@@ -148,7 +150,7 @@ public class Options
 
     // threshold to allocate byte buffers on direct memory instead of heap.
     // Set to <= 0 to disable this system.
-    public int allocationHeapThreshold;
+    public MsgAllocator allocator;
 
     public final Errno errno = new Errno();
 
@@ -194,7 +196,7 @@ public class Options
         curveSecretKey = new byte[CURVE_KEYSIZE];
         curveServerKey = new byte[CURVE_KEYSIZE];
 
-        allocationHeapThreshold = Config.MSG_ALLOCATION_HEAP_THRESHOLD.getValue();
+        allocator = new MsgAllocatorThreshold(Config.MSG_ALLOCATION_HEAP_THRESHOLD.getValue());
     }
 
     @SuppressWarnings("deprecation")
@@ -441,13 +443,48 @@ public class Options
             rawSocket = true;
             return true;
 
+        case ZMQ.ZMQ_MSG_ALLOCATOR:
+            if (optval instanceof String) {
+                try {
+                    allocator = allocator(Class.forName((String) optval));
+                    return true;
+                }
+                catch (ClassNotFoundException e) {
+                    throw new IllegalArgumentException(e);
+                }
+            }
+            else if (optval instanceof Class) {
+                allocator = allocator((Class<?>) optval);
+                return true;
+            }
+            else if (optval instanceof MsgAllocator) {
+                allocator = (MsgAllocator) optval;
+                return true;
+            }
+            return false;
+
         case ZMQ.ZMQ_MSG_ALLOCATION_HEAP_THRESHOLD:
-            allocationHeapThreshold = (Integer) optval;
+            Integer allocationHeapThreshold = (Integer) optval;
+            allocator = new MsgAllocatorThreshold(allocationHeapThreshold);
             return true;
 
         default:
             throw new IllegalArgumentException("Unknown Option " + option);
         }
+    }
+
+    private MsgAllocator allocator(Class<?> clazz)
+    {
+        try {
+            Class<? extends MsgAllocator> msgAllocator = clazz.asSubclass(MsgAllocator.class);
+            return msgAllocator.newInstance();
+         }
+         catch (InstantiationException e) {
+            throw new IllegalArgumentException(e);
+         }
+         catch (IllegalAccessException e) {
+            throw new IllegalArgumentException(e);
+         }
     }
 
     private <T> Class<? extends T> checkCustomClass(Object optval, Class<T> type)
@@ -638,8 +675,15 @@ public class Options
         case ZMQ.ZMQ_HANDSHAKE_IVL:
             return handshakeIvl;
 
+        case ZMQ.ZMQ_MSG_ALLOCATOR:
+            return allocator;
+
         case ZMQ.ZMQ_MSG_ALLOCATION_HEAP_THRESHOLD:
-            return allocationHeapThreshold;
+            if (allocator instanceof MsgAllocatorThreshold) {
+                MsgAllocatorThreshold all = (MsgAllocatorThreshold) allocator;
+                return all.threshold;
+            }
+            return -1;
 
         default:
             throw new IllegalArgumentException("option=" + option);

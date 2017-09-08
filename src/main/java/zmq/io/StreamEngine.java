@@ -796,8 +796,7 @@ public class StreamEngine implements IEngine, IPollEvents
             zmtpVersion = Protocol.V0;
 
             encoder = new V1Encoder(errno, Config.OUT_BATCH_SIZE.getValue());
-            decoder = new V1Decoder(errno, Config.IN_BATCH_SIZE.getValue(), options.maxMsgSize,
-                    options.allocationHeapThreshold);
+            decoder = new V1Decoder(errno, Config.IN_BATCH_SIZE.getValue(), options.maxMsgSize, options.allocator);
 
             //  We have already sent the message header.
             //  Since there is no way to tell the encoder to
@@ -846,8 +845,7 @@ public class StreamEngine implements IEngine, IPollEvents
                 return false;
             }
             encoder = new V1Encoder(errno, Config.OUT_BATCH_SIZE.getValue());
-            decoder = new V1Decoder(errno, Config.IN_BATCH_SIZE.getValue(), options.maxMsgSize,
-                    options.allocationHeapThreshold);
+            decoder = new V1Decoder(errno, Config.IN_BATCH_SIZE.getValue(), options.maxMsgSize, options.allocator);
         }
         else if (greetingRecv.get(revisionPos) == Protocol.V2.revision) {
             //  ZMTP/2.0 framing.
@@ -860,15 +858,13 @@ public class StreamEngine implements IEngine, IPollEvents
                 return false;
             }
             encoder = new V2Encoder(errno, Config.OUT_BATCH_SIZE.getValue());
-            decoder = new V2Decoder(errno, Config.IN_BATCH_SIZE.getValue(), options.maxMsgSize,
-                    options.allocationHeapThreshold);
+            decoder = new V2Decoder(errno, Config.IN_BATCH_SIZE.getValue(), options.maxMsgSize, options.allocator);
         }
         else {
             zmtpVersion = Protocol.V3;
 
             encoder = new V2Encoder(errno, Config.OUT_BATCH_SIZE.getValue());
-            decoder = new V2Decoder(errno, Config.IN_BATCH_SIZE.getValue(), options.maxMsgSize,
-                    options.allocationHeapThreshold);
+            decoder = new V2Decoder(errno, Config.IN_BATCH_SIZE.getValue(), options.maxMsgSize, options.allocator);
 
             greetingRecv.position(V2_GREETING_SIZE);
             if (options.mechanism == null) {
