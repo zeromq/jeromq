@@ -56,6 +56,8 @@ public class ZAuth
         @Override
         public boolean configure(ZMsg msg, boolean verbose)
         {
+            assert (msg.size() == 2);
+
             // For now we don't do anything with domains
             @SuppressWarnings("unused")
             String domain = msg.popString();
@@ -244,9 +246,17 @@ public class ZAuth
         public final String    statusText; //  readable status
         public final String    userId;     //  User-Id
         public final ZMetadata metadata;   //  optional metadata
+        public final String    address;    // not part of the ZAP protocol, but handy information for user
+        public final String    identity;   // not part of the ZAP protocol, but handy information for user
 
         private ZapReply(String version, String sequence, int statusCode, String statusText, String userId,
                 ZMetadata metadata)
+        {
+            this(version, sequence, statusCode, statusText, userId, metadata, null, null);
+        }
+
+        private ZapReply(String version, String sequence, int statusCode, String statusText, String userId,
+                ZMetadata metadata, String address, String identity)
         {
             assert (version.equals(ZAP_VERSION));
             this.version = version;
@@ -255,6 +265,8 @@ public class ZAuth
             this.statusText = statusText;
             this.userId = userId;
             this.metadata = metadata;
+            this.address = address;
+            this.identity = identity;
         }
 
         private ZMsg msg()
@@ -285,15 +297,17 @@ public class ZAuth
             if (msg == null) {
                 return null;
             }
-            assert (msg.size() == 6);
+            assert (msg.size() == 8);
             String version = msg.popString();
             String sequence = msg.popString();
             int statusCode = Integer.parseInt(msg.popString());
             String statusText = msg.popString();
             String userId = msg.popString();
             ZMetadata metadata = ZMetadata.read(msg.popString());
+            String address = msg.popString();
+            String identity = msg.popString();
 
-            return new ZapReply(version, sequence, statusCode, statusText, userId, metadata);
+            return new ZapReply(version, sequence, statusCode, statusText, userId, metadata, address, identity);
         }
     }
 
@@ -380,14 +394,17 @@ public class ZAuth
         /**
          * Send a zap reply to the handler socket
          */
-        public void reply(int statusCode, String statusText, Socket events)
+        public void reply(int statusCode, String statusText, Socket replies)
         {
             ZapReply reply = new ZapReply(ZAP_VERSION, sequence, statusCode, statusText, userId, metadata);
             ZMsg msg = reply.msg();
-            boolean destroy = events == null;
+            boolean destroy = replies == null;
             msg.send(handler, destroy);
-            if (events != null) {
-                msg.send(events);
+            if (replies != null) {
+                // let's add other fields for convenience of listener
+                msg.add(address);
+                msg.add(identity);
+                msg.send(replies);
             }
         }
 
@@ -621,7 +638,7 @@ public class ZAuth
         private final Properties                blacklist     = new Properties(); // blacklisted addresses
         private final Map<String, Authentifier> authentifiers = new HashMap<>();
 
-        private final String repliesAddress; // lock safeguard for events pipe
+        private final String repliesAddress; // address of replies pipe AND safeguard lock for connected agent
         private boolean      repliesEnabled; // are replies enabled?
         private Socket       replies;        // replies pipe
         private boolean      verbose;        // trace behavior
@@ -632,7 +649,7 @@ public class ZAuth
             assert (actorName != null);
             this.actorName = actorName;
             this.authentifiers.putAll(authentifiers);
-            this.repliesAddress = "inproc://zauth-events-" + UUID.randomUUID().toString();
+            this.repliesAddress = "inproc://zauth-replies-" + UUID.randomUUID().toString();
         }
 
         private ZAgent createAgent(ZContext ctx)
@@ -651,9 +668,11 @@ public class ZAuth
         @Override
         public List<Socket> createSockets(ZContext ctx, Object... args)
         {
-            //create ZAP handler and get ready for requests
+            //create replies pipe that will forward replies to user
             replies = ctx.createSocket(ZMQ.PAIR);
             assert (replies != null);
+
+            //create ZAP handler and get ready for requests
             Socket handler = ctx.createSocket(ZMQ.REP);
             assert (handler != null);
             return Arrays.asList(handler, replies);
@@ -729,6 +748,9 @@ public class ZAuth
                 rc = pipe.send(OK);
             }
             else if (TERMINATE.equals(command)) {
+                if (repliesEnabled) {
+                    replies.send(repliesAddress); // lock replies agent
+                }
                 rc = pipe.send(OK);
                 return false;
             }
