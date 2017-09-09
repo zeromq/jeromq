@@ -180,7 +180,7 @@ public class ZAuthTest
             clientCert.setMeta("meta1/meta2/meta3", "Third level of meta");
             // wait a second before overwriting a cert, otherwise the certstore won't see that the file actually changed and will deny
             // if creating new files, this is not needed
-//            ZMQ.sleep(1);
+            //            ZMQ.sleep(1);
             clientCert.savePublic(CERTIFICATE_FOLDER + "/testcert.pub");
 
             ZCert serverCert = new ZCert();
