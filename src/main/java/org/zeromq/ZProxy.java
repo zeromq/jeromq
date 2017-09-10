@@ -454,12 +454,8 @@ public class ZProxy
     public String exit()
     {
         agent.send(EXIT);
-        try {
-            exit.await();
-        }
-        catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
+        exit.awaitSilent();
+        agent.close();
         return EXITED;
     }
 

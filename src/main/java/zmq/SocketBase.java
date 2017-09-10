@@ -522,8 +522,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
                 || options.type == ZMQ.ZMQ_REQ;
 
         if (isSingleConnect) {
-            boolean endpointpipe = endpoints.hasValues(addr);
-            if (endpointpipe) {
+            if (endpoints.hasValues(addr)) {
                 // There is no valid use for multiple connects for SUB-PUB nor
                 // DEALER-ROUTER nor REQ-REP. Multiple connects produces
                 // nonsensical results.

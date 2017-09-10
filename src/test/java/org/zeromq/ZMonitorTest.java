@@ -3,10 +3,12 @@ package org.zeromq;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
+import java.io.IOException;
+
 import org.junit.Test;
 import org.zeromq.ZMQ.Socket;
-import org.zeromq.ZMonitor.ZEvent;
 import org.zeromq.ZMonitor.Event;
+import org.zeromq.ZMonitor.ZEvent;
 
 public class ZMonitorTest
 {
@@ -19,36 +21,44 @@ public class ZMonitorTest
 
         final ZMonitor clientMonitor = new ZMonitor(ctx, client);
         clientMonitor.verbose(true);
-        clientMonitor.addEvents(Event.LISTENING, Event.ACCEPTED);
+        clientMonitor.add(Event.LISTENING, Event.CONNECTED, Event.DISCONNECTED);
         clientMonitor.start();
 
         final ZMonitor serverMonitor = new ZMonitor(ctx, server);
         serverMonitor.verbose(false);
-        serverMonitor.addEvents(Event.LISTENING, Event.CONNECTED, Event.DISCONNECTED);
+        serverMonitor.add(Event.LISTENING, Event.ACCEPTED);
         serverMonitor.start();
 
-        //  Allow a brief time for the message to get there...
-        zmq.ZMQ.msleep(200);
-
-        //  Check client is now listening
-        int port = client.bindToRandomPort("tcp://127.0.0.1");
-        ZEvent event = clientMonitor.nextEvent();
-        assertThat(event.type, is(Event.LISTENING));
+        //  Check server is now listening
+        int port = server.bindToRandomPort("tcp://127.0.0.1");
+        ZEvent received = serverMonitor.nextEvent();
+        assertThat(received.type, is(Event.LISTENING));
 
         //  Check server connected to client
-        server.connect("tcp://127.0.0.1:" + port);
-        event = serverMonitor.nextEvent();
-        assertThat(event.type, is(Event.CONNECTED));
+        boolean rc = client.connect("tcp://127.0.0.1:" + port);
+        assertThat(rc, is(true));
+        received = clientMonitor.nextEvent();
+        assertThat(received.type, is(Event.CONNECTED));
 
-        //  Check client accepted connection
-        event = clientMonitor.nextEvent(true);
-        assertThat(event.type, is(Event.ACCEPTED));
+        //  Check server accepted connection
+        received = serverMonitor.nextEvent(true);
+        assertThat(received.type, is(Event.ACCEPTED));
 
         client.close();
-        server.close();
-
         clientMonitor.close();
+
+        server.close();
         serverMonitor.close();
+
         ctx.close();
+    }
+
+    //    @Test
+    public void testRepeated() throws IOException
+    {
+        for (int idx = 0; idx < 10000; ++idx) {
+            System.out.println("+++++ " + idx);
+            testZMonitor();
+        }
     }
 }

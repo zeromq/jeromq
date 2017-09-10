@@ -618,7 +618,7 @@ public class ZAuth
         }
         agent.send(msg);
         msg.destroy();
-        agent.recv().destroy();
+        agent.recv();
         return this;
     }
 
@@ -655,7 +655,8 @@ public class ZAuth
         private ZAgent createAgent(ZContext ctx)
         {
             Socket pipe = ctx.createSocket(ZMQ.PAIR);
-            pipe.connect(repliesAddress);
+            boolean rc = pipe.connect(repliesAddress);
+            assert (rc);
             return new ZAgent.SimpleAgent(pipe, repliesAddress);
         }
 
@@ -751,7 +752,7 @@ public class ZAuth
                 if (repliesEnabled) {
                     replies.send(repliesAddress); // lock replies agent
                 }
-                rc = pipe.send(OK);
+                pipe.send(OK);
                 return false;
             }
             else {

@@ -32,10 +32,19 @@ public interface ZAgent
 
     /**
      * Receives a control message sent from the Plateau in the Corbeille.
+     * The call times out if there is no message after the elapsed time.
+     *
+     * @param timeout the timeout in milliseconds before returning null.
+     * @return the received message or null if the context was shut down or if no message after the timeout.
+     */
+    ZMsg recv(int timeout);
+
+    /**
+     * Receives a control message sent from the Plateau in the Corbeille.
      * The call is blocking depending on the parameter.
      *
      * @param wait   true to make a blocking call, false to not wait, and possibly return null
-     * @return the received message or null if the context was shut down or if no message if not blocking.
+     * @return the received message or null if the context was shut down or if there is no message when not blocking.
      */
     ZMsg recv(boolean wait);
 
@@ -137,6 +146,7 @@ public interface ZAgent
         {
             return !locked;
         }
+
         @Override
         public void close()
         {
@@ -151,6 +161,18 @@ public interface ZAgent
         }
 
         @Override
+        public ZMsg recv(int timeout)
+        {
+            final int old = pipe.getReceiveTimeOut();
+            pipe.setReceiveTimeOut(timeout);
+
+            ZMsg msg = recv(true);
+            pipe.setReceiveTimeOut(old);
+
+            return msg;
+        }
+
+        @Override
         public ZMsg recv(boolean wait)
         {
             if (locked) {
@@ -162,13 +184,15 @@ public interface ZAgent
                     return null;
                 }
 
-                final ZFrame frame = msg.peek();
-                byte[] key = frame.getData();
-                if (lock != null && Arrays.equals(lock, key)) {
-                    locked = true;
-                    // this is the last message anyway, and not a one for a public display
-                    msg = null;
-                    pipe.close();
+                if (msg.size() == 1) {
+                    final ZFrame frame = msg.peek();
+                    byte[] key = frame.getData();
+                    if (lock != null && Arrays.equals(lock, key)) {
+                        locked = true;
+                        // this is the last message anyway, and not a one for a public display
+                        msg = null;
+                        pipe.close();
+                    }
                 }
                 return msg;
             }
