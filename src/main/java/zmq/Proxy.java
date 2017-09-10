@@ -1,6 +1,7 @@
 package zmq;
 
 import java.nio.channels.Selector;
+import java.util.Arrays;
 
 import zmq.poll.PollItem;
 
@@ -93,19 +94,20 @@ class Proxy
                         return false;
                     }
 
-                    String command = new String(msg.data(), ZMQ.CHARSET);
-                    if ("PAUSE".equals(command)) {
+                    byte[] command = msg.data();
+                    if (Arrays.equals(command, ZMQ.PROXY_PAUSE)) {
                         state = State.PAUSED;
                     }
-                    else if ("RESUME".equals(command)) {
+                    else if (Arrays.equals(command, ZMQ.PROXY_RESUME)) {
                         state = State.ACTIVE;
                     }
-                    else if ("TERMINATE".equals(command)) {
+                    else if (Arrays.equals(command, ZMQ.PROXY_TERMINATE)) {
                         state = State.TERMINATED;
                     }
                     else {
                         //  This is an API error, we should assert
-                        System.out.println("E: invalid command sent to proxy '" + command + "'");
+                        System.out
+                                .printf("E: invalid command sent to proxy '%s'%n", new String(command, ZMQ.CHARSET));
                         assert false;
                     }
                 }

@@ -22,7 +22,7 @@ import org.zeromq.ZMQ;
  */
 public class ZAuthTest
 {
-    private static final boolean VERBOSE_MODE       = false;
+    private static final boolean VERBOSE_MODE       = true;
     private static final String  PASSWORDS_FILE     = "target/passwords";
     private static final String  CERTIFICATE_FOLDER = "target/curve";
 
@@ -43,6 +43,131 @@ public class ZAuthTest
     }
 
     @Test
+    public void testNull() throws IOException
+    {
+        System.out.println("testNull");
+        //  Create context
+        final ZContext ctx = new ZContext();
+        try {
+            ZAuth auth = new ZAuth(ctx);
+            //  Get some indication of what the authenticator is deciding
+            auth.setVerbose(VERBOSE_MODE);
+            // auth send the replies
+            auth.replies(true);
+
+            //  Create and bind server socket
+            ZMQ.Socket server = ctx.createSocket(ZMQ.PUSH);
+            server.setZapDomain("test");
+            final int port = server.bindToRandomPort("tcp://*");
+
+            //  Create and connect client socket
+            ZMQ.Socket client = ctx.createSocket(ZMQ.PULL);
+            boolean rc = client.connect("tcp://127.0.0.1:" + port);
+            assertThat(rc, is(true));
+
+            //  Send a single message from server to client
+            rc = server.send("Hello");
+            assertThat(rc, is(true));
+
+            ZAuth.ZapReply reply = auth.nextReply();
+            assertThat(reply.statusCode, is(200));
+
+            String message = client.recvStr();
+
+            assertThat(message, is("Hello"));
+
+            auth.close();
+        }
+        finally {
+            ctx.close();
+        }
+    }
+
+    @Test
+    public void testNullAllowed() throws IOException
+    {
+        System.out.println("testNullAllowed");
+        //  Create context
+        final ZContext ctx = new ZContext();
+        try {
+            ZAuth auth = new ZAuth(ctx);
+            //  Get some indication of what the authenticator is deciding
+            auth.setVerbose(VERBOSE_MODE);
+            // auth send the replies
+            auth.replies(true);
+            auth.allow("127.0.0.1");
+
+            //  Create and bind server socket
+            ZMQ.Socket server = ctx.createSocket(ZMQ.PUSH);
+            server.setZapDomain("test");
+            final int port = server.bindToRandomPort("tcp://*");
+
+            //  Create and connect client socket
+            ZMQ.Socket client = ctx.createSocket(ZMQ.PULL);
+            boolean rc = client.connect("tcp://127.0.0.1:" + port);
+            assertThat(rc, is(true));
+
+            //  Send a single message from server to client
+            rc = server.send("Hello");
+            assertThat(rc, is(true));
+
+            ZAuth.ZapReply reply = auth.nextReply();
+            assertThat(reply.statusCode, is(200));
+
+            String message = client.recvStr();
+
+            assertThat(message, is("Hello"));
+
+            auth.close();
+        }
+        finally {
+            ctx.close();
+        }
+    }
+
+    @Test
+    public void testNullWithNoDomain() throws IOException
+    {
+        System.out.println("testNullWithNoDomain");
+        //  Create context
+        final ZContext ctx = new ZContext();
+        try {
+            ZAuth auth = new ZAuth(ctx);
+            //  Get some indication of what the authenticator is deciding
+            auth.setVerbose(VERBOSE_MODE);
+            // auth send the replies
+            auth.replies(true);
+            auth.allow("127.0.0.1");
+
+            //  Create and bind server socket
+            ZMQ.Socket server = ctx.createSocket(ZMQ.PUSH);
+//            server.setZapDomain("test"); // no domain, so no NULL authentication mechanism
+            final int port = server.bindToRandomPort("tcp://*");
+
+            //  Create and connect client socket
+            ZMQ.Socket client = ctx.createSocket(ZMQ.PULL);
+            boolean rc = client.connect("tcp://127.0.0.1:" + port);
+            assertThat(rc, is(true));
+
+            //  Send a single message from server to client
+            rc = server.send("Hello");
+            assertThat(rc, is(true));
+
+            ZAuth.ZapReply reply = auth.nextReply(1000);
+            assertThat(reply, nullValue());
+
+            String message = client.recvStr();
+
+            assertThat(message, is("Hello"));
+
+            auth.close();
+        }
+        finally {
+            ctx.close();
+        }
+    }
+
+    @Test
     public void testPlainWithPassword() throws IOException
     {
         System.out.println("testPlainWithPassword");
@@ -57,8 +182,6 @@ public class ZAuthTest
             auth.setVerbose(VERBOSE_MODE);
             // auth send the replies
             auth.replies(true);
-            //  Whitelist our address; any other address will be rejected
-            auth.allow("127.0.0.1");
             auth.configurePlain("*", PASSWORDS_FILE);
 
             //  Create and bind server socket
@@ -94,6 +217,50 @@ public class ZAuthTest
     }
 
     @Test
+    public void testPlainWithPasswordDenied() throws IOException
+    {
+        System.out.println("testPlainWithPasswordDenied");
+        //  Create context
+        final ZContext ctx = new ZContext();
+        try {
+            //  Start an authentication engine for this context. This engine
+            //  allows or denies incoming connections (talking to the libzmq
+            //  core over a protocol called ZAP).
+            ZAuth auth = new ZAuth(ctx);
+            //  Get some indication of what the authenticator is deciding
+            auth.setVerbose(true);
+            // auth send the replies
+            auth.replies(true);
+            auth.configurePlain("*", PASSWORDS_FILE);
+
+            //  Create and bind server socket
+            ZMQ.Socket server = ctx.createSocket(ZMQ.PUSH);
+            server.setAsServerPlain(true);
+            server.setZapDomain("global".getBytes());
+            final int port = server.bindToRandomPort("tcp://*");
+
+            //  Create and connect client socket
+            ZMQ.Socket client = ctx.createSocket(ZMQ.PULL);
+            client.setPlainUsername("admin".getBytes());
+            client.setPlainPassword("wrong".getBytes());
+            boolean rc = client.connect("tcp://127.0.0.1:" + port);
+            assertThat(rc, is(true));
+
+            //  Send a single message from server to client
+            rc = server.send("Hello");
+            assertThat(rc, is(true));
+
+            ZAuth.ZapReply reply = auth.nextReply();
+            assertThat(reply.statusCode, is(400));
+
+            auth.close();
+        }
+        finally {
+            ctx.close();
+        }
+    }
+
+    @Test
     public void testCurveAnyClient() throws IOException
     {
         System.out.println("testCurveAnyClient");
@@ -109,8 +276,6 @@ public class ZAuthTest
             // auth send the replies
             auth.replies(true);
 
-            //  Whitelist our address; any other address will be rejected
-            auth.allow("127.0.0.1");
             auth.configureCurve(ZAuth.CURVE_ALLOW_ANY);
 
             //  We need two certificates, one for the client and one for
@@ -141,6 +306,8 @@ public class ZAuthTest
             assertThat(reply.statusCode, is(200));
             assertThat(reply.userId, is(""));
 
+            System.out.println("ZAuth replied " + reply.toString());
+
             String message = client.recvStr();
             assertThat(message, is("Hello"));
 
@@ -167,8 +334,6 @@ public class ZAuthTest
             // auth send the replies
             auth.replies(true);
 
-            //  Whitelist our address; any other address will be rejected
-            auth.allow("127.0.0.1");
             //  Tell authenticator to use the certificate store in .curve
             auth.configureCurve(CERTIFICATE_FOLDER);
 
@@ -218,7 +383,178 @@ public class ZAuthTest
             ctx.close();
             TestUtils.cleanupDir(CERTIFICATE_FOLDER);
         }
+    }
 
+    @Test
+    public void testBlacklistDenied() throws IOException
+    {
+        System.out.println("testBlacklistDenied");
+        final ZContext ctx = new ZContext();
+        try {
+            //  Start an authentication engine for this context. This engine
+            //  allows or denies incoming connections (talking to the libzmq
+            //  core over a protocol called ZAP).
+            ZAuth auth = new ZAuth(ctx, new ZCertStore.Timestamper());
+            //  Get some indication of what the authenticator is deciding
+            auth.setVerbose(VERBOSE_MODE);
+            // auth send the replies
+            auth.replies(true);
+
+            //  Blacklist our address
+            auth.deny("127.0.0.1");
+
+            //  Create and bind server socket
+            ZMQ.Socket server = ctx.createSocket(ZMQ.PUSH);
+            server.setZapDomain("global".getBytes());
+            final int port = server.bindToRandomPort("tcp://*");
+
+            //  Create and connect client socket
+            ZMQ.Socket client = ctx.createSocket(ZMQ.PULL);
+            boolean rc = client.connect("tcp://127.0.0.1:" + port);
+            assertThat(rc, is(true));
+
+            //  Send a single message from server to client
+            rc = server.send("Hello");
+            assertThat(rc, is(true));
+
+            ZAuth.ZapReply reply = auth.nextReply(true);
+            assertThat(reply.statusCode, is(400));
+            assertThat(reply.userId, is(""));
+
+            auth.close();
+        }
+        finally {
+            ctx.close();
+        }
+    }
+
+    @Test
+    public void testBlacklistAllowed() throws IOException
+    {
+        System.out.println("testBlacklistAllowed");
+        final ZContext ctx = new ZContext();
+        try {
+            //  Start an authentication engine for this context. This engine
+            //  allows or denies incoming connections (talking to the libzmq
+            //  core over a protocol called ZAP).
+            ZAuth auth = new ZAuth(ctx, new ZCertStore.Hasher());
+            //  Get some indication of what the authenticator is deciding
+            auth.setVerbose(VERBOSE_MODE);
+            // auth send the replies
+            auth.replies(true);
+
+            //  Blacklist another address
+            auth.deny("127.0.0.2");
+
+            //  Create and bind server socket
+            ZMQ.Socket server = ctx.createSocket(ZMQ.PUSH);
+            server.setZapDomain("global".getBytes());
+            final int port = server.bindToRandomPort("tcp://*");
+
+            //  Create and connect client socket
+            ZMQ.Socket client = ctx.createSocket(ZMQ.PULL);
+            boolean rc = client.connect("tcp://127.0.0.1:" + port);
+            assertThat(rc, is(true));
+
+            //  Send a single message from server to client
+            rc = server.send("Hello");
+            assertThat(rc, is(true));
+
+            ZAuth.ZapReply reply = auth.nextReply(true);
+            assertThat(reply.statusCode, is(200));
+            assertThat(reply.userId, is(""));
+
+            auth.close();
+        }
+        finally {
+            ctx.close();
+        }
+    }
+
+    @Test
+    public void testWhitelistDenied() throws IOException
+    {
+        System.out.println("testWhitelistDenied");
+        final ZContext ctx = new ZContext();
+        try {
+            //  Start an authentication engine for this context. This engine
+            //  allows or denies incoming connections (talking to the libzmq
+            //  core over a protocol called ZAP).
+            ZAuth auth = new ZAuth(ctx, new ZCertStore.Hasher());
+            //  Get some indication of what the authenticator is deciding
+            auth.setVerbose(VERBOSE_MODE);
+            // auth send the replies
+            auth.replies(true);
+
+            //  Whitelist another address
+            auth.allow("127.0.0.2");
+
+            //  Create and bind server socket
+            ZMQ.Socket server = ctx.createSocket(ZMQ.PUSH);
+            server.setZapDomain("global".getBytes());
+            final int port = server.bindToRandomPort("tcp://*");
+
+            //  Create and connect client socket
+            ZMQ.Socket client = ctx.createSocket(ZMQ.PULL);
+            boolean rc = client.connect("tcp://127.0.0.1:" + port);
+            assertThat(rc, is(true));
+
+            //  Send a single message from server to client
+            rc = server.send("Hello");
+            assertThat(rc, is(true));
+
+            ZAuth.ZapReply reply = auth.nextReply(true);
+            assertThat(reply.statusCode, is(400));
+            assertThat(reply.userId, is(""));
+
+            auth.close();
+        }
+        finally {
+            ctx.close();
+        }
+    }
+
+    @Test
+    public void testWhitelistAllowed() throws IOException
+    {
+        System.out.println("testWhitelistAllowed");
+        final ZContext ctx = new ZContext();
+        try {
+            //  Start an authentication engine for this context. This engine
+            //  allows or denies incoming connections (talking to the libzmq
+            //  core over a protocol called ZAP).
+            ZAuth auth = new ZAuth(ctx, new ZCertStore.Hasher());
+            //  Get some indication of what the authenticator is deciding
+            auth.setVerbose(VERBOSE_MODE);
+            // auth send the replies
+            auth.replies(true);
+
+            //  Whitelist our address
+            auth.allow("127.0.0.1");
+
+            //  Create and bind server socket
+            ZMQ.Socket server = ctx.createSocket(ZMQ.PUSH);
+            server.setZapDomain("global".getBytes());
+            final int port = server.bindToRandomPort("tcp://*");
+
+            //  Create and connect client socket
+            ZMQ.Socket client = ctx.createSocket(ZMQ.PULL);
+            boolean rc = client.connect("tcp://127.0.0.1:" + port);
+            assertThat(rc, is(true));
+
+            //  Send a single message from server to client
+            rc = server.send("Hello");
+            assertThat(rc, is(true));
+
+            ZAuth.ZapReply reply = auth.nextReply(true);
+            assertThat(reply.statusCode, is(200));
+            assertThat(reply.userId, is(""));
+
+            auth.close();
+        }
+        finally {
+            ctx.close();
+        }
     }
 
     @Test
@@ -228,14 +564,12 @@ public class ZAuthTest
         // this is the same test but here we do not save the client's certificate into the certstore's folder
         final ZContext ctx = new ZContext();
         try {
-            ZAuth auth = new ZAuth(ctx, new ZCertStore.Hasher());
+            ZAuth auth = new ZAuth(ctx, new ZCertStore.Timestamper());
             //  Get some indication of what the authenticator is deciding
             auth.setVerbose(VERBOSE_MODE);
             // auth send the replies
             auth.replies(true);
 
-            //  Whitelist our address; any other address will be rejected
-            auth.allow("127.0.0.1");
             //  Tell authenticator to use the certificate store in .curve
             auth.configureCurve(CERTIFICATE_FOLDER);
 
@@ -287,6 +621,31 @@ public class ZAuthTest
         }
     }
 
+    @Test
+    public void testNoReplies() throws IOException
+    {
+        System.out.println("testNoReplies");
+        final ZContext ctx = new ZContext();
+        try {
+            //  Start an authentication engine for this context. This engine
+            //  allows or denies incoming connections (talking to the libzmq
+            //  core over a protocol called ZAP).
+            ZAuth auth = new ZAuth(ctx, new ZCertStore.Hasher());
+            //  Get some indication of what the authenticator is deciding
+            auth.setVerbose(VERBOSE_MODE);
+            // auth do not send the replies
+            auth.replies(false);
+
+            ZAuth.ZapReply reply = auth.nextReply(true);
+            assertThat(reply, nullValue());
+
+            auth.close();
+        }
+        finally {
+            ctx.close();
+        }
+    }
+
     @After
     public void cleanup()
     {
@@ -294,7 +653,7 @@ public class ZAuthTest
         deletePasswords.delete();
     }
 
-//    @Test
+    //    @Test
     public void testRepeated() throws IOException
     {
         for (int idx = 0; idx < 10000; ++idx) {

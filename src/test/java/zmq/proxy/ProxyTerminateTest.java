@@ -107,7 +107,7 @@ public class ProxyTerminateTest
         ret = ZMQ.send(publisher, "This is a test", 0);
         assertThat(ret, is(14));
 
-        ret = ZMQ.send(control, "TERMINATE", 0);
+        ret = ZMQ.send(control, ZMQ.PROXY_TERMINATE, 0);
         assertThat(ret, is(9));
 
         ZMQ.close(publisher);

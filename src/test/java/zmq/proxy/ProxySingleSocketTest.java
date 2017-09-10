@@ -98,7 +98,7 @@ public class ProxySingleSocketTest
         assertThat(msg, notNullValue());
         assertThat(new String(msg.data(), ZMQ.CHARSET), is("msg22"));
 
-        ret = ZMQ.send(control, "TERMINATE", 0);
+        ret = ZMQ.send(control, ZMQ.PROXY_TERMINATE, 0);
         assertThat(ret, is(9));
 
         System.out.println(".");

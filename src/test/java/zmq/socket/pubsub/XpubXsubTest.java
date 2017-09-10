@@ -99,7 +99,7 @@ public class XpubXsubTest
         rc = command.connect("inproc://ctrl-proxy");
         assertThat(rc, is(true));
 
-        command.send(new Msg("TERMINATE".getBytes(ZMQ.CHARSET)), 0);
+        command.send(new Msg(ZMQ.PROXY_TERMINATE), 0);
 
         proxy.get();
         zmq.ZMQ.close(command);

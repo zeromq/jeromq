@@ -17,6 +17,7 @@ import zmq.ZError.CtxTerminatedException;
 import zmq.io.coder.IDecoder;
 import zmq.io.coder.IEncoder;
 import zmq.io.mechanism.Mechanisms;
+import zmq.msg.MsgAllocator;
 
 public class ZMQ
 {
@@ -229,9 +230,13 @@ public class ZMQ
      */
     public static final int EVENT_ALL                = zmq.ZMQ.ZMQ_EVENT_ALL;
 
-    public static final byte[] MESSAGE_SEPARATOR = new byte[0];
+    public static final byte[] MESSAGE_SEPARATOR = zmq.ZMQ.MESSAGE_SEPARATOR;
 
-    public static final byte[] SUBSCRIPTION_ALL = new byte[0];
+    public static final byte[] SUBSCRIPTION_ALL = zmq.ZMQ.SUBSCRIPTION_ALL;
+
+    public static final byte[] PROXY_PAUSE     = zmq.ZMQ.PROXY_PAUSE;
+    public static final byte[] PROXY_RESUME    = zmq.ZMQ.PROXY_RESUME;
+    public static final byte[] PROXY_TERMINATE = zmq.ZMQ.PROXY_TERMINATE;
 
     public static final Charset CHARSET = zmq.ZMQ.CHARSET;
 
@@ -1672,6 +1677,16 @@ public class ZMQ
         }
 
         /**
+         * Sets a custom message allocator.
+         * @param allocator the custom allocator.
+         * @return true if the option was set, otherwise false.
+         */
+        public boolean setMsgAllocator(MsgAllocator allocator)
+        {
+            return setSocketOpt(zmq.ZMQ.ZMQ_MSG_ALLOCATOR, allocator);
+        }
+
+        /**
          * The ZMQ_CONNECT_RID option sets the peer id of the next host connected via the connect() call,
          * and immediately readies that connection for data transfer with the named id.
          * This option applies only to the first subsequent call to connect(),
@@ -2305,6 +2320,7 @@ public class ZMQ
             NULL(Mechanisms.NULL),
             PLAIN(Mechanisms.PLAIN),
             CURVE(Mechanisms.CURVE);
+            // TODO add GSSAPI once it is implemented
 
             private final Mechanisms mech;
 

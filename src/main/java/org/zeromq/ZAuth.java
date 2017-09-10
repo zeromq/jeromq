@@ -1,6 +1,7 @@
 package org.zeromq;
 
 import java.io.BufferedReader;
+import java.io.Closeable;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
@@ -13,9 +14,9 @@ import java.util.Properties;
 import java.util.UUID;
 
 import org.zeromq.ZMQ.Socket;
+import org.zeromq.ZMQ.Socket.Mechanism;
 import org.zeromq.util.ZMetadata;
 
-import zmq.io.mechanism.Mechanisms;
 import zmq.io.mechanism.curve.Curve;
 
 /**
@@ -28,12 +29,12 @@ import zmq.io.mechanism.curve.Curve;
  *  <br>
  * Based on <a href="http://github.com/zeromq/czmq/blob/master/src/zauth.c">zauth.c</a> in czmq
  */
-public class ZAuth
+public class ZAuth implements Closeable
 {
-    public interface Authentifier
+    public interface Auth
     {
         /**
-         * Configures the authentifier with ad-hoc message.
+         * Configures with ad-hoc message.
          * @param msg the configuration message.
          * @param verbose true if the actor is verbose.
          * @return true if correctly configured, otherwise false.
@@ -41,13 +42,13 @@ public class ZAuth
         boolean configure(ZMsg msg, boolean verbose);
 
         /**
-         * Callback for authorizing an authenticated connection.
+         * Callback for authorizing a connection.
          * @return true if the connection is authorized, false otherwise.
          */
-        boolean authenticate(ZapRequest request, boolean verbose);
+        boolean authorize(ZapRequest request, boolean verbose);
     }
 
-    public static class SimplePlainAuthentifier implements Authentifier
+    public static class SimplePlainAuth implements Auth
     {
         private final Properties passwords = new Properties(); // PLAIN passwords, if loaded
         private File             passwordsFile;
@@ -82,8 +83,9 @@ public class ZAuth
         }
 
         @Override
-        public boolean authenticate(ZapRequest request, boolean verbose)
+        public boolean authorize(ZapRequest request, boolean verbose)
         {
+            // assert (request.username != null);
             // Refresh the passwords map if the file changed
             try {
                 loadPasswords(false);
@@ -137,47 +139,19 @@ public class ZAuth
         }
     }
 
-    public static class SimpleGSSAuthentifier implements Authentifier
-    {
-        @Override
-        public boolean configure(ZMsg msg, boolean verbose)
-        {
-            // GSSAPI authentication is not yet implemented here
-            @SuppressWarnings("unused")
-            String domain = msg.popString();
-            return true;
-        }
-
-        @Override
-        public boolean authenticate(ZapRequest request, boolean verbose)
-        {
-            if (verbose) {
-                System.out.printf(
-                                  "ZAuth: Allowed (GSSAPI allow any client) principal = %s identity = %s%n",
-                                  request.principal,
-                                  request.identity);
-            }
-            // At this point, the request is authenticated, send to
-            //zauth callback for complete authorization
-            request.userId = request.principal;
-
-            return true;
-        }
-    }
-
-    public static class SimpleCurveAuthentifier implements Authentifier
+    public static class SimpleCurveAuth implements Auth
     {
         private final ZCertStore.Fingerprinter fingerprinter;
 
         private ZCertStore certStore = null;
         private boolean    allowAny;
 
-        public SimpleCurveAuthentifier()
+        public SimpleCurveAuth()
         {
             this(new ZCertStore.Hasher());
         }
 
-        public SimpleCurveAuthentifier(ZCertStore.Fingerprinter fingerprinter)
+        public SimpleCurveAuth(ZCertStore.Fingerprinter fingerprinter)
         {
             this.fingerprinter = fingerprinter;
         }
@@ -204,7 +178,7 @@ public class ZAuth
         }
 
         @Override
-        public boolean authenticate(ZapRequest request, boolean verbose)
+        public boolean authorize(ZapRequest request, boolean verbose)
         {
             if (allowAny) {
                 if (verbose) {
@@ -236,6 +210,21 @@ public class ZAuth
         }
     }
 
+    public static class SimpleNullAuth implements Auth
+    {
+        @Override
+        public boolean configure(ZMsg configuration, boolean verbose)
+        {
+            return true;
+        }
+
+        @Override
+        public boolean authorize(ZapRequest request, boolean verbose)
+        {
+            return true;
+        }
+    }
+
     private static final String ZAP_VERSION = "1.0";
 
     public static class ZapReply
@@ -258,7 +247,7 @@ public class ZAuth
         private ZapReply(String version, String sequence, int statusCode, String statusText, String userId,
                 ZMetadata metadata, String address, String identity)
         {
-            assert (version.equals(ZAP_VERSION));
+            assert (ZAP_VERSION.equals(version));
             this.version = version;
             this.sequence = sequence;
             this.statusCode = statusCode;
@@ -293,7 +282,16 @@ public class ZAuth
 
         private static ZapReply recv(ZAgent agent, boolean wait)
         {
-            ZMsg msg = agent.recv(wait);
+            return received(agent.recv(wait));
+        }
+
+        private static ZapReply recv(ZAgent agent, int timeout)
+        {
+            return received(agent.recv(timeout));
+        }
+
+        private static ZapReply received(ZMsg msg)
+        {
             if (msg == null) {
                 return null;
             }
@@ -344,16 +342,16 @@ public class ZAuth
             mechanism = request.popString();
 
             //  If the version is wrong, we're linked with a bogus libzmq, so die
-            assert (version.equals(ZAP_VERSION));
+            assert (ZAP_VERSION.equals(version));
 
             // Get mechanism-specific frames
-            if (Mechanisms.PLAIN.name().equals(mechanism)) {
+            if (Mechanism.PLAIN.name().equals(mechanism)) {
                 username = request.popString();
                 password = request.popString();
                 clientKey = null;
                 principal = null;
             }
-            else if (Mechanisms.CURVE.name().equals(mechanism)) {
+            else if (Mechanism.CURVE.name().equals(mechanism)) {
                 ZFrame frame = request.pop();
                 byte[] clientPublicKey = frame.getData();
                 username = null;
@@ -361,7 +359,8 @@ public class ZAuth
                 clientKey = Curve.z85EncodePublic(clientPublicKey);
                 principal = null;
             }
-            else if (Mechanisms.GSSAPI.name().equals(mechanism)) {
+            else if (zmq.io.mechanism.Mechanisms.GSSAPI.name().equals(mechanism)) {
+                // TOD handle GSSAPI as well
                 username = null;
                 password = null;
                 clientKey = null;
@@ -375,7 +374,7 @@ public class ZAuth
             }
         }
 
-        static ZapRequest recvRequest(Socket handler, boolean wait)
+        private static ZapRequest recvRequest(Socket handler, boolean wait)
         {
             ZMsg request = ZMsg.recvMsg(handler, wait);
             if (request == null) {
@@ -385,7 +384,7 @@ public class ZAuth
             ZapRequest self = new ZapRequest(handler, request);
 
             //  If the version is wrong, we're linked with a bogus libzmq, so die
-            assert (self.version.equals(ZAP_VERSION));
+            assert (ZAP_VERSION.equals(self.version));
 
             request.destroy();
             return self;
@@ -394,7 +393,7 @@ public class ZAuth
         /**
          * Send a zap reply to the handler socket
          */
-        public void reply(int statusCode, String statusText, Socket replies)
+        private void reply(int statusCode, String statusText, Socket replies)
         {
             ZapReply reply = new ZapReply(ZAP_VERSION, sequence, statusCode, statusText, userId, metadata);
             ZMsg msg = reply.msg();
@@ -406,23 +405,6 @@ public class ZAuth
                 msg.add(identity);
                 msg.send(replies);
             }
-        }
-
-        @Override
-        public String toString()
-        {
-            return "ZapRequest [" + (version != null ? "version=" + version + ", " : "")
-                    + (sequence != null ? "sequence=" + sequence + ", " : "")
-                    + (domain != null ? "domain=" + domain + ", " : "")
-                    + (address != null ? "address=" + address + ", " : "")
-                    + (identity != null ? "identity=" + identity + ", " : "")
-                    + (mechanism != null ? "mechanism=" + mechanism + ", " : "")
-                    + (username != null ? "username=" + username + ", " : "")
-                    + (password != null ? "password=" + password + ", " : "")
-                    + (clientKey != null ? "clientKey=" + clientKey + ", " : "")
-                    + (principal != null ? "principal=" + principal + ", " : "")
-                    + (userId != null ? "userId=" + userId + ", " : "")
-                    + (metadata != null ? "metadata=" + metadata : "") + "]";
         }
     }
 
@@ -456,30 +438,33 @@ public class ZAuth
 
     public ZAuth(ZContext ctx, String actorName)
     {
-        this(ctx, actorName, makeSimpleAuthentifiers());
+        this(ctx, actorName, makeSimpleAuths());
     }
 
-    private static Map<String, Authentifier> makeSimpleAuthentifiers()
+    private static Map<String, Auth> makeSimpleAuths()
     {
-        Map<String, Authentifier> auths = new HashMap<>();
+        Map<String, Auth> auths = new HashMap<>();
 
-        auths.put(Mechanisms.PLAIN.name(), new SimplePlainAuthentifier());
-        auths.put(Mechanisms.CURVE.name(), new SimpleCurveAuthentifier());
-        auths.put(Mechanisms.GSSAPI.name(), new SimpleGSSAuthentifier());
-
+        auths.put(Mechanism.PLAIN.name(), new SimplePlainAuth());
+        auths.put(Mechanism.CURVE.name(), new SimpleCurveAuth());
+        auths.put(Mechanism.NULL.name(), new SimpleNullAuth());
+        // TODO add GSSAPI once it is implemented
         return auths;
     }
 
-    private static Map<String, Authentifier> curveVariant(ZCertStore.Fingerprinter fingerprinter)
+    private static Map<String, Auth> curveVariant(ZCertStore.Fingerprinter fingerprinter)
     {
-        Map<String, Authentifier> auths = makeSimpleAuthentifiers();
-        auths.put(Mechanisms.CURVE.name(), new SimpleCurveAuthentifier(fingerprinter));
+        Map<String, Auth> auths = makeSimpleAuths();
+        auths.put(Mechanism.CURVE.name(), new SimpleCurveAuth(fingerprinter));
         return auths;
     }
 
-    public ZAuth(ZContext ctx, String actorName, Map<String, Authentifier> authentifiers)
+    public ZAuth(final ZContext ctx, String actorName, Map<String, Auth> auths)
     {
-        final AuthActor actor = new AuthActor(actorName, authentifiers);
+        assert (ctx != null); // works only for connections within the same context
+        assert (actorName != null);
+        assert (auths != null);
+        final AuthActor actor = new AuthActor(actorName, auths);
         final ZActor zactor = new ZActor(ctx, null, actor, UUID.randomUUID().toString());
         agent = zactor.agent();
         exit = zactor.exit();
@@ -536,7 +521,7 @@ public class ZAuth
     {
         assert (domain != null);
         assert (filename != null);
-        return send(Mechanisms.PLAIN.name(), domain, filename);
+        return send(Mechanism.PLAIN.name(), domain, filename);
     }
 
     /**
@@ -547,18 +532,7 @@ public class ZAuth
     public ZAuth configureCurve(String location)
     {
         assert (location != null);
-        return send(Mechanisms.CURVE.name(), location);
-    }
-
-    /**
-     * Configure GSSAPI authentication for a given domain. GSSAPI authentication
-     * uses an underlying mechanism (usually Kerberos) to establish a secure
-     * context and perform mutual authentication.  To cover all domains, use "*".
-     */
-    public ZAuth configureGSSAPI(String domain)
-    {
-        assert (domain != null);
-        return send(Mechanisms.GSSAPI.name(), domain);
+        return send(Mechanism.CURVE.name(), location);
     }
 
     public ZAuth replies(boolean enable)
@@ -591,9 +565,24 @@ public class ZAuth
     }
 
     /**
+     * Retrieves the next ZAP reply.
+     * @param timeout the timeout in milliseconds to wait for a reply before giving up and returning null.
+     * @return the next reply or null if the actor is closed or if there is no next reply after the elapsed timeout.
+     */
+    public ZapReply nextReply(int timeout)
+    {
+        if (!repliesEnabled) {
+            System.out.println("ZAuth: replies are disabled. Please use replies(true);");
+            return null;
+        }
+        return ZapReply.recv(replies, timeout);
+    }
+
+    /**
      * Destructor.
      */
-    public void close()
+    @Override
+    public void close() throws IOException
     {
         destroy();
     }
@@ -634,21 +623,21 @@ public class ZAuth
 
         private final String actorName;
 
-        private final Properties                whitelist     = new Properties(); // whitelisted addresses
-        private final Properties                blacklist     = new Properties(); // blacklisted addresses
-        private final Map<String, Authentifier> authentifiers = new HashMap<>();
+        private final Properties        whitelist = new Properties(); // whitelisted addresses
+        private final Properties        blacklist = new Properties(); // blacklisted addresses
+        private final Map<String, Auth> auths     = new HashMap<>();
 
         private final String repliesAddress; // address of replies pipe AND safeguard lock for connected agent
         private boolean      repliesEnabled; // are replies enabled?
         private Socket       replies;        // replies pipe
         private boolean      verbose;        // trace behavior
 
-        private AuthActor(String actorName, Map<String, Authentifier> authentifiers)
+        private AuthActor(String actorName, Map<String, Auth> auths)
         {
-            assert (authentifiers != null);
+            assert (auths != null);
             assert (actorName != null);
             this.actorName = actorName;
-            this.authentifiers.putAll(authentifiers);
+            this.auths.putAll(auths);
             this.repliesAddress = "inproc://zauth-replies-" + UUID.randomUUID().toString();
         }
 
@@ -708,10 +697,10 @@ public class ZAuth
             ZMsg msg = ZMsg.recvMsg(pipe);
 
             String command = msg.popString();
-            if (verbose) {
-                System.out.printf("ZAuth: API command=%s\n", command);
-            }
             if (command == null) {
+                if (verbose) {
+                    System.out.println("ZAuth: NULL command");
+                }
                 return false; //interrupted
             }
             boolean rc;
@@ -752,13 +741,16 @@ public class ZAuth
                 if (repliesEnabled) {
                     replies.send(repliesAddress); // lock replies agent
                 }
+                if (verbose) {
+                    System.out.println("ZAuth: Terminated");
+                }
                 pipe.send(OK);
                 return false;
             }
             else {
-                final Authentifier authentifier = authentifiers.get(command);
-                if (authentifier != null) {
-                    if (authentifier.configure(msg, verbose)) {
+                final Auth authenticator = auths.get(command);
+                if (authenticator != null) {
+                    if (authenticator.configure(msg, verbose)) {
                         rc = pipe.send(OK);
                     }
                     else {
@@ -821,21 +813,13 @@ public class ZAuth
 
             //mechanism specific check
             if (!denied) {
-                final Authentifier authentifier = authentifiers.get(request.mechanism);
-                if (authentifier == null) {
-                    if (Mechanisms.NULL.name().equals(request.mechanism) && !allowed) {
-                        //  For NULL, we allow if the address wasn't blacklisted
-                        if (verbose) {
-                            System.out.printf("ZAuth: Allowed (NULL)\n");
-                        }
-                        allowed = true;
-                    }
-                    else {
-                        System.out.printf("ZAuth E: Skipping unknown mechanism %s%n", request.mechanism);
-                    }
+                final Auth auth = auths.get(request.mechanism);
+                if (auth == null) {
+                    System.out.printf("ZAuth E: Skipping unhandled mechanism %s%n", request.mechanism);
+                    return false;
                 }
                 else {
-                    allowed = authentifier.authenticate(request, verbose);
+                    allowed = auth.authorize(request, verbose);
                 }
             }
 

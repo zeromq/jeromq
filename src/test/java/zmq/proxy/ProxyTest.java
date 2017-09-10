@@ -42,14 +42,16 @@ public class ProxyTest
 {
     private final class Client implements Runnable
     {
+        private final int     idx;
         private final String  host;
         private final String  control;
         private final boolean verbose;
 
         private final AtomicBoolean done = new AtomicBoolean();
 
-        Client(String host, String control, boolean verbose)
+        Client(int idx, String host, String control, boolean verbose)
         {
+            this.idx = idx;
             this.host = host;
             this.control = control;
             this.verbose = verbose;
@@ -66,7 +68,7 @@ public class ProxyTest
             SocketBase control = ZMQ.socket(ctx, ZMQ.ZMQ_SUB);
             assertThat(control, notNullValue());
 
-            boolean rc = ZMQ.setSocketOption(control, ZMQ.ZMQ_SUBSCRIBE, new byte[0]);
+            boolean rc = ZMQ.setSocketOption(control, ZMQ.ZMQ_SUBSCRIBE, ZMQ.SUBSCRIPTION_ALL);
             assertThat(rc, is(true));
 
             rc = ZMQ.connect(control, this.control);
@@ -109,7 +111,7 @@ public class ProxyTest
                     }
                     if (items[1].isReadable()) {
                         msg = ZMQ.recv(control, 0);
-                        if (Arrays.equals(msg.data(), "TERMINATE".getBytes(ZMQ.CHARSET))) {
+                        if (Arrays.equals(msg.data(), ZMQ.PROXY_TERMINATE)) {
                             run = false;
                             break;
                         }
@@ -132,6 +134,7 @@ public class ProxyTest
             ZMQ.close(client);
 
             ZMQ.term(ctx);
+            System.out.printf("Client %s done%n", idx);
         }
     }
 
@@ -174,7 +177,7 @@ public class ProxyTest
             SocketBase control = ZMQ.socket(ctx, ZMQ.ZMQ_SUB);
             assertThat(control, notNullValue());
 
-            rc = ZMQ.setSocketOption(control, ZMQ.ZMQ_SUBSCRIBE, new byte[0]);
+            rc = ZMQ.setSocketOption(control, ZMQ.ZMQ_SUBSCRIBE, ZMQ.SUBSCRIPTION_ALL);
             assertThat(rc, is(true));
 
             rc = ZMQ.connect(control, this.control);
@@ -199,6 +202,7 @@ public class ProxyTest
             ZMQ.close(control);
 
             ZMQ.term(ctx);
+            System.out.println("Server done");
         }
     }
 
@@ -249,7 +253,7 @@ public class ProxyTest
                     break;
                 }
                 if (msg != null) {
-                    if (Arrays.equals(msg.data(), "TERMINATE".getBytes(ZMQ.CHARSET))) {
+                    if (Arrays.equals(msg.data(), ZMQ.PROXY_TERMINATE)) {
                         run = false;
                         break;
                     }
@@ -282,6 +286,7 @@ public class ProxyTest
 
             ZMQ.close(control);
             ZMQ.close(worker);
+            System.out.printf("Worker %s done%n", idx);
         }
     }
 
@@ -301,12 +306,14 @@ public class ProxyTest
         boolean rc = ZMQ.bind(control, controlEndpoint);
         assertThat(rc, is(true));
 
+        ZMQ.msleep(1000);
+
         String host = "tcp://127.0.0.1:" + Utils.findOpenPort();
         int count = 5;
         ExecutorService executor = Executors.newFixedThreadPool(count + 1);
         List<Client> clients = new ArrayList<>();
         for (int idx = 0; idx < count; ++idx) {
-            Client client = new Client(host, controlEndpoint, false);
+            Client client = new Client(idx, host, controlEndpoint, false);
             clients.add(client);
             executor.submit(client);
         }
