@@ -251,7 +251,7 @@ class Mtrie
             return pipes == null;
         }
 
-        byte c = prefix[start + size];
+        byte c = prefix[start];
         if (count == 0 || c < min || c >= min + count) {
             return false;
         }
