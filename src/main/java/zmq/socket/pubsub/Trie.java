@@ -2,6 +2,7 @@ package zmq.socket.pubsub;
 
 import java.nio.ByteBuffer;
 
+import zmq.Msg;
 import zmq.pipe.Pipe;
 import zmq.util.Utils;
 
@@ -32,7 +33,7 @@ class Trie
 
     //  Add key to the trie. Returns true if this is a new item in the trie
     //  rather than a duplicate.
-    public boolean add(byte[] prefix, int start, int size)
+    public boolean add(Msg msg, int start, int size)
     {
         //  We are at the node corresponding to the prefix. We are done.
         if (size == 0) {
@@ -40,7 +41,7 @@ class Trie
             return refcnt == 1;
         }
 
-        byte c = prefix[start];
+        byte c = msg.get(start);
         if (c < min || c >= min + count) {
             //  The character is out of range of currently handled
             //  characters. We have to extend the table.
@@ -79,7 +80,7 @@ class Trie
                 ++liveNodes;
                 assert (liveNodes == 1);
             }
-            return next[0].add(prefix, start + 1, size - 1);
+            return next[0].add(msg, start + 1, size - 1);
         }
         else {
             if (next[c - min] == null) {
@@ -88,7 +89,7 @@ class Trie
                 ++liveNodes;
                 assert (liveNodes > 1);
             }
-            return next[c - min].add(prefix, start + 1, size - 1);
+            return next[c - min].add(msg, start + 1, size - 1);
         }
     }
 
@@ -99,7 +100,7 @@ class Trie
 
     //  Remove key from the trie. Returns true if the item is actually
     //  removed from the trie.
-    public boolean rm(byte[] prefix, int start, int size)
+    public boolean rm(Msg msg, int start, int size)
     {
         //  TODO: Shouldn't an error be reported if the key does not exist?
 
@@ -111,7 +112,7 @@ class Trie
             return refcnt == 0;
         }
 
-        byte c = prefix[start];
+        byte c = msg.get(start);
         if (count == 0 || c < min || c >= min + count) {
             return false;
         }
@@ -122,7 +123,7 @@ class Trie
             return false;
         }
 
-        boolean ret = nextNode.rm(prefix, start + 1, size - 1);
+        boolean ret = nextNode.rm(msg, start + 1, size - 1);
 
         //  Prune redundant nodes
         if (nextNode.isRedundant()) {

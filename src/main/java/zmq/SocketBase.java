@@ -27,7 +27,7 @@ import zmq.util.MultiMap;
 
 public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeEvents
 {
-    private class EndpointPipe
+    private static class EndpointPipe
     {
         private final Own  endpoint;
         private final Pipe pipe;
