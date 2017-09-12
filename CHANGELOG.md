@@ -1,6 +1,9 @@
 # Changelog
 
-## v0.4.2 (unreleased)
+## v0.4.3 (unreleased)
+
+
+## v0.4.2 (2017-06-29)
 
 [#443](https://github.com/zeromq/jeromq/pull/443): Fix issue where JeroMQ was
 broken on Android. Security no longer depends on libsodium and is now pure Java
