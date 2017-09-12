@@ -187,6 +187,10 @@ public class ZMQ
 
     public static final Charset CHARSET = Charset.forName("UTF-8");
 
+    public static final byte[] PROXY_PAUSE     = "PAUSE".getBytes(ZMQ.CHARSET);
+    public static final byte[] PROXY_RESUME    = "RESUME".getBytes(ZMQ.CHARSET);
+    public static final byte[] PROXY_TERMINATE = "TERMINATE".getBytes(ZMQ.CHARSET);
+
     public static class Event
     {
         private static final int VALUE_INTEGER = 1;

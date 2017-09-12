@@ -4,6 +4,7 @@ import java.nio.ByteBuffer;
 import java.util.HashSet;
 import java.util.Set;
 
+import zmq.Msg;
 import zmq.pipe.Pipe;
 import zmq.util.Utils;
 
@@ -32,19 +33,19 @@ class Mtrie
         next = null;
     }
 
-    public boolean add(byte[] prefix, Pipe pipe)
+    final boolean addOnTop(Pipe pipe)
     {
-        return addHelper(prefix, 0, 0, pipe);
+        return addHelper(null, 0, 0, pipe);
     }
 
     //  Add key to the trie. Returns true if it's a new subscription
     //  rather than a duplicate.
-    public boolean add(byte[] prefix, int size, Pipe pipe)
+    public boolean add(Msg msg, Pipe pipe)
     {
-        return addHelper(prefix, 1, size - 1, pipe);
+        return addHelper(msg, 1, msg.size() - 1, pipe);
     }
 
-    private boolean addHelper(byte[] prefix, int start, int size, Pipe pipe)
+    private boolean addHelper(Msg msg, int start, int size, Pipe pipe)
     {
         //  We are at the node corresponding to the prefix. We are done.
         if (size == 0) {
@@ -56,7 +57,7 @@ class Mtrie
             return result;
         }
 
-        byte c = prefix[start];
+        byte c = msg.get(start);
         if (c < min || c >= min + count) {
             //  The character is out of range of currently handled
             //  characters. We have to extend the table.
@@ -94,7 +95,7 @@ class Mtrie
                 ++liveNodes;
                 //alloc_assert (next.node);
             }
-            return next[0].addHelper(prefix, start + 1, size - 1, pipe);
+            return next[0].addHelper(msg, start + 1, size - 1, pipe);
         }
         else {
             if (next[c - min] == null) {
@@ -102,7 +103,7 @@ class Mtrie
                 ++liveNodes;
                 //alloc_assert (next.table [c - min]);
             }
-            return next[c - min].addHelper(prefix, start + 1, size - 1, pipe);
+            return next[c - min].addHelper(msg, start + 1, size - 1, pipe);
         }
     }
 
@@ -233,12 +234,12 @@ class Mtrie
 
     //  Remove specific subscription from the trie. Return true is it was
     //  actually removed rather than de-duplicated.
-    public boolean rm(byte[] prefix, int size, Pipe pipe)
+    public boolean rm(Msg msg, Pipe pipe)
     {
-        return rmHelper(prefix, 1, size - 1, pipe);
+        return rmHelper(msg, 1, msg.size() - 1, pipe);
     }
 
-    private boolean rmHelper(byte[] prefix, int start, int size, Pipe pipe)
+    private boolean rmHelper(Msg msg, int start, int size, Pipe pipe)
     {
         if (size == 0) {
             if (pipes != null) {
@@ -251,7 +252,7 @@ class Mtrie
             return pipes == null;
         }
 
-        byte c = prefix[start];
+        byte c = msg.get(start);
         if (count == 0 || c < min || c >= min + count) {
             return false;
         }
@@ -262,7 +263,7 @@ class Mtrie
             return false;
         }
 
-        boolean ret = nextNode.rmHelper(prefix, start + 1, size - 1, pipe);
+        boolean ret = nextNode.rmHelper(msg, start + 1, size - 1, pipe);
         if (nextNode.isRedundant()) {
             assert (count > 0);
 

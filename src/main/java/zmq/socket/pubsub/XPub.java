@@ -81,7 +81,7 @@ public class XPub extends SocketBase
         //  If subscribe_to_all_ is specified, the caller would like to subscribe
         //  to all data on this pipe, implicitly.
         if (subscribeToAll) {
-            subscriptions.add(null, pipe);
+            subscriptions.addOnTop(pipe);
         }
 
         //  The pipe is active when attached. Let's read the subscriptions from
@@ -96,20 +96,19 @@ public class XPub extends SocketBase
         Msg sub;
         while ((sub = pipe.read()) != null) {
             //  Apply the subscription to the trie
-            byte[] data = sub.data();
             int size = sub.size();
-            if (size > 0 && (data[0] == 0 || data[0] == 1)) {
+            if (size > 0 && (sub.get(0) == 0 || sub.get(0) == 1)) {
                 boolean unique;
-                if (data[0] == 0) {
-                    unique = subscriptions.rm(data, size, pipe);
+                if (sub.get(0) == 0) {
+                    unique = subscriptions.rm(sub, pipe);
                 }
                 else {
-                    unique = subscriptions.add(data, size, pipe);
+                    unique = subscriptions.add(sub, pipe);
                 }
 
                 //  If the subscription is not a duplicate, store it so that it can be
                 //  passed to used on next recv call. (Unsubscribe is not verbose.)
-                if (options.type == ZMQ.ZMQ_XPUB && (unique || (data[0] > 0 && verbose))) {
+                if (options.type == ZMQ.ZMQ_XPUB && (unique || (sub.get(0) > 0 && verbose))) {
                     pendingData.add(Blob.createBlob(sub));
                     pendingFlags.add(0);
                 }

@@ -1,6 +1,8 @@
 package org.zeromq;
 
-import java.util.Arrays;
+import java.io.Closeable;
+import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -11,7 +13,7 @@ import org.zeromq.ZMQ.Socket;
  * connected, listen, disconnected, etc. Socket events are only available
  * for sockets connecting or bound to ipc:// and tcp:// endpoints.
  */
-public class ZMonitor
+public class ZMonitor implements Closeable
 {
     /**
      * High-level representation of an event.
@@ -110,8 +112,12 @@ public class ZMonitor
      */
     public final ZMonitor start()
     {
-        control.send(START);
-        control.recv();
+        if (started) {
+            System.out.println("ZMonitor: Unable to start while already started.");
+            return this;
+        }
+        agent.send(START);
+        agent.recv();
         started = true;
         return this;
     }
@@ -120,7 +126,8 @@ public class ZMonitor
      * Stops the monitoring and closes the actor.
      * When returning from that call, ZMonitor will be no more active.
      */
-    public final void close()
+    @Override
+    public final void close() throws IOException
     {
         destroy();
     }
@@ -131,22 +138,25 @@ public class ZMonitor
      */
     public final void destroy()
     {
-        control.send(CLOSE);
+        agent.send(CLOSE);
         exit.awaitSilent();
-        control.close();
-        events.close();
+        agent.close();
     }
 
     /**
      * Sets verbosity of the monitor.
-     * @param verbose
+     * @param verbose true for monitor to be verbose, otherwise false.
      * @return this instance.
      */
     public final ZMonitor verbose(boolean verbose)
     {
-        control.send(VERBOSE, true);
-        control.send(Boolean.toString(verbose));
-        control.recv();
+        if (started) {
+            System.out.println("ZMonitor: Unable to change verbosity while already started.");
+            return this;
+        }
+        agent.send(VERBOSE, true);
+        agent.send(Boolean.toString(verbose));
+        agent.recv();
         return this;
     }
 
@@ -158,7 +168,7 @@ public class ZMonitor
     public final ZMonitor add(Event... events)
     {
         if (started) {
-            System.out.println("Unable to add events while already started.");
+            System.out.println("ZMonitor: Unable to add events while already started.");
             return this;
         }
         ZMsg msg = new ZMsg();
@@ -166,8 +176,8 @@ public class ZMonitor
         for (Event evt : events) {
             msg.add(evt.name());
         }
-        control.send(msg);
-        control.recv();
+        agent.send(msg);
+        agent.recv();
         return this;
     }
 
@@ -179,7 +189,7 @@ public class ZMonitor
     public final ZMonitor remove(Event... events)
     {
         if (started) {
-            System.out.println("Unable to remove events while already started.");
+            System.out.println("ZMonitor: Unable to remove events while already started.");
             return this;
         }
         ZMsg msg = new ZMsg();
@@ -187,8 +197,8 @@ public class ZMonitor
         for (Event evt : events) {
             msg.add(evt.name());
         }
-        control.send(msg);
-        control.recv();
+        agent.send(msg);
+        agent.recv();
         return this;
     }
 
@@ -208,7 +218,11 @@ public class ZMonitor
      */
     public final ZEvent nextEvent(boolean wait)
     {
-        ZMsg msg = events.recv(wait);
+        if (!started) {
+            System.out.println("ZMonitor: Start before getting events.");
+            return null;
+        }
+        ZMsg msg = agent.recv(wait);
         if (msg == null) {
             return null;
         }
@@ -217,12 +231,16 @@ public class ZMonitor
 
     /**
      * Gets the next event, blocking for it until available if requested.
-     * @param timeout the time in milliseconds to wait for a message before returning null
+     * @param timeout the time in milliseconds to wait for a message before returning null, -1 to block.
      * @return the next event or null if there is currently none after the specified timeout.
      */
     public final ZEvent nextEvent(int timeout)
     {
-        ZMsg msg = events.recv(timeout);
+        if (!started) {
+            System.out.println("ZMonitor: Start before getting events.");
+            return null;
+        }
+        ZMsg msg = agent.recv(timeout);
         if (msg == null) {
             return null;
         }
@@ -235,28 +253,26 @@ public class ZMonitor
     private static final String ADD_EVENTS    = "ADD_EVENTS";
     private static final String REMOVE_EVENTS = "REMOVE_EVENTS";
 
-    private final ZAgent     control;
+    private final ZAgent     agent;
     private final ZStar.Exit exit;
-    private final ZAgent     events;
 
-    public ZMonitor(Socket socket)
-    {
-        this(null, socket);
-
-    }
-
+    /**
+     * Creates a monitoring actor for the given socket.
+     * @param ctx the context relative to this actor. Not null.
+     * @param socket the socket to monitor for events. Not null.
+     */
     public ZMonitor(ZContext ctx, Socket socket)
     {
+        assert (ctx != null);
         assert (socket != null);
         final MonitorActor actor = new MonitorActor(socket);
         final ZActor zactor = new ZActor(ctx, actor, UUID.randomUUID().toString());
 
-        control = zactor.agent();
+        agent = zactor.agent();
         exit = zactor.exit();
-        events = actor.createAgent(ctx);
 
         // wait for the start of the actor
-        control.recv().destroy();
+        agent.recv().destroy();
     }
 
     private static class MonitorActor extends ZActor.SimpleActor
@@ -269,7 +285,6 @@ public class ZMonitor
 
         private Socket  monitor; // the monitoring socket
         private int     events;  // the events to monitor
-        private Socket  out;     // where will be sent the monitored events
         private boolean verbose;
 
         public MonitorActor(ZMQ.Socket socket)
@@ -277,14 +292,6 @@ public class ZMonitor
             assert (socket != null);
             this.monitored = socket;
             this.address = String.format("inproc://zmonitor-%s-%s", socket.hashCode(), UUID.randomUUID().toString());
-        }
-
-        public ZAgent createAgent(ZContext ctx)
-        {
-            Socket pipe = ctx.createSocket(ZMQ.PAIR);
-            boolean rc = pipe.connect(address + "-events");
-            assert (rc);
-            return new ZAgent.SimpleAgent(pipe, address + "-events");
         }
 
         @Override
@@ -299,17 +306,12 @@ public class ZMonitor
             monitor = ctx.createSocket(ZMQ.PAIR);
             assert (monitor != null);
 
-            out = ctx.createSocket(ZMQ.PAIR);
-            assert (out != null);
-
-            return Arrays.asList(monitor, out);
+            return Collections.singletonList(monitor);
         }
 
         @Override
         public void start(Socket pipe, List<Socket> sockets, ZPoller poller)
         {
-            boolean rc = out.bind(address + "-events");
-            assert (rc);
             pipe.send("STARTED");
         }
 
@@ -334,7 +336,7 @@ public class ZMonitor
             if (value != null) {
                 msg.add(value.toString());
             }
-            return msg.send(out, true);
+            return msg.send(pipe, true);
         }
 
         @Override
@@ -418,10 +420,8 @@ public class ZMonitor
             if (rc) {
                 return pipe.send(OK);
             }
-            else {
-                pipe.send(ERROR);
-            }
-            return rc;
+            pipe.send(ERROR);
+            return false;
         }
 
         private boolean close(ZPoller poller, Socket pipe)
@@ -434,7 +434,6 @@ public class ZMonitor
             }
             log("top", rc, err);
 
-            out.send(address + "-events"); // lock the events pipe
             if (verbose) {
                 System.out.printf("ZMonitor: Closing monitor %s%n", monitored);
             }

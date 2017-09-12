@@ -103,20 +103,19 @@ public class XSub extends SocketBase
     protected boolean xsend(Msg msg)
     {
         final int size = msg.size();
-        final byte[] data = msg.data();
 
-        if (size > 0 && data[0] == 1) {
+        if (size > 0 && msg.get(0) == 1) {
             //  Process subscribe message
             //  This used to filter out duplicate subscriptions,
             //  however this is already done on the XPUB side and
             //  doing it here as well breaks ZMQ_XPUB_VERBOSE
             //  when there are forwarding devices involved.
-            subscriptions.add(data, 1, size - 1);
+            subscriptions.add(msg, 1, size - 1);
             return dist.sendToAll(msg);
         }
-        else if (size > 0 && data[0] == 0) {
+        else if (size > 0 && msg.get(0) == 0) {
             //  Process unsubscribe message
-            if (subscriptions.rm(data, 1, size - 1)) {
+            if (subscriptions.rm(msg, 1, size - 1)) {
                 return dist.sendToAll(msg);
             }
         }

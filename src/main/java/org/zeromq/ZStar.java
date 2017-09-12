@@ -269,7 +269,7 @@ public class ZStar implements ZAgent
      */
     public ZStar(Fortune actor, String lock, Object... args)
     {
-        this(null, new VerySimpleSelectorCreator(), actor, lock, args);
+        this(new VerySimpleSelectorCreator(), actor, lock, args);
     }
 
     /**
@@ -321,6 +321,8 @@ public class ZStar implements ZAgent
             // it will be destroyed, so this is the main context
             producer = chef;
         }
+        this.context = chef;
+        assert (this.context != null);
 
         // retrieve the last optional set and entourage given in input
         Set set = null;
@@ -354,6 +356,9 @@ public class ZStar implements ZAgent
         agent = agent(phone, motdelafin);
     }
 
+    // context of the star. never null
+    private final ZContext context;
+
     // communicating agent with the star for the Corbeille side
     private final ZAgent agent;
 
@@ -374,6 +379,14 @@ public class ZStar implements ZAgent
     protected ZAgent agent(Socket phone, String secret)
     {
         return ZAgent.Creator.create(phone, secret);
+    }
+
+    /**
+     * @return the context. Never null. If provided context in constructor was null, returns the auto-generated context for that star.
+     */
+    private ZContext context()
+    {
+        return context;
     }
 
     // the plateau where the acting will take place (stage and backstage), or

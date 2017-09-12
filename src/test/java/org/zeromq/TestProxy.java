@@ -237,7 +237,7 @@ public class TestProxy
         Context ctx = ZMQ.context(1);
         Socket control = ctx.socket(ZMQ.PAIR);
         control.connect(controlEndpoint);
-        control.send("TERMINATE");
+        control.send(ZMQ.PROXY_TERMINATE);
         proxy.join();
         control.close();
         ctx.close();
