@@ -698,9 +698,7 @@ public class ZAuth implements Closeable
 
             String command = msg.popString();
             if (command == null) {
-                if (verbose) {
-                    System.out.println("ZAuth: NULL command");
-                }
+                System.out.printf("ZAuth: Closing auth: No command%n");
                 return false; //interrupted
             }
             boolean rc;

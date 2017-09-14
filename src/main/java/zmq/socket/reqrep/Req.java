@@ -278,7 +278,7 @@ public class Req extends Dealer
             default:
                 break;
             }
-            errno(ZError.EFAULT);
+            errno.set(ZError.EFAULT);
             return false;
         }
 

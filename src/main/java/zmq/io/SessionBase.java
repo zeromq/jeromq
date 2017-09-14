@@ -626,9 +626,4 @@ public class SessionBase extends Own implements Pipe.IPipeEvents, IPollEvents
     {
         super.incSeqnum();
     }
-
-    public void errno(int error)
-    {
-        socket.errno.set(error);
-    }
 }

@@ -140,12 +140,14 @@ public class ZPoller implements Closeable
         {
             super(socket, ops);
             this.handler = handler;
+            assert (item() != null);
         }
 
         public ZPollItem(final SelectableChannel channel, final EventsHandler handler, final int ops)
         {
             super(channel, ops);
             this.handler = handler;
+            assert (item() != null);
         }
 
         @Override
@@ -185,14 +187,11 @@ public class ZPoller implements Closeable
                 return false;
             }
             ItemHolder other = (ItemHolder) obj;
-            if (item() == null) {
-                if (other.item() != null) {
-                    return false;
-                }
-            }
-            else if (!item().equals(other.item())) {
+            // this.item() is never null
+            if (other.item() == null) {
                 return false;
             }
+            // no checking on item() as zmq.PollItem does not override equals()
             if (item().getRawSocket() == null) {
                 if (other.item().getRawSocket() != null) {
                     return false;
@@ -721,9 +720,7 @@ public class ZPoller implements Closeable
     @Override
     public void close() throws IOException
     {
-        // we didn't create the selector,
-        // it is not our responsibility to close it.
-        // selector.close();
+        destroy();
     }
 
     /**
@@ -731,12 +728,8 @@ public class ZPoller implements Closeable
      */
     public void destroy()
     {
-        try {
-            close();
-        }
-        catch (IOException e) {
-            e.printStackTrace();
-        }
+        // we didn't create the selector,
+        // it is not our responsibility to close it.
     }
 
     // selector used for polling
@@ -754,7 +747,7 @@ public class ZPoller implements Closeable
     private EventsHandler globalHandler;
 
     // simple creator for poll items
-    private static class SimpleCreator implements ItemCreator
+    public static class SimpleCreator implements ItemCreator
     {
         @Override
         public ItemHolder create(final Socket socket, final EventsHandler handler, final int events)
@@ -775,15 +768,15 @@ public class ZPoller implements Closeable
         if (socketOrChannel == null) {
             Socket socket = holder.socket();
             SelectableChannel ch = holder.item().getRawSocket();
-            if (socket == null) {
-                // not a socket
-                assert (ch != null);
-                socketOrChannel = ch;
-            }
             if (ch == null) {
                 // not a channel
                 assert (socket != null);
                 socketOrChannel = socket;
+            }
+            else if (socket == null) {
+                // not a socket
+                assert (ch != null);
+                socketOrChannel = ch;
             }
         }
         assert (socketOrChannel != null);

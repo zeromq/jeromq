@@ -14,7 +14,7 @@ public class TestZActor
     @Test
     public void testMinimalistic()
     {
-        Actor acting = new ZActor.SimpleActor()
+        final Actor acting = new ZActor.SimpleActor()
         {
             @Override
             public List<Socket> createSockets(ZContext ctx, Object... args)
@@ -37,10 +37,11 @@ public class TestZActor
                 return true;
             }
         };
-        ZContext context = new ZContext();
-        ZActor actor = new ZActor(context, new ZAgent.VerySimpleSelectorCreator(), acting, "LOCK",
+        final ZContext context = new ZContext();
+        final ZActor.Duo duo = new ZActor.Duo(acting, new ZActor.SimpleActor());
+        final ZActor actor = new ZActor(context, new ZAgent.VerySimpleSelectorCreator(), duo, "LOCK",
                 Arrays.asList("TEST").toArray());
-        Socket pipe = actor.pipe();
+        final Socket pipe = actor.pipe();
         boolean rc = pipe.send("HELLO");
         Assert.assertTrue("Unable to send a message through pipe", rc);
         ZMsg msg = actor.recv();
