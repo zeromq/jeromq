@@ -1,13 +1,24 @@
 package org.zeromq;
 
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.hasItem;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
+
 import java.io.IOException;
 import java.nio.channels.SelectableChannel;
+import java.nio.channels.Selector;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.junit.Assert;
 import org.junit.Test;
 import org.zeromq.ZMQ.Socket;
 import org.zeromq.ZPoller.EventsHandler;
+import org.zeromq.ZPoller.ItemCreator;
+import org.zeromq.ZPoller.ItemHolder;
 
 public class TestZPoller
 {
@@ -55,7 +66,7 @@ public class TestZPoller
                     break;
                 }
                 else {
-                    Assert.fail("unable to get server socket in writable state");
+                    fail("unable to get server socket in writable state");
                 }
             }
             socket.close();
@@ -65,7 +76,7 @@ public class TestZPoller
             }
             catch (IOException e) {
                 e.printStackTrace();
-                Assert.fail("error while closing poller " + e.getMessage());
+                fail("error while closing poller " + e.getMessage());
             }
         }
     }
@@ -108,7 +119,8 @@ public class TestZPoller
                 }
             }
             client.join();
-            Assert.assertNotNull("unable to receive msg after several cycles", msg);
+
+            assertThat("unable to receive msg after several cycles", msg, notNullValue());
         }
         finally {
             receiver.close();
@@ -120,29 +132,30 @@ public class TestZPoller
     @Test
     public void testUseNull() throws IOException
     {
-        ZPoller poller = new ZPoller(new ZStar.VerySimpleSelectorCreator().create());
+        Selector selector = new ZStar.VerySimpleSelectorCreator().create();
+        ZPoller poller = new ZPoller(selector);
 
         SelectableChannel channel = null;
         Socket socket = null; // ctx.createSocket(ZMQ.SUB);
 
         boolean rc = false;
         rc = poller.register(socket, ZPoller.IN);
-        Assert.assertFalse("Registering a null socket was successful", rc);
+        assertThat("Registering a null socket was successful", rc, is(false));
         rc = poller.register(channel, ZPoller.OUT);
-        Assert.assertFalse("Registering a null channel was successful", rc);
+        assertThat("Registering a null channel was successful", rc, is(false));
 
         int events = poller.poll(10);
-        Assert.assertEquals("reading event on without sockets", 0, events);
+        assertThat("reading event on without sockets", events, is(0));
 
         rc = poller.isReadable(socket);
-        Assert.assertFalse("checking read event on a null socket was successful", rc);
+        assertThat("checking read event on a null socket was successful", rc, is(false));
         rc = poller.writable(socket);
-        Assert.assertFalse("checking write event on a null socket was successful", rc);
+        assertThat("checking write event on a null socket was successful", rc, is(false));
 
         rc = poller.readable(channel);
-        Assert.assertFalse("checking read event on a null channel was successful", rc);
+        assertThat("checking read event on a null channel was successful", rc, is(false));
         rc = poller.isWritable(channel);
-        Assert.assertFalse("checking write event on a null channel was successful", rc);
+        assertThat("checking write event on a null channel was successful", rc, is(false));
 
         EventsHandler global = null;
 
@@ -150,13 +163,218 @@ public class TestZPoller
 
         EventsHandler handler = null;
         rc = poller.register(socket, handler, ZPoller.ERR);
-        Assert.assertFalse("Register with handler on a null socket was successful", rc);
+        assertThat("Register with handler on a null socket was successful", rc, is(false));
         rc = poller.register(channel, ZPoller.ERR);
-        Assert.assertFalse("Register with handler on a null channel was successful", rc);
+        assertThat("Register with handler on a null channel was successful", rc, is(false));
 
         events = poller.poll(10);
-        Assert.assertEquals("reading event with events handlers without sockets", 0, events);
+        assertThat("reading event with events handlers without sockets", events, is(0));
 
         poller.close();
+        selector.close();
+    }
+
+    @Test
+    public void testZPollerNew() throws IOException
+    {
+        ZContext ctx = new ZContext();
+        ZPoller poller = new ZPoller(ctx);
+        try {
+            ZPoller other = new ZPoller(poller);
+            other.close();
+
+            ItemCreator itemCreator = new ZPoller.SimpleCreator();
+            other = new ZPoller(itemCreator, poller);
+            other.close();
+        }
+        finally {
+            poller.close();
+            ctx.close();
+        }
+    }
+
+    @Test
+    public void testGlobalHandler() throws IOException
+    {
+        ZContext ctx = new ZContext();
+        ZPoller poller = new ZPoller(ctx);
+        try {
+            assertThat(poller.getGlobalHandler(), nullValue());
+            EventsHandler handler = new EventsHandlerAdapter();
+            poller.setGlobalHandler(handler);
+            assertThat(poller.getGlobalHandler(), is(handler));
+        }
+        finally {
+            poller.close();
+            ctx.close();
+        }
+    }
+
+    @SuppressWarnings("unlikely-arg-type")
+    @Test
+    public void testItemEqualsBasic() throws IOException
+    {
+        ZContext ctx = new ZContext();
+
+        ItemCreator itemCreator = new ZPoller.SimpleCreator();
+        ZPoller poller = new ZPoller(itemCreator, ctx);
+
+        try {
+            Socket socket = ctx.createSocket(ZMQ.ROUTER);
+            ItemHolder holder = itemCreator.create(socket, null, 0);
+
+            assertThat(holder, is(holder));
+            assertThat(holder, is(not(equalTo(null))));
+
+            assertThat(holder.equals(""), is(false));
+        }
+        finally {
+            poller.close();
+            ctx.close();
+        }
+    }
+
+    @Test
+    public void testItemEquals() throws IOException
+    {
+        ZContext ctx = new ZContext();
+        ItemCreator itemCreator = new ZPoller.SimpleCreator();
+        ZPoller poller = new ZPoller(itemCreator, ctx);
+
+        try {
+            Socket socket = ctx.createSocket(ZMQ.ROUTER);
+            ItemHolder holder = poller.create(socket, null, 0);
+
+            ItemHolder other = new ZPoller.ZPollItem(socket, null, 0);
+            assertThat(other, is(equalTo(holder)));
+
+            other = new ZPoller.ZPollItem(socket, new EventsHandlerAdapter(), 0);
+            assertThat(other, is(not(equalTo(holder))));
+
+            socket = ctx.createSocket(ZMQ.ROUTER);
+            other = new ZPoller.ZPollItem(socket, null, 0);
+            assertThat(other, is(not(equalTo(holder))));
+
+            other = itemCreator.create((SelectableChannel) null, null, 0);
+            assertThat(other, is(not(equalTo(holder))));
+
+            holder = poller.create(socket, new EventsHandlerAdapter(), 0);
+            other = new ZPoller.ZPollItem(socket, new EventsHandlerAdapter(), 0);
+            assertThat(other, is(not(equalTo(holder))));
+        }
+        finally {
+            poller.close();
+            ctx.close();
+        }
+    }
+
+    @Test
+    public void testReadable() throws IOException
+    {
+        ZContext ctx = new ZContext();
+        ZPoller poller = new ZPoller(ctx);
+        try {
+            Socket socket = ctx.createSocket(ZMQ.XPUB);
+            poller.register(socket, new EventsHandlerAdapter());
+
+            boolean rc = poller.readable(socket);
+            assertThat(rc, is(false));
+
+            rc = poller.isReadable(socket);
+            assertThat(rc, is(false));
+
+            rc = poller.pollin(socket);
+            assertThat(rc, is(false));
+        }
+        finally {
+            poller.close();
+            ctx.close();
+        }
+    }
+
+    @Test
+    public void testWritable() throws IOException
+    {
+        ZContext ctx = new ZContext();
+        ZPoller poller = new ZPoller(ctx);
+        try {
+            Socket socket = ctx.createSocket(ZMQ.XPUB);
+            poller.register(socket, ZPoller.OUT);
+
+            boolean rc = poller.writable(socket);
+            assertThat(rc, is(false));
+
+            rc = poller.isWritable(socket);
+            assertThat(rc, is(false));
+
+            rc = poller.pollout(socket);
+            assertThat(rc, is(false));
+        }
+        finally {
+            poller.close();
+            ctx.close();
+        }
+    }
+
+    @Test
+    public void testError() throws IOException
+    {
+        ZContext ctx = new ZContext();
+        ZPoller poller = new ZPoller(ctx);
+        try {
+            Socket socket = ctx.createSocket(ZMQ.XPUB);
+            poller.register(socket, ZPoller.ERR);
+
+            boolean rc = poller.error(socket);
+            assertThat(rc, is(false));
+
+            rc = poller.isError(socket);
+            assertThat(rc, is(false));
+
+            rc = poller.pollerr(socket);
+            assertThat(rc, is(false));
+        }
+        finally {
+            poller.close();
+            ctx.close();
+        }
+    }
+
+    @Test
+    public void testRegister() throws IOException
+    {
+        ZContext ctx = new ZContext();
+        ZPoller poller = new ZPoller(ctx);
+        try {
+            Socket socket = ctx.createSocket(ZMQ.XPUB);
+            ItemHolder holder = poller.create(socket, null, 0);
+            boolean rc = poller.register(holder);
+            assertThat(rc, is(true));
+        }
+        finally {
+            poller.close();
+            ctx.close();
+        }
+    }
+
+    @Test
+    public void testItems() throws IOException
+    {
+        ZContext ctx = new ZContext();
+        ZPoller poller = new ZPoller(ctx);
+        try {
+            Socket socket = ctx.createSocket(ZMQ.XPUB);
+            Iterable<ItemHolder> items = poller.items(null);
+            assertThat(items, notNullValue());
+
+            ItemHolder holder = poller.create(socket, null, 0);
+            poller.register(holder);
+            items = poller.items(socket);
+            assertThat(items, hasItem(holder));
+        }
+        finally {
+            poller.close();
+            ctx.close();
+        }
     }
 }

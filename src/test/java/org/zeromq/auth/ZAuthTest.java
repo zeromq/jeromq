@@ -639,6 +639,9 @@ public class ZAuthTest
             ZAuth.ZapReply reply = auth.nextReply(true);
             assertThat(reply, nullValue());
 
+            reply = auth.nextReply(1);
+            assertThat(reply, nullValue());
+
             auth.close();
         }
         finally {

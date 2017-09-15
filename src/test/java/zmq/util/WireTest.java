@@ -10,6 +10,17 @@ import org.junit.Test;
 public class WireTest
 {
     @Test
+    public void testUint16()
+    {
+        testUint16(0);
+        testUint16(0xff);
+        testUint16(0xff + 1);
+        testUint16(0xff - 1);
+        testUint16(0xffff - 1);
+        testUint16(0xffff);
+    }
+
+    @Test
     public void testUint32()
     {
         testUint32(0);
@@ -37,6 +48,13 @@ public class WireTest
         ByteBuffer buf = ByteBuffer.allocate(8);
         Wire.putUInt32(buf, expected);
         int actual = Wire.getUInt32(buf);
+        assertThat(actual, is(expected));
+    }
+
+    private void testUint16(int expected)
+    {
+        byte[] buf = Wire.putUInt16(expected);
+        int actual = Wire.getUInt16(buf);
         assertThat(actual, is(expected));
     }
 

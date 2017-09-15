@@ -19,9 +19,10 @@ public class Wire
 
     public static byte[] putUInt16(int value)
     {
+        assert (value >= 0); // it has to be an *unsigned* int
         byte[] bytes = new byte[2];
 
-        bytes[0] = (byte) (value >>> 8);
+        bytes[0] = (byte) ((value >>> 8) & 0xff);
         bytes[1] = (byte) (value & 0xff);
 
         return bytes;
@@ -51,6 +52,7 @@ public class Wire
 
     public static byte[] putUInt32(int value)
     {
+        assert (value >= 0); // it has to be an *unsigned* int
         byte[] bytes = new byte[4];
 
         bytes[0] = (byte) ((value >>> 24) & 0xff);
