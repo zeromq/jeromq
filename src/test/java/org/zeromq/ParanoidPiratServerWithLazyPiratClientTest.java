@@ -422,7 +422,7 @@ public class ParanoidPiratServerWithLazyPiratClientTest
         }
     }
 
-//    @Test
+    //    @Test
     public void testRepeated() throws IOException, InterruptedException, ExecutionException
     {
         for (int idx = 0; idx < 300; ++idx) {
@@ -469,6 +469,6 @@ public class ParanoidPiratServerWithLazyPiratClientTest
         assertThat(service.awaitTermination(10, TimeUnit.SECONDS), is(true));
 
         final long end = System.currentTimeMillis();
-        System.out.printf("Test with Paranoid Server and Lazy client completed in %s millis", end - start);
+        System.out.printf("Test with Paranoid Server and Lazy client completed in %s millis%n", end - start);
     }
 }
