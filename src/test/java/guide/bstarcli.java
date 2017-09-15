@@ -1,7 +1,5 @@
 package guide;
 
-import java.nio.channels.Selector;
-
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQ.Poller;
@@ -17,7 +15,6 @@ public class bstarcli
     public static void main(String[] argv) throws Exception
     {
         ZContext ctx = new ZContext();
-        Selector selector = ctx.createSelector();
         String[] server = { "tcp://localhost:5001", "tcp://localhost:5002" };
         int serverNbr = 0;
 

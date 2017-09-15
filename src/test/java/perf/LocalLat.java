@@ -39,7 +39,7 @@ public class LocalLat
 
         s = ZMQ.socket(ctx, ZMQ.ZMQ_REP);
         if (s == null) {
-            printf("error in socket: %s\n", ZMQ.strerror(s.errno()));
+            printf("error in socket: %s\n", ZMQ.strerror(ctx.errno().get()));
             return;
         }
 

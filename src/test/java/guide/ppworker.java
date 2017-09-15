@@ -1,6 +1,5 @@
 package guide;
 
-import java.nio.channels.Selector;
 import java.util.Random;
 
 import org.zeromq.ZContext;
@@ -49,7 +48,6 @@ public class ppworker
     public static void main(String[] args)
     {
         ZContext ctx = new ZContext();
-        Selector selector = ctx.createSelector();
         Socket worker = worker_socket(ctx);
 
         Poller poller = ctx.createPoller(1);

@@ -1,6 +1,5 @@
 package guide;
 
-import java.nio.channels.Selector;
 import java.util.ArrayList;
 
 import org.zeromq.ZContext;
@@ -23,7 +22,6 @@ public class spqueue
     public static void main(String[] args)
     {
         ZContext ctx = new ZContext();
-        Selector selector = ctx.createSelector();
         Socket frontend = ctx.createSocket(ZMQ.ROUTER);
         Socket backend = ctx.createSocket(ZMQ.ROUTER);
         frontend.bind("tcp://*:5555"); //  For clients

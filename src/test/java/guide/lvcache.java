@@ -1,6 +1,5 @@
 package guide;
 
-import java.nio.channels.Selector;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -17,7 +16,6 @@ public class lvcache
     public static void main(String[] args)
     {
         ZContext context = new ZContext();
-        Selector selector = context.createSelector();
         Socket frontend = context.createSocket(ZMQ.SUB);
         frontend.bind("tcp://*:5557");
         Socket backend = context.createSocket(ZMQ.XPUB);

@@ -1,7 +1,5 @@
 package guide;
 
-import java.nio.channels.Selector;
-
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQ.Poller;
@@ -17,7 +15,6 @@ public class flclient1
 
     private static ZMsg tryRequest(ZContext ctx, String endpoint, ZMsg request)
     {
-        Selector selector = ctx.createSelector();
         System.out.printf("I: trying echo service at %s...\n", endpoint);
         Socket client = ctx.createSocket(ZMQ.REQ);
         client.connect(endpoint);
