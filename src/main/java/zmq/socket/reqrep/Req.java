@@ -61,9 +61,6 @@ public class Req extends Dealer
                 return false;
             }
 
-            if (replyPipe.get() != null) {
-                replyPipe.get().terminate(false);
-            }
             receivingReply = false;
             messageBegins = true;
         }

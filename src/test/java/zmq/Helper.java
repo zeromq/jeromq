@@ -225,7 +225,7 @@ public class Helper
 
     public static int sendMore(SocketBase socket, String data)
     {
-        return ZMQ.send(socket, data, ZMQ.ZMQ_MORE);
+        return ZMQ.send(socket, data, ZMQ.ZMQ_SNDMORE);
     }
 
     public static String recv(SocketBase socket)
@@ -256,12 +256,10 @@ public class Helper
     public static void recvSeq(SocketBase socket, String... data)
     {
         String rc;
-        for (int idx = 0; idx < data.length - 1; ++idx) {
+        for (int idx = 0; idx < data.length; ++idx) {
             rc = recv(socket);
             assert (data[idx].equals(rc));
         }
-        rc = recv(socket);
-        assert (data[data.length - 1].equals(rc));
     }
 
     public static void send(Socket sa, String data) throws IOException
