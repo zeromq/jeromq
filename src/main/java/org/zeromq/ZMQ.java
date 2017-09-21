@@ -2075,6 +2075,68 @@ public class ZMQ
         }
 
         /**
+         * Sets the domain for ZAP (ZMQ RFC 27) authentication.
+         * For NULL security (the default on all tcp:// connections),
+         * ZAP authentication only happens if you set a non-empty domain.
+         * For PLAIN and CURVE security, ZAP requests are always made, if there is a ZAP handler present.
+         * See http://rfc.zeromq.org/spec:27 for more details.
+         *
+         * @param domain the domain of ZAP authentication
+         * @return true if the option was set
+         * @see #getZapDomain()
+         */
+        public boolean setZAPDomain(String domain)
+        {
+            return setZapDomain(domain);
+        }
+
+        /**
+         * Sets the domain for ZAP (ZMQ RFC 27) authentication.
+         * For NULL security (the default on all tcp:// connections),
+         * ZAP authentication only happens if you set a non-empty domain.
+         * For PLAIN and CURVE security, ZAP requests are always made, if there is a ZAP handler present.
+         * See http://rfc.zeromq.org/spec:27 for more details.
+         *
+         * @param domain the domain of ZAP authentication
+         * @return true if the option was set
+         * @see #getZapDomain()
+         */
+        public boolean setZAPDomain(byte[] domain)
+        {
+            return setZapDomain(domain);
+        }
+
+        /**
+         * The ZMQ_ZAP_DOMAIN option shall retrieve the last ZAP domain set for the socket.
+         * The returned value MAY be empty.
+         *
+         * @return the domain of ZAP authentication
+         * @see #setZapDomain(String)
+         */
+        public String getZAPDomain()
+        {
+            return getZapDomain();
+        }
+
+        /**
+         * Defines whether the socket will act as server for PLAIN security, see zmq_plain(7).
+         * A value of true means the socket will act as PLAIN server.
+         * A value of false means the socket will not act as PLAIN server,
+         * and its security role then depends on other option settings.
+         * Setting this to false shall reset the socket security to NULL.
+         *
+         * @param server true if the role of the socket should be server for PLAIN security.
+         * @return true if the option was set, otherwise false.
+         * @deprecated the naming is inconsistent with jzmq, please use {@link #setPlainServer(boolean)} instead
+         * @see #isAsServerPlain()
+         */
+        @Deprecated
+        public boolean setAsServerPlain(boolean server)
+        {
+            return setPlainServer(server);
+        }
+
+        /**
          * Defines whether the socket will act as server for PLAIN security, see zmq_plain(7).
          * A value of true means the socket will act as PLAIN server.
          * A value of false means the socket will not act as PLAIN server,
@@ -2085,7 +2147,7 @@ public class ZMQ
          * @return true if the option was set, otherwise false.
          * @see #isAsServerPlain()
          */
-        public boolean setAsServerPlain(boolean server)
+        public boolean setPlainServer(boolean server)
         {
             return setSocketOpt(zmq.ZMQ.ZMQ_PLAIN_SERVER, server);
         }
@@ -2094,11 +2156,26 @@ public class ZMQ
          * Returns the ZMQ_PLAIN_SERVER option, if any, previously set on the socket.
          *
          * @return true if the role of the socket should be server for the PLAIN mechanism.
+         * @deprecated the naming is inconsistent with jzmq, please use {@link #getPlainServer()} instead
          * @see #setAsServerPlain(boolean)
          */
+        @Deprecated
         public boolean isAsServerPlain()
         {
-            return (Boolean) base.getSocketOptx(zmq.ZMQ.ZMQ_PLAIN_SERVER);
+            return getPlainServer();
+        }
+
+        /**
+         * Returns the ZMQ_PLAIN_SERVER option, if any, previously set on the socket.
+         *
+         * @return true if the role of the socket should be server for the PLAIN mechanism.
+         * @deprecated the naming is inconsistent with jzmq, please use {@link #getPlainServer()} instead
+         * @see #setAsServerPlain(boolean)
+         */
+        @Deprecated
+        public boolean getAsServerPlain()
+        {
+            return getPlainServer();
         }
 
         /**
@@ -2107,9 +2184,9 @@ public class ZMQ
          * @return true if the role of the socket should be server for the PLAIN mechanism.
          * @see #setAsServerPlain(boolean)
          */
-        public boolean getAsServerPlain()
+        public boolean getPlainServer()
         {
-            return isAsServerPlain();
+            return (Boolean) base.getSocketOptx(zmq.ZMQ.ZMQ_PLAIN_SERVER);
         }
 
         /**
@@ -2200,9 +2277,29 @@ public class ZMQ
          *
          * @param server true if the role of the socket should be server for CURVE mechanism
          * @return true if the option was set
+         * @deprecated the naming is inconsistent with jzmq, please use {@link #setCurveServer(boolean)} instead
          * @see #isAsServerCurve()
          */
+        @Deprecated
         public boolean setAsServerCurve(boolean server)
+        {
+            return setCurveServer(server);
+        }
+
+        /**
+         * Defines whether the socket will act as server for CURVE security, see zmq_curve(7).
+         * A value of true means the socket will act as CURVE server.
+         * A value of false means the socket will not act as CURVE server,
+         * and its security role then depends on other option settings.
+         * Setting this to false shall reset the socket security to NULL.
+         * When you set this you must also set the server's secret key using the ZMQ_CURVE_SECRETKEY option.
+         * A server socket does not need to know its own public key.
+         *
+         * @param server true if the role of the socket should be server for CURVE mechanism
+         * @return true if the option was set
+         * @see #isAsServerCurve()
+         */
+        public boolean setCurveServer(boolean server)
         {
             return setSocketOpt(zmq.ZMQ.ZMQ_CURVE_SERVER, server);
         }
@@ -2211,11 +2308,13 @@ public class ZMQ
          * Tells if the socket will act as server for CURVE security.
          *
          * @return true if the role of the socket should be server for CURVE mechanism.
+         * @deprecated the naming is inconsistent with jzmq, please use {@link #getCurveServer()} instead
          * @see #setAsServerCurve(boolean)
          */
+        @Deprecated
         public boolean isAsServerCurve()
         {
-            return (boolean) base.getSocketOptx(zmq.ZMQ.ZMQ_CURVE_SERVER);
+            return getCurveServer();
         }
 
         /**
@@ -2224,9 +2323,22 @@ public class ZMQ
          * @return true if the role of the socket should be server for CURVE mechanism.
          * @see #setAsServerCurve(boolean)
          */
+        public boolean getCurveServer()
+        {
+            return (boolean) base.getSocketOptx(zmq.ZMQ.ZMQ_CURVE_SERVER);
+        }
+
+        /**
+         * Tells if the socket will act as server for CURVE security.
+         *
+         * @return true if the role of the socket should be server for CURVE mechanism.
+         * @deprecated the naming is inconsistent with jzmq, please use {@link #getCurveServer()} instead
+         * @see #setAsServerCurve(boolean)
+         */
+        @Deprecated
         public boolean getAsServerCurve()
         {
-            return isAsServerCurve();
+            return getCurveServer();
         }
 
         /**
@@ -3312,17 +3424,17 @@ public class ZMQ
         }
     }
 
-    public static void msleep(int millis)
+    public static void msleep(long millis)
     {
         zmq.ZMQ.msleep(millis);
     }
 
-    public static void sleep(int seconds)
+    public static void sleep(long seconds)
     {
         zmq.ZMQ.sleep(seconds);
     }
 
-    public static void sleep(int amount, TimeUnit unit)
+    public static void sleep(long amount, TimeUnit unit)
     {
         zmq.ZMQ.sleep(amount, unit);
     }

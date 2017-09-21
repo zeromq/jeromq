@@ -589,17 +589,17 @@ public class ZMQ
         return data;
     }
 
-    public static void sleep(int seconds)
+    public static void sleep(long seconds)
     {
         sleep(seconds, TimeUnit.SECONDS);
     }
 
-    public static void msleep(int milliseconds)
+    public static void msleep(long milliseconds)
     {
         sleep(milliseconds, TimeUnit.MILLISECONDS);
     }
 
-    public static void sleep(int amount, TimeUnit unit)
+    public static void sleep(long amount, TimeUnit unit)
     {
         LockSupport.parkNanos(TimeUnit.NANOSECONDS.convert(amount, unit));
     }
