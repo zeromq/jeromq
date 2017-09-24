@@ -1185,9 +1185,10 @@ public class ZMQ
          * @return state of the ZMQ_REQ_CORRELATE option.
          * @see #setReqCorrelate(boolean)
          */
+        @Deprecated
         public boolean getReqCorrelate()
         {
-            return base.getSocketOpt(zmq.ZMQ.ZMQ_REQ_CORRELATE) > 0;
+            throw new UnsupportedOperationException();
         }
 
         /**
@@ -1222,9 +1223,10 @@ public class ZMQ
          * @return state of the ZMQ_REQ_RELAXED option.
          * @see #setReqRelaxed(boolean)
          */
+        @Deprecated
         public boolean getReqRelaxed()
         {
-            return base.getSocketOpt(zmq.ZMQ.ZMQ_REQ_CORRELATE) > 0;
+            throw new UnsupportedOperationException();
         }
 
         /**
