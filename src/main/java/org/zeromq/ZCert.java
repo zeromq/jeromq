@@ -3,10 +3,10 @@ package org.zeromq;
 import java.io.File;
 import java.io.IOException;
 
+import org.zeromq.ZMQ.Curve.KeyPair;
 import org.zeromq.util.ZMetadata;
 
 import zmq.Options;
-import zmq.io.mechanism.curve.Curve;
 import zmq.util.Z85;
 
 /**
@@ -35,10 +35,10 @@ import zmq.util.Z85;
  */
 public class ZCert
 {
-    private final byte[]   publicKey;                 //  Public key in binary
-    private final byte[]   secretKey;                 //  Secret key in binary
-    private final String   publicTxt;                 //  Public key in Z85 text
-    private final String   secretTxt;                 //  Secret key in Z85 text
+    private final byte[]    publicKey;                  //  Public key in binary
+    private final byte[]    secretKey;                  //  Secret key in binary
+    private final String    publicTxt;                  //  Public key in Z85 text
+    private final String    secretTxt;                  //  Secret key in Z85 text
     private final ZMetadata metadata = new ZMetadata(); //  Certificate metadata
 
     public ZCert(String publickey)
@@ -46,7 +46,7 @@ public class ZCert
         if (publickey.length() == Options.CURVE_KEYSIZE) {
             // in binary-format
             publicKey = publickey.getBytes(ZMQ.CHARSET);
-            publicTxt = Curve.z85EncodePublic(publicKey);
+            publicTxt = ZMQ.Curve.z85Encode(publicKey);
         }
         else {
             assert (publickey.length() == Options.CURVE_KEYSIZE_Z85);
@@ -60,11 +60,11 @@ public class ZCert
 
     public ZCert()
     {
-        byte[][] keypair = new Curve().keypair();
-        publicKey = keypair[0];
-        publicTxt = Curve.z85EncodePublic(publicKey);
-        secretKey = keypair[1];
-        secretTxt = Curve.z85EncodePublic(secretKey);
+        KeyPair keypair = ZMQ.Curve.generateKeyPair();
+        publicKey = ZMQ.Curve.z85Decode(keypair.publicKey);
+        publicTxt = keypair.publicKey;
+        secretKey = ZMQ.Curve.z85Decode(keypair.secretKey);
+        secretTxt = keypair.secretKey;
     }
 
     public byte[] getPublicKey()

@@ -18,6 +18,7 @@ import zmq.io.coder.IDecoder;
 import zmq.io.coder.IEncoder;
 import zmq.io.mechanism.Mechanisms;
 import zmq.msg.MsgAllocator;
+import zmq.util.Z85;
 
 public class ZMQ
 {
@@ -3439,5 +3440,73 @@ public class ZMQ
     public static void sleep(long amount, TimeUnit unit)
     {
         zmq.ZMQ.sleep(amount, unit);
+    }
+
+    /**
+     * Class that interfaces the generation of CURVE key pairs
+     */
+    public static class Curve
+    {
+        /**
+         * A container for a public and a corresponding secret key
+         */
+        public static class KeyPair
+        {
+            /**
+             * Z85-encoded public key.
+             */
+            public final String publicKey;
+
+            /**
+             * Z85-encoded secret key.
+             */
+            public final String secretKey;
+
+            public KeyPair(final String publicKey, final String secretKey)
+            {
+                this.publicKey = publicKey;
+                this.secretKey = secretKey;
+            }
+        }
+
+        /**
+         * Returns a newly generated random keypair consisting of a public key
+         * and a secret key.
+         *
+         * <p>The keys are encoded using {@link #z85Encode}.</p>
+         *
+         * @return Randomly generated {@link KeyPair}
+         */
+        public static KeyPair generateKeyPair()
+        {
+            String[] keys = new zmq.io.mechanism.curve.Curve().keypairZ85();
+            return new KeyPair(keys[0], keys[1]);
+        }
+
+        /**
+         * The function shall decode given key encoded as Z85 string into byte array.
+         *
+         * <p>The decoding shall follow the ZMQ RFC 32 specification.</p>
+         *
+         * @param key Key to be decoded
+         * @return The resulting key as byte array
+         */
+        public static byte[] z85Decode(String key)
+        {
+            return Z85.decode(key);
+        }
+
+        /**
+         * The function shall encode the binary block specified into a string.
+         *
+         * <p>The encoding shall follow the ZMQ RFC 32 specification.</p>
+         *
+         * @param key Key to be encoded
+         * @return The resulting key as String in Z85
+         */
+        public static String z85Encode(byte[] key)
+        {
+            return zmq.io.mechanism.curve.Curve.z85EncodePublic(key);
+        }
     }
 }
