@@ -17,8 +17,6 @@ import org.zeromq.ZMQ.Socket;
 import org.zeromq.ZMQ.Socket.Mechanism;
 import org.zeromq.util.ZMetadata;
 
-import zmq.io.mechanism.curve.Curve;
-
 /**
  * A ZAuth actor takes over authentication for all incoming connections in
  *  its context. You can whitelist or blacklist peers based on IP address,
@@ -356,7 +354,7 @@ public class ZAuth implements Closeable
                 byte[] clientPublicKey = frame.getData();
                 username = null;
                 password = null;
-                clientKey = Curve.z85EncodePublic(clientPublicKey);
+                clientKey = ZMQ.Curve.z85Encode(clientPublicKey);
                 principal = null;
             }
             else if (zmq.io.mechanism.Mechanisms.GSSAPI.name().equals(mechanism)) {

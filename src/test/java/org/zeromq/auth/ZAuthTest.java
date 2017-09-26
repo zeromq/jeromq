@@ -141,7 +141,7 @@ public class ZAuthTest
 
             //  Create and bind server socket
             ZMQ.Socket server = ctx.createSocket(ZMQ.PUSH);
-//            server.setZapDomain("test"); // no domain, so no NULL authentication mechanism
+            //            server.setZapDomain("test"); // no domain, so no NULL authentication mechanism
             final int port = server.bindToRandomPort("tcp://*");
 
             //  Create and connect client socket
@@ -186,7 +186,7 @@ public class ZAuthTest
 
             //  Create and bind server socket
             ZMQ.Socket server = ctx.createSocket(ZMQ.PUSH);
-            server.setAsServerPlain(true);
+            server.setPlainServer(true);
             server.setZapDomain("global".getBytes());
             final int port = server.bindToRandomPort("tcp://*");
 
@@ -235,7 +235,7 @@ public class ZAuthTest
 
             //  Create and bind server socket
             ZMQ.Socket server = ctx.createSocket(ZMQ.PUSH);
-            server.setAsServerPlain(true);
+            server.setPlainServer(true);
             server.setZapDomain("global".getBytes());
             final int port = server.bindToRandomPort("tcp://*");
 
@@ -287,7 +287,7 @@ public class ZAuthTest
             //  Create and bind server socket
             ZMQ.Socket server = ctx.createSocket(ZMQ.PUSH);
             server.setZapDomain("global".getBytes());
-            server.setAsServerCurve(true);
+            server.setCurveServer(true);
             serverCert.apply(server);
             final int port = server.bindToRandomPort("tcp://*");
 
@@ -353,7 +353,7 @@ public class ZAuthTest
             //  Create and bind server socket
             ZMQ.Socket server = ctx.createSocket(ZMQ.PUSH);
             server.setZapDomain("global".getBytes());
-            server.setAsServerCurve(true);
+            server.setCurveServer(true);
             server.setCurvePublicKey(serverCert.getPublicKey());
             server.setCurveSecretKey(serverCert.getSecretKey());
             final int port = server.bindToRandomPort("tcp://*");
@@ -587,7 +587,7 @@ public class ZAuthTest
             //  Create and bind server socket
             ZMQ.Socket server = ctx.createSocket(ZMQ.PUSH);
             server.setZapDomain("global".getBytes());
-            server.setAsServerCurve(true);
+            server.setCurveServer(true);
             serverCert.apply(server);
             final int port = server.bindToRandomPort("tcp://*");
 

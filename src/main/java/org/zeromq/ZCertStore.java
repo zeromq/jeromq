@@ -15,8 +15,6 @@ import java.util.Map;
 import org.zeromq.util.ZDigest;
 import org.zeromq.util.ZMetadata;
 
-import zmq.io.mechanism.curve.Curve;
-
 /**
  *
     To authenticate new clients using the ZeroMQ CURVE security mechanism,
@@ -183,7 +181,7 @@ public class ZCertStore
         if (publicKey.length != 32) {
             throw new RuntimeException("publickey needs to have a size of 32 bytes. got only " + publicKey.length);
         }
-        return containsPublicKey(Curve.z85EncodePublic(publicKey));
+        return containsPublicKey(ZMQ.Curve.z85Encode(publicKey));
     }
 
     /**
@@ -229,7 +227,7 @@ public class ZCertStore
                         return false;
                     }
                     if (publicKey.length() == 32) { // we want to store the public-key as Z85-String
-                        publicKey = Curve.z85EncodePublic(publicKey.getBytes());
+                        publicKey = ZMQ.Curve.z85Encode(publicKey.getBytes(ZMQ.CHARSET));
                     }
                     assert (publicKey.length() == 40);
                     keys.put(publicKey, ZMetadata.read(zconf));

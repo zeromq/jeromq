@@ -13,7 +13,6 @@ import java.net.Socket;
 import org.junit.Before;
 import org.junit.Test;
 
-import org.zeromq.ZContext;
 import zmq.Ctx;
 import zmq.Helper;
 import zmq.Msg;
@@ -111,25 +110,29 @@ public class SecurityCurveTest
         byte[] clientPublicKey = clientKeyPair[0];
         byte[] clientSecretKey = clientKeyPair[1];
 
-        try (ZContext context = new ZContext()) {
-            org.zeromq.ZMQ.Socket serverSocket = context.createSocket(ZMQ.ZMQ_DEALER);
-            serverSocket.setCurveSecretKey(serverSecretKey);
-            serverSocket.setAsServerCurve(true);
-            serverSocket.bind(connectionString);
+        Ctx context = ZMQ.createContext();
 
-            org.zeromq.ZMQ.Socket clientSocket = context.createSocket(ZMQ.ZMQ_DEALER);
-            clientSocket.setCurveServerKey(serverPublicKey);
-            clientSocket.setCurvePublicKey(clientPublicKey);
-            clientSocket.setCurveSecretKey(clientSecretKey);
-            clientSocket.connect(connectionString);
+        SocketBase server = context.createSocket(ZMQ.ZMQ_DEALER);
+        ZMQ.setSocketOption(server, ZMQ.ZMQ_CURVE_SERVER, true);
+        ZMQ.setSocketOption(server, ZMQ.ZMQ_CURVE_SECRETKEY, serverSecretKey);
+        server.bind(connectionString);
 
-            byte[] testBytes = "hello-world".getBytes();
+        SocketBase client = context.createSocket(ZMQ.ZMQ_DEALER);
+        ZMQ.setSocketOption(client, ZMQ.ZMQ_CURVE_SERVERKEY, serverPublicKey);
+        ZMQ.setSocketOption(client, ZMQ.ZMQ_CURVE_PUBLICKEY, clientPublicKey);
+        ZMQ.setSocketOption(client, ZMQ.ZMQ_CURVE_SECRETKEY, clientSecretKey);
+        client.connect(connectionString);
 
-            clientSocket.send(testBytes);
+        byte[] testBytes = "hello-world".getBytes();
 
-            byte[] recv = serverSocket.recv();
-            assertThat(recv, is(equalTo(testBytes)));
-        }
+        ZMQ.send(client, testBytes, 0);
+
+        byte[] recv = ZMQ.recv(server, 0).data();
+        assertThat(recv, is(equalTo(testBytes)));
+
+        server.close();
+        client.close();
+        context.terminate();
     }
 
     @Test
