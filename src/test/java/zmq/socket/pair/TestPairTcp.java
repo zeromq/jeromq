@@ -99,7 +99,7 @@ public class TestPairTcp
     }
 
     @Test
-    public void testPairMonitorIssue291() throws InterruptedException, IOException
+    public void testPairMonitorBindConnect() throws InterruptedException, IOException
     {
         int port = Utils.findOpenPort();
         String host = "tcp://127.0.0.1:" + port;
@@ -135,6 +135,43 @@ public class TestPairTcp
         //  Tear down the wiring.
         ZMQ.close(bind);
         ZMQ.close(connect);
+        ZMQ.close(monitor);
+        ZMQ.term(ctx);
+    }
+
+    @Test
+    public void testPairMonitorIssue291() throws InterruptedException, IOException
+    {
+        int port = Utils.findOpenPort();
+        String host = "tcp://127.0.0.1:" + port;
+
+        Ctx ctx = ZMQ.init(1);
+        assertThat(ctx, notNullValue());
+
+        // bind first to use the address
+        SocketBase bind = ZMQ.socket(ctx, ZMQ.ZMQ_PAIR);
+        assertThat(bind, notNullValue());
+        boolean rc = ZMQ.bind(bind, host);
+        assertThat(rc, is(true));
+
+        // monitor new socket and connect another pair to send events to
+        SocketBase monitored = ZMQ.socket(ctx, ZMQ.ZMQ_PAIR);
+        assertThat(monitored, notNullValue());
+        rc = ZMQ.monitorSocket(monitored, "inproc://events", ZMQ.ZMQ_EVENT_ALL);
+        assertThat(rc, is(true));
+
+        SocketBase monitor = ZMQ.socket(ctx, ZMQ.ZMQ_PAIR);
+        assertThat(monitor, notNullValue());
+        rc = ZMQ.connect(monitor, "inproc://events");
+        assertThat(rc, is(true));
+
+        // bind monitored socket with already used address
+        rc = ZMQ.bind(monitored, host);
+        assertThat(rc, is(false));
+
+        //  Tear down the wiring.
+        ZMQ.close(bind);
+        ZMQ.close(monitored);
         ZMQ.close(monitor);
         ZMQ.term(ctx);
     }
