@@ -10,7 +10,7 @@ import org.zeromq.ZMQ.Socket;
 // For issue: https://github.com/zeromq/jeromq/issues/198
 public class TestRapidOpenCloseSocket
 {
-  @Test
+  @Test(timeout = 10000)
   public void testRapidOpenCloseSocket() throws Exception
   {
     for (int i = 0; i < 50; i++) {
