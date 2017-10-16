@@ -16,6 +16,12 @@ To run the automated test battery:
 mvn test
 ```
 
+To run a single test class (e.g. PubSubTest):
+
+```
+mvn -Dtest=PubSubTest test
+```
+
 Before submitting a Pull Request, please be sure that the tests pass!
 
 ## Running the Examples
