@@ -52,6 +52,7 @@ public class tripping
                     msg.addFirst(new ZFrame("C"));
                     msg.send(frontend);
                 }
+                items.close();
             }
             ctx.close();
         }

@@ -248,6 +248,7 @@ public class clone
                         server.expiry = System.currentTimeMillis() + SERVER_TTL;
                         self.state = STATE_SYNCING;
 
+                        poller.close();
                         poller = ctx.createPoller(2);
                         poller.register(pipe, Poller.POLLIN);
                         poller.register(server.snapshot, Poller.POLLIN);
@@ -258,6 +259,7 @@ public class clone
                 case STATE_SYNCING:
                     //  In this state we read from snapshot and we expect
                     //  the server to respond, else we fail over.
+                    poller.close();
                     poller = ctx.createPoller(2);
                     poller.register(pipe, Poller.POLLIN);
                     poller.register(server.snapshot, Poller.POLLIN);
@@ -266,6 +268,7 @@ public class clone
                 case STATE_ACTIVE:
                     //  In this state we read from subscriber and we expect
                     //  the server to give hugz, else we fail over.
+                    poller.close();
                     poller = ctx.createPoller(2);
                     poller.register(pipe, Poller.POLLIN);
                     poller.register(server.subscriber, Poller.POLLIN);

@@ -179,7 +179,7 @@ public class mdwrkapi
                 sendToBroker(MDP.W_HEARTBEAT, null, null);
                 heartbeatAt = System.currentTimeMillis() + heartbeat;
             }
-
+            items.close();
         }
         if (Thread.currentThread().isInterrupted())
             log.format("W: interrupt received, killing worker\n");

@@ -167,6 +167,7 @@ public class HighWatermarkTest
                 if (trace) {
                     System.out.println("Worker #" + index + " closing.");
                 }
+                poller.close();
                 context.close();
                 if (trace) {
                     System.out.println("Worker #" + index + " done.");

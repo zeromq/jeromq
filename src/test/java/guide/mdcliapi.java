@@ -125,6 +125,7 @@ public class mdcliapi
                 log.format("W: no reply, reconnecting\n");
                 reconnectToBroker();
             }
+            items.close();
         }
         request.destroy();
         return reply;

@@ -28,7 +28,7 @@ public class lbbroker2
     private static class ClientTask implements ZThread.IDetachedRunnable
     {
         @Override
-        public void run(Object [] args)
+        public void run(Object[] args)
         {
             ZContext context = new ZContext();
 
@@ -53,7 +53,7 @@ public class lbbroker2
     private static class WorkerTask implements ZThread.IDetachedRunnable
     {
         @Override
-        public void run(Object [] args)
+        public void run(Object[] args)
         {
             ZContext context = new ZContext();
 
@@ -148,6 +148,7 @@ public class lbbroker2
                     msg.send(backend);
                 }
             }
+            items.close();
         }
 
         context.close();

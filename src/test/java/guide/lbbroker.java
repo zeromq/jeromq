@@ -19,6 +19,7 @@ public class lbbroker
      */
     private static class ClientTask extends Thread
     {
+        @Override
         public void run()
         {
             Context context = ZMQ.context(1);
@@ -47,6 +48,7 @@ public class lbbroker
      */
     private static class WorkerTask extends Thread
     {
+        @Override
         public void run()
         {
             Context context = ZMQ.context(1);
@@ -177,6 +179,7 @@ public class lbbroker
                 backend.send(request);
 
             }
+            items.close();
         }
 
         frontend.close();
