@@ -143,6 +143,7 @@ public class mdbroker
                 header.destroy();
 
             }
+            items.close();
             purgeWorkers();
             sendHeartbeats();
         }

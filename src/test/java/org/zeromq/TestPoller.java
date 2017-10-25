@@ -56,8 +56,7 @@ public class TestPoller
         sender.setImmediate(false);
         sender.bind(addr);
 
-        ZMQ.Poller outItems;
-        outItems = context.poller();
+        ZMQ.Poller outItems = context.poller();
         outItems.register(sender, ZMQ.Poller.POLLOUT);
 
         ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -77,6 +76,7 @@ public class TestPoller
 
         executor.shutdown();
         executor.awaitTermination(30, TimeUnit.SECONDS);
+        outItems.close();
         sender.close();
         System.out.println("Poller test done");
         assertThat(client.received.get(), is(true));

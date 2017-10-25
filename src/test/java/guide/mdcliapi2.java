@@ -90,6 +90,7 @@ public class mdcliapi2
 
             reply = msg;
         }
+        items.close();
         return reply;
     }
 

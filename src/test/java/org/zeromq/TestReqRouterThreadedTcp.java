@@ -150,6 +150,8 @@ public class TestReqRouterThreadedTcp
             boolean readable = poller.pollin(0);
             assertThat(readable, is(true));
             // now a message should have been prefetched
+
+            poller.close();
         }
     }
 

@@ -99,6 +99,9 @@ public class ZLoop
         pollact = null;
 
         pollSize = pollers.size();
+        if (pollset != null) {
+            pollset.close();
+        }
         pollset = context.poller(pollSize);
         assert (pollset != null);
 

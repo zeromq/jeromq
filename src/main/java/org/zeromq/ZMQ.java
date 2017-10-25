@@ -399,6 +399,7 @@ public class ZMQ
 
         /**
          * Create a new Poller within this context, with a default size.
+         * DO NOT FORGET TO CLOSE THE POLLER AFTER USE with {@link Poller#close()}
          *
          * @return the newly created Poller.
          */
@@ -409,7 +410,7 @@ public class ZMQ
 
         /**
          * Create a new Poller within this context, with a specified initial size.
-         *
+         * DO NOT FORGET TO CLOSE THE POLLER AFTER USE with {@link Poller#close()}
          * @param size
          *            the poller initial size.
          * @return the newly created Poller.
@@ -2756,7 +2757,7 @@ public class ZMQ
         }
     }
 
-    public static class Poller
+    public static class Poller implements Closeable
     {
         /**
          * These values can be ORed to specify what we want to poll for.
@@ -2812,6 +2813,12 @@ public class ZMQ
         protected Poller(Context context)
         {
             this(context, SIZE_DEFAULT);
+        }
+
+        @Override
+        public void close()
+        {
+            context.close(selector);
         }
 
         /**

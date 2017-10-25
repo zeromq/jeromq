@@ -64,6 +64,7 @@ public class rrbroker
             }
         }
         //  We never get here but clean up anyhow
+        items.close();
         frontend.close();
         backend.close();
         context.term();

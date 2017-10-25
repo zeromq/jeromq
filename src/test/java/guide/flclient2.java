@@ -74,6 +74,7 @@ public class flclient2
                 reply.destroy();
             }
         }
+        poller.close();
         request.destroy();
         return reply;
 

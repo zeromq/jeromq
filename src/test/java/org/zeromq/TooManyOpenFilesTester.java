@@ -151,6 +151,8 @@ public class TooManyOpenFilesTester
 
         boolean readable = poller.pollin(0);
         assertThat(readable, is(true));
+
+        poller.close();
     }
 
     /**

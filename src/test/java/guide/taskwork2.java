@@ -54,6 +54,7 @@ public class taskwork2
         }
 
         // Finished
+        items.close();
         receiver.close();
         sender.close();
         controller.close();
