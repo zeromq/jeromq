@@ -100,10 +100,10 @@ public abstract class DecoderBase implements IDecoder
         while (processed.get() < size) {
             //  Copy the data from buffer to the message.
             int toCopy = Math.min(toRead, size - processed.get());
-            int limit = buf.limit();
-            buf.limit(buf.position() + toCopy);
-            readPos.put(buf);
-            buf.limit(limit);
+            int limit = data.limit();
+            data.limit(data.position() + toCopy);
+            readPos.put(data);
+            data.limit(limit);
             toRead -= toCopy;
             processed.set(processed.get() + toCopy);
 
