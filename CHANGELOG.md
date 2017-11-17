@@ -1,6 +1,8 @@
 # Changelog
 
-## v0.4.3 (unreleased)
+## v0.4.4 (unreleased)
+
+## v0.4.3 (2017-11-17)
 
 ### Added
 
