@@ -5,14 +5,14 @@
 
 ## v0.4.2 (2017-06-29)
 
-[#443](https://github.com/zeromq/jeromq/pull/443): Fix issue where JeroMQ was
+* [#443](https://github.com/zeromq/jeromq/pull/443): Fix issue where JeroMQ was
 broken on Android. Security no longer depends on libsodium and is now pure Java
 
 ## v0.4.1 (2017-06-28)
 
 ### Added
 
-JeroMQ is now based of of 4.1.7 of libzmq which means it also now support security
+JeroMQ is now based off of 4.1.7 of libzmq which means it now supports additional security features.
 
 ### Changed
 
