@@ -2,6 +2,100 @@
 
 ## v0.4.3 (unreleased)
 
+### Added
+
+* [#470](https://github.com/zeromq/jeromq/pull/470): Added an argument to the
+  ZBeacon constructor to configure datagram socket blocking behavior. The
+  default behavior (non-blocking) is preserved when the argument is omitted.
+
+* [#474](https://github.com/zeromq/jeromq/pull/474),
+  [#475](https://github.com/zeromq/jeromq/pull/475),
+  [#477](https://github.com/zeromq/jeromq/pull/477),
+  [#479](https://github.com/zeromq/jeromq/pull/479) Added features:
+  * ZAuth, an actor that manages authentication and handles ZAP requests.
+  * ZCert, an abstraction for CURVE certificates.
+  * ZCertStore, a sub-optimal store for certificates.
+  * ZConfig, to manage the ZPL file format.
+  * ZMonitor, for simplified socket monitoring.
+  * Reinstated support for the `ZMQ_MSG_ALLOCATOR` option. Added a
+    `setMsgAllocator` method in the ZMQ class for setting a custom message
+    allocator.
+
+* [#477](https://github.com/zeromq/jeromq/pull/477): Added an overload of
+  `ZAgent.recv` that takes a timeout argument.
+
+* [#498](https://github.com/zeromq/jeromq/pull/498): Implemented `Closable` for
+  `ZMQ.Poller`, providing a way to call `.close()` on a poller when you're done
+  with it and free the selector resource to avoid memory leaks.
+
+  It is recommended that you either close a poller or terminate the context when
+  you are done polling.
+
+### Changed
+
+* Miscellaneous Javadoc documentation tweaks/fixes.
+
+* [#453](https://github.com/zeromq/jeromq/pull/453),
+  [#462](https://github.com/zeromq/jeromq/pull/462),
+  [#471](https://github.com/zeromq/jeromq/pull/471): Fixed Android-specific
+  compilation issues.
+
+* [#454](https://github.com/zeromq/jeromq/pull/454): Fixed an issue where the
+  router was interpreting peers' socket identities as UTF-8 strings instead of
+  raw bytes.
+
+* [#460](https://github.com/zeromq/jeromq/pull/460): Fixed an issue where CURVE
+  keys were being parsed as strings.
+
+* [#461](https://github.com/zeromq/jeromq/pull/461),
+  [#501](https://github.com/zeromq/jeromq/pull/501): Fixed protocol handshake
+  issues that were causing interoperability problems between applications using
+  different versions of ZeroMQ/JeroMQ.
+
+* [#465](https://github.com/zeromq/jeromq/pull/465) Various small fixes:
+  * Fixed an uncaught divide by zero exception
+    ([#447](https://github.com/zeromq/jeromq/issues/447)).
+  * ZMQ.Socket class is no longer final.
+  * Handle interrupt caused by close in ZBeacon.
+
+* [#468](https://github.com/zeromq/jeromq/pull/468): Fix an issue where sockets
+  would disconnect when network connection was lost.
+
+* [#469](https://github.com/zeromq/jeromq/pull/469) Various small fixes:
+  * Fixed an error in comparison of byte arrays in the Mechanism class.
+  * Handled the possibility of receiving a null message in ZSocket by returning
+    null instead of throwing an uncaught NullPointerException.
+  * Fixed the return value of ZMQ.setHWM, which indicates the status of the
+    lower-level calls to set the send and receive HWM, but was doing so
+    incorrectly.
+
+* [#478](https://github.com/zeromq/jeromq/pull/478): Fixed an issue where, when
+  using an XPUB/XSUB proxy, the PUB socket was throwing an error when attempting
+  to send a message if all of the subscriptions have been removed.
+
+* [#479](https://github.com/zeromq/jeromq/pull/479): Various internal
+  improvements.
+
+* [#486](https://github.com/zeromq/jeromq/pull/486): Fixed an issue where it was
+  not possible to send two messages in a row without a successful receive in
+  between, even with the RELAXED option set on the REQ socket.
+
+* [#487](https://github.com/zeromq/jeromq/pull/487) Various improvements:
+  * Added some method name aliases for compatibility with the jzmq API, in
+    places where the JeroMQ method names differed.
+  * Miscellaneous internal refactoring to make JeroMQ code more similar to that
+    of jzmq.
+  * It is not possible to get the values of the ZMQ options `ZMQ_REQ_CORRELATE`
+    and `ZMQ_REQ_RELAXED`, so `getReqCorrelated` and `getReqRelaxed` are now
+    deprecated and will throw an UnsupportedOperationException when called.
+
+* [#492](https://github.com/zeromq/jeromq/pull/492): Fixed an issue where a
+  NullPointerException was thrown when trying to bind on an already used port,
+  for example when the socket has a monitor.
+
+* [#502](https://github.com/zeromq/jeromq/pull/502): Use explicit mutex locks to
+  help prevent problems caused by concurrent access to a ZContext. This makes
+  ZContext behave more like libzmq's zctx.
 
 ## v0.4.2 (2017-06-29)
 
