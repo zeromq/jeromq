@@ -695,7 +695,7 @@ public class ZMQ
                 waitMillis = -1L;
             }
             else {
-                waitMillis = TimeUnit.MICROSECONDS.toMillis(end - now);
+                waitMillis = TimeUnit.NANOSECONDS.toMillis(end - now);
                 if (waitMillis == 0) {
                     waitMillis = 1L;
                 }
@@ -754,8 +754,8 @@ public class ZMQ
             //  first pass have taken negligible time). We also compute the time
             //  when the polling should time out.
             if (firstPass) {
-                now = Clock.nowUS();
-                end = now + TimeUnit.MILLISECONDS.toMicros(timeout);
+                now = Clock.nowNS();
+                end = now + TimeUnit.MILLISECONDS.toNanos(timeout);
                 if (now == end) {
                     break;
                 }
@@ -764,7 +764,7 @@ public class ZMQ
             }
 
             //  Find out whether timeout have expired.
-            now = Clock.nowUS();
+            now = Clock.nowNS();
             if (now >= end) {
                 break;
             }
