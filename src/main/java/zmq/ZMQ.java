@@ -695,7 +695,10 @@ public class ZMQ
                 waitMillis = -1L;
             }
             else {
-                waitMillis = end - now;
+                waitMillis = TimeUnit.MICROSECONDS.toMillis(end - now);
+                if (waitMillis == 0) {
+                    waitMillis = 1L;
+                }
             }
 
             //  Wait for events.
@@ -751,8 +754,8 @@ public class ZMQ
             //  first pass have taken negligible time). We also compute the time
             //  when the polling should time out.
             if (firstPass) {
-                now = Clock.nowMS();
-                end = now + timeout;
+                now = Clock.nowUS();
+                end = now + TimeUnit.MILLISECONDS.toMicros(timeout);
                 if (now == end) {
                     break;
                 }
@@ -761,7 +764,7 @@ public class ZMQ
             }
 
             //  Find out whether timeout have expired.
-            now = Clock.nowMS();
+            now = Clock.nowUS();
             if (now >= end) {
                 break;
             }
