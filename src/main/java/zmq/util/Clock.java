@@ -14,10 +14,20 @@ public class Clock
     {
     }
 
-    //  High precision timestamp.
+    /**
+     * High precision timestamp in microseconds.
+     */
     public static long nowUS()
     {
         return TimeUnit.MICROSECONDS.convert(System.nanoTime(), TimeUnit.NANOSECONDS);
+    }
+
+    /**
+     * High precision timestamp in nanoseconds.
+     */
+    public static long nowNS()
+    {
+        return System.nanoTime();
     }
 
     //  Low precision timestamp. In tight loops generating it can be
