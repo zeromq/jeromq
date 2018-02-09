@@ -577,6 +577,7 @@ public class StreamEngine implements IEngine, IPollEvents
                 buf.flip();
             }
         }
+        assert (outsize == outpos.get().remaining());
 
         //  If there are any data to write in write buffer, write as much as
         //  possible to the socket. Note that amount of data to write can be
