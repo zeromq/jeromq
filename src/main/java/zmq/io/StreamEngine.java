@@ -570,12 +570,9 @@ public class StreamEngine implements IEngine, IPollEvents
                 return;
             }
 
-            ByteBuffer buf = outpos.get();
-            assert (buf != null);
-
-            if (outsize <= Config.OUT_BATCH_SIZE.getValue()) {
-                buf.flip();
-            }
+            // slight difference with libzmq:
+            // encoder is notified of the end of the loading
+            encoder.encoded();
         }
 
         //  If there are any data to write in write buffer, write as much as

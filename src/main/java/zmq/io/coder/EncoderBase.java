@@ -118,6 +118,12 @@ public abstract class EncoderBase implements IEncoder
         return pos;
     }
 
+    @Override
+    public void encoded()
+    {
+        buffer.flip();
+    }
+
     protected void encodingError()
     {
         error = true;
