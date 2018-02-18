@@ -466,7 +466,7 @@ public class ParanoidPiratServerWithLazyPiratClientTest
         queue.active.set(false);
 
         service.shutdown();
-        assertThat(service.awaitTermination(10, TimeUnit.SECONDS), is(true));
+        assertThat(service.awaitTermination(20, TimeUnit.SECONDS), is(true));
 
         final long end = System.currentTimeMillis();
         System.out.printf("Test with Paranoid Server and Lazy client completed in %s millis%n", end - start);
