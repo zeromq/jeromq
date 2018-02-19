@@ -92,7 +92,13 @@ public abstract class EncoderBase implements IEncoder
             //  As a consequence, large messages being sent won't block
             //  other engines running in the same I/O thread for excessive
             //  amounts of time.
-            if (pos == 0 && data.get() == null && toWrite >= bufferSize) {
+            //  Note: Since writeBuf must not be flipped before sending,
+            //  but StreamEngine flips the data buffer if its size is less
+            //  or equals OUT_BATCH_SIZE we must allow zero-copy encode
+            //  only if toWrite is greater (and not equals) OUT_BATCH_SIZE.
+            //  Since StreamEngine initializes bufferSize with
+            //  OUT_BATCH_SIZE, it follows toWrite > bufferSize.
+            if (pos == 0 && data.get() == null && toWrite > bufferSize) {
                 writeBuf.limit(writeBuf.capacity());
                 data.set(writeBuf);
                 pos = toWrite;
