@@ -216,15 +216,17 @@ public class Ctx
 
     public void terminate()
     {
-        // Connect up any pending inproc connections, otherwise we will hang
-        for (Entry<String, PendingConnection> pending : pendingConnections.entrySet()) {
-            SocketBase s = createSocket(ZMQ.ZMQ_PAIR);
-            s.bind(pending.getKey());
-            s.close();
-        }
-
         slotSync.lock();
         try {
+            // Connect up any pending inproc connections, otherwise we will hang
+            for (Entry<String, PendingConnection> pending : pendingConnections.entrySet()) {
+                SocketBase s = createSocket(ZMQ.ZMQ_PAIR);
+                // create_socket might fail eg: out of memory/sockets limit reached
+                assert (s != null);
+                s.bind(pending.getKey());
+                s.close();
+            }
+
             if (!starting.get()) {
                 //  Check whether termination was already underway, but interrupted and now
                 //  restarted.
@@ -243,20 +245,27 @@ public class Ctx
                         reaper.stop();
                     }
                 }
-                slotSync.unlock();
-
-                //  Wait till reaper thread closes all the sockets.
-                Command cmd = termMailbox.recv(WAIT_FOREVER);
-                if (cmd == null) {
-                    throw new IllegalStateException();
-                }
-                assert (cmd.type == Command.Type.DONE);
-                slotSync.lock();
-                assert (sockets.isEmpty());
             }
         }
         finally {
             slotSync.unlock();
+        }
+
+        if (!starting.get()) {
+            //  Wait till reaper thread closes all the sockets.
+            Command cmd = termMailbox.recv(WAIT_FOREVER);
+            if (cmd == null) {
+                throw new IllegalStateException();
+            }
+            assert (cmd.type == Command.Type.DONE);
+
+            slotSync.lock();
+            try {
+                assert (sockets.isEmpty());
+            }
+            finally {
+                slotSync.unlock();
+            }
         }
 
         //  Deallocate the resources.

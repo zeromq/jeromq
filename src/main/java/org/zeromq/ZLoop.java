@@ -85,9 +85,13 @@ public class ZLoop
         this(ctx.getContext());
     }
 
+    /**
+     * @deprecated no-op behaviour
+     */
+    @Deprecated
     public void destroy()
     {
-        context.close();
+        // do nothing
     }
 
     //  We hold an array of pollers that matches the pollset, so we can
