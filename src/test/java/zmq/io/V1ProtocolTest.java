@@ -10,7 +10,19 @@ import zmq.ZMQ;
 
 public class V1ProtocolTest extends AbstractProtocolVersion
 {
-    @Test(timeout = 2000)
+    @Test
+    public void testFixIssue524() throws IOException, InterruptedException
+    {
+        for (int idx = 0; idx < REPETITIONS; ++idx) {
+            if (idx % 100 == 0) {
+                System.out.print(idx + " ");
+            }
+            testProtocolVersion1short();
+        }
+        System.out.println();
+    }
+
+    @Test
     public void testProtocolVersion1short() throws IOException, InterruptedException
     {
         List<ByteBuffer> raws = raws(0);
@@ -25,7 +37,7 @@ public class V1ProtocolTest extends AbstractProtocolVersion
         assertProtocolVersion(1, raws, "abcdefg");
     }
 
-    @Test(timeout = 2000)
+    @Test
     public void testProtocolVersion1long() throws IOException, InterruptedException
     {
         List<ByteBuffer> raws = raws(0);
