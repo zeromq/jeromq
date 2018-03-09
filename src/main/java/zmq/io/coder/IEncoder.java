@@ -16,4 +16,8 @@ public interface IEncoder
     int encode(ValueReference<ByteBuffer> data, int size);
 
     void destroy();
+
+    // called when stream engine finished encoding all messages and is ready to
+    // send data to network layer
+    void encoded();
 }
