@@ -21,7 +21,19 @@ public class V2ProtocolTest extends AbstractProtocolVersion
                 .put((byte) 0);
     }
 
-    @Test(timeout = 2000)
+    @Test
+    public void testFixIssue524() throws IOException, InterruptedException
+    {
+        for (int idx = 0; idx < REPETITIONS; ++idx) {
+            if (idx % 100 == 0) {
+                System.out.print(idx + " ");
+            }
+            testProtocolVersion2short();
+        }
+        System.out.println();
+    }
+
+    @Test
     public void testProtocolVersion2short() throws IOException, InterruptedException
     {
         List<ByteBuffer> raws = raws(1);
@@ -38,7 +50,7 @@ public class V2ProtocolTest extends AbstractProtocolVersion
         assertProtocolVersion(2, raws, "abcdefg");
     }
 
-    @Test(timeout = 2000)
+    @Test
     public void testProtocolVersion2long() throws IOException, InterruptedException
     {
         List<ByteBuffer> raws = raws(1);

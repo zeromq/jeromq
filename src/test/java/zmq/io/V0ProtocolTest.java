@@ -10,6 +10,18 @@ import zmq.ZMQ;
 
 public class V0ProtocolTest extends AbstractProtocolVersion
 {
+    @Test
+    public void testFixIssue524() throws IOException, InterruptedException
+    {
+        for (int idx = 0; idx < REPETITIONS; ++idx) {
+            if (idx % 100 == 0) {
+                System.out.print(idx + " ");
+            }
+            testProtocolVersion0short();
+        }
+        System.out.println();
+    }
+
     @Test(timeout = 2000)
     public void testProtocolVersion0short() throws IOException, InterruptedException
     {

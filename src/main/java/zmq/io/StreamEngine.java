@@ -816,9 +816,7 @@ public class StreamEngine implements IEngine, IPollEvents
             assert (bufferSize == headerSize);
 
             //  Make sure the decoder sees the data we have already received.
-            greetingRecv.flip();
-            inpos = greetingRecv;
-            insize = greetingRecv.limit();
+            decodeDataAfterHandshake(0);
 
             //  To allow for interoperability with peers that do not forward
             //  their subscriptions, we inject a phantom subscription message
@@ -846,6 +844,8 @@ public class StreamEngine implements IEngine, IPollEvents
             }
             encoder = new V1Encoder(errno, Config.OUT_BATCH_SIZE.getValue());
             decoder = new V1Decoder(errno, Config.IN_BATCH_SIZE.getValue(), options.maxMsgSize, options.allocator);
+
+            decodeDataAfterHandshake(V2_GREETING_SIZE);
         }
         else if (greetingRecv.get(revisionPos) == Protocol.V2.revision) {
             //  ZMTP/2.0 framing.
@@ -859,6 +859,8 @@ public class StreamEngine implements IEngine, IPollEvents
             }
             encoder = new V2Encoder(errno, Config.OUT_BATCH_SIZE.getValue());
             decoder = new V2Decoder(errno, Config.IN_BATCH_SIZE.getValue(), options.maxMsgSize, options.allocator);
+
+            decodeDataAfterHandshake(V2_GREETING_SIZE);
         }
         else {
             zmtpVersion = Protocol.V3;
@@ -902,6 +904,19 @@ public class StreamEngine implements IEngine, IPollEvents
         socket.eventHandshaken(endpoint, zmtpVersion.ordinal());
 
         return true;
+    }
+
+    private void decodeDataAfterHandshake(int greetingSize)
+    {
+        final int pos = greetingRecv.position();
+        if (pos > greetingSize) {
+            // data is present after handshake
+            greetingRecv.position(greetingSize).limit(pos);
+
+            //  Make sure the decoder sees this extra data.
+            inpos = greetingRecv;
+            insize = greetingRecv.remaining();
+        }
     }
 
     private Msg identityMsg()
