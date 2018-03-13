@@ -6,11 +6,8 @@ import static org.junit.Assert.assertThat;
 
 import java.io.IOException;
 import java.util.UUID;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.Test;
@@ -25,6 +22,9 @@ public class XpubXsubZTest
                                                     ExecutorService service, final ZContext ctx)
             throws InterruptedException, ExecutionException
     {
+
+        final AtomicInteger numberReceived = new AtomicInteger(0);
+
         Future<?> subscriber = service.submit(new Runnable()
         {
             @Override
@@ -36,10 +36,10 @@ public class XpubXsubZTest
                     final ZMQ.Socket requester = ctx.createSocket(ZMQ.SUB);
                     requester.connect("tcp://localhost:" + back);
                     requester.subscribe("hello".getBytes(ZMQ.CHARSET));
-                    int count = 0;
-                    while (count < max) {
+
+                    while (numberReceived.get() < max) {
                         ZMsg.recvMsg(requester);
-                        count++;
+                        numberReceived.incrementAndGet();
                     }
                 }
                 finally {
@@ -58,12 +58,11 @@ public class XpubXsubZTest
                 try {
                     ZMQ.Socket pub = ctx.createSocket(ZMQ.PUB);
                     pub.connect("tcp://localhost:" + front);
-                    int count = 0;
-                    while (++count < max * 4) {
+                    while (numberReceived.get() < max) {
                         ZMsg message = ZMsg.newStringMsg("hello", "world");
                         boolean rc = message.send(pub);
                         assertThat(rc, is(true));
-                        ZMQ.msleep(10);
+                        ZMQ.msleep(5);
                     }
                 }
                 catch (Throwable ex) {
@@ -72,7 +71,16 @@ public class XpubXsubZTest
                 }
             }
         });
-        subscriber.get();
+
+        try {
+            subscriber.get(5, TimeUnit.SECONDS);
+        } catch (TimeoutException e) {
+            System.err.println("Timeout waiting for subscriber to get " + max + " messages.");
+            error.set(e);
+            e.printStackTrace();
+
+            numberReceived.set( max + 1 ); // Make sure the threads will finish
+        }
 
         ZMQ.msleep(300);
         return error;
