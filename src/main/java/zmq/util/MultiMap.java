@@ -93,11 +93,15 @@ public final class MultiMap<K extends Comparable<? super K>, V>
     {
         K old = inverse.get(value);
         if (old != null) {
-            removeData(old, value);
+            boolean rc = removeData(old, value);
+            assert rc;
         }
         boolean inserted = getValues(key).add(value);
         if (inserted) {
             inverse.put(value, key);
+        }
+        else {
+            inverse.remove(value);
         }
         return inserted;
     }

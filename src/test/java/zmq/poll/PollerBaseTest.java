@@ -3,6 +3,8 @@ package zmq.poll;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.junit.Test;
 
 public class PollerBaseTest
@@ -62,8 +64,8 @@ public class PollerBaseTest
         assertThat(poller.isEmpty(), is(true));
     }
 
-    @Test
-    public void testCancelTimerInTimerEvent()
+    @Test(expected = AssertionError.class)
+    public void testCancelTimerInTimerEventIsNotPossible()
     {
         final PollerBaseTested poller = new PollerBaseTested();
 
@@ -72,14 +74,48 @@ public class PollerBaseTest
             @Override
             public void timerEvent(int id)
             {
+                // cancelTimer() is never called in timerEvent()
                 poller.cancelTimer(this, id);
             }
         };
         poller.addTimer(1000, sink, 1);
 
         poller.clock(1000);
+        poller.executeTimers();
+    }
+
+    @Test
+    public void testAddTimerInTimerEvent()
+    {
+        final int id = 1;
+        final PollerBaseTested poller = new PollerBaseTested();
+
+        final AtomicInteger counter = new AtomicInteger();
+        PollEvents sink = new PollEvents()
+        {
+            @Override
+            public void timerEvent(int id)
+            {
+                counter.incrementAndGet();
+                poller.addTimer(100, this, id);
+            }
+        };
+
+        poller.addTimer(1000, sink, id);
+        assertThat(poller.isEmpty(), is(false));
+
+        poller.clock(1000);
         long timeout = poller.executeTimers();
 
+        assertThat(counter.get(), is(1));
+        assertThat(poller.isEmpty(), is(false));
+        assertThat(timeout, is(100L));
+
+        poller.cancelTimer(sink, id);
+        poller.clock(3000);
+        timeout = poller.executeTimers();
+
+        assertThat(counter.get(), is(1));
         assertThat(timeout, is(0L));
         assertThat(poller.isEmpty(), is(true));
     }

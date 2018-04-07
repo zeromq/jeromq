@@ -167,11 +167,11 @@ abstract class PollerBase implements Runnable
                 return key - current;
             }
 
-            //  Trigger the timer.
-            timerInfo.sink.timerEvent(timerInfo.id);
-
             //  Remove it from the list of active timers.
             timers.remove(key, timerInfo);
+
+            //  Trigger the timer.
+            timerInfo.sink.timerEvent(timerInfo.id);
         }
 
         if (changed) {

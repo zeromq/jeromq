@@ -25,15 +25,15 @@ public class TestPairIpc
         SocketBase pairBind = ZMQ.socket(ctx, ZMQ.ZMQ_PAIR);
         assertThat(pairBind, notNullValue());
 
-        UUID random = UUID.randomUUID();
-
-        boolean brc = ZMQ.bind(pairBind, "ipc:///tmp/tester/" + random.toString());
-        assertThat(brc, is(true));
+        UUID random;
+        do {
+            random = UUID.randomUUID();
+        } while (!ZMQ.bind(pairBind, "ipc:///tmp/tester/" + random.toString()));
 
         SocketBase pairConnect = ZMQ.socket(ctx, ZMQ.ZMQ_PAIR);
         assertThat(pairConnect, notNullValue());
 
-        brc = ZMQ.connect(pairConnect, "ipc:///tmp/tester/" + random.toString());
+        boolean brc = ZMQ.connect(pairConnect, "ipc:///tmp/tester/" + random.toString());
         assertThat(brc, is(true));
 
         Helper.bounce(pairBind, pairConnect);
