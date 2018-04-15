@@ -3,11 +3,15 @@ package zmq;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
+
+import java.util.Arrays;
 
 import org.junit.Before;
 import org.junit.Test;
 
+import zmq.io.mechanism.Mechanisms;
 import zmq.msg.MsgAllocatorDirect;
 import zmq.msg.MsgAllocatorThreshold;
 
@@ -56,42 +60,184 @@ public class OptionsTest
     public void testConflate()
     {
         options.setSocketOpt(ZMQ.ZMQ_CONFLATE, true);
-        assertThat(options.getSocketOpt(ZMQ.ZMQ_CONFLATE), is((Object) options.conflate));
+        assertThat(options.getSocketOpt(ZMQ.ZMQ_CONFLATE), is((Object) true));
+    }
+
+    @Test
+    public void testRate()
+    {
+        options.setSocketOpt(ZMQ.ZMQ_RATE, 10);
+        assertThat(options.getSocketOpt(ZMQ.ZMQ_RATE), is((Object) 10));
+    }
+
+    @Test
+    public void testRecoveryIvl()
+    {
+        options.setSocketOpt(ZMQ.ZMQ_RECOVERY_IVL, 11);
+        assertThat(options.getSocketOpt(ZMQ.ZMQ_RECOVERY_IVL), is((Object) 11));
+    }
+
+    @Test
+    public void testMulticastHops()
+    {
+        options.setSocketOpt(ZMQ.ZMQ_MULTICAST_HOPS, 12);
+        assertThat(options.getSocketOpt(ZMQ.ZMQ_MULTICAST_HOPS), is((Object) 12));
+    }
+
+    @Test
+    public void testPlainUsername()
+    {
+        options.setSocketOpt(ZMQ.ZMQ_CURVE_SERVER, true);
+        String username = "username";
+
+        options.setSocketOpt(ZMQ.ZMQ_PLAIN_USERNAME, username);
+        assertThat(options.getSocketOpt(ZMQ.ZMQ_PLAIN_USERNAME), is((Object) username));
+        assertThat(options.getSocketOpt(ZMQ.ZMQ_PLAIN_SERVER), is((Object) false));
+        assertThat(options.getSocketOpt(ZMQ.ZMQ_MECHANISM), is((Object) Mechanisms.PLAIN));
+    }
+
+    @Test
+    public void testPlainPassword()
+    {
+        options.setSocketOpt(ZMQ.ZMQ_CURVE_SERVER, true);
+        String password = "password";
+
+        options.setSocketOpt(ZMQ.ZMQ_PLAIN_PASSWORD, password);
+        assertThat(options.getSocketOpt(ZMQ.ZMQ_PLAIN_PASSWORD), is((Object) password));
+        assertThat(options.getSocketOpt(ZMQ.ZMQ_PLAIN_SERVER), is((Object) false));
+        assertThat(options.getSocketOpt(ZMQ.ZMQ_MECHANISM), is((Object) Mechanisms.PLAIN));
+    }
+
+    @Test
+    public void testPlainUsernameNull()
+    {
+        options.setSocketOpt(ZMQ.ZMQ_CURVE_SERVER, true);
+
+        options.setSocketOpt(ZMQ.ZMQ_PLAIN_USERNAME, null);
+        assertThat(options.getSocketOpt(ZMQ.ZMQ_PLAIN_USERNAME), nullValue());
+        assertThat(options.getSocketOpt(ZMQ.ZMQ_PLAIN_SERVER), is((Object) false));
+        assertThat(options.getSocketOpt(ZMQ.ZMQ_MECHANISM), is((Object) Mechanisms.NULL));
+    }
+
+    @Test
+    public void testPlainPasswordNull()
+    {
+        options.setSocketOpt(ZMQ.ZMQ_CURVE_SERVER, true);
+
+        options.setSocketOpt(ZMQ.ZMQ_PLAIN_PASSWORD, null);
+        assertThat(options.getSocketOpt(ZMQ.ZMQ_PLAIN_PASSWORD), nullValue());
+        assertThat(options.getSocketOpt(ZMQ.ZMQ_PLAIN_SERVER), is((Object) false));
+        assertThat(options.getSocketOpt(ZMQ.ZMQ_MECHANISM), is((Object) Mechanisms.NULL));
     }
 
     @Test
     public void testCurvePublicKey()
     {
         byte[] key = new byte[32];
+        Arrays.fill(key, (byte) 11);
         options.setSocketOpt(ZMQ.ZMQ_CURVE_PUBLICKEY, key);
-        assertThat(options.getSocketOpt(ZMQ.ZMQ_CURVE_PUBLICKEY), is((Object) options.curvePublicKey));
+        assertThat(options.getSocketOpt(ZMQ.ZMQ_CURVE_PUBLICKEY), is((Object) key));
     }
 
     @Test
     public void testCurveSecretKey()
     {
         byte[] key = new byte[32];
+        Arrays.fill(key, (byte) 12);
         options.setSocketOpt(ZMQ.ZMQ_CURVE_SECRETKEY, key);
-        assertThat(options.getSocketOpt(ZMQ.ZMQ_CURVE_SECRETKEY), is((Object) options.curveSecretKey));
+        assertThat(options.getSocketOpt(ZMQ.ZMQ_CURVE_SECRETKEY), is((Object) key));
     }
 
     @Test
     public void testCurveServerKey()
     {
         byte[] key = new byte[32];
+        Arrays.fill(key, (byte) 14);
         options.setSocketOpt(ZMQ.ZMQ_CURVE_SERVERKEY, key);
-        assertThat(options.getSocketOpt(ZMQ.ZMQ_CURVE_SERVERKEY), is((Object) options.curveServerKey));
+        assertThat(options.getSocketOpt(ZMQ.ZMQ_CURVE_SERVERKEY), is((Object) key));
     }
 
     @Test
     public void testGssPlaintext()
     {
         options.setSocketOpt(ZMQ.ZMQ_GSSAPI_PLAINTEXT, true);
-        assertThat(options.getSocketOpt(ZMQ.ZMQ_GSSAPI_PLAINTEXT), is((Object) options.gssPlaintext));
+        assertThat(options.getSocketOpt(ZMQ.ZMQ_GSSAPI_PLAINTEXT), is((Object) true));
     }
 
     @Test
-    public void testDefaultValu()
+    public void testHeartbeatInterval()
+    {
+        options.setSocketOpt(ZMQ.ZMQ_HEARTBEAT_IVL, 1000);
+        assertThat(options.getSocketOpt(ZMQ.ZMQ_HEARTBEAT_IVL), is((Object) 1000));
+    }
+
+    @Test
+    public void testHeartbeatTimeout()
+    {
+        options.setSocketOpt(ZMQ.ZMQ_HEARTBEAT_TIMEOUT, 1001);
+        assertThat(options.getSocketOpt(ZMQ.ZMQ_HEARTBEAT_TIMEOUT), is((Object) 1001));
+    }
+
+    @Test
+    public void testHeartbeatTtlRounded()
+    {
+        options.setSocketOpt(ZMQ.ZMQ_HEARTBEAT_TTL, 2020);
+        assertThat(options.getSocketOpt(ZMQ.ZMQ_HEARTBEAT_TTL), is((Object) 2000));
+    }
+
+    @Test
+    public void testHeartbeatTtlMin()
+    {
+        options.setSocketOpt(ZMQ.ZMQ_HEARTBEAT_TTL, -99);
+        assertThat(options.getSocketOpt(ZMQ.ZMQ_HEARTBEAT_TTL), is((Object) 0));
+    }
+
+    @Test
+    public void testHeartbeatTtlRoundedMin()
+    {
+        options.setSocketOpt(ZMQ.ZMQ_HEARTBEAT_TTL, 99);
+        assertThat(options.getSocketOpt(ZMQ.ZMQ_HEARTBEAT_TTL), is((Object) 0));
+    }
+
+    @Test
+    public void testHeartbeatTtlMax()
+    {
+        options.setSocketOpt(ZMQ.ZMQ_HEARTBEAT_TTL, 655399);
+        assertThat(options.getSocketOpt(ZMQ.ZMQ_HEARTBEAT_TTL), is((Object) 655300));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testHeartbeatTtlOverflow()
+    {
+        options.setSocketOpt(ZMQ.ZMQ_HEARTBEAT_TTL, 655400);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testHeartbeatTtlUnderflow()
+    {
+        options.setSocketOpt(ZMQ.ZMQ_HEARTBEAT_TTL, -100);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testHeartbeatIvlUnderflow()
+    {
+        options.setSocketOpt(ZMQ.ZMQ_HEARTBEAT_IVL, -1);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testHeartbeatTimeoutUnderflow()
+    {
+        options.setSocketOpt(ZMQ.ZMQ_HEARTBEAT_TIMEOUT, -1);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testHandshakeIvlUnderflow()
+    {
+        options.setSocketOpt(ZMQ.ZMQ_HANDSHAKE_IVL, -1);
+    }
+
+    @Test
+    public void testDefaultValue()
     {
         //        assertThat(options.getSocketOpt(ZMQ.ZMQ_DECODER), is((Object)options.decoder));
         //        assertThat(options.getSocketOpt(ZMQ.ZMQ_ENCODER), is((Object)options.encoder));
@@ -128,5 +274,9 @@ public class OptionsTest
         assertThat(options.getSocketOpt(ZMQ.ZMQ_TOS), is((Object) options.tos));
         assertThat(options.getSocketOpt(ZMQ.ZMQ_TYPE), is((Object) options.type));
         assertThat(options.getSocketOpt(ZMQ.ZMQ_ZAP_DOMAIN), is((Object) options.zapDomain));
+        assertThat(options.getSocketOpt(ZMQ.ZMQ_HANDSHAKE_IVL), is((Object) options.handshakeIvl));
+        assertThat(options.getSocketOpt(ZMQ.ZMQ_HEARTBEAT_IVL), is((Object) options.heartbeatInterval));
+        assertThat(options.getSocketOpt(ZMQ.ZMQ_HEARTBEAT_TIMEOUT), is((Object) options.heartbeatTimeout));
+        assertThat(options.getSocketOpt(ZMQ.ZMQ_HEARTBEAT_TTL), is((Object) options.heartbeatTtl));
     }
 }

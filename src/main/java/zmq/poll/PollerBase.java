@@ -128,9 +128,10 @@ abstract class PollerBase implements Runnable
         //  Complexity of this operation is O(n). We assume it is rarely used.
 
         TimerInfo timerInfo = timers.find(copy);
-        assert (timerInfo != null);
-        // let's defer the removal during the loop
-        timerInfo.cancelled = true;
+        if (timerInfo != null) {
+            // let's defer the removal during the loop
+            timerInfo.cancelled = true;
+        }
     }
 
     //  Executes any timers that are due. Returns number of milliseconds

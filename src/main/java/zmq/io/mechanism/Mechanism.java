@@ -14,6 +14,7 @@ import zmq.ZMQ;
 import zmq.io.Metadata;
 import zmq.io.Metadata.ParseListener;
 import zmq.io.SessionBase;
+import zmq.io.Msgs;
 import zmq.io.net.Address;
 import zmq.socket.Sockets;
 import zmq.util.Blob;
@@ -171,20 +172,7 @@ public abstract class Mechanism
 
     protected boolean compare(Msg msg, String data, boolean includeLength)
     {
-        int start = includeLength ? 1 : 0;
-        if (msg.size() < data.length() + start) {
-            return false;
-        }
-        boolean comparison = includeLength ? msg.get(0) == data.length() : true;
-        if (comparison) {
-            for (int idx = start; idx < data.length(); ++idx) {
-                comparison = (msg.get(idx) == data.charAt(idx - start));
-                if (!comparison) {
-                    break;
-                }
-            }
-        }
-        return comparison;
+        return Msgs.startsWith(msg, data, includeLength);
     }
 
     protected boolean compare(ByteBuffer a1, byte[] b, int offset, int length)
@@ -344,8 +332,7 @@ public abstract class Mechanism
 
     protected final void appendData(Msg msg, String data)
     {
-        msg.put((byte) data.length());
-        msg.put(data.getBytes(ZMQ.CHARSET));
+        Msgs.put(msg, data);
     }
 
     public void destroy()

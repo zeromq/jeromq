@@ -64,8 +64,8 @@ public class PollerBaseTest
         assertThat(poller.isEmpty(), is(true));
     }
 
-    @Test(expected = AssertionError.class)
-    public void testCancelTimerInTimerEventIsNotPossible()
+    @Test
+    public void testCancelTimerInTimerEvent()
     {
         final PollerBaseTested poller = new PollerBaseTested();
 
@@ -81,7 +81,9 @@ public class PollerBaseTest
         poller.addTimer(1000, sink, 1);
 
         poller.clock(1000);
-        poller.executeTimers();
+        long rc = poller.executeTimers();
+        assertThat(rc, is(0L));
+        assertThat(poller.isEmpty(), is(true));
     }
 
     @Test

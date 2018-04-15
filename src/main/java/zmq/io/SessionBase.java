@@ -135,6 +135,9 @@ public class SessionBase extends Own implements Pipe.IPipeEvents, IPollEvents
 
     protected boolean pushMsg(Msg msg)
     {
+        if (msg.isCommand()) {
+            return true;
+        }
         if (pipe != null && pipe.write(msg)) {
             return true;
         }
@@ -337,8 +340,7 @@ public class SessionBase extends Own implements Pipe.IPipeEvents, IPollEvents
 
     protected boolean zapEnabled()
     {
-        return options.mechanism != Mechanisms.NULL
-                || (options.zapDomain != null && !options.zapDomain.isEmpty());
+        return options.mechanism != Mechanisms.NULL || (options.zapDomain != null && !options.zapDomain.isEmpty());
     }
 
     @Override

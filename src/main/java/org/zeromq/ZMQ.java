@@ -680,6 +680,50 @@ public class ZMQ
         }
 
         /**
+         * The ZMQ_HEARTBEAT_IVL option shall set the interval
+         * between sending ZMTP heartbeats for the specified socket.
+         * If this option is set and is greater than 0,
+         * then a PING ZMTP command will be sent every ZMQ_HEARTBEAT_IVL milliseconds.
+         * @return heartbeat interval in milliseconds
+         */
+        public int getHeartbeatIvl()
+        {
+            return base.getSocketOpt(zmq.ZMQ.ZMQ_HEARTBEAT_IVL);
+        }
+
+        /**
+         * The ZMQ_HEARTBEAT_TIMEOUT option shall set
+         * how long to wait before timing-out a connection
+         * after sending a PING ZMTP command and not receiving any traffic.
+         * This option is only valid if ZMQ_HEARTBEAT_IVL is also set,
+         * and is greater than 0. The connection will time out
+         * if there is no traffic received after sending the PING command,
+         * but the received traffic does not have to be a PONG command
+         * - any received traffic will cancel the timeout.
+         * @return heartbeat timeout in milliseconds
+         */
+        public int getHeartbeatTimeout()
+        {
+            return base.getSocketOpt(zmq.ZMQ.ZMQ_HEARTBEAT_TIMEOUT);
+        }
+
+        /**
+         * The ZMQ_HEARTBEAT_TTL option shall set the timeout
+         * on the remote peer for ZMTP heartbeats.
+         * If this option is greater than 0,
+         * the remote side shall time out the connection
+         * if it does not receive any more traffic within the TTL period.
+         * This option does not have any effect if ZMQ_HEARTBEAT_IVL is not set or is 0.
+         * Internally, this value is rounded down to the nearest decisecond,
+         * any value less than 100 will have no effect.
+         * @return heartbeat time-to-live in milliseconds
+         */
+        public int getHeartbeatTtl()
+        {
+            return base.getSocketOpt(zmq.ZMQ.ZMQ_HEARTBEAT_TTL);
+        }
+
+        /**
          * The ZMQ_HANDSHAKE_IVL option shall set the maximum handshake interval for the specified socket.
          * Handshaking is the exchange of socket configuration information (socket type, identity, security)
          * that occurs when a connection is first opened, only for connection-oriented transports.
@@ -693,6 +737,53 @@ public class ZMQ
         public boolean setHandshakeIvl(int maxHandshakeIvl)
         {
             return setSocketOpt(zmq.ZMQ.ZMQ_HANDSHAKE_IVL, maxHandshakeIvl);
+        }
+
+        /**
+         * The ZMQ_HEARTBEAT_IVL option shall set the interval
+         * between sending ZMTP heartbeats for the specified socket.
+         * If this option is set and is greater than 0,
+         * then a PING ZMTP command will be sent every ZMQ_HEARTBEAT_IVL milliseconds.
+         * @param heartbeatIvl heartbeat interval in milliseconds
+         * @return true if the option was set, otherwise false
+         */
+        public boolean setHeartbeatIvl(int heartbeatIvl)
+        {
+            return setSocketOpt(zmq.ZMQ.ZMQ_HEARTBEAT_IVL, heartbeatIvl);
+        }
+
+        /**
+         * The ZMQ_HEARTBEAT_TIMEOUT option shall set
+         * how long to wait before timing-out a connection
+         * after sending a PING ZMTP command and not receiving any traffic.
+         * This option is only valid if ZMQ_HEARTBEAT_IVL is also set,
+         * and is greater than 0. The connection will time out
+         * if there is no traffic received after sending the PING command,
+         * but the received traffic does not have to be a PONG command
+         * - any received traffic will cancel the timeout.
+         * @param heartbeatTimeout heartbeat timeout in milliseconds
+         * @return true if the option was set, otherwise false
+         */
+        public boolean setHeartbeatTimeout(int heartbeatTimeout)
+        {
+            return setSocketOpt(zmq.ZMQ.ZMQ_HEARTBEAT_TIMEOUT, heartbeatTimeout);
+        }
+
+        /**
+         * The ZMQ_HEARTBEAT_TTL option shall set the timeout
+         * on the remote peer for ZMTP heartbeats.
+         * If this option is greater than 0,
+         * the remote side shall time out the connection
+         * if it does not receive any more traffic within the TTL period.
+         * This option does not have any effect if ZMQ_HEARTBEAT_IVL is not set or is 0.
+         * Internally, this value is rounded down to the nearest decisecond,
+         * any value less than 100 will have no effect.
+         * @param heartbeatTtl heartbeat time-to-live in milliseconds
+         * @return true if the option was set, otherwise false
+         */
+        public boolean setHeartbeatTtl(int heartbeatTtl)
+        {
+            return setSocketOpt(zmq.ZMQ.ZMQ_HEARTBEAT_TTL, heartbeatTtl);
         }
 
         /**
