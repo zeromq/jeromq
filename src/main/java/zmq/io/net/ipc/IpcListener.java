@@ -22,6 +22,9 @@ public class IpcListener extends TcpListener
     @Override
     public String getAddress()
     {
+        if (((InetSocketAddress) address.address()).getPort() == 0) {
+            return address(address);
+        }
         return address.toString();
     }
 

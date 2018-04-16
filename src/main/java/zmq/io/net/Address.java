@@ -12,8 +12,7 @@ public class Address
     {
         ProtocolFamily family();
 
-        @Override
-        String toString();
+        String toString(int port);
 
         InetSocketAddress resolve(String name, boolean ipv6, boolean local);
 

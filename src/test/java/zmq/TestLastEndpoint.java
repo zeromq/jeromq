@@ -6,7 +6,8 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertThat;
 
 import java.io.IOException;
-import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.junit.Test;
 
@@ -38,14 +39,38 @@ public class TestLastEndpoint
 
         bindAndVerify(sb, "tcp://127.0.0.1:" + port1);
         bindAndVerify(sb, "tcp://127.0.0.1:" + port2);
-        bindAndVerify(sb, "ipc:///tmp/test-" + UUID.randomUUID().toString());
 
         sb.close();
         ctx.terminate();
     }
 
     @Test
-    public void testLastEndpointWildcard() throws IOException
+    public void testLastEndpointWildcardIpc() throws IOException
+    {
+        //  Create the infrastructure
+        Ctx ctx = ZMQ.init(1);
+        assertThat(ctx, notNullValue());
+
+        SocketBase socket = ZMQ.socket(ctx, ZMQ.ZMQ_ROUTER);
+        assertThat(socket, notNullValue());
+
+        boolean brc = ZMQ.bind(socket, "ipc://*");
+        assertThat(brc, is(true));
+
+        String stest = (String) ZMQ.getSocketOptionExt(socket, ZMQ.ZMQ_LAST_ENDPOINT);
+        assertThat(stest, is(not("ipc://*")));
+        assertThat(stest, is(not("ipc://localhost:0")));
+
+        Pattern pattern = Pattern.compile("ipc://.*", Pattern.DOTALL);
+        Matcher matcher = pattern.matcher(stest);
+        assertThat(stest, matcher.matches(), is(true));
+
+        socket.close();
+        ctx.terminate();
+    }
+
+    @Test
+    public void testLastEndpointWildcardTcp() throws IOException
     {
         //  Create the infrastructure
         Ctx ctx = ZMQ.init(1);
