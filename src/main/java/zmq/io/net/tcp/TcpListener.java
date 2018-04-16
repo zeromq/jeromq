@@ -148,7 +148,8 @@ public class TcpListener extends Own implements IPollEvents
 
     public String getAddress()
     {
-        return address.toString();
+        int port = fd.socket().getLocalPort();
+        return address.toString(port);
     }
 
     //  Set address to listen on.

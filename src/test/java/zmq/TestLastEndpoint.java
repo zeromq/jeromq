@@ -1,6 +1,7 @@
 package zmq;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertThat;
 
@@ -40,6 +41,48 @@ public class TestLastEndpoint
         bindAndVerify(sb, "ipc:///tmp/test-" + UUID.randomUUID().toString());
 
         sb.close();
+        ctx.terminate();
+    }
+
+    @Test
+    public void testLastEndpointWildcard() throws IOException
+    {
+        //  Create the infrastructure
+        Ctx ctx = ZMQ.init(1);
+        assertThat(ctx, notNullValue());
+
+        SocketBase socket = ZMQ.socket(ctx, ZMQ.ZMQ_ROUTER);
+        assertThat(socket, notNullValue());
+
+        boolean brc = ZMQ.bind(socket, "tcp://127.0.0.1:*");
+        assertThat(brc, is(true));
+
+        String stest = (String) ZMQ.getSocketOptionExt(socket, ZMQ.ZMQ_LAST_ENDPOINT);
+        assertThat(stest, is(not("tcp://127.0.0.1:*")));
+        assertThat(stest, is(not("tcp://127.0.0.1:0")));
+        assertThat(stest.matches("tcp://127.0.0.1:\\d+"), is(true));
+
+        socket.close();
+        ctx.terminate();
+    }
+
+    @Test
+    public void testLastEndpointAllWildcards() throws IOException
+    {
+        //  Create the infrastructure
+        Ctx ctx = ZMQ.init(1);
+        assertThat(ctx, notNullValue());
+
+        SocketBase socket = ZMQ.socket(ctx, ZMQ.ZMQ_ROUTER);
+        assertThat(socket, notNullValue());
+
+        boolean brc = ZMQ.bind(socket, "tcp://*:*");
+        assertThat(brc, is(true));
+
+        String stest = (String) ZMQ.getSocketOptionExt(socket, ZMQ.ZMQ_LAST_ENDPOINT);
+        assertThat(stest, is(not("tcp://0.0.0.0:0")));
+        assertThat(stest.matches("tcp://0.0.0.0:\\d+"), is(true));
+        socket.close();
         ctx.terminate();
     }
 }
