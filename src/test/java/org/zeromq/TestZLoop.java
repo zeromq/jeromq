@@ -1,9 +1,22 @@
 package org.zeromq;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
+
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
+import java.nio.channels.DatagramChannel;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.zeromq.ZLoop.IZLoopHandler;
 import org.zeromq.ZMQ.PollItem;
 import org.zeromq.ZMQ.Poller;
 import org.zeromq.ZMQ.Socket;
@@ -35,6 +48,78 @@ public class TestZLoop
     public void tearDown()
     {
         ctx.destroy();
+    }
+
+    @Test
+    public void testZLoopWithUDP() throws IOException
+    {
+        final int port = Utils.findOpenPort();
+        final InetSocketAddress addr = new InetSocketAddress("127.0.0.1", port);
+
+        ZLoop loop = new ZLoop(ctx);
+
+        DatagramChannel udpIn = DatagramChannel.open();
+        assertThat(udpIn, notNullValue());
+        udpIn.configureBlocking(false);
+        udpIn.bind(new InetSocketAddress(port));
+
+        DatagramChannel udpOut = DatagramChannel.open();
+        assertThat(udpOut, notNullValue());
+        udpOut.configureBlocking(false);
+        udpOut.connect(addr);
+
+        final AtomicInteger counter = new AtomicInteger();
+        final AtomicBoolean done = new AtomicBoolean();
+
+        loop.addPoller(new PollItem(udpIn, ZMQ.Poller.POLLIN), new IZLoopHandler()
+        {
+            @Override
+            public int handle(ZLoop loop, PollItem item, Object arg)
+            {
+                DatagramChannel udpIn = (DatagramChannel) arg;
+                ByteBuffer bb = ByteBuffer.allocate(3);
+                try {
+                    udpIn.receive(bb);
+                    String read = new String(bb.array(), 0, bb.limit(), ZMQ.CHARSET);
+                    assertThat(read, is("udp"));
+                    done.set(true);
+                    counter.incrementAndGet();
+                }
+                catch (IOException e) {
+                    e.printStackTrace();
+                    fail();
+                }
+                return -1;
+            }
+        }, udpIn);
+        loop.addPoller(new PollItem(udpOut, ZMQ.Poller.POLLOUT), new IZLoopHandler()
+        {
+            @Override
+            public int handle(ZLoop loop, PollItem item, Object arg)
+            {
+                DatagramChannel udpOut = (DatagramChannel) arg;
+                try {
+                    ByteBuffer bb = ByteBuffer.allocate(3);
+                    bb.put("udp".getBytes(ZMQ.CHARSET));
+                    bb.flip();
+                    int written = udpOut.send(bb, addr);
+                    assertThat(written, is(3));
+                    counter.incrementAndGet();
+                }
+                catch (IOException e) {
+                    e.printStackTrace();
+                    fail();
+                }
+                return 0;
+            }
+        }, udpOut);
+        loop.start();
+
+        assertThat(done.get(), is(true));
+        assertThat(counter.get(), is(2));
+
+        udpIn.close();
+        udpOut.close();
     }
 
     @Test
