@@ -12,4 +12,4 @@ if [[ ! -f $filename ]]; then
   exit 1
 fi
 
-mvn exec:java -Dexec.mainClass=guide.$example -Dexec.classpathScope=test
+mvn test-compile exec:java -Dexec.mainClass=guide.$example -Dexec.classpathScope=test
