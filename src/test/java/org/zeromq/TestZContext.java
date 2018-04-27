@@ -54,6 +54,8 @@ public class TestZContext
     {
         ZContext ctx = new ZContext();
         assertThat(ctx, notNullValue());
+        assertThat(ctx.getContext(), notNullValue());
+        assertThat(ctx.isClosed(), is(false));
         assertThat(ctx.getIoThreads(), is(1));
         assertThat(ctx.getLinger(), is(0));
         assertThat(ctx.isMain(), is(true));
@@ -65,6 +67,7 @@ public class TestZContext
     {
         ZContext ctx = new ZContext();
         ctx.close();
+        assertThat(ctx.isClosed(), is(true));
         assertThat(ctx.getSockets().isEmpty(), is(true));
 
         // Ensure context is not destroyed if not in main thread
