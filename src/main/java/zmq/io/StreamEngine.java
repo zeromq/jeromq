@@ -3,6 +3,7 @@ package zmq.io;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
+import java.util.Arrays;
 
 import zmq.Config;
 import zmq.Msg;
@@ -45,10 +46,18 @@ public class StreamEngine implements IEngine, IPollEvents
 
     private final class ProducePongMessage extends MessageProcessor.Adapter
     {
+        private final byte[] pingContext;
+
+        public ProducePongMessage(byte[] pingContext)
+        {
+            assert (pingContext != null);
+            this.pingContext = pingContext;
+        }
+
         @Override
         public Msg nextMsg()
         {
-            return producePongMessage();
+            return producePongMessage(pingContext);
         }
     }
 
@@ -308,10 +317,11 @@ public class StreamEngine implements IEngine, IPollEvents
     //  True is linger timer is running.
     private boolean hasHandshakeTimer;
 
-    private boolean   hasTtlTimer;
-    private boolean   hasTimeoutTimer;
-    private boolean   hasHeartbeatTimer;
-    private final int heartbeatTimeout;
+    private boolean      hasTtlTimer;
+    private boolean      hasTimeoutTimer;
+    private boolean      hasHeartbeatTimer;
+    private final int    heartbeatTimeout;
+    private final byte[] heartbeatContext;
 
     // Socket
     private SocketBase socket;
@@ -347,6 +357,7 @@ public class StreamEngine implements IEngine, IPollEvents
         peerAddress = Utils.getPeerIpAddress(fd);
 
         heartbeatTimeout = heartbeatTimeout();
+        heartbeatContext = Arrays.copyOf(options.heartbeatContext, options.heartbeatContext.length);
     }
 
     private int heartbeatTimeout()
@@ -1184,8 +1195,6 @@ public class StreamEngine implements IEngine, IPollEvents
 
     private final MessageProcessor pushOneThenDecodeAndPush = new PushOneThenDecodeAndPush();
 
-    private final MessageProcessor producePongMessage = new ProducePongMessage();
-
     private final MessageProcessor producePingMessage = new ProducePingMessage();
 
     //  Function to handle network disconnections.
@@ -1246,10 +1255,11 @@ public class StreamEngine implements IEngine, IPollEvents
     {
         assert (mechanism != null);
 
-        Msg msg = new Msg(7);
+        Msg msg = new Msg(7 + heartbeatContext.length);
         msg.setFlags(Msg.COMMAND);
         Msgs.put(msg, "PING");
         Wire.putUInt16(msg, options.heartbeatTtl);
+        msg.put(heartbeatContext);
 
         msg = mechanism.encode(msg);
 
@@ -1263,13 +1273,15 @@ public class StreamEngine implements IEngine, IPollEvents
         return msg;
     }
 
-    private Msg producePongMessage()
+    private Msg producePongMessage(byte[] pingContext)
     {
         assert (mechanism != null);
+        assert (pingContext != null);
 
-        Msg msg = new Msg(5);
+        Msg msg = new Msg(5 + pingContext.length);
         msg.setFlags(Msg.COMMAND);
         Msgs.put(msg, "PONG");
+        msg.put(pingContext);
 
         msg = mechanism.encode(msg);
 
@@ -1291,7 +1303,12 @@ public class StreamEngine implements IEngine, IPollEvents
                 ioObject.addTimer(remoteHeartbeatTtl, HEARTBEAT_TTL_TIMER_ID);
                 hasTtlTimer = true;
             }
-            nextMsg = producePongMessage;
+            // extract the ping context that will be sent back inside the pong message
+            final int remaining = msg.size() - 7;
+            final byte[] pingContext = new byte[remaining];
+            msg.getBytes(7, pingContext, 0, remaining);
+
+            nextMsg = new ProducePongMessage(pingContext);
             outEvent();
 
             return true;

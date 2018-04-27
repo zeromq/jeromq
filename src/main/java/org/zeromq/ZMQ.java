@@ -724,6 +724,17 @@ public class ZMQ
         }
 
         /**
+         * The ZMQ_HEARTBEAT_CONTEXT option shall set the ping context
+         * of the peer for ZMTP heartbeats.
+         * If this option is set, every ping message sent for heartbeat will contain this context.
+         * @return the context to be sent with ping messages. Empty array by default.
+         */
+        public byte[] getHeartbeatContext()
+        {
+            return (byte[]) base.getSocketOptx(zmq.ZMQ.ZMQ_HEARTBEAT_CONTEXT);
+        }
+
+        /**
          * The ZMQ_HANDSHAKE_IVL option shall set the maximum handshake interval for the specified socket.
          * Handshaking is the exchange of socket configuration information (socket type, identity, security)
          * that occurs when a connection is first opened, only for connection-oriented transports.
@@ -784,6 +795,18 @@ public class ZMQ
         public boolean setHeartbeatTtl(int heartbeatTtl)
         {
             return setSocketOpt(zmq.ZMQ.ZMQ_HEARTBEAT_TTL, heartbeatTtl);
+        }
+
+        /**
+         * The ZMQ_HEARTBEAT_CONTEXT option shall set the ping context
+         * of the peer for ZMTP heartbeats.
+         * If this option is set, every ping message sent for heartbeat will contain this context.
+         * @param pingContext the context to be sent with ping messages.
+         * @return true if the option was set, otherwise false
+         */
+        public boolean setHeartbeatContext(byte[] pingContext)
+        {
+            return setSocketOpt(zmq.ZMQ.ZMQ_HEARTBEAT_CONTEXT, pingContext);
         }
 
         /**

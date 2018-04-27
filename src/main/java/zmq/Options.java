@@ -153,6 +153,8 @@ public class Options
     public int heartbeatInterval;
     //  Time in milliseconds to wait for a PING response before disconnecting
     public int heartbeatTimeout;
+    // the ping context that will be sent with each ping message.
+    public byte[] heartbeatContext;
 
     public Class<? extends IDecoder> decoder;
     public Class<? extends IEncoder> encoder;
@@ -202,6 +204,7 @@ public class Options
         heartbeatTtl = 0;
         heartbeatInterval = 0;
         heartbeatTimeout = -1;
+        heartbeatContext = new byte[0];
 
         identity = new byte[0];
         identitySize = (byte) identity.length;
@@ -468,6 +471,13 @@ public class Options
             }
             return true;
 
+        case ZMQ.ZMQ_HEARTBEAT_CONTEXT:
+            heartbeatContext = (byte[]) optval;
+            if (heartbeatContext == null) {
+                throw new IllegalArgumentException("heartbeatContext cannot be null");
+            }
+            return true;
+
         case ZMQ.ZMQ_DECODER:
             decoder = checkCustomClass(optval, IDecoder.class);
             if (decoder == null) {
@@ -725,6 +735,9 @@ public class Options
         case ZMQ.ZMQ_HEARTBEAT_TTL:
             // Convert the internal deciseconds value to milliseconds
             return heartbeatTtl * 100;
+
+        case ZMQ.ZMQ_HEARTBEAT_CONTEXT:
+            return heartbeatContext;
 
         case ZMQ.ZMQ_MSG_ALLOCATOR:
             return allocator;

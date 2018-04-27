@@ -423,6 +423,24 @@ public class TestZMQ
         socket.close();
     }
 
+    @Test
+    public void testSocketHeartbeatContext()
+    {
+        final Socket socket = ctx.socket(ZMQ.REQ);
+        assertThat(socket, notNullValue());
+
+        byte[] context = new byte[3];
+        context[0] = 4;
+        context[1] = 2;
+        context[2] = 1;
+        boolean set = socket.setHeartbeatContext(context);
+        assertThat(set, is(true));
+        byte[] hctx = socket.getHeartbeatContext();
+        assertThat(hctx, is(context));
+
+        socket.close();
+    }
+
     @SuppressWarnings("deprecation")
     @Test
     public void testSocketHWM()

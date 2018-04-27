@@ -133,6 +133,7 @@ public class ZMQ
     public static final int ZMQ_DECODER                       = ZMQ_CUSTOM_OPTION + 2;
     public static final int ZMQ_MSG_ALLOCATOR                 = ZMQ_CUSTOM_OPTION + 3;
     public static final int ZMQ_MSG_ALLOCATION_HEAP_THRESHOLD = ZMQ_CUSTOM_OPTION + 4;
+    public static final int ZMQ_HEARTBEAT_CONTEXT             = ZMQ_CUSTOM_OPTION + 5;
 
     /*  Message options                                                           */
     public static final int ZMQ_MORE = 1;

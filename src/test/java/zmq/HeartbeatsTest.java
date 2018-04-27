@@ -109,22 +109,28 @@ public class HeartbeatsTest
     @Test
     public void testHeartbeatNoTimeoutWithCurve() throws IOException, InterruptedException
     {
-        testHeartbeatNoTimeout(true);
+        testHeartbeatNoTimeout(true, new byte[0]);
     }
 
     @Test
     public void testHeartbeatNoTimeoutWithoutCurve() throws IOException, InterruptedException
     {
-        testHeartbeatNoTimeout(false);
+        testHeartbeatNoTimeout(false, new byte[0]);
     }
 
-    private void testHeartbeatNoTimeout(boolean curve) throws IOException, InterruptedException
+    @Test
+    public void testHeartbeatNoTimeoutWithoutCurveWithPingContext() throws IOException, InterruptedException
+    {
+        testHeartbeatNoTimeout(false, "context".getBytes(ZMQ.CHARSET));
+    }
+
+    private void testHeartbeatNoTimeout(boolean curve, byte[] context) throws IOException, InterruptedException
     {
         Ctx ctx = ZMQ.createContext();
         assertThat(ctx, notNullValue());
 
         int port = Utils.findOpenPort();
-        SocketBase server = prepServerSocket(ctx, true, curve, port);
+        SocketBase server = prepServerSocket(ctx, true, context, curve, port);
         assertThat(server, notNullValue());
 
         SocketBase monitor = ZMQ.socket(ctx, ZMQ.ZMQ_PAIR);
@@ -159,6 +165,11 @@ public class HeartbeatsTest
 
     private SocketBase prepServerSocket(Ctx ctx, boolean heartBeats, boolean curve, int port)
     {
+        return prepServerSocket(ctx, heartBeats, new byte[0], curve, port);
+    }
+
+    private SocketBase prepServerSocket(Ctx ctx, boolean heartBeats, byte[] pingContext, boolean curve, int port)
+    {
         SocketBase server = ctx.createSocket(ZMQ.ZMQ_ROUTER);
         assertThat(server, notNullValue());
 
@@ -167,6 +178,9 @@ public class HeartbeatsTest
 
         if (heartBeats) {
             rc = ZMQ.setSocketOption(server, ZMQ.ZMQ_HEARTBEAT_IVL, 200);
+            assertThat(rc, is(true));
+
+            rc = ZMQ.setSocketOption(server, ZMQ.ZMQ_HEARTBEAT_CONTEXT, pingContext);
             assertThat(rc, is(true));
         }
 
