@@ -88,20 +88,21 @@ public class espresso
     //  itself up as a listening proxy. The listener runs as a child thread:
     public static void main(String[] argv)
     {
-        //  Start child threads
-        ZContext ctx = new ZContext();
-        ZThread.fork(ctx, new Publisher());
-        ZThread.fork(ctx, new Subscriber());
+        try (ZContext ctx = new ZContext()) {
+            //  Start child threads
+            ZThread.fork(ctx, new Publisher());
+            ZThread.fork(ctx, new Subscriber());
 
-        Socket subscriber = ctx.createSocket(ZMQ.XSUB);
-        subscriber.connect("tcp://localhost:6000");
-        Socket publisher = ctx.createSocket(ZMQ.XPUB);
-        publisher.bind("tcp://*:6001");
-        Socket listener = ZThread.fork(ctx, new Listener());
-        ZMQ.proxy(subscriber, publisher, listener);
+            Socket subscriber = ctx.createSocket(ZMQ.XSUB);
+            subscriber.connect("tcp://localhost:6000");
+            Socket publisher = ctx.createSocket(ZMQ.XPUB);
+            publisher.bind("tcp://*:6001");
+            Socket listener = ZThread.fork(ctx, new Listener());
+            ZMQ.proxy(subscriber, publisher, listener);
 
-        System.out.println(" interrupted");
-        //  Tell attached threads to exit
-        ctx.destroy();
+            System.out.println(" interrupted");
+
+            // NB: child threads exit here when the context is closed
+        }
     }
 }

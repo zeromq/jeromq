@@ -21,59 +21,60 @@ public class spqueue
 
     public static void main(String[] args)
     {
-        ZContext ctx = new ZContext();
-        Socket frontend = ctx.createSocket(ZMQ.ROUTER);
-        Socket backend = ctx.createSocket(ZMQ.ROUTER);
-        frontend.bind("tcp://*:5555"); //  For clients
-        backend.bind("tcp://*:5556"); //  For workers
+        try (ZContext ctx = new ZContext()) {
+            Socket frontend = ctx.createSocket(ZMQ.ROUTER);
+            Socket backend = ctx.createSocket(ZMQ.ROUTER);
+            frontend.bind("tcp://*:5555"); //  For clients
+            backend.bind("tcp://*:5556"); //  For workers
 
-        //  Queue of available workers
-        ArrayList<ZFrame> workers = new ArrayList<ZFrame>();
+            //  Queue of available workers
+            ArrayList<ZFrame> workers = new ArrayList<ZFrame>();
 
-        Poller poller = ctx.createPoller(2);
-        poller.register(backend, Poller.POLLIN);
-        poller.register(frontend, Poller.POLLIN);
+            Poller poller = ctx.createPoller(2);
+            poller.register(backend, Poller.POLLIN);
+            poller.register(frontend, Poller.POLLIN);
 
-        //  The body of this example is exactly the same as lruqueue2.
-        while (true) {
-            boolean workersAvailable = workers.size() > 0;
-            int rc = poller.poll(-1);
+            //  The body of this example is exactly the same as lruqueue2.
+            while (true) {
+                boolean workersAvailable = workers.size() > 0;
+                int rc = poller.poll(-1);
 
-            //  Poll frontend only if we have available workers
-            if (rc == -1)
-                break; //  Interrupted
-
-            //  Handle worker activity on backend
-            if (poller.pollin(0)) {
-                //  Use worker address for LRU routing
-                ZMsg msg = ZMsg.recvMsg(backend);
-                if (msg == null)
+                //  Poll frontend only if we have available workers
+                if (rc == -1)
                     break; //  Interrupted
-                ZFrame address = msg.unwrap();
-                workers.add(address);
 
-                //  Forward message to client if it's not a READY
-                ZFrame frame = msg.getFirst();
-                if (new String(frame.getData(), ZMQ.CHARSET).equals(WORKER_READY))
-                    msg.destroy();
-                else msg.send(frontend);
-            }
-            if (workersAvailable && poller.pollin(1)) {
-                //  Get client request, route to first available worker
-                ZMsg msg = ZMsg.recvMsg(frontend);
-                if (msg != null) {
-                    msg.wrap(workers.remove(0));
-                    msg.send(backend);
+                //  Handle worker activity on backend
+                if (poller.pollin(0)) {
+                    //  Use worker address for LRU routing
+                    ZMsg msg = ZMsg.recvMsg(backend);
+                    if (msg == null)
+                        break; //  Interrupted
+                    ZFrame address = msg.unwrap();
+                    workers.add(address);
+
+                    //  Forward message to client if it's not a READY
+                    ZFrame frame = msg.getFirst();
+                    if (new String(frame.getData(), ZMQ.CHARSET).equals(WORKER_READY))
+                        msg.destroy();
+                    else msg.send(frontend);
+                }
+                if (workersAvailable && poller.pollin(1)) {
+                    //  Get client request, route to first available worker
+                    ZMsg msg = ZMsg.recvMsg(frontend);
+                    if (msg != null) {
+                        msg.wrap(workers.remove(0));
+                        msg.send(backend);
+                    }
                 }
             }
-        }
-        //  When we're done, clean up properly
-        while (workers.size() > 0) {
-            ZFrame frame = workers.remove(0);
-            frame.destroy();
-        }
-        workers.clear();
-        ctx.close();
-    }
 
+            //  When we're done, clean up properly
+            while (workers.size() > 0) {
+                ZFrame frame = workers.remove(0);
+                frame.destroy();
+            }
+
+            workers.clear();
+        }
+    }
 }

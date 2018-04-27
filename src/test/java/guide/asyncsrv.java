@@ -32,31 +32,33 @@ public class asyncsrv
         @Override
         public void run()
         {
-            ZContext ctx = new ZContext();
-            Socket client = ctx.createSocket(ZMQ.DEALER);
+            try (ZContext ctx = new ZContext()) {
+                Socket client = ctx.createSocket(ZMQ.DEALER);
 
-            //  Set random identity to make tracing easier
-            String identity = String.format("%04X-%04X", rand.nextInt(), rand.nextInt());
-            client.setIdentity(identity.getBytes(ZMQ.CHARSET));
-            client.connect("tcp://localhost:5570");
+                //  Set random identity to make tracing easier
+                String identity = String.format(
+                    "%04X-%04X", rand.nextInt(), rand.nextInt()
+                );
+                client.setIdentity(identity.getBytes(ZMQ.CHARSET));
+                client.connect("tcp://localhost:5570");
 
-            Poller poller = ctx.createPoller(1);
-            poller.register(client, Poller.POLLIN);
+                Poller poller = ctx.createPoller(1);
+                poller.register(client, Poller.POLLIN);
 
-            int requestNbr = 0;
-            while (!Thread.currentThread().isInterrupted()) {
-                //  Tick once per second, pulling in arriving messages
-                for (int centitick = 0; centitick < 100; centitick++) {
-                    poller.poll(10);
-                    if (poller.pollin(0)) {
-                        ZMsg msg = ZMsg.recvMsg(client);
-                        msg.getLast().print(identity);
-                        msg.destroy();
+                int requestNbr = 0;
+                while (!Thread.currentThread().isInterrupted()) {
+                    //  Tick once per second, pulling in arriving messages
+                    for (int centitick = 0; centitick < 100; centitick++) {
+                        poller.poll(10);
+                        if (poller.pollin(0)) {
+                            ZMsg msg = ZMsg.recvMsg(client);
+                            msg.getLast().print(identity);
+                            msg.destroy();
+                        }
                     }
+                    client.send(String.format("request #%d", ++requestNbr), 0);
                 }
-                client.send(String.format("request #%d", ++requestNbr), 0);
             }
-            ctx.close();
         }
     }
 
@@ -71,24 +73,22 @@ public class asyncsrv
         @Override
         public void run()
         {
-            ZContext ctx = new ZContext();
+            try (ZContext ctx = new ZContext()) {
+                //  Frontend socket talks to clients over TCP
+                Socket frontend = ctx.createSocket(ZMQ.ROUTER);
+                frontend.bind("tcp://*:5570");
 
-            //  Frontend socket talks to clients over TCP
-            Socket frontend = ctx.createSocket(ZMQ.ROUTER);
-            frontend.bind("tcp://*:5570");
+                //  Backend socket talks to workers over inproc
+                Socket backend = ctx.createSocket(ZMQ.DEALER);
+                backend.bind("inproc://backend");
 
-            //  Backend socket talks to workers over inproc
-            Socket backend = ctx.createSocket(ZMQ.DEALER);
-            backend.bind("inproc://backend");
+                //  Launch pool of worker threads, precise number is not critical
+                for (int threadNbr = 0; threadNbr < 5; threadNbr++)
+                    new Thread(new server_worker(ctx)).start();
 
-            //  Launch pool of worker threads, precise number is not critical
-            for (int threadNbr = 0; threadNbr < 5; threadNbr++)
-                new Thread(new server_worker(ctx)).start();
-
-            //  Connect backend to frontend via a proxy
-            ZMQ.proxy(frontend, backend, null);
-
-            ctx.destroy();
+                //  Connect backend to frontend via a proxy
+                ZMQ.proxy(frontend, backend, null);
+            }
         }
     }
 
@@ -142,7 +142,6 @@ public class asyncsrv
 
     public static void main(String[] args) throws Exception
     {
-        ZContext ctx = new ZContext();
         new Thread(new client_task()).start();
         new Thread(new client_task()).start();
         new Thread(new client_task()).start();
@@ -150,6 +149,5 @@ public class asyncsrv
 
         //  Run for 5 seconds then quit
         Thread.sleep(5 * 1000);
-        ctx.close();
     }
 }

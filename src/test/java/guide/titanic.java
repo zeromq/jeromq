@@ -26,7 +26,6 @@ public class titanic
 {
     //  Return a new UUID as a printable character string
     //  Caller must free returned string when finished with it
-
     static String generateUUID()
     {
         return UUID.randomUUID().toString();
@@ -49,17 +48,17 @@ public class titanic
     }
 
     //  .split Titanic request service
-    //  The {{titanic.request}} task waits for requests to this service. It writes
-    //  each request to disk and returns a UUID to the client. The client picks
-    //  up the reply asynchronously using the {{titanic.reply}} service:
-
+    //  The {{titanic.request}} task waits for requests to this service. It
+    //  writes each request to disk and returns a UUID to the client. The client
+    //  picks up the reply asynchronously using the {{titanic.reply}} service:
     static class TitanicRequest implements IAttachedRunnable
     {
-
         @Override
         public void run(Object[] args, ZContext ctx, Socket pipe)
         {
-            mdwrkapi worker = new mdwrkapi("tcp://localhost:5555", "titanic.request", false);
+            mdwrkapi worker = new mdwrkapi(
+                "tcp://localhost:5555", "titanic.request", false
+            );
             ZMsg reply = null;
 
             while (true) {
@@ -107,18 +106,19 @@ public class titanic
             worker.destroy();
         }
     }
+
     //  .split Titanic reply service
     //  The {{titanic.reply}} task checks if there's a reply for the specified
     //  request (by UUID), and returns a 200 (OK), 300 (Pending), or 400
     //  (Unknown) accordingly:
-
     static class TitanicReply implements IDetachedRunnable
     {
-
         @Override
         public void run(Object[] args)
         {
-            mdwrkapi worker = new mdwrkapi("tcp://localhost:5555", "titanic.reply", false);
+            mdwrkapi worker = new mdwrkapi(
+                "tcp://localhost:5555", "titanic.reply", false
+            );
             ZMsg reply = null;
 
             while (true) {
@@ -133,7 +133,9 @@ public class titanic
                 if (new File(repFilename).exists()) {
                     DataInputStream file = null;
                     try {
-                        file = new DataInputStream(new FileInputStream(repFilename));
+                        file = new DataInputStream(
+                            new FileInputStream(repFilename)
+                        );
                         reply = ZMsg.load(file);
                         reply.push("200");
                     }
@@ -170,7 +172,9 @@ public class titanic
         @Override
         public void run(Object[] args)
         {
-            mdwrkapi worker = new mdwrkapi("tcp://localhost:5555", "titanic.close", false);
+            mdwrkapi worker = new mdwrkapi(
+                "tcp://localhost:5555", "titanic.close", false
+            );
             ZMsg reply = null;
 
             while (true) {
@@ -196,104 +200,119 @@ public class titanic
     //  This is the main thread for the Titanic worker. It starts three child
     //  threads; for the request, reply, and close services. It then dispatches
     //  requests to workers using a simple brute force disk queue. It receives
-    //  request UUIDs from the {{titanic.request}} service, saves these to a disk
-    //  file, and then throws each request at MDP workers until it gets a
+    //  request UUIDs from the {{titanic.request}} service, saves these to a
+    //  disk file, and then throws each request at MDP workers until it gets a
     //  response.
-
     public static void main(String[] args)
     {
         boolean verbose = (args.length > 0 && "-v".equals(args[0]));
 
-        ZContext ctx = new ZContext();
-        Socket requestPipe = ZThread.fork(ctx, new TitanicRequest());
-        ZThread.start(new TitanicReply());
-        ZThread.start(new TitanicClose());
+        try (ZContext ctx = new ZContext()) {
+            Socket requestPipe = ZThread.fork(ctx, new TitanicRequest());
+            ZThread.start(new TitanicReply());
+            ZThread.start(new TitanicClose());
 
-        Poller poller = ctx.createPoller(1);
-        poller.register(requestPipe, ZMQ.Poller.POLLIN);
+            Poller poller = ctx.createPoller(1);
+            poller.register(requestPipe, ZMQ.Poller.POLLIN);
 
-        //  Main dispatcher loop
-        while (true) {
-            //  We'll dispatch once per second, if there's no activity
-            int rc = poller.poll(1000);
-            if (rc == -1)
-                break; //  Interrupted
-            if (poller.pollin(0)) {
-                //  Ensure message directory exists
-                new File(TITANIC_DIR).mkdirs();
-
-                //  Append UUID to queue, prefixed with '-' for pending
-                ZMsg msg = ZMsg.recvMsg(requestPipe);
-                if (msg == null)
+            //  Main dispatcher loop
+            while (true) {
+                //  We'll dispatch once per second, if there's no activity
+                int rc = poller.poll(1000);
+                if (rc == -1)
                     break; //  Interrupted
-                String uuid = msg.popString();
-                BufferedWriter wfile = null;
+                if (poller.pollin(0)) {
+                    //  Ensure message directory exists
+                    new File(TITANIC_DIR).mkdirs();
+
+                    //  Append UUID to queue, prefixed with '-' for pending
+                    ZMsg msg = ZMsg.recvMsg(requestPipe);
+                    if (msg == null)
+                        break; //  Interrupted
+                    String uuid = msg.popString();
+                    BufferedWriter wfile = null;
+                    try {
+                        wfile = new BufferedWriter(
+                            new FileWriter(TITANIC_DIR + "/queue", true)
+                        );
+                        wfile.write("-" + uuid + "\n");
+                    }
+                    catch (IOException e) {
+                        e.printStackTrace();
+                        break;
+                    }
+                    finally {
+                        try {
+                            if (wfile != null)
+                                wfile.close();
+                        }
+                        catch (IOException e) {
+                        }
+                    }
+                    msg.destroy();
+                }
+
+                // Brute force dispatcher
+                // "?........:....:....:....:............:";
+                byte[] entry = new byte[37];
+
+                RandomAccessFile file = null;
+
                 try {
-                    wfile = new BufferedWriter(new FileWriter(TITANIC_DIR + "/queue", true));
-                    wfile.write("-" + uuid + "\n");
+                    file = new RandomAccessFile(TITANIC_DIR + "/queue", "rw");
+                    while (file.read(entry) > 0) {
+                        //  UUID is prefixed with '-' if still waiting
+                        if (entry[0] == '-') {
+                            if (verbose)
+                                System.out.printf(
+                                    "I: processing request %s\n",
+                                    new String(
+                                        entry, 1, entry.length - 1, ZMQ.CHARSET
+                                    )
+                                );
+                            if (serviceSuccess(
+                                    new String(
+                                        entry, 1, entry.length - 1, ZMQ.CHARSET
+                                    )
+                                )) {
+                                //  Mark queue entry as processed
+                                file.seek(file.getFilePointer() - 37);
+                                file.writeBytes("+");
+                                file.seek(file.getFilePointer() + 36);
+                            }
+                        }
+
+                        //  Skip end of line, LF or CRLF
+                        if (file.readByte() == '\r')
+                            file.readByte();
+
+                        if (Thread.currentThread().isInterrupted())
+                            break;
+                    }
+                }
+                catch (FileNotFoundException e) {
                 }
                 catch (IOException e) {
                     e.printStackTrace();
-                    break;
                 }
                 finally {
-                    try {
-                        if (wfile != null)
-                            wfile.close();
-                    }
-                    catch (IOException e) {
-                    }
-                }
-                msg.destroy();
-            }
-            //  Brute force dispatcher
-            byte[] entry = new byte[37]; //"?........:....:....:....:............:";
-            RandomAccessFile file = null;
-            try {
-                file = new RandomAccessFile(TITANIC_DIR + "/queue", "rw");
-                while (file.read(entry) > 0) {
-
-                    //  UUID is prefixed with '-' if still waiting
-                    if (entry[0] == '-') {
-                        if (verbose)
-                            System.out.printf("I: processing request %s\n",
-                                    new String(entry, 1, entry.length - 1, ZMQ.CHARSET));
-                        if (serviceSuccess(new String(entry, 1, entry.length - 1, ZMQ.CHARSET))) {
-                            //  Mark queue entry as processed
-                            file.seek(file.getFilePointer() - 37);
-                            file.writeBytes("+");
-                            file.seek(file.getFilePointer() + 36);
+                    if (file != null) {
+                        try {
+                            file.close();
                         }
-                    }
-                    //  Skip end of line, LF or CRLF
-                    if (file.readByte() == '\r')
-                        file.readByte();
-                    if (Thread.currentThread().isInterrupted())
-                        break;
-                }
-            }
-            catch (FileNotFoundException e) {
-            }
-            catch (IOException e) {
-                e.printStackTrace();
-            }
-            finally {
-                if (file != null) {
-                    try {
-                        file.close();
-                    }
-                    catch (IOException e) {
+                        catch (IOException e) {
+                        }
                     }
                 }
             }
         }
     }
+
     //  .split try to call a service
     //  Here, we first check if the requested MDP service is defined or not,
-    //  using a MMI lookup to the Majordomo broker. If the service exists,
-    //  we send a request and wait for a reply using the conventional MDP
-    //  client API. This is not meant to be fast, just very simple:
-
+    //  using a MMI lookup to the Majordomo broker. If the service exists, we
+    //  send a request and wait for a reply using the conventional MDP client
+    //  API. This is not meant to be fast, just very simple:
     static boolean serviceSuccess(String uuid)
     {
         //  Load request message, service will be first frame
@@ -333,7 +352,8 @@ public class titanic
         ZMsg mmiRequest = new ZMsg();
         mmiRequest.add(service);
         ZMsg mmiReply = client.send("mmi.service", mmiRequest);
-        boolean serviceOK = (mmiReply != null && mmiReply.getFirst().toString().equals("200"));
+        boolean serviceOK = (mmiReply != null &&
+                             mmiReply.getFirst().toString().equals("200"));
         mmiReply.destroy();
 
         boolean result = false;
@@ -361,7 +381,6 @@ public class titanic
                 result = true;
             }
             reply.destroy();
-            ;
         }
         else request.destroy();
 

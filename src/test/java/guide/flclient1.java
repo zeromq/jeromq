@@ -44,43 +44,44 @@ public class flclient1
 
     public static void main(String[] argv)
     {
-        ZContext ctx = new ZContext();
-        ZMsg request = new ZMsg();
-        request.add("Hello world");
-        ZMsg reply = null;
+        try (ZContext ctx = new ZContext()) {
+            ZMsg request = new ZMsg();
+            request.add("Hello world");
+            ZMsg reply = null;
 
-        int endpoints = argv.length;
-        if (endpoints == 0)
-            System.out.printf("I: syntax: flclient1 <endpoint> ...\n");
-        else if (endpoints == 1) {
-            //  For one endpoint, we retry N times
-            int retries;
-            for (retries = 0; retries < MAX_RETRIES; retries++) {
-                String endpoint = argv[0];
-                reply = tryRequest(ctx, endpoint, request);
-                if (reply != null)
-                    break; //  Successful
-                System.out.printf("W: no response from %s, retrying...\n", endpoint);
+            int endpoints = argv.length;
+            if (endpoints == 0)
+                System.out.printf("I: syntax: flclient1 <endpoint> ...\n");
+            else if (endpoints == 1) {
+                //  For one endpoint, we retry N times
+                int retries;
+                for (retries = 0; retries < MAX_RETRIES; retries++) {
+                    String endpoint = argv[0];
+                    reply = tryRequest(ctx, endpoint, request);
+                    if (reply != null)
+                        break; //  Successful
+                    System.out.printf(
+                        "W: no response from %s, retrying...\n", endpoint
+                    );
+                }
             }
-        }
-        else {
-            //  For multiple endpoints, try each at most once
-            int endpointNbr;
-            for (endpointNbr = 0; endpointNbr < endpoints; endpointNbr++) {
-                String endpoint = argv[endpointNbr];
-                reply = tryRequest(ctx, endpoint, request);
-                if (reply != null)
-                    break; //  Successful
-                System.out.printf("W: no response from %s\n", endpoint);
+            else {
+                //  For multiple endpoints, try each at most once
+                int endpointNbr;
+                for (endpointNbr = 0; endpointNbr < endpoints; endpointNbr++) {
+                    String endpoint = argv[endpointNbr];
+                    reply = tryRequest(ctx, endpoint, request);
+                    if (reply != null)
+                        break; //  Successful
+                    System.out.printf("W: no response from %s\n", endpoint);
+                }
             }
+            if (reply != null) {
+                System.out.printf("Service is running OK\n");
+                reply.destroy();
+            }
+            request.destroy();
         }
-        if (reply != null) {
-            System.out.printf("Service is running OK\n");
-            reply.destroy();
-        }
-        request.destroy();
-        ;
-        ctx.destroy();
     }
 
 }

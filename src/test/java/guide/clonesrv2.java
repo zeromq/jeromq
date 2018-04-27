@@ -25,36 +25,37 @@ public class clonesrv2
 
     public void run()
     {
-        ZContext ctx = new ZContext();
-        Socket publisher = ctx.createSocket(ZMQ.PUB);
-        publisher.bind("tcp://*:5557");
+        try (ZContext ctx = new ZContext()) {
+            Socket publisher = ctx.createSocket(ZMQ.PUB);
+            publisher.bind("tcp://*:5557");
 
-        Socket updates = ZThread.fork(ctx, new StateManager());
+            Socket updates = ZThread.fork(ctx, new StateManager());
 
-        Random random = new Random();
-        long sequence = 0;
-        while (!Thread.currentThread().isInterrupted()) {
-            long currentSequenceNumber = ++sequence;
-            int key = random.nextInt(10000);
-            int body = random.nextInt(1000000);
+            Random random = new Random();
+            long sequence = 0;
+            while (!Thread.currentThread().isInterrupted()) {
+                long currentSequenceNumber = ++sequence;
+                int key = random.nextInt(10000);
+                int body = random.nextInt(1000000);
 
-            ByteBuffer b = ByteBuffer.allocate(4);
-            b.asIntBuffer().put(body);
+                ByteBuffer b = ByteBuffer.allocate(4);
+                b.asIntBuffer().put(body);
 
-            kvsimple kvMsg = new kvsimple(key + "", currentSequenceNumber, b.array());
-            kvMsg.send(publisher);
-            kvMsg.send(updates); // send a message to State Manager thead.
+                kvsimple kvMsg = new kvsimple(
+                    key + "", currentSequenceNumber, b.array()
+                );
+                kvMsg.send(publisher);
+                kvMsg.send(updates); // send a message to State Manager thread.
 
-            try {
-                Thread.sleep(1000);
+                try {
+                    Thread.sleep(1000);
+                }
+                catch (InterruptedException e) {
+                }
             }
-            catch (InterruptedException e) {
-            }
 
+            System.out.printf(" Interrupted\n%d messages out\n", sequence);
         }
-        System.out.printf(" Interrupted\n%d messages out\n", sequence);
-
-        ctx.destroy();
     }
 
     public static class StateManager implements IAttachedRunnable

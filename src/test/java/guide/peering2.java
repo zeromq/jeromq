@@ -31,24 +31,24 @@ public class peering2
         @Override
         public void run()
         {
-            ZContext ctx = new ZContext();
-            Socket client = ctx.createSocket(ZMQ.REQ);
-            client.connect(String.format("ipc://%s-localfe.ipc", self));
+            try (ZContext ctx = new ZContext()) {
+                Socket client = ctx.createSocket(ZMQ.REQ);
+                client.connect(String.format("ipc://%s-localfe.ipc", self));
 
-            while (true) {
-                //  Send request, get reply
-                client.send("HELLO", 0);
-                String reply = client.recvStr(0);
-                if (reply == null)
-                    break; //  Interrupted
-                System.out.printf("Client: %s\n", reply);
-                try {
-                    Thread.sleep(1000);
-                }
-                catch (InterruptedException e) {
+                while (true) {
+                    //  Send request, get reply
+                    client.send("HELLO", 0);
+                    String reply = client.recvStr(0);
+                    if (reply == null)
+                        break; //  Interrupted
+                    System.out.printf("Client: %s\n", reply);
+                    try {
+                        Thread.sleep(1000);
+                    }
+                    catch (InterruptedException e) {
+                    }
                 }
             }
-            ctx.close();
         }
     }
 
@@ -60,25 +60,25 @@ public class peering2
         @Override
         public void run()
         {
-            ZContext ctx = new ZContext();
-            Socket worker = ctx.createSocket(ZMQ.REQ);
-            worker.connect(String.format("ipc://%s-localbe.ipc", self));
+            try (ZContext ctx = new ZContext()) {
+                Socket worker = ctx.createSocket(ZMQ.REQ);
+                worker.connect(String.format("ipc://%s-localbe.ipc", self));
 
-            //  Tell broker we're ready for work
-            ZFrame frame = new ZFrame(WORKER_READY);
-            frame.send(worker, 0);
+                //  Tell broker we're ready for work
+                ZFrame frame = new ZFrame(WORKER_READY);
+                frame.send(worker, 0);
 
-            while (true) {
-                //  Send request, get reply
-                ZMsg msg = ZMsg.recvMsg(worker, 0);
-                if (msg == null)
-                    break; //  Interrupted
-                msg.getLast().print("Worker: ");
-                msg.getLast().reset("OK");
-                msg.send(worker);
+                while (true) {
+                    //  Send request, get reply
+                    ZMsg msg = ZMsg.recvMsg(worker, 0);
+                    if (msg == null)
+                        break; //  Interrupted
+                    msg.getLast().print("Worker: ");
+                    msg.getLast().reset("OK");
+                    msg.send(worker);
 
+                }
             }
-            ctx.close();
         }
     }
 
@@ -97,153 +97,155 @@ public class peering2
         System.out.printf("I: preparing broker at %s\n", self);
         Random rand = new Random(System.nanoTime());
 
-        ZContext ctx = new ZContext();
+        try (ZContext ctx = new ZContext()) {
+            //  Bind cloud frontend to endpoint
+            Socket cloudfe = ctx.createSocket(ZMQ.ROUTER);
+            cloudfe.setIdentity(self.getBytes(ZMQ.CHARSET));
+            cloudfe.bind(String.format("ipc://%s-cloud.ipc", self));
 
-        //  Bind cloud frontend to endpoint
-        Socket cloudfe = ctx.createSocket(ZMQ.ROUTER);
-        cloudfe.setIdentity(self.getBytes(ZMQ.CHARSET));
-        cloudfe.bind(String.format("ipc://%s-cloud.ipc", self));
+            //  Connect cloud backend to all peers
+            Socket cloudbe = ctx.createSocket(ZMQ.ROUTER);
+            cloudbe.setIdentity(self.getBytes(ZMQ.CHARSET));
+            int argn;
+            for (argn = 1; argn < argv.length; argn++) {
+                String peer = argv[argn];
+                System.out.printf(
+                    "I: connecting to cloud forintend at '%s'\n", peer
+                );
+                cloudbe.connect(String.format("ipc://%s-cloud.ipc", peer));
+            }
 
-        //  Connect cloud backend to all peers
-        Socket cloudbe = ctx.createSocket(ZMQ.ROUTER);
-        cloudbe.setIdentity(self.getBytes(ZMQ.CHARSET));
-        int argn;
-        for (argn = 1; argn < argv.length; argn++) {
-            String peer = argv[argn];
-            System.out.printf("I: connecting to cloud forintend at '%s'\n", peer);
-            cloudbe.connect(String.format("ipc://%s-cloud.ipc", peer));
-        }
+            //  Prepare local frontend and backend
+            Socket localfe = ctx.createSocket(ZMQ.ROUTER);
+            localfe.bind(String.format("ipc://%s-localfe.ipc", self));
+            Socket localbe = ctx.createSocket(ZMQ.ROUTER);
+            localbe.bind(String.format("ipc://%s-localbe.ipc", self));
 
-        //  Prepare local frontend and backend
-        Socket localfe = ctx.createSocket(ZMQ.ROUTER);
-        localfe.bind(String.format("ipc://%s-localfe.ipc", self));
-        Socket localbe = ctx.createSocket(ZMQ.ROUTER);
-        localbe.bind(String.format("ipc://%s-localbe.ipc", self));
+            //  Get user to tell us when we can start
+            System.out.println("Press Enter when all brokers are started: ");
+            try {
+                System.in.read();
+            }
+            catch (IOException e) {
+                e.printStackTrace();
+            }
 
-        //  Get user to tell us when we can start
-        System.out.println("Press Enter when all brokers are started: ");
-        try {
-            System.in.read();
-        }
-        catch (IOException e) {
-            e.printStackTrace();
-        }
+            //  Start local workers
+            int worker_nbr;
+            for (worker_nbr = 0; worker_nbr < NBR_WORKERS; worker_nbr++)
+                new worker_task().start();
 
-        //  Start local workers
-        int worker_nbr;
-        for (worker_nbr = 0; worker_nbr < NBR_WORKERS; worker_nbr++)
-            new worker_task().start();
+            //  Start local clients
+            int client_nbr;
+            for (client_nbr = 0; client_nbr < NBR_CLIENTS; client_nbr++)
+                new client_task().start();
 
-        //  Start local clients
-        int client_nbr;
-        for (client_nbr = 0; client_nbr < NBR_CLIENTS; client_nbr++)
-            new client_task().start();
+            //  Here we handle the request-reply flow. We're using the LRU
+            //  approach to poll workers at all times, and clients only when
+            //  there are one or more workers available.
 
-        //  Here we handle the request-reply flow. We're using the LRU approach
-        //  to poll workers at all times, and clients only when there are one or
-        //  more workers available.
+            //  Least recently used queue of available workers
+            int capacity = 0;
+            ArrayList<ZFrame> workers = new ArrayList<ZFrame>();
 
-        //  Least recently used queue of available workers
-        int capacity = 0;
-        ArrayList<ZFrame> workers = new ArrayList<ZFrame>();
+            Poller backends = ctx.createPoller(2);
+            backends.register(localbe, Poller.POLLIN);
+            backends.register(cloudbe, Poller.POLLIN);
 
-        Poller backends = ctx.createPoller(2);
-        backends.register(localbe, Poller.POLLIN);
-        backends.register(cloudbe, Poller.POLLIN);
+            Poller frontends = ctx.createPoller(2);
+            frontends.register(localfe, Poller.POLLIN);
+            frontends.register(cloudfe, Poller.POLLIN);
 
-        Poller frontends = ctx.createPoller(2);
-        frontends.register(localfe, Poller.POLLIN);
-        frontends.register(cloudfe, Poller.POLLIN);
+            while (true) {
+                //  First, route any waiting replies from workers
 
-        while (true) {
-            //  First, route any waiting replies from workers
-
-            //  If we have no workers anyhow, wait indefinitely
-            int rc = backends.poll(capacity > 0 ? 1000 : -1);
-            if (rc == -1)
-                break; //  Interrupted
-            //  Handle reply from local worker
-            ZMsg msg = null;
-            if (backends.pollin(0)) {
-                msg = ZMsg.recvMsg(localbe);
-                if (msg == null)
+                //  If we have no workers anyhow, wait indefinitely
+                int rc = backends.poll(capacity > 0 ? 1000 : -1);
+                if (rc == -1)
                     break; //  Interrupted
-                ZFrame address = msg.unwrap();
-                workers.add(address);
-                capacity++;
+                //  Handle reply from local worker
+                ZMsg msg = null;
+                if (backends.pollin(0)) {
+                    msg = ZMsg.recvMsg(localbe);
+                    if (msg == null)
+                        break; //  Interrupted
+                    ZFrame address = msg.unwrap();
+                    workers.add(address);
+                    capacity++;
 
-                //  If it's READY, don't route the message any further
-                ZFrame frame = msg.getFirst();
-                if (new String(frame.getData(), ZMQ.CHARSET).equals(WORKER_READY)) {
-                    msg.destroy();
-                    msg = null;
+                    //  If it's READY, don't route the message any further
+                    ZFrame frame = msg.getFirst();
+                    String frameData = new String(frame.getData(), ZMQ.CHARSET);
+                    if (frameData.equals(WORKER_READY)) {
+                        msg.destroy();
+                        msg = null;
+                    }
+                }
+                //  Or handle reply from peer broker
+                else if (backends.pollin(1)) {
+                    msg = ZMsg.recvMsg(cloudbe);
+                    if (msg == null)
+                        break; //  Interrupted
+                    //  We don't use peer broker address for anything
+                    ZFrame address = msg.unwrap();
+                    address.destroy();
+                }
+                //  Route reply to cloud if it's addressed to a broker
+                for (argn = 1; msg != null && argn < argv.length; argn++) {
+                    byte[] data = msg.getFirst().getData();
+                    if (argv[argn].equals(new String(data, ZMQ.CHARSET))) {
+                        msg.send(cloudfe);
+                        msg = null;
+                    }
+                }
+                //  Route reply to client if we still need to
+                if (msg != null)
+                    msg.send(localfe);
+
+                //  Now we route as many client requests as we have worker
+                //  capacity for. We may reroute requests from our local
+                //  frontend, but not from // the cloud frontend. We reroute
+                //  randomly now, just to test things out. In the next version
+                //  we'll do this properly by calculating cloud capacity://
+
+                while (capacity > 0) {
+                    rc = frontends.poll(0);
+                    assert (rc >= 0);
+                    int reroutable = 0;
+                    //  We'll do peer brokers first, to prevent starvation
+                    if (frontends.pollin(1)) {
+                        msg = ZMsg.recvMsg(cloudfe);
+                        reroutable = 0;
+                    }
+                    else if (frontends.pollin(0)) {
+                        msg = ZMsg.recvMsg(localfe);
+                        reroutable = 1;
+                    }
+                    else break; //  No work, go back to backends
+
+                    //  If reroutable, send to cloud 20% of the time
+                    //  Here we'd normally use cloud status information
+                    if (reroutable != 0 &&
+                        argv.length > 1 &&
+                        rand.nextInt(5) == 0) {
+                        //  Route to random broker peer
+                        int random_peer = rand.nextInt(argv.length - 1) + 1;
+                        msg.push(argv[random_peer]);
+                        msg.send(cloudbe);
+                    }
+                    else {
+                        ZFrame frame = workers.remove(0);
+                        msg.wrap(frame);
+                        msg.send(localbe);
+                        capacity--;
+                    }
                 }
             }
-            //  Or handle reply from peer broker
-            else if (backends.pollin(1)) {
-                msg = ZMsg.recvMsg(cloudbe);
-                if (msg == null)
-                    break; //  Interrupted
-                //  We don't use peer broker address for anything
-                ZFrame address = msg.unwrap();
-                address.destroy();
-            }
-            //  Route reply to cloud if it's addressed to a broker
-            for (argn = 1; msg != null && argn < argv.length; argn++) {
-                byte[] data = msg.getFirst().getData();
-                if (argv[argn].equals(new String(data, ZMQ.CHARSET))) {
-                    msg.send(cloudfe);
-                    msg = null;
-                }
-            }
-            //  Route reply to client if we still need to
-            if (msg != null)
-                msg.send(localfe);
-
-            //  Now we route as many client requests as we have worker capacity
-            //  for. We may reroute requests from our local frontend, but not from //
-            //  the cloud frontend. We reroute randomly now, just to test things
-            //  out. In the next version we'll do this properly by calculating
-            //  cloud capacity://
-
-            while (capacity > 0) {
-                rc = frontends.poll(0);
-                assert (rc >= 0);
-                int reroutable = 0;
-                //  We'll do peer brokers first, to prevent starvation
-                if (frontends.pollin(1)) {
-                    msg = ZMsg.recvMsg(cloudfe);
-                    reroutable = 0;
-                }
-                else if (frontends.pollin(0)) {
-                    msg = ZMsg.recvMsg(localfe);
-                    reroutable = 1;
-                }
-                else break; //  No work, go back to backends
-
-                //  If reroutable, send to cloud 20% of the time
-                //  Here we'd normally use cloud status information
-                //
-                if (reroutable != 0 && argv.length > 1 && rand.nextInt(5) == 0) {
-                    //  Route to random broker peer
-                    int random_peer = rand.nextInt(argv.length - 1) + 1;
-                    msg.push(argv[random_peer]);
-                    msg.send(cloudbe);
-                }
-                else {
-                    ZFrame frame = workers.remove(0);
-                    msg.wrap(frame);
-                    msg.send(localbe);
-                    capacity--;
-                }
+            //  When we're done, clean up properly
+            while (workers.size() > 0) {
+                ZFrame frame = workers.remove(0);
+                frame.destroy();
             }
         }
-        //  When we're done, clean up properly
-        while (workers.size() > 0) {
-            ZFrame frame = workers.remove(0);
-            frame.destroy();
-        }
-
-        ctx.close();
     }
 }

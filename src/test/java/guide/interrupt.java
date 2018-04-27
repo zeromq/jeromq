@@ -8,20 +8,21 @@ package guide;
 
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQException;
+import org.zeromq.ZContext;
 
 public class interrupt
 {
     public static void main(String[] args)
     {
         //  Prepare our context and socket
-        final ZMQ.Context context = ZMQ.context(1);
+        final ZContext context = new ZContext();
 
         final Thread zmqThread = new Thread()
         {
             @Override
             public void run()
             {
-                ZMQ.Socket socket = context.socket(ZMQ.REP);
+                ZMQ.Socket socket = context.createSocket(ZMQ.REP);
                 socket.bind("tcp://*:5555");
 
                 while (!Thread.currentThread().isInterrupted()) {
@@ -46,7 +47,7 @@ public class interrupt
             public void run()
             {
                 System.out.println("W: interrupt received, killing server...");
-                context.term();
+                context.close();
                 try {
                     zmqThread.interrupt();
                     zmqThread.join();

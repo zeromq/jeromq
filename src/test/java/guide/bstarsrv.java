@@ -127,77 +127,77 @@ public class bstarsrv
         //  Arguments can be either of:
         //      -p  primary server, at tcp://localhost:5001
         //      -b  backup server, at tcp://localhost:5002
-        ZContext ctx = new ZContext();
-        Socket statepub = ctx.createSocket(ZMQ.PUB);
-        Socket statesub = ctx.createSocket(ZMQ.SUB);
-        statesub.subscribe(ZMQ.SUBSCRIPTION_ALL);
-        Socket frontend = ctx.createSocket(ZMQ.ROUTER);
-        bstarsrv fsm = new bstarsrv();
 
-        if (argv.length == 1 && argv[0].equals("-p")) {
-            System.out.printf("I: Primary active, waiting for backup (passive)\n");
-            frontend.bind("tcp://*:5001");
-            statepub.bind("tcp://*:5003");
-            statesub.connect("tcp://localhost:5004");
-            fsm.state = State.STATE_PRIMARY;
-        }
-        else if (argv.length == 1 && argv[0].equals("-b")) {
-            System.out.printf("I: Backup passive, waiting for primary (active)\n");
-            frontend.bind("tcp://*:5002");
-            statepub.bind("tcp://*:5004");
-            statesub.connect("tcp://localhost:5003");
-            fsm.state = State.STATE_BACKUP;
-        }
-        else {
-            System.out.printf("Usage: bstarsrv { -p | -b }\n");
-            ctx.destroy();
-            System.exit(0);
-        }
-        //  .split handling socket input
-        //  We now process events on our two input sockets, and process these
-        //  events one at a time via our finite-state machine. Our "work" for
-        //  a client request is simply to echo it back.
-        Poller poller = ctx.createPoller(2);
-        poller.register(frontend, ZMQ.Poller.POLLIN);
-        poller.register(statesub, ZMQ.Poller.POLLIN);
+        try (ZContext ctx = new ZContext()) {
+            Socket statepub = ctx.createSocket(ZMQ.PUB);
+            Socket statesub = ctx.createSocket(ZMQ.SUB);
+            statesub.subscribe(ZMQ.SUBSCRIPTION_ALL);
+            Socket frontend = ctx.createSocket(ZMQ.ROUTER);
+            bstarsrv fsm = new bstarsrv();
 
-        //  Set timer for next outgoing state message
-        long sendStateAt = System.currentTimeMillis() + HEARTBEAT;
-        while (!Thread.currentThread().isInterrupted()) {
-            int timeLeft = (int) ((sendStateAt - System.currentTimeMillis()));
-            if (timeLeft < 0)
-                timeLeft = 0;
-            int rc = poller.poll(timeLeft);
-            if (rc == -1)
-                break; //  Context has been shut down
-
-            if (poller.pollin(0)) {
-                //  Have a client request
-                ZMsg msg = ZMsg.recvMsg(frontend);
-                fsm.event = Event.CLIENT_REQUEST;
-                if (fsm.stateMachine() == false)
-                    //  Answer client by echoing request back
-                    msg.send(frontend);
-                else msg.destroy();
+            if (argv.length == 1 && argv[0].equals("-p")) {
+                System.out.printf("I: Primary active, waiting for backup (passive)\n");
+                frontend.bind("tcp://*:5001");
+                statepub.bind("tcp://*:5003");
+                statesub.connect("tcp://localhost:5004");
+                fsm.state = State.STATE_PRIMARY;
             }
-            if (poller.pollin(1)) {
-                //  Have state from our peer, execute as event
-                String message = statesub.recvStr();
-                fsm.event = Event.values()[Integer.parseInt(message)];
-                if (fsm.stateMachine())
-                    break; //  Error, so exit
-                fsm.peerExpiry = System.currentTimeMillis() + 2 * HEARTBEAT;
+            else if (argv.length == 1 && argv[0].equals("-b")) {
+                System.out.printf("I: Backup passive, waiting for primary (active)\n");
+                frontend.bind("tcp://*:5002");
+                statepub.bind("tcp://*:5004");
+                statesub.connect("tcp://localhost:5003");
+                fsm.state = State.STATE_BACKUP;
             }
-            //  If we timed out, send state to peer
-            if (System.currentTimeMillis() >= sendStateAt) {
-                statepub.send(String.valueOf(fsm.state.ordinal()));
-                sendStateAt = System.currentTimeMillis() + HEARTBEAT;
+            else {
+                System.out.printf("Usage: bstarsrv { -p | -b }\n");
+                ctx.destroy();
+                System.exit(0);
             }
-        }
-        if (Thread.currentThread().isInterrupted())
-            System.out.printf("W: interrupted\n");
+            //  .split handling socket input
+            //  We now process events on our two input sockets, and process
+            //  these events one at a time via our finite-state machine. Our
+            //  "work" for a client request is simply to echo it back.
+            Poller poller = ctx.createPoller(2);
+            poller.register(frontend, ZMQ.Poller.POLLIN);
+            poller.register(statesub, ZMQ.Poller.POLLIN);
 
-        //  Shutdown sockets and context
-        ctx.close();
+            //  Set timer for next outgoing state message
+            long sendStateAt = System.currentTimeMillis() + HEARTBEAT;
+            while (!Thread.currentThread().isInterrupted()) {
+                int timeLeft = (int) ((sendStateAt - System.currentTimeMillis()));
+                if (timeLeft < 0)
+                    timeLeft = 0;
+                int rc = poller.poll(timeLeft);
+                if (rc == -1)
+                    break; //  Context has been shut down
+
+                if (poller.pollin(0)) {
+                    //  Have a client request
+                    ZMsg msg = ZMsg.recvMsg(frontend);
+                    fsm.event = Event.CLIENT_REQUEST;
+                    if (fsm.stateMachine() == false)
+                        //  Answer client by echoing request back
+                        msg.send(frontend);
+                    else msg.destroy();
+                }
+                if (poller.pollin(1)) {
+                    //  Have state from our peer, execute as event
+                    String message = statesub.recvStr();
+                    fsm.event = Event.values()[Integer.parseInt(message)];
+                    if (fsm.stateMachine())
+                        break; //  Error, so exit
+                    fsm.peerExpiry = System.currentTimeMillis() + 2 * HEARTBEAT;
+                }
+                //  If we timed out, send state to peer
+                if (System.currentTimeMillis() >= sendStateAt) {
+                    statepub.send(String.valueOf(fsm.state.ordinal()));
+                    sendStateAt = System.currentTimeMillis() + HEARTBEAT;
+                }
+            }
+
+            if (Thread.currentThread().isInterrupted())
+                System.out.printf("W: interrupted\n");
+        }
     }
 }

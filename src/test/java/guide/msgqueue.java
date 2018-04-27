@@ -1,8 +1,8 @@
 package guide;
 
 import org.zeromq.ZMQ;
-import org.zeromq.ZMQ.Context;
 import org.zeromq.ZMQ.Socket;
+import org.zeromq.ZContext;
 
 /**
 * Simple message queuing broker
@@ -14,22 +14,17 @@ public class msgqueue
     public static void main(String[] args)
     {
         //  Prepare our context and sockets
-        Context context = ZMQ.context(1);
+        try (ZContext context = new ZContext()) {
+            //  Socket facing clients
+            Socket frontend = context.createSocket(ZMQ.ROUTER);
+            frontend.bind("tcp://*:5559");
 
-        //  Socket facing clients
-        Socket frontend = context.socket(ZMQ.ROUTER);
-        frontend.bind("tcp://*:5559");
+            //  Socket facing services
+            Socket backend = context.createSocket(ZMQ.DEALER);
+            backend.bind("tcp://*:5560");
 
-        //  Socket facing services
-        Socket backend = context.socket(ZMQ.DEALER);
-        backend.bind("tcp://*:5560");
-
-        //  Start the proxy
-        ZMQ.proxy(frontend, backend, null);
-
-        //  We never get here but clean up anyhow
-        frontend.close();
-        backend.close();
-        context.term();
+            //  Start the proxy
+            ZMQ.proxy(frontend, backend, null);
+        }
     }
 }

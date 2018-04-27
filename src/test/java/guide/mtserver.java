@@ -1,8 +1,8 @@
 package guide;
 
 import org.zeromq.ZMQ;
-import org.zeromq.ZMQ.Context;
 import org.zeromq.ZMQ.Socket;
+import org.zeromq.ZContext;
 
 /**
  * Multi threaded Hello World server
@@ -12,9 +12,9 @@ public class mtserver
 
     private static class Worker extends Thread
     {
-        private Context context;
+        private ZContext context;
 
-        private Worker(Context context)
+        private Worker(ZContext context)
         {
             this.context = context;
         }
@@ -22,7 +22,7 @@ public class mtserver
         @Override
         public void run()
         {
-            ZMQ.Socket socket = context.socket(ZMQ.REP);
+            ZMQ.Socket socket = context.createSocket(ZMQ.REP);
             socket.connect("inproc://workers");
 
             while (true) {
@@ -46,25 +46,20 @@ public class mtserver
 
     public static void main(String[] args)
     {
+        try (ZContext context = new ZContext()) {
+            Socket clients = context.createSocket(ZMQ.ROUTER);
+            clients.bind("tcp://*:5555");
 
-        Context context = ZMQ.context(1);
+            Socket workers = context.createSocket(ZMQ.DEALER);
+            workers.bind("inproc://workers");
 
-        Socket clients = context.socket(ZMQ.ROUTER);
-        clients.bind("tcp://*:5555");
+            for (int thread_nbr = 0; thread_nbr < 5; thread_nbr++) {
+                Thread worker = new Worker(context);
+                worker.start();
+            }
 
-        Socket workers = context.socket(ZMQ.DEALER);
-        workers.bind("inproc://workers");
-
-        for (int thread_nbr = 0; thread_nbr < 5; thread_nbr++) {
-            Thread worker = new Worker(context);
-            worker.start();
+            //  Connect work threads to client threads via a queue
+            ZMQ.proxy(clients, workers, null);
         }
-        //  Connect work threads to client threads via a queue
-        ZMQ.proxy(clients, workers, null);
-
-        //  We never get here but clean up anyhow
-        clients.close();
-        workers.close();
-        context.term();
     }
 }
