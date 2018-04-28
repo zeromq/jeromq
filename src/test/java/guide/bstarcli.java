@@ -14,66 +14,68 @@ public class bstarcli
 
     public static void main(String[] argv) throws Exception
     {
-        ZContext ctx = new ZContext();
-        String[] server = { "tcp://localhost:5001", "tcp://localhost:5002" };
-        int serverNbr = 0;
+        try (ZContext ctx = new ZContext()) {
+            String[] server = { "tcp://localhost:5001",
+                                "tcp://localhost:5002" };
+            int serverNbr = 0;
 
-        System.out.printf("I: connecting to server at %s...\n", server[serverNbr]);
-        Socket client = ctx.createSocket(ZMQ.REQ);
-        client.connect(server[serverNbr]);
+            System.out.printf("I: connecting to server at %s...\n",
+                              server[serverNbr]);
 
-        Poller poller = ctx.createPoller(1);
-        poller.register(client, ZMQ.Poller.POLLIN);
+            Socket client = ctx.createSocket(ZMQ.REQ);
+            client.connect(server[serverNbr]);
 
-        int sequence = 0;
-        while (!Thread.currentThread().isInterrupted()) {
-            //  We send a request, then we work to get a reply
-            String request = String.format("%d", ++sequence);
-            client.send(request);
+            Poller poller = ctx.createPoller(1);
+            poller.register(client, ZMQ.Poller.POLLIN);
 
-            boolean expectReply = true;
-            while (expectReply) {
-                //  Poll socket for a reply, with timeout
-                int rc = poller.poll(REQUEST_TIMEOUT);
-                if (rc == -1)
-                    break; //  Interrupted
+            int sequence = 0;
+            while (!Thread.currentThread().isInterrupted()) {
+                //  We send a request, then we work to get a reply
+                String request = String.format("%d", ++sequence);
+                client.send(request);
 
-                //  .split main body of client
-                //  We use a Lazy Pirate strategy in the client. If there's no
-                //  reply within our timeout, we close the socket and try again.
-                //  In Binary Star, it's the client vote that decides which
-                //  server is primary; the client must therefore try to connect
-                //  to each server in turn:
+                boolean expectReply = true;
+                while (expectReply) {
+                    //  Poll socket for a reply, with timeout
+                    int rc = poller.poll(REQUEST_TIMEOUT);
+                    if (rc == -1)
+                        break; //  Interrupted
 
-                if (poller.pollin(0)) {
-                    //  We got a reply from the server, must match getSequence
-                    String reply = client.recvStr();
-                    if (Integer.parseInt(reply) == sequence) {
-                        System.out.printf("I: server replied OK (%s)\n", reply);
-                        expectReply = false;
-                        Thread.sleep(1000); //  One request per second
+                    //  .split main body of client
+                    //  We use a Lazy Pirate strategy in the client. If there's
+                    //  no reply within our timeout, we close the socket and try
+                    //  again.  In Binary Star, it's the client vote that
+                    //  decides which server is primary; the client must
+                    //  therefore try to connect to each server in turn:
+
+                    if (poller.pollin(0)) {
+                        //  We got a reply from the server, must match getSequence
+                        String reply = client.recvStr();
+                        if (Integer.parseInt(reply) == sequence) {
+                            System.out.printf("I: server replied OK (%s)\n", reply);
+                            expectReply = false;
+                            Thread.sleep(1000); //  One request per second
+                        }
+                        else System.out.printf("E: bad reply from server: %s\n", reply);
                     }
-                    else System.out.printf("E: bad reply from server: %s\n", reply);
-                }
-                else {
-                    System.out.printf("W: no response from server, failing over\n");
+                    else {
+                        System.out.printf("W: no response from server, failing over\n");
 
-                    //  Old socket is confused; close it and open a new one
-                    poller.unregister(client);
-                    ctx.destroySocket(client);
-                    serverNbr = (serverNbr + 1) % 2;
-                    Thread.sleep(SETTLE_DELAY);
-                    System.out.printf("I: connecting to server at %s...\n", server[serverNbr]);
-                    client = ctx.createSocket(ZMQ.REQ);
-                    client.connect(server[serverNbr]);
-                    poller.register(client, ZMQ.Poller.POLLIN);
+                        //  Old socket is confused; close it and open a new one
+                        poller.unregister(client);
+                        ctx.destroySocket(client);
+                        serverNbr = (serverNbr + 1) % 2;
+                        Thread.sleep(SETTLE_DELAY);
+                        System.out.printf("I: connecting to server at %s...\n", server[serverNbr]);
+                        client = ctx.createSocket(ZMQ.REQ);
+                        client.connect(server[serverNbr]);
+                        poller.register(client, ZMQ.Poller.POLLIN);
 
-                    //  Send request again, on new socket
-                    client.send(request);
+                        //  Send request again, on new socket
+                        client.send(request);
+                    }
                 }
             }
         }
-        ctx.close();
-
     }
 }

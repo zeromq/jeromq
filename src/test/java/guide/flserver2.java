@@ -16,30 +16,31 @@ public class flserver2
             System.out.printf("I: syntax: flserver2 <endpoint>\n");
             System.exit(0);
         }
-        ZContext ctx = new ZContext();
-        Socket server = ctx.createSocket(ZMQ.REP);
-        server.bind(args[0]);
 
-        System.out.printf("I: echo service is ready at %s\n", args[0]);
-        while (true) {
-            ZMsg request = ZMsg.recvMsg(server);
-            if (request == null)
-                break; //  Interrupted
+        try (ZContext ctx = new ZContext()) {
+            Socket server = ctx.createSocket(ZMQ.REP);
+            server.bind(args[0]);
 
-            //  Fail nastily if run against wrong client
-            assert (request.size() == 2);
+            System.out.printf("I: echo service is ready at %s\n", args[0]);
+            while (true) {
+                ZMsg request = ZMsg.recvMsg(server);
+                if (request == null)
+                    break; //  Interrupted
 
-            ZFrame identity = request.pop();
-            request.destroy();
+                //  Fail nastily if run against wrong client
+                assert (request.size() == 2);
 
-            ZMsg reply = new ZMsg();
-            reply.add(identity);
-            reply.add("OK");
-            reply.send(server);
+                ZFrame identity = request.pop();
+                request.destroy();
+
+                ZMsg reply = new ZMsg();
+                reply.add(identity);
+                reply.add("OK");
+                reply.send(server);
+            }
+
+            if (Thread.currentThread().isInterrupted())
+                System.out.printf("W: interrupted\n");
         }
-        if (Thread.currentThread().isInterrupted())
-            System.out.printf("W: interrupted\n");
-
-        ctx.close();
     }
 }

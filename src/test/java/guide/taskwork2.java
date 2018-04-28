@@ -1,6 +1,7 @@
 package guide;
 
 import org.zeromq.ZMQ;
+import org.zeromq.ZContext;
 
 /**
  *  Task worker - design 2
@@ -8,56 +9,47 @@ import org.zeromq.ZMQ;
  */
 public class taskwork2
 {
-
     public static void main(String[] args) throws InterruptedException
     {
-        ZMQ.Context context = ZMQ.context(1);
+        try (ZContext context = new ZContext()) {
+            ZMQ.Socket receiver = context.createSocket(ZMQ.PULL);
+            receiver.connect("tcp://localhost:5557");
 
-        ZMQ.Socket receiver = context.socket(ZMQ.PULL);
-        receiver.connect("tcp://localhost:5557");
+            ZMQ.Socket sender = context.createSocket(ZMQ.PUSH);
+            sender.connect("tcp://localhost:5558");
 
-        ZMQ.Socket sender = context.socket(ZMQ.PUSH);
-        sender.connect("tcp://localhost:5558");
+            ZMQ.Socket controller = context.createSocket(ZMQ.SUB);
+            controller.connect("tcp://localhost:5559");
+            controller.subscribe(ZMQ.SUBSCRIPTION_ALL);
 
-        ZMQ.Socket controller = context.socket(ZMQ.SUB);
-        controller.connect("tcp://localhost:5559");
-        controller.subscribe(ZMQ.SUBSCRIPTION_ALL);
+            ZMQ.Poller items = context.createPoller(2);
+            items.register(receiver, ZMQ.Poller.POLLIN);
+            items.register(controller, ZMQ.Poller.POLLIN);
 
-        ZMQ.Poller items = context.poller(2);
-        items.register(receiver, ZMQ.Poller.POLLIN);
-        items.register(controller, ZMQ.Poller.POLLIN);
+            while (true) {
+                items.poll();
 
-        while (true) {
+                if (items.pollin(0)) {
 
-            items.poll();
+                    String message = receiver.recvStr(0);
+                    long nsec = Long.parseLong(message);
 
-            if (items.pollin(0)) {
+                    //  Simple progress indicator for the viewer
+                    System.out.print(message + '.');
+                    System.out.flush();
 
-                String message = receiver.recvStr(0);
-                long nsec = Long.parseLong(message);
+                    //  Do the work
+                    Thread.sleep(nsec);
 
-                //  Simple progress indicator for the viewer
-                System.out.print(message + '.');
-                System.out.flush();
+                    //  Send results to sink
+                    sender.send("", 0);
+                }
 
-                //  Do the work
-                Thread.sleep(nsec);
-
-                //  Send results to sink
-                sender.send("", 0);
+                //  Any waiting controller command acts as 'KILL'
+                if (items.pollin(1)) {
+                    break; // Exit loop
+                }
             }
-            //  Any waiting controller command acts as 'KILL'
-            if (items.pollin(1)) {
-                break; // Exit loop
-            }
-
         }
-
-        // Finished
-        items.close();
-        receiver.close();
-        sender.close();
-        controller.close();
-        context.term();
     }
 }

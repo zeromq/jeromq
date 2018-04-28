@@ -33,20 +33,18 @@ public class lbbroker3
         @Override
         public void run(Object [] args)
         {
-            ZContext context = new ZContext();
-
             //  Prepare our context and sockets
-            Socket client = context.createSocket(ZMQ.REQ);
-            ZHelper.setId(client); //  Set a printable identity
+            try (ZContext context = new ZContext()) {
+                Socket client = context.createSocket(ZMQ.REQ);
+                ZHelper.setId(client); //  Set a printable identity
 
-            client.connect("ipc://frontend.ipc");
+                client.connect("ipc://frontend.ipc");
 
-            //  Send request, get reply
-            client.send("HELLO");
-            String reply = client.recvStr();
-            System.out.println("Client: " + reply);
-
-            context.close();
+                //  Send request, get reply
+                client.send("HELLO");
+                String reply = client.recvStr();
+                System.out.println("Client: " + reply);
+            }
         }
     }
 
@@ -58,27 +56,26 @@ public class lbbroker3
         @Override
         public void run(Object [] args)
         {
-            ZContext context = new ZContext();
-
             //  Prepare our context and sockets
-            Socket worker = context.createSocket(ZMQ.REQ);
-            ZHelper.setId(worker); //  Set a printable identity
+            try (ZContext context = new ZContext()) {
+                Socket worker = context.createSocket(ZMQ.REQ);
+                ZHelper.setId(worker); //  Set a printable identity
 
-            worker.connect("ipc://backend.ipc");
+                worker.connect("ipc://backend.ipc");
 
-            //  Tell backend we're ready for work
-            ZFrame frame = new ZFrame(WORKER_READY);
-            frame.send(worker, 0);
+                //  Tell backend we're ready for work
+                ZFrame frame = new ZFrame(WORKER_READY);
+                frame.send(worker, 0);
 
-            while (true) {
-                ZMsg msg = ZMsg.recvMsg(worker);
-                if (msg == null)
-                    break;
+                while (true) {
+                    ZMsg msg = ZMsg.recvMsg(worker);
+                    if (msg == null)
+                        break;
 
-                msg.getLast().reset("OK");
-                msg.send(worker);
+                    msg.getLast().reset("OK");
+                    msg.send(worker);
+                }
             }
-            context.close();
         }
     }
 
@@ -101,7 +98,6 @@ public class lbbroker3
         @Override
         public int handle(ZLoop loop, PollItem item, Object arg_)
         {
-
             LBBroker arg = (LBBroker) arg_;
             ZMsg msg = ZMsg.recvMsg(arg.frontend);
             if (msg != null) {
@@ -124,7 +120,6 @@ public class lbbroker3
         @Override
         public int handle(ZLoop loop, PollItem item, Object arg_)
         {
-
             LBBroker arg = (LBBroker) arg_;
             ZMsg msg = ZMsg.recvMsg(arg.backend);
             if (msg != null) {
@@ -157,31 +152,29 @@ public class lbbroker3
      */
     public static void main(String[] args)
     {
-        ZContext context = new ZContext();
-        LBBroker arg = new LBBroker();
         //  Prepare our context and sockets
-        arg.frontend = context.createSocket(ZMQ.ROUTER);
-        arg.backend = context.createSocket(ZMQ.ROUTER);
-        arg.frontend.bind("ipc://frontend.ipc");
-        arg.backend.bind("ipc://backend.ipc");
+        try (ZContext context = new ZContext()) {
+            LBBroker arg = new LBBroker();
+            arg.frontend = context.createSocket(ZMQ.ROUTER);
+            arg.backend = context.createSocket(ZMQ.ROUTER);
+            arg.frontend.bind("ipc://frontend.ipc");
+            arg.backend.bind("ipc://backend.ipc");
 
-        int clientNbr;
-        for (clientNbr = 0; clientNbr < NBR_CLIENTS; clientNbr++)
-            ZThread.start(new ClientTask());
+            int clientNbr;
+            for (clientNbr = 0; clientNbr < NBR_CLIENTS; clientNbr++)
+                ZThread.start(new ClientTask());
 
-        for (int workerNbr = 0; workerNbr < NBR_WORKERS; workerNbr++)
-            ZThread.start(new WorkerTask());
+            for (int workerNbr = 0; workerNbr < NBR_WORKERS; workerNbr++)
+                ZThread.start(new WorkerTask());
 
-        //  Queue of available workers
-        arg.workers = new LinkedList<ZFrame>();
+            //  Queue of available workers
+            arg.workers = new LinkedList<ZFrame>();
 
-        //  Prepare reactor and fire it up
-        ZLoop reactor = new ZLoop(context);
-        PollItem item = new PollItem(arg.backend, ZMQ.Poller.POLLIN);
-        reactor.addPoller(item, backendHandler, arg);
-        reactor.start();
-
-        context.close();
+            //  Prepare reactor and fire it up
+            ZLoop reactor = new ZLoop(context);
+            PollItem item = new PollItem(arg.backend, ZMQ.Poller.POLLIN);
+            reactor.addPoller(item, backendHandler, arg);
+            reactor.start();
+        }
     }
-
 }

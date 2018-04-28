@@ -5,8 +5,8 @@ import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.zeromq.ZMQ;
-import org.zeromq.ZMQ.Context;
 import org.zeromq.ZMQ.Socket;
+import org.zeromq.ZContext;
 
 /**
  * 
@@ -20,31 +20,33 @@ public class clonesrv1
 
     public void run()
     {
-        Context ctx = ZMQ.context(1);
-        Socket publisher = ctx.socket(ZMQ.PUB);
-        publisher.bind("tcp://*:5556");
+        try (ZContext ctx = new ZContext()) {
+            Socket publisher = ctx.createSocket(ZMQ.PUB);
+            publisher.bind("tcp://*:5556");
 
-        try {
-            Thread.sleep(200);
-        }
-        catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+            try {
+                Thread.sleep(200);
+            }
+            catch (InterruptedException e) {
+                e.printStackTrace();
+            }
 
-        Random random = new Random();
+            Random random = new Random();
 
-        while (true) {
-            long currentSequenceNumber = sequence.incrementAndGet();
-            int key = random.nextInt(10000);
-            int body = random.nextInt(1000000);
+            while (true) {
+                long currentSequenceNumber = sequence.incrementAndGet();
+                int key = random.nextInt(10000);
+                int body = random.nextInt(1000000);
 
-            ByteBuffer b = ByteBuffer.allocate(4);
-            b.asIntBuffer().put(body);
+                ByteBuffer b = ByteBuffer.allocate(4);
+                b.asIntBuffer().put(body);
 
-            kvsimple kvMsg = new kvsimple(key + "", currentSequenceNumber, b.array());
-            kvMsg.send(publisher);
-            System.out.println("sending " + kvMsg);
-
+                kvsimple kvMsg = new kvsimple(
+                    key + "", currentSequenceNumber, b.array()
+                );
+                kvMsg.send(publisher);
+                System.out.println("sending " + kvMsg);
+            }
         }
     }
 

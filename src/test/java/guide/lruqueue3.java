@@ -16,32 +16,32 @@ class ClientThread3 extends Thread
     @Override
     public void run()
     {
-        ZContext context = new ZContext();
-
         //  Prepare our context and sockets
-        Socket client = context.createSocket(ZMQ.REQ);
+        try (ZContext context = new ZContext()) {
+            Socket client = context.createSocket(ZMQ.REQ);
 
-        //  Initialize random number generator
-        client.connect("ipc://frontend.ipc");
+            //  Initialize random number generator
+            client.connect("ipc://frontend.ipc");
 
-        //  Send request, get reply
-        while (true) {
-            client.send("HELLO".getBytes(ZMQ.CHARSET), 0);
-            byte[] data = client.recv(0);
+            //  Send request, get reply
+            while (true) {
+                client.send("HELLO".getBytes(ZMQ.CHARSET), 0);
+                byte[] data = client.recv(0);
 
-            if (data == null)
-                break;
-            String reply = new String(data, ZMQ.CHARSET);
-            try {
-                Thread.sleep(1000);
+                if (data == null)
+                    break;
+                String reply = new String(data, ZMQ.CHARSET);
+                try {
+                    Thread.sleep(1000);
+                }
+                catch (InterruptedException e) {
+                }
+
+                System.out.println(
+                    Thread.currentThread().getName() + " Client Sent HELLO"
+                );
             }
-            catch (InterruptedException e) {
-            }
-
-            System.out.println(Thread.currentThread().getName() + " Client Sent HELLO");
-
         }
-        context.close();
     }
 }
 
@@ -51,28 +51,29 @@ class WorkerThread3 extends Thread
     @Override
     public void run()
     {
-        ZContext context = new ZContext();
         //  Prepare our context and sockets
-        Socket worker = context.createSocket(ZMQ.REQ);
+        try (ZContext context = new ZContext()) {
+            Socket worker = context.createSocket(ZMQ.REQ);
 
-        worker.connect("ipc://backend.ipc");
+            worker.connect("ipc://backend.ipc");
 
-        ZFrame frame = new ZFrame(lruqueue3.LRU_READY);
-        //  Tell backend we're ready for work
-        frame.send(worker, 0);
+            ZFrame frame = new ZFrame(lruqueue3.LRU_READY);
+            //  Tell backend we're ready for work
+            frame.send(worker, 0);
 
-        while (true) {
-            ZMsg msg = ZMsg.recvMsg(worker);
-            if (msg == null)
-                break;
+            while (true) {
+                ZMsg msg = ZMsg.recvMsg(worker);
+                if (msg == null)
+                    break;
 
-            msg.getLast().reset("OK".getBytes(ZMQ.CHARSET));
+                msg.getLast().reset("OK".getBytes(ZMQ.CHARSET));
 
-            msg.send(worker);
-            System.out.println(Thread.currentThread().getName() + " Worker Sent OK");
+                msg.send(worker);
+                System.out.println(
+                    Thread.currentThread().getName() + " Worker Sent OK"
+                );
+            }
         }
-
-        context.close();
     }
 }
 
@@ -94,7 +95,6 @@ class FrontendHandler implements ZLoop.IZLoopHandler
     @Override
     public int handle(ZLoop loop, PollItem item, Object arg_)
     {
-
         LRUQueueArg arg = (LRUQueueArg) arg_;
         ZMsg msg = ZMsg.recvMsg(arg.frontend);
         if (msg != null) {
@@ -118,7 +118,6 @@ class BackendHandler implements ZLoop.IZLoopHandler
     @Override
     public int handle(ZLoop loop, PollItem item, Object arg_)
     {
-
         LRUQueueArg arg = (LRUQueueArg) arg_;
         ZMsg msg = ZMsg.recvMsg(arg.backend);
         if (msg != null) {
@@ -152,44 +151,40 @@ public class lruqueue3
 
     public static void main(String[] args)
     {
-        ZContext context = new ZContext();
-        LRUQueueArg arg = new LRUQueueArg();
         //  Prepare our context and sockets
-        Socket frontend = context.createSocket(ZMQ.ROUTER);
-        Socket backend = context.createSocket(ZMQ.ROUTER);
-        arg.frontend = frontend;
-        arg.backend = backend;
+        try (ZContext context = new ZContext()) {
+            LRUQueueArg arg = new LRUQueueArg();
+            Socket frontend = context.createSocket(ZMQ.ROUTER);
+            Socket backend = context.createSocket(ZMQ.ROUTER);
+            arg.frontend = frontend;
+            arg.backend = backend;
 
-        frontend.bind("ipc://frontend.ipc");
-        backend.bind("ipc://backend.ipc");
+            frontend.bind("ipc://frontend.ipc");
+            backend.bind("ipc://backend.ipc");
 
-        int client_nbr;
-        for (client_nbr = 0; client_nbr < 10; client_nbr++)
-            new ClientThread3().start();
+            int client_nbr;
+            for (client_nbr = 0; client_nbr < 10; client_nbr++)
+                new ClientThread3().start();
 
-        int worker_nbr;
-        for (worker_nbr = 0; worker_nbr < 3; worker_nbr++)
-            new WorkerThread3().start();
+            int worker_nbr;
+            for (worker_nbr = 0; worker_nbr < 3; worker_nbr++)
+                new WorkerThread3().start();
 
-        //  Queue of available workers
-        arg.workers = new LinkedList<ZFrame>();
+            //  Queue of available workers
+            arg.workers = new LinkedList<ZFrame>();
 
-        //  Prepare reactor and fire it up
-        ZLoop reactor = new ZLoop(context);
-        reactor.verbose(true);
-        PollItem poller = new PollItem(arg.backend, ZMQ.Poller.POLLIN);
-        reactor.addPoller(poller, handle_backend, arg);
-        reactor.start();
-        reactor.destroy();
+            //  Prepare reactor and fire it up
+            ZLoop reactor = new ZLoop(context);
+            reactor.verbose(true);
+            PollItem poller = new PollItem(arg.backend, ZMQ.Poller.POLLIN);
+            reactor.addPoller(poller, handle_backend, arg);
+            reactor.start();
 
-        for (ZFrame frame : arg.workers) {
-            frame.destroy();
+            for (ZFrame frame : arg.workers) {
+                frame.destroy();
+            }
         }
 
-        context.close();
-
         System.exit(0);
-
     }
-
 }

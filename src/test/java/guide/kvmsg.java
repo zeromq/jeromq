@@ -327,58 +327,54 @@ public class kvmsg
         System.out.printf(" * kvmsg: ");
 
         //  Prepare our context and sockets
-        ZContext ctx = new ZContext();
-        Socket output = ctx.createSocket(ZMQ.DEALER);
-        output.bind("ipc://kvmsg_selftest.ipc");
-        Socket input = ctx.createSocket(ZMQ.DEALER);
-        input.connect("ipc://kvmsg_selftest.ipc");
+        try (ZContext ctx = new ZContext()) {
+            Socket output = ctx.createSocket(ZMQ.DEALER);
+            output.bind("ipc://kvmsg_selftest.ipc");
+            Socket input = ctx.createSocket(ZMQ.DEALER);
+            input.connect("ipc://kvmsg_selftest.ipc");
 
-        Map<String, kvmsg> kvmap = new HashMap<String, kvmsg>();
+            Map<String, kvmsg> kvmap = new HashMap<String, kvmsg>();
 
-        //  .until
-        //  Test send and receive of simple message
-        kvmsg kvmsg = new kvmsg(1);
-        kvmsg.setKey("getKey");
-        kvmsg.setUUID();
-        kvmsg.setBody("body".getBytes(ZMQ.CHARSET));
-        if (verbose)
-            kvmsg.dump();
-        kvmsg.send(output);
-        kvmsg.store(kvmap);
+            //  .until
+            //  Test send and receive of simple message
+            kvmsg kvmsg = new kvmsg(1);
+            kvmsg.setKey("getKey");
+            kvmsg.setUUID();
+            kvmsg.setBody("body".getBytes(ZMQ.CHARSET));
+            if (verbose)
+                kvmsg.dump();
+            kvmsg.send(output);
+            kvmsg.store(kvmap);
 
-        kvmsg = guide.kvmsg.recv(input);
-        if (verbose)
-            kvmsg.dump();
-        assert (kvmsg.getKey().equals("getKey"));
-        kvmsg.store(kvmap);
+            kvmsg = guide.kvmsg.recv(input);
+            if (verbose)
+                kvmsg.dump();
+            assert (kvmsg.getKey().equals("getKey"));
+            kvmsg.store(kvmap);
 
-        //  Test send and receive of message with properties
-        kvmsg = new kvmsg(2);
-        kvmsg.setProp("prop1", "value1");
-        kvmsg.setProp("prop2", "value1");
-        kvmsg.setProp("prop2", "value2");
-        kvmsg.setKey("getKey");
-        kvmsg.setUUID();
-        kvmsg.setBody("body".getBytes(ZMQ.CHARSET));
-        assert (kvmsg.getProp("prop2").equals("value2"));
-        if (verbose)
-            kvmsg.dump();
-        kvmsg.send(output);
-        kvmsg.destroy();
+            //  Test send and receive of message with properties
+            kvmsg = new kvmsg(2);
+            kvmsg.setProp("prop1", "value1");
+            kvmsg.setProp("prop2", "value1");
+            kvmsg.setProp("prop2", "value2");
+            kvmsg.setKey("getKey");
+            kvmsg.setUUID();
+            kvmsg.setBody("body".getBytes(ZMQ.CHARSET));
+            assert (kvmsg.getProp("prop2").equals("value2"));
+            if (verbose)
+                kvmsg.dump();
+            kvmsg.send(output);
+            kvmsg.destroy();
 
-        kvmsg = guide.kvmsg.recv(input);
-        if (verbose)
-            kvmsg.dump();
-        assert (kvmsg.key.equals("getKey"));
-        assert (kvmsg.getProp("prop2").equals("value2"));
-        kvmsg.destroy();
-
-        //  .skip
-        //  Shutdown and destroy all objects
-        ctx.close();
+            kvmsg = guide.kvmsg.recv(input);
+            if (verbose)
+                kvmsg.dump();
+            assert (kvmsg.key.equals("getKey"));
+            assert (kvmsg.getProp("prop2").equals("value2"));
+            kvmsg.destroy();
+        }
 
         System.out.printf("OK\n");
-
     }
     //  .until
 }

@@ -26,7 +26,6 @@ public class ppqueue
 
     //  Here we define the worker class; a structure and a set of functions that
     //  as constructor, destructor, and methods on worker objects:
-
     private static class Worker
     {
         ZFrame address;  //  Address of worker
@@ -82,80 +81,84 @@ public class ppqueue
     //  detect crashed or blocked worker tasks:
     public static void main(String[] args)
     {
-        ZContext ctx = new ZContext();
-        Socket frontend = ctx.createSocket(ZMQ.ROUTER);
-        Socket backend = ctx.createSocket(ZMQ.ROUTER);
-        frontend.bind("tcp://*:5555"); //  For clients
-        backend.bind("tcp://*:5556"); //  For workers
+        try (ZContext ctx = new ZContext()) {
+            Socket frontend = ctx.createSocket(ZMQ.ROUTER);
+            Socket backend = ctx.createSocket(ZMQ.ROUTER);
+            frontend.bind("tcp://*:5555"); //  For clients
+            backend.bind("tcp://*:5556"); //  For workers
 
-        //  List of available workers
-        ArrayList<Worker> workers = new ArrayList<Worker>();
+            //  List of available workers
+            ArrayList<Worker> workers = new ArrayList<Worker>();
 
-        //  Send out heartbeats at regular intervals
-        long heartbeat_at = System.currentTimeMillis() + HEARTBEAT_INTERVAL;
+            //  Send out heartbeats at regular intervals
+            long heartbeat_at = System.currentTimeMillis() + HEARTBEAT_INTERVAL;
 
-        Poller poller = ctx.createPoller(2);
-        poller.register(backend, Poller.POLLIN);
-        poller.register(frontend, Poller.POLLIN);
+            Poller poller = ctx.createPoller(2);
+            poller.register(backend, Poller.POLLIN);
+            poller.register(frontend, Poller.POLLIN);
 
-        while (true) {
-            boolean workersAvailable = workers.size() > 0;
-            int rc = poller.poll(HEARTBEAT_INTERVAL);
-            if (rc == -1)
-                break; //  Interrupted
-
-            //  Handle worker activity on backend
-            if (poller.pollin(0)) {
-                //  Use worker address for LRU routing
-                ZMsg msg = ZMsg.recvMsg(backend);
-                if (msg == null)
+            while (true) {
+                boolean workersAvailable = workers.size() > 0;
+                int rc = poller.poll(HEARTBEAT_INTERVAL);
+                if (rc == -1)
                     break; //  Interrupted
 
-                //  Any sign of life from worker means it's ready
-                ZFrame address = msg.unwrap();
-                Worker worker = new Worker(address);
-                worker.ready(workers);
+                //  Handle worker activity on backend
+                if (poller.pollin(0)) {
+                    //  Use worker address for LRU routing
+                    ZMsg msg = ZMsg.recvMsg(backend);
+                    if (msg == null)
+                        break; //  Interrupted
 
-                //  Validate control message, or return reply to client
-                if (msg.size() == 1) {
-                    ZFrame frame = msg.getFirst();
-                    String data = new String(frame.getData(), ZMQ.CHARSET);
-                    if (!data.equals(PPP_READY) && !data.equals(PPP_HEARTBEAT)) {
-                        System.out.println("E: invalid message from worker");
-                        msg.dump(System.out);
+                    //  Any sign of life from worker means it's ready
+                    ZFrame address = msg.unwrap();
+                    Worker worker = new Worker(address);
+                    worker.ready(workers);
+
+                    //  Validate control message, or return reply to client
+                    if (msg.size() == 1) {
+                        ZFrame frame = msg.getFirst();
+                        String data = new String(frame.getData(), ZMQ.CHARSET);
+                        if (!data.equals(PPP_READY) &&
+                            !data.equals(PPP_HEARTBEAT)) {
+                            System.out.println(
+                                "E: invalid message from worker"
+                            );
+                            msg.dump(System.out);
+                        }
+                        msg.destroy();
                     }
-                    msg.destroy();
+                    else msg.send(frontend);
                 }
-                else msg.send(frontend);
-            }
-            if (workersAvailable && poller.pollin(1)) {
-                //  Now get next client request, route to next worker
-                ZMsg msg = ZMsg.recvMsg(frontend);
-                if (msg == null)
-                    break; //  Interrupted
-                msg.push(Worker.next(workers));
-                msg.send(backend);
-            }
-
-            //  We handle heartbeating after any socket activity. First we send
-            //  heartbeats to any idle workers if it's time. Then we purge any
-            //  dead workers:
-
-            if (System.currentTimeMillis() >= heartbeat_at) {
-                for (Worker worker : workers) {
-
-                    worker.address.send(backend, ZFrame.REUSE + ZFrame.MORE);
-                    ZFrame frame = new ZFrame(PPP_HEARTBEAT);
-                    frame.send(backend, 0);
+                if (workersAvailable && poller.pollin(1)) {
+                    //  Now get next client request, route to next worker
+                    ZMsg msg = ZMsg.recvMsg(frontend);
+                    if (msg == null)
+                        break; //  Interrupted
+                    msg.push(Worker.next(workers));
+                    msg.send(backend);
                 }
-                heartbeat_at = System.currentTimeMillis() + HEARTBEAT_INTERVAL;
+
+                //  We handle heartbeating after any socket activity. First we
+                //  send heartbeats to any idle workers if it's time. Then we
+                //  purge any dead workers:
+                if (System.currentTimeMillis() >= heartbeat_at) {
+                    for (Worker worker : workers) {
+
+                        worker.address.send(
+                            backend, ZFrame.REUSE + ZFrame.MORE
+                        );
+                        ZFrame frame = new ZFrame(PPP_HEARTBEAT);
+                        frame.send(backend, 0);
+                    }
+                    long now = System.currentTimeMillis();
+                    heartbeat_at = now + HEARTBEAT_INTERVAL;
+                }
+                Worker.purge(workers);
             }
-            Worker.purge(workers);
+
+            //  When we're done, clean up properly
+            workers.clear();
         }
-
-        //  When we're done, clean up properly
-        workers.clear();
-        ctx.close();
     }
-
 }

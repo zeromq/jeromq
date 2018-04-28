@@ -1,8 +1,8 @@
 package guide;
 
 import org.zeromq.ZMQ;
-import org.zeromq.ZMQ.Context;
 import org.zeromq.ZMQ.Socket;
+import org.zeromq.ZContext;
 
 //  Hello World worker
 //  Connects REP socket to tcp://*:5560
@@ -11,26 +11,22 @@ public class rrworker
 {
     public static void main(String[] args) throws Exception
     {
-        Context context = ZMQ.context(1);
+        try (ZContext context = new ZContext()) {
+            //  Socket to talk to server
+            Socket responder = context.createSocket(ZMQ.REP);
+            responder.connect("tcp://localhost:5560");
 
-        //  Socket to talk to server
-        Socket responder = context.socket(ZMQ.REP);
-        responder.connect("tcp://localhost:5560");
+            while (!Thread.currentThread().isInterrupted()) {
+                //  Wait for next request from client
+                String string = responder.recvStr(0);
+                System.out.printf("Received request: [%s]\n", string);
 
-        while (!Thread.currentThread().isInterrupted()) {
-            //  Wait for next request from client
-            String string = responder.recvStr(0);
-            System.out.printf("Received request: [%s]\n", string);
+                //  Do some 'work'
+                Thread.sleep(1000);
 
-            //  Do some 'work'
-            Thread.sleep(1000);
-
-            //  Send reply back to client
-            responder.send("World");
+                //  Send reply back to client
+                responder.send("World");
+            }
         }
-
-        //  We never get here but clean up anyhow
-        responder.close();
-        context.term();
     }
 }

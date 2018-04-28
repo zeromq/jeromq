@@ -14,44 +14,44 @@ public class flserver3
     {
         boolean verbose = (args.length > 0 && args[0].equals("-v"));
 
-        ZContext ctx = new ZContext();
-        //  Prepare server socket with predictable identity
-        String bindEndpoint = "tcp://*:5555";
-        String connectEndpoint = "tcp://localhost:5555";
-        Socket server = ctx.createSocket(ZMQ.ROUTER);
-        server.setIdentity(connectEndpoint.getBytes(ZMQ.CHARSET));
-        server.bind(bindEndpoint);
-        System.out.printf("I: service is ready at %s\n", bindEndpoint);
+        try (ZContext ctx = new ZContext()) {
+            //  Prepare server socket with predictable identity
+            String bindEndpoint = "tcp://*:5555";
+            String connectEndpoint = "tcp://localhost:5555";
+            Socket server = ctx.createSocket(ZMQ.ROUTER);
+            server.setIdentity(connectEndpoint.getBytes(ZMQ.CHARSET));
+            server.bind(bindEndpoint);
+            System.out.printf("I: service is ready at %s\n", bindEndpoint);
 
-        while (!Thread.currentThread().isInterrupted()) {
-            ZMsg request = ZMsg.recvMsg(server);
-            if (verbose && request != null)
-                request.dump(System.out);
+            while (!Thread.currentThread().isInterrupted()) {
+                ZMsg request = ZMsg.recvMsg(server);
+                if (verbose && request != null)
+                    request.dump(System.out);
 
-            if (request == null)
-                break; //  Interrupted
+                if (request == null)
+                    break; //  Interrupted
 
-            //  Frame 0: identity of client
-            //  Frame 1: PING, or client control frame
-            //  Frame 2: request body
-            ZFrame identity = request.pop();
-            ZFrame control = request.pop();
-            ZMsg reply = new ZMsg();
-            if (control.equals(new ZFrame("PING")))
-                reply.add("PONG");
-            else {
-                reply.add(control);
-                reply.add("OK");
+                //  Frame 0: identity of client
+                //  Frame 1: PING, or client control frame
+                //  Frame 2: request body
+                ZFrame identity = request.pop();
+                ZFrame control = request.pop();
+                ZMsg reply = new ZMsg();
+                if (control.equals(new ZFrame("PING")))
+                    reply.add("PONG");
+                else {
+                    reply.add(control);
+                    reply.add("OK");
+                }
+                request.destroy();
+                reply.push(identity);
+                if (verbose && reply != null)
+                    reply.dump(System.out);
+                reply.send(server);
             }
-            request.destroy();
-            reply.push(identity);
-            if (verbose && reply != null)
-                reply.dump(System.out);
-            reply.send(server);
-        }
-        if (Thread.currentThread().isInterrupted())
-            System.out.printf("W: interrupted\n");
 
-        ctx.close();
+            if (Thread.currentThread().isInterrupted())
+                System.out.printf("W: interrupted\n");
+        }
     }
 }

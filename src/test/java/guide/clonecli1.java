@@ -20,21 +20,21 @@ public class clonecli1
 
     public void run()
     {
-        ZContext ctx = new ZContext();
-        Socket subscriber = ctx.createSocket(ZMQ.SUB);
-        subscriber.connect("tcp://localhost:5556");
-        subscriber.subscribe(ZMQ.SUBSCRIPTION_ALL);
+        try (ZContext ctx = new ZContext()) {
+            Socket subscriber = ctx.createSocket(ZMQ.SUB);
+            subscriber.connect("tcp://localhost:5556");
+            subscriber.subscribe(ZMQ.SUBSCRIPTION_ALL);
 
-        while (true) {
-            kvsimple kvMsg = kvsimple.recv(subscriber);
-            if (kvMsg == null)
-                break;
+            while (true) {
+                kvsimple kvMsg = kvsimple.recv(subscriber);
+                if (kvMsg == null)
+                    break;
 
-            clonecli1.kvMap.put(kvMsg.getKey(), kvMsg);
-            System.out.println("receiving " + kvMsg);
-            sequence.incrementAndGet();
+                clonecli1.kvMap.put(kvMsg.getKey(), kvMsg);
+                System.out.println("receiving " + kvMsg);
+                sequence.incrementAndGet();
+            }
         }
-        ctx.close();
     }
 
     public static void main(String[] args)
