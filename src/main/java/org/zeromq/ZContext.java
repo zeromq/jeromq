@@ -78,7 +78,7 @@ public class ZContext implements Closeable
 
     public ZContext(int ioThreads)
     {
-        this(null, true, ioThreads);
+        this(ZMQ.context(ioThreads), true, ioThreads);
     }
 
     private ZContext(Context context, boolean main, int ioThreads)
@@ -102,11 +102,12 @@ public class ZContext implements Closeable
         for (Socket socket : sockets) {
             destroySocket(socket);
         }
+
         sockets.clear();
+
         // Only terminate context if we are on the main thread
-        if (isMain() && context != null) {
-            context.term();
-            context = null;
+        if (isMain()) {
+          context.term();
         }
     }
 
@@ -121,7 +122,7 @@ public class ZContext implements Closeable
     public Socket createSocket(int type)
     {
         // Create and register socket
-        Socket socket = getContext().socket(type);
+        Socket socket = context.socket(type);
         socket.setRcvHWM(this.rcvhwm);
         socket.setSndHWM(this.sndhwm);
         try {
@@ -158,12 +159,12 @@ public class ZContext implements Closeable
 
     public Selector createSelector()
     {
-        return getContext().selector();
+        return context.selector();
     }
 
     public Poller createPoller(int size)
     {
-        return new Poller(getContext(), size);
+        return new Poller(context, size);
     }
 
     /**
@@ -256,6 +257,7 @@ public class ZContext implements Closeable
             mutex.unlock();
         }
     }
+
     /**
      * @return the main
      */
@@ -279,16 +281,7 @@ public class ZContext implements Closeable
      */
     public Context getContext()
     {
-        try {
-            mutex.lock();
-            if (this.context == null) {
-                this.context = ZMQ.context(this.ioThreads);
-            }
-        }
-        finally {
-            mutex.unlock();
-        }
-        return this.context;
+        return context;
     }
 
     /**
@@ -318,9 +311,6 @@ public class ZContext implements Closeable
     public boolean isClosed()
     {
         synchronized (this) {
-            if (context == null) {
-                return true;
-            }
             return context.isClosed();
         }
     }
