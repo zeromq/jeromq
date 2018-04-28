@@ -3,6 +3,7 @@ package zmq.io;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
+import java.util.Arrays;
 
 import zmq.Config;
 import zmq.Msg;
@@ -34,6 +35,32 @@ import zmq.util.Wire;
 // e.g. TCP socket or an UNIX domain socket.
 public class StreamEngine implements IEngine, IPollEvents
 {
+    private final class ProducePingMessage extends MessageProcessor.Adapter
+    {
+        @Override
+        public Msg nextMsg()
+        {
+            return producePingMessage();
+        }
+    }
+
+    private final class ProducePongMessage extends MessageProcessor.Adapter
+    {
+        private final byte[] pingContext;
+
+        public ProducePongMessage(byte[] pingContext)
+        {
+            assert (pingContext != null);
+            this.pingContext = pingContext;
+        }
+
+        @Override
+        public Msg nextMsg()
+        {
+            return producePongMessage(pingContext);
+        }
+    }
+
     private final class HandshakeCommand extends MessageProcessor.Adapter
     {
         @Override
@@ -93,6 +120,18 @@ public class StreamEngine implements IEngine, IPollEvents
             if (msg == null) {
                 return false;
             }
+            if (hasTimeoutTimer) {
+                hasTimeoutTimer = false;
+                ioObject.cancelTimer(HEARTBEAT_TIMEOUT_TIMER_ID);
+            }
+            if (hasTtlTimer) {
+                hasTtlTimer = false;
+                ioObject.cancelTimer(HEARTBEAT_TTL_TIMER_ID);
+            }
+            if (msg.isCommand()) {
+                StreamEngine.this.processHeartbeatMessage(msg);
+            }
+
             if (metadata != null) {
                 msg.setMetadata(metadata);
             }
@@ -270,10 +309,19 @@ public class StreamEngine implements IEngine, IPollEvents
     private boolean outputStopped;
 
     //  ID of the handshake timer
-    private static final int HANDSHAKE_TIMER_ID = 0x40;
+    private static final int HANDSHAKE_TIMER_ID         = 0x40;
+    private static final int HEARTBEAT_TTL_TIMER_ID     = 0x80;
+    private static final int HEARTBEAT_IVL_TIMER_ID     = 0x81;
+    private static final int HEARTBEAT_TIMEOUT_TIMER_ID = 0x82;
 
     //  True is linger timer is running.
     private boolean hasHandshakeTimer;
+
+    private boolean      hasTtlTimer;
+    private boolean      hasTimeoutTimer;
+    private boolean      hasHeartbeatTimer;
+    private final int    heartbeatTimeout;
+    private final byte[] heartbeatContext;
 
     // Socket
     private SocketBase socket;
@@ -307,6 +355,21 @@ public class StreamEngine implements IEngine, IPollEvents
         }
 
         peerAddress = Utils.getPeerIpAddress(fd);
+
+        heartbeatTimeout = heartbeatTimeout();
+        heartbeatContext = Arrays.copyOf(options.heartbeatContext, options.heartbeatContext.length);
+    }
+
+    private int heartbeatTimeout()
+    {
+        int timeout = 0;
+        if (options.heartbeatInterval > 0) {
+            timeout = options.heartbeatTimeout;
+            if (timeout == -1) {
+                timeout = options.heartbeatInterval;
+            }
+        }
+        return timeout;
     }
 
     public void destroy()
@@ -425,6 +488,21 @@ public class StreamEngine implements IEngine, IPollEvents
         if (hasHandshakeTimer) {
             ioObject.cancelTimer(HANDSHAKE_TIMER_ID);
             hasHandshakeTimer = false;
+        }
+
+        if (hasTtlTimer) {
+            ioObject.cancelTimer(HEARTBEAT_TTL_TIMER_ID);
+            hasTtlTimer = false;
+        }
+
+        if (hasTimeoutTimer) {
+            ioObject.cancelTimer(HEARTBEAT_TIMEOUT_TIMER_ID);
+            hasTimeoutTimer = false;
+        }
+
+        if (hasHeartbeatTimer) {
+            ioObject.cancelTimer(HEARTBEAT_IVL_TIMER_ID);
+            hasHeartbeatTimer = false;
         }
 
         if (!ioError) {
@@ -1024,6 +1102,11 @@ public class StreamEngine implements IEngine, IPollEvents
 
     private void mechanismReady()
     {
+        if (options.heartbeatInterval > 0) {
+            ioObject.addTimer(options.heartbeatInterval, HEARTBEAT_IVL_TIMER_ID);
+            hasHeartbeatTimer = true;
+        }
+
         if (options.recvIdentity) {
             Msg identity = mechanism.peerIdentity();
             boolean rc = session.pushMsg(identity);
@@ -1112,6 +1195,8 @@ public class StreamEngine implements IEngine, IPollEvents
 
     private final MessageProcessor pushOneThenDecodeAndPush = new PushOneThenDecodeAndPush();
 
+    private final MessageProcessor producePingMessage = new ProducePingMessage();
+
     //  Function to handle network disconnections.
     private void error(ErrorReason error)
     {
@@ -1142,11 +1227,93 @@ public class StreamEngine implements IEngine, IPollEvents
     @Override
     public void timerEvent(int id)
     {
-        assert (id == HANDSHAKE_TIMER_ID);
-        hasHandshakeTimer = false;
+        if (id == HANDSHAKE_TIMER_ID) {
+            hasHandshakeTimer = false;
+            //  handshake timer expired before handshake completed, so engine fails
+            error(ErrorReason.TIMEOUT);
+        }
+        else if (id == HEARTBEAT_IVL_TIMER_ID) {
+            nextMsg = producePingMessage;
+            outEvent();
+            ioObject.addTimer(options.heartbeatInterval, HEARTBEAT_IVL_TIMER_ID);
+        }
+        else if (id == HEARTBEAT_TTL_TIMER_ID) {
+            hasTtlTimer = false;
+            error(ErrorReason.TIMEOUT);
+        }
+        else if (id == HEARTBEAT_TIMEOUT_TIMER_ID) {
+            hasTimeoutTimer = false;
+            error(ErrorReason.TIMEOUT);
+        }
+        else {
+            // There are no other valid timer ids!
+            assert (false);
+        }
+    }
 
-        //  handshake timer expired before handshake completed, so engine fails
-        error(ErrorReason.TIMEOUT);
+    private Msg producePingMessage()
+    {
+        assert (mechanism != null);
+
+        Msg msg = new Msg(7 + heartbeatContext.length);
+        msg.setFlags(Msg.COMMAND);
+        Msgs.put(msg, "PING");
+        Wire.putUInt16(msg, options.heartbeatTtl);
+        msg.put(heartbeatContext);
+
+        msg = mechanism.encode(msg);
+
+        nextMsg = pullAndEncode;
+
+        if (!hasTimeoutTimer && heartbeatTimeout > 0) {
+            ioObject.addTimer(heartbeatTimeout, HEARTBEAT_TIMEOUT_TIMER_ID);
+            hasTimeoutTimer = true;
+        }
+
+        return msg;
+    }
+
+    private Msg producePongMessage(byte[] pingContext)
+    {
+        assert (mechanism != null);
+        assert (pingContext != null);
+
+        Msg msg = new Msg(5 + pingContext.length);
+        msg.setFlags(Msg.COMMAND);
+        Msgs.put(msg, "PONG");
+        msg.put(pingContext);
+
+        msg = mechanism.encode(msg);
+
+        nextMsg = pullAndEncode;
+
+        return msg;
+    }
+
+    private boolean processHeartbeatMessage(Msg msg)
+    {
+        if (Msgs.startsWith(msg, "PING", true)) {
+            // Get the remote heartbeat TTL to setup the timer
+            int remoteHeartbeatTtl = msg.getShort(5);
+
+            // The remote heartbeat is in 10ths of a second
+            // so we multiply it by 100 to get the timer interval in ms.
+            remoteHeartbeatTtl *= 100;
+            if (!hasTtlTimer && remoteHeartbeatTtl > 0) {
+                ioObject.addTimer(remoteHeartbeatTtl, HEARTBEAT_TTL_TIMER_ID);
+                hasTtlTimer = true;
+            }
+            // extract the ping context that will be sent back inside the pong message
+            final int remaining = msg.size() - 7;
+            final byte[] pingContext = new byte[remaining];
+            msg.getBytes(7, pingContext, 0, remaining);
+
+            nextMsg = new ProducePongMessage(pingContext);
+            outEvent();
+
+            return true;
+        }
+        return false;
     }
 
     //  Writes data to the socket. Returns the number of bytes actually

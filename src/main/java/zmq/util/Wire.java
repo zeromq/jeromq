@@ -38,6 +38,11 @@ public class Wire
         return msg.getInt(offset);
     }
 
+    public static int getUInt16(ByteBuffer buf, int offset)
+    {
+        return (buf.get(offset) & 0xff) << 8 | (buf.get(offset + 1) & 0xff);
+    }
+
     public static int getUInt32(ByteBuffer buf, int offset)
     {
         return (buf.get(offset) & 0xff) << 24 | (buf.get(offset + 1) & 0xff) << 16 | (buf.get(offset + 2) & 0xff) << 8
@@ -48,6 +53,14 @@ public class Wire
     {
         return (bytes[offset] & 0xff) << 24 | (bytes[offset + 1] & 0xff) << 16 | (bytes[offset + 2] & 0xff) << 8
                 | (bytes[offset + 3] & 0xff);
+    }
+
+    public static Msg putUInt16(Msg msg, int value)
+    {
+        msg.put((byte) ((value >>> 8) & 0xff));
+        msg.put((byte) ((value & 0xff)));
+
+        return msg;
     }
 
     public static byte[] putUInt32(int value)

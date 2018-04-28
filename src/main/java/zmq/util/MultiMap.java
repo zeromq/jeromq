@@ -50,6 +50,7 @@ public final class MultiMap<K extends Comparable<? super K>, V>
         return list;
     }
 
+    @Deprecated
     public Collection<V> values()
     {
         return inverse.keySet();

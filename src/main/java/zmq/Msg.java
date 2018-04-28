@@ -375,6 +375,11 @@ public class Msg
         return Wire.getUInt32(buf, offset);
     }
 
+    public int getShort(int offset)
+    {
+        return Wire.getUInt16(buf, offset);
+    }
+
     public void transfer(ByteBuffer destination, int srcOffset, int srcLength)
     {
         int position = buf.position();

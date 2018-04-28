@@ -145,6 +145,17 @@ public class Options
     //  close socket.  Default is 30 secs.  0 means no handshake timeout.
     public int handshakeIvl;
 
+    //  If remote peer receives a PING message and doesn't receive another
+    //  message within the ttl value, it should close the connection
+    //  (measured in tenths of a second)
+    public int heartbeatTtl;
+    //  Time in milliseconds between sending heartbeat PING messages.
+    public int heartbeatInterval;
+    //  Time in milliseconds to wait for a PING response before disconnecting
+    public int heartbeatTimeout;
+    // the ping context that will be sent with each ping message.
+    public byte[] heartbeatContext;
+
     public Class<? extends IDecoder> decoder;
     public Class<? extends IEncoder> encoder;
 
@@ -189,6 +200,12 @@ public class Options
         socketId = 0;
         conflate = false;
         handshakeIvl = 30000;
+
+        heartbeatTtl = 0;
+        heartbeatInterval = 0;
+        heartbeatTimeout = -1;
+        heartbeatContext = new byte[0];
+
         identity = new byte[0];
         identitySize = (byte) identity.length;
 
@@ -427,6 +444,40 @@ public class Options
             }
             return true;
 
+        case ZMQ.ZMQ_HEARTBEAT_IVL:
+            heartbeatInterval = (Integer) optval;
+            if (heartbeatInterval < 0) {
+                throw new IllegalArgumentException("heartbeatInterval only accept positive values " + optval);
+            }
+            return true;
+
+        case ZMQ.ZMQ_HEARTBEAT_TIMEOUT:
+            heartbeatTimeout = (Integer) optval;
+            if (heartbeatTimeout < 0) {
+                throw new IllegalArgumentException("heartbeatTimeout only accept positive values " + optval);
+            }
+            return true;
+
+        case ZMQ.ZMQ_HEARTBEAT_TTL:
+            Integer value = (Integer) optval;
+            // Convert this to deciseconds from milliseconds
+            value /= 100;
+
+            if (value >= 0 && value <= 6553) {
+                heartbeatTtl = value;
+            }
+            else {
+                throw new IllegalArgumentException("heartbeatTtl is out of range [0..655399]" + optval);
+            }
+            return true;
+
+        case ZMQ.ZMQ_HEARTBEAT_CONTEXT:
+            heartbeatContext = (byte[]) optval;
+            if (heartbeatContext == null) {
+                throw new IllegalArgumentException("heartbeatContext cannot be null");
+            }
+            return true;
+
         case ZMQ.ZMQ_DECODER:
             decoder = checkCustomClass(optval, IDecoder.class);
             if (decoder == null) {
@@ -478,13 +529,13 @@ public class Options
         try {
             Class<? extends MsgAllocator> msgAllocator = clazz.asSubclass(MsgAllocator.class);
             return msgAllocator.newInstance();
-         }
-         catch (InstantiationException e) {
+        }
+        catch (InstantiationException e) {
             throw new IllegalArgumentException(e);
-         }
-         catch (IllegalAccessException e) {
+        }
+        catch (IllegalAccessException e) {
             throw new IllegalArgumentException(e);
-         }
+        }
     }
 
     private <T> Class<? extends T> checkCustomClass(Object optval, Class<T> type)
@@ -674,6 +725,19 @@ public class Options
 
         case ZMQ.ZMQ_HANDSHAKE_IVL:
             return handshakeIvl;
+
+        case ZMQ.ZMQ_HEARTBEAT_IVL:
+            return heartbeatInterval;
+
+        case ZMQ.ZMQ_HEARTBEAT_TIMEOUT:
+            return heartbeatTimeout;
+
+        case ZMQ.ZMQ_HEARTBEAT_TTL:
+            // Convert the internal deciseconds value to milliseconds
+            return heartbeatTtl * 100;
+
+        case ZMQ.ZMQ_HEARTBEAT_CONTEXT:
+            return heartbeatContext;
 
         case ZMQ.ZMQ_MSG_ALLOCATOR:
             return allocator;

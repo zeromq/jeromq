@@ -381,6 +381,66 @@ public class TestZMQ
         socket.close();
     }
 
+    @Test
+    public void testSocketHeartbeatIvl()
+    {
+        final Socket socket = ctx.socket(ZMQ.REQ);
+        assertThat(socket, notNullValue());
+
+        boolean set = socket.setHeartbeatIvl(42);
+        assertThat(set, is(true));
+        int rc = socket.getHeartbeatIvl();
+        assertThat(rc, is(42));
+
+        socket.close();
+    }
+
+    @Test
+    public void testSocketHeartbeatTtl()
+    {
+        final Socket socket = ctx.socket(ZMQ.REQ);
+        assertThat(socket, notNullValue());
+
+        boolean set = socket.setHeartbeatTtl(420);
+        assertThat(set, is(true));
+        int rc = socket.getHeartbeatTtl();
+        assertThat(rc, is(400));
+
+        socket.close();
+    }
+
+    @Test
+    public void testSocketHeartbeatTimeout()
+    {
+        final Socket socket = ctx.socket(ZMQ.REQ);
+        assertThat(socket, notNullValue());
+
+        boolean set = socket.setHeartbeatTimeout(42);
+        assertThat(set, is(true));
+        int rc = socket.getHeartbeatTimeout();
+        assertThat(rc, is(42));
+
+        socket.close();
+    }
+
+    @Test
+    public void testSocketHeartbeatContext()
+    {
+        final Socket socket = ctx.socket(ZMQ.REQ);
+        assertThat(socket, notNullValue());
+
+        byte[] context = new byte[3];
+        context[0] = 4;
+        context[1] = 2;
+        context[2] = 1;
+        boolean set = socket.setHeartbeatContext(context);
+        assertThat(set, is(true));
+        byte[] hctx = socket.getHeartbeatContext();
+        assertThat(hctx, is(context));
+
+        socket.close();
+    }
+
     @SuppressWarnings("deprecation")
     @Test
     public void testSocketHWM()

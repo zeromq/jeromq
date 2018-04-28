@@ -119,6 +119,10 @@ public class ZMQ
     public static final int ZMQ_SOCKS_PROXY              = 67;
     public static final int ZMQ_XPUB_NODROP              = 69;
     public static final int ZMQ_BLOCKY                   = 70;
+
+    public static final int ZMQ_HEARTBEAT_IVL            = 75;
+    public static final int ZMQ_HEARTBEAT_TTL            = 76;
+    public static final int ZMQ_HEARTBEAT_TIMEOUT        = 77;
     @Deprecated
     public static final int ZMQ_XPUB_VERBOSE_UNSUBSCRIBE = 78;
 
@@ -129,6 +133,7 @@ public class ZMQ
     public static final int ZMQ_DECODER                       = ZMQ_CUSTOM_OPTION + 2;
     public static final int ZMQ_MSG_ALLOCATOR                 = ZMQ_CUSTOM_OPTION + 3;
     public static final int ZMQ_MSG_ALLOCATION_HEAP_THRESHOLD = ZMQ_CUSTOM_OPTION + 4;
+    public static final int ZMQ_HEARTBEAT_CONTEXT             = ZMQ_CUSTOM_OPTION + 5;
 
     /*  Message options                                                           */
     public static final int ZMQ_MORE = 1;
