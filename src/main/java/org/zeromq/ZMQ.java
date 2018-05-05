@@ -18,6 +18,7 @@ import zmq.io.coder.IDecoder;
 import zmq.io.coder.IEncoder;
 import zmq.io.mechanism.Mechanisms;
 import zmq.msg.MsgAllocator;
+import zmq.util.Draft;
 import zmq.util.Z85;
 
 public class ZMQ
@@ -729,6 +730,7 @@ public class ZMQ
          * If this option is set, every ping message sent for heartbeat will contain this context.
          * @return the context to be sent with ping messages. Empty array by default.
          */
+        @Draft
         public byte[] getHeartbeatContext()
         {
             return (byte[]) base.getSocketOptx(zmq.ZMQ.ZMQ_HEARTBEAT_CONTEXT);
@@ -804,6 +806,7 @@ public class ZMQ
          * @param pingContext the context to be sent with ping messages.
          * @return true if the option was set, otherwise false
          */
+        @Draft
         public boolean setHeartbeatContext(byte[] pingContext)
         {
             return setSocketOpt(zmq.ZMQ.ZMQ_HEARTBEAT_CONTEXT, pingContext);
