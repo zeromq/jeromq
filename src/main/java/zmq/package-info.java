@@ -11,6 +11,6 @@
  * <p/>
  * All subpackages should be considered internal, with the exception of {@link zmq.msg}.
  * <p/>
- * Within this package, only {@link zmq.ZMQ}, {@link zmq.Ctx} and {@link zmq.SocketBase} should be used.
+ * Within this package, only {@link zmq.ZMQ}, {@link zmq.Ctx}, {@link zmq.SocketBase} and {@link zmq.Msg} should be used.
  */
 package zmq;

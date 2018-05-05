@@ -2671,31 +2671,99 @@ public class ZMQ
             return base.termEndpoint(addr);
         }
 
+        /**
+         * Queues a message created from data, so it can be sent.
+         *
+         * @param data the data to send. The data is either a single-part message by itself,
+         * or the last part of a multi-part message.
+         * @return true when it has been queued on the socket and ØMQ has assumed responsibility for the message.
+         * This does not indicate that the message has been transmitted to the network.
+         */
         public boolean send(String data)
         {
             return send(data.getBytes(CHARSET), 0);
         }
 
+        /**
+         * Queues a multi-part message created from data, so it can be sent.
+         *
+         * @param data the data to send. further message parts are to follow.
+         * @return true when it has been queued on the socket and ØMQ has assumed responsibility for the message.
+         * This does not indicate that the message has been transmitted to the network.
+         */
         public boolean sendMore(String data)
         {
             return send(data.getBytes(CHARSET), zmq.ZMQ.ZMQ_SNDMORE);
         }
 
+        /**
+         * Queues a message created from data.
+         *
+         * @param data the data to send.
+         * @param flags a combination (with + or |) of the flags defined below:
+         * <ul>
+         * <li>{@link org.zeromq.ZMQ#DONTWAIT DONTWAIT}:
+         * For socket types ({@link org.zeromq.ZMQ#DEALER DEALER}, {@link org.zeromq.ZMQ#PUSH PUSH})
+         * that block when there are no available peers (or all peers have full high-water mark),
+         * specifies that the operation should be performed in non-blocking mode.
+         * If the message cannot be queued on the socket, the method shall fail with errno set to EAGAIN.</li>
+         * <li>{@link org.zeromq.ZMQ#SNDMORE SNDMORE}:
+         * Specifies that the message being sent is a multi-part message,
+         * and that further message parts are to follow.</li>
+         * <li>0 : blocking send of a single-part message or the last of a multi-part message</li>
+         * </ul>
+         * @return true when it has been queued on the socket and ØMQ has assumed responsibility for the message.
+         * This does not indicate that the message has been transmitted to the network.
+         */
         public boolean send(String data, int flags)
         {
             return send(data.getBytes(CHARSET), flags);
         }
 
+        /**
+         * Queues a message created from data, so it can be sent.
+         *
+         * @param data the data to send. The data is either a single-part message by itself,
+         * or the last part of a multi-part message.
+         * @return true when it has been queued on the socket and ØMQ has assumed responsibility for the message.
+         * This does not indicate that the message has been transmitted to the network.
+         */
         public boolean send(byte[] data)
         {
             return send(data, 0);
         }
 
+        /**
+         * Queues a multi-part message created from data, so it can be sent.
+         *
+         * @param data the data to send. further message parts are to follow.
+         * @return true when it has been queued on the socket and ØMQ has assumed responsibility for the message.
+         * This does not indicate that the message has been transmitted to the network.
+         */
         public boolean sendMore(byte[] data)
         {
             return send(data, zmq.ZMQ.ZMQ_SNDMORE);
         }
 
+        /**
+         * Queues a message created from data, so it can be sent.
+         *
+         * @param data the data to send.
+         * @param flags a combination (with + or |) of the flags defined below:
+         * <ul>
+         * <li>{@link org.zeromq.ZMQ#DONTWAIT DONTWAIT}:
+         * For socket types ({@link org.zeromq.ZMQ#DEALER DEALER}, {@link org.zeromq.ZMQ#PUSH PUSH})
+         * that block when there are no available peers (or all peers have full high-water mark),
+         * specifies that the operation should be performed in non-blocking mode.
+         * If the message cannot be queued on the socket, the method shall fail with errno set to EAGAIN.</li>
+         * <li>{@link org.zeromq.ZMQ#SNDMORE SNDMORE}:
+         * Specifies that the message being sent is a multi-part message,
+         * and that further message parts are to follow.</li>
+         * <li>0 : blocking send of a single-part message or the last of a multi-part message</li>
+         * </ul>
+         * @return true when it has been queued on the socket and ØMQ has assumed responsibility for the message.
+         * This does not indicate that the message has been transmitted to the network.
+         */
         public boolean send(byte[] data, int flags)
         {
             zmq.Msg msg = new zmq.Msg(data);
@@ -2707,6 +2775,27 @@ public class ZMQ
             return false;
         }
 
+        /**
+         * Queues a message created from data, so it can be sent.
+         *
+         * @param data the data to send.
+         * @param off the index of the first byte to be sent.
+         * @param length the number of bytes to be sent.
+         * @param flags a combination (with + or |) of the flags defined below:
+         * <ul>
+         * <li>{@link org.zeromq.ZMQ#DONTWAIT DONTWAIT}:
+         * For socket types ({@link org.zeromq.ZMQ#DEALER DEALER}, {@link org.zeromq.ZMQ#PUSH PUSH})
+         * that block when there are no available peers (or all peers have full high-water mark),
+         * specifies that the operation should be performed in non-blocking mode.
+         * If the message cannot be queued on the socket, the method shall fail with errno set to EAGAIN.</li>
+         * <li>{@link org.zeromq.ZMQ#SNDMORE SNDMORE}:
+         * Specifies that the message being sent is a multi-part message,
+         * and that further message parts are to follow.</li>
+         * <li>0 : blocking send of a single-part message or the last of a multi-part message</li>
+         * </ul>
+         * @return true when it has been queued on the socket and ØMQ has assumed responsibility for the message.
+         * This does not indicate that the message has been transmitted to the network.
+         */
         public boolean send(byte[] data, int off, int length, int flags)
         {
             byte[] copy = new byte[length];
@@ -2721,11 +2810,22 @@ public class ZMQ
         }
 
         /**
-         * Send a message
+         * Queues a message created from data, so it can be sent.
          *
          * @param data ByteBuffer payload
-         * @param flags the flags to apply to the send operation
-         * @return the number of bytes sent, -1 on error
+         * @param flags a combination (with + or |) of the flags defined below:
+         * <ul>
+         * <li>{@link org.zeromq.ZMQ#DONTWAIT DONTWAIT}:
+         * For socket types ({@link org.zeromq.ZMQ#DEALER DEALER}, {@link org.zeromq.ZMQ#PUSH PUSH})
+         * that block when there are no available peers (or all peers have full high-water mark),
+         * specifies that the operation should be performed in non-blocking mode.
+         * If the message cannot be queued on the socket, the method shall fail with errno set to EAGAIN.</li>
+         * <li>{@link org.zeromq.ZMQ#SNDMORE SNDMORE}:
+         * Specifies that the message being sent is a multi-part message,
+         * and that further message parts are to follow.</li>
+         * <li>0 : blocking send of a single-part message or the last of a multi-part message</li>
+         * </ul>
+         * @return the number of bytes queued, -1 on error
          */
         public int sendByteBuffer(ByteBuffer data, int flags)
         {
@@ -2739,7 +2839,7 @@ public class ZMQ
         }
 
         /**
-         * Receive a message.
+         * Receives a message.
          *
          * @return the message received, as an array of bytes; null on error.
          */
@@ -2749,10 +2849,17 @@ public class ZMQ
         }
 
         /**
-         * Receive a message.
+         * Receives a message.
          *
-         * @param flags
-         *            the flags to apply to the receive operation.
+         * @param flags either:
+         * <ul>
+         * <li>{@link org.zeromq.ZMQ#DONTWAIT DONTWAIT}:
+         * Specifies that the operation should be performed in non-blocking mode.
+         * If there are no messages available on the specified socket,
+         * the method shall fail with errno set to EAGAIN and return null.</li>
+         * <li>0 : receive operation blocks until one message is successfully retrieved,
+         * or stops when timeout set by {@link #setReceiveTimeOut(int)} expires.</li>
+         * </ul>
          * @return the message received, as an array of bytes; null on error.
          */
         public byte[] recv(int flags)
@@ -2768,7 +2875,7 @@ public class ZMQ
         }
 
         /**
-         * Receive a message in to a specified buffer.
+         * Receives a message in to a specified buffer.
          *
          * @param buffer
          *            byte[] to copy zmq message payload in to.
@@ -2778,8 +2885,15 @@ public class ZMQ
          *            max bytes to write to buffer.
          *            If len is smaller than the incoming message size,
          *            the message will be truncated.
-         * @param flags
-         *            the flags to apply to the receive operation.
+         * @param flags either:
+         * <ul>
+         * <li>{@link org.zeromq.ZMQ#DONTWAIT DONTWAIT}:
+         * Specifies that the operation should be performed in non-blocking mode.
+         * If there are no messages available on the specified socket,
+         * the method shall fail with errno set to EAGAIN and return null.</li>
+         * <li>0 : receive operation blocks until one message is successfully retrieved,
+         * or stops when timeout set by {@link #setReceiveTimeOut(int)} expires.</li>
+         * </ul>
          * @return the number of bytes read, -1 on error
          */
         public int recv(byte[] buffer, int offset, int len, int flags)
@@ -2794,10 +2908,18 @@ public class ZMQ
         }
 
         /**
-         * Receive a message into the specified ByteBuffer
+         * Receives a message into the specified ByteBuffer.
          *
          * @param buffer the buffer to copy the zmq message payload into
-         * @param flags the flags to apply to the receive operation
+         * @param flags either:
+         * <ul>
+         * <li>{@link org.zeromq.ZMQ#DONTWAIT DONTWAIT}:
+         * Specifies that the operation should be performed in non-blocking mode.
+         * If there are no messages available on the specified socket,
+         * the method shall fail with errno set to EAGAIN and return null.</li>
+         * <li>0 : receive operation blocks until one message is successfully retrieved,
+         * or stops when timeout set by {@link #setReceiveTimeOut(int)} expires.</li>
+         * </ul>
          * @return the number of bytes read, -1 on error
          */
         public int recvByteBuffer(ByteBuffer buffer, int flags)
@@ -2823,8 +2945,17 @@ public class ZMQ
         }
 
         /**
+         * Receives a message as a string.
          *
-         * @param flags the flags to apply to the receive operation.
+         * @param flags either:
+         * <ul>
+         * <li>{@link org.zeromq.ZMQ#DONTWAIT DONTWAIT}:
+         * Specifies that the operation should be performed in non-blocking mode.
+         * If there are no messages available on the specified socket,
+         * the method shall fail with errno set to EAGAIN and return null.</li>
+         * <li>0 : receive operation blocks until one message is successfully retrieved,
+         * or stops when timeout set by {@link #setReceiveTimeOut(int)} expires.</li>
+         * </ul>
          * @return the message received, as a String object; null on no message.
          */
         public String recvStr(int flags)
