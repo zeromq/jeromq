@@ -17,13 +17,13 @@ Pure Java implementation of libzmq (http://zeromq.org).
 * Securities
  * [PLAIN](http://rfc.zeromq.org/spec:24).
  * [CURVE](http://rfc.zeromq.org/spec:25).
- 
-* Not too bad performance compared to zeromq.
+
+* Performance that's not too bad, compared to native libzmq.
  * 4.5M messages (100B) per sec.
  * [Performance](https://github.com/zeromq/jeromq/wiki/Performance).
 * Exactly same developer experience with zeromq and jzmq.
 
-## Not supported Features
+## Unsupported
 
 * ipc:// protocol with zeromq. Java doesn't support UNIX domain socket.
 * pgm:// protocol. Cannot find a pgm Java implementation.
@@ -81,8 +81,65 @@ To generate an ant build file from `pom.xml`, issue the following command:
 mvn ant:ant
 ```
 
+## Getting started
+
+### Simple example
+
+Here is how you might implement a server that prints the messages it receives
+and responds to them with "Hello, world!":
+
+```java
+import org.zeromq.ZMQ;
+import org.zeromq.ZContext;
+
+public class hwserver
+{
+    public static void main(String[] args) throws Exception
+    {
+        try (ZContext context = new ZContext()) {
+            // Socket to talk to clients
+            ZMQ.Socket socket = context.createSocket(ZMQ.REP);
+            socket.bind("tcp://*:5555");
+
+            while (!Thread.currentThread().isInterrupted()) {
+                // Block until a message is received
+                byte[] reply = socket.recv(0);
+
+                // Print the message
+                System.out.println(
+                    "Received " + ": [" + new String(reply, ZMQ.CHARSET) + "]"
+                );
+
+                // Send a response
+                String response = "Hello, world!";
+                socket.send(response.getBytes(ZMQ.CHARSET), 0);
+            }
+        }
+    }
+}
+```
+
+### More examples
+
+The JeroMQ [translations of the zguide examples](src/test/java/guide) are a good
+reference for recommended usage.
+
+(Note that the Java examples in the [zguide](http://zguide.zeromq.org) itself
+are out of date and do not necessarily reflect current recommended practices
+with JeroMQ.)
+
+### Documentation
+
+For API-level documentation, see the
+[Javadocs](http://www.javadoc.io/doc/org.zeromq/jeromq).
+
+This repo also has a [doc](doc/) folder, which contains assorted "how to do X"
+guides and other useful information about various topics related to using
+JeroMQ.
+
 ## License
 
-All source files are copyright © 2007-2017 contributors as noted in the AUTHORS file.
+All source files are copyright © 2007-2018 contributors as noted in the AUTHORS file.
 
 Free use of this software is granted under the terms of the Mozilla Public License 2.0. For details see the file `LICENSE` included with the JeroMQ distribution.
+

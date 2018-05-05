@@ -14,7 +14,7 @@ public class hwserver
     public static void main(String[] args) throws Exception
     {
         try (ZContext context = new ZContext()) {
-            //  Socket to talk to clients
+            // Socket to talk to clients
             ZMQ.Socket socket = context.createSocket(ZMQ.REP);
             socket.bind("tcp://*:5555");
 
@@ -24,10 +24,8 @@ public class hwserver
                     "Received " + ": [" + new String(reply, ZMQ.CHARSET) + "]"
                 );
 
-                //  Create a "Hello" message.
-                String request = "world";
-                // Send the message
-                socket.send(request.getBytes(ZMQ.CHARSET), 0);
+                String response = "world";
+                socket.send(response.getBytes(ZMQ.CHARSET), 0);
 
                 Thread.sleep(1000); //  Do some 'work'
             }
