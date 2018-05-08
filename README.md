@@ -15,12 +15,12 @@ Pure Java implementation of libzmq (http://zeromq.org).
 * ipc:// protocol works only between jeromq (uses tcp://127.0.0.1:port internally).
 
 * Securities
- * [PLAIN](http://rfc.zeromq.org/spec:24).
- * [CURVE](http://rfc.zeromq.org/spec:25).
-
+  * [PLAIN](http://rfc.zeromq.org/spec:24).
+  * [CURVE](http://rfc.zeromq.org/spec:25).
+ 
 * Performance that's not too bad, compared to native libzmq.
- * 4.5M messages (100B) per sec.
- * [Performance](https://github.com/zeromq/jeromq/wiki/Performance).
+  * 4.5M messages (100B) per sec.
+  * [Performance](https://github.com/zeromq/jeromq/wiki/Performance).
 * Exactly same developer experience with zeromq and jzmq.
 
 ## Unsupported
@@ -33,6 +33,8 @@ Pure Java implementation of libzmq (http://zeromq.org).
 * GSSAPI mechanism is not yet implemented.
 
 * TCP KeepAlive Count, Idle, Interval cannot be set via Java but as OS level.
+
+* Interrupting threads is still unsupported: library is NOT Thread.interrupt safe.
 
 ## Contributing
 
