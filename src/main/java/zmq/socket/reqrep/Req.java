@@ -256,6 +256,12 @@ public class Req extends Dealer
         @Override
         public boolean pushMsg(Msg msg)
         {
+            //  Ignore commands, they are processed by the engine and should not
+            //  affect the state machine.
+            if (msg.isCommand()) {
+                return true;
+            }
+
             switch (state) {
             case BOTTOM:
                 if (msg.hasMore() && msg.size() == 0) {

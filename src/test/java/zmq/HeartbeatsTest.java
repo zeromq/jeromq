@@ -16,6 +16,51 @@ import zmq.util.Utils;
 
 public class HeartbeatsTest
 {
+    // this checks for heartbeat in REQ socket.
+    @Test
+    public void testHeartbeatReq() throws IOException
+    {
+        final int heartbeatInterval = 100;
+        final int port = Utils.findOpenPort();
+
+        final String addr = String.format("tcp://localhost:%s", port);
+
+        Ctx ctx = ZMQ.init(1);
+        assertThat(ctx, notNullValue());
+
+        SocketBase req = ctx.createSocket(ZMQ.ZMQ_REQ);
+        assertThat(req, notNullValue());
+        boolean rc = req.setSocketOpt(ZMQ.ZMQ_HEARTBEAT_IVL, heartbeatInterval);
+        assertThat(rc, is(true));
+        rc = req.connect(addr);
+        assertThat(rc, is(true));
+
+        SocketBase rep = ctx.createSocket(ZMQ.ZMQ_REP);
+        assertThat(rep, notNullValue());
+        rc = rep.bind(addr);
+        assertThat(rc, is(true));
+
+        final long start = System.currentTimeMillis();
+        do {
+            // request
+            int sent = ZMQ.send(req, "hello", 0);
+            assertThat(sent, is("hello".length()));
+
+            Msg msg = ZMQ.recv(rep, 0);
+            assertThat(msg, notNullValue());
+            // reply
+            sent = ZMQ.send(rep, "world", 0);
+            assertThat(sent, is("world".length()));
+            msg = ZMQ.recv(req, 0);
+            assertThat(msg, notNullValue());
+            // let some time pass so several heartbeats are sent
+        } while (System.currentTimeMillis() - start < 5 * heartbeatInterval);
+
+        rep.close();
+        req.close();
+        ctx.terminate();
+    }
+
     // This checks for a broken TCP connection (or, in this case a stuck one
     // where the peer never responds to PINGS). There should be an accepted event
     // then a disconnect event.
