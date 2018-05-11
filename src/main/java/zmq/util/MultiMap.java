@@ -56,6 +56,16 @@ public final class MultiMap<K extends Comparable<? super K>, V>
         return inverse.keySet();
     }
 
+    public boolean contains(V value)
+    {
+        return inverse.containsKey(value);
+    }
+
+    public K key(V value)
+    {
+        return inverse.get(value);
+    }
+
     public V find(V copy)
     {
         K key = inverse.get(copy);
