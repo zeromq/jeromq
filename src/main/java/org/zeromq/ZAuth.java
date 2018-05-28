@@ -641,7 +641,7 @@ public class ZAuth implements Closeable
 
         private ZAgent createAgent(ZContext ctx)
         {
-            Socket pipe = ctx.createSocket(ZMQ.PAIR);
+            Socket pipe = ctx.createSocket(SocketType.PAIR);
             boolean rc = pipe.connect(repliesAddress);
             assert (rc);
             return new ZAgent.SimpleAgent(pipe, repliesAddress);
@@ -657,11 +657,11 @@ public class ZAuth implements Closeable
         public List<Socket> createSockets(ZContext ctx, Object... args)
         {
             //create replies pipe that will forward replies to user
-            replies = ctx.createSocket(ZMQ.PAIR);
+            replies = ctx.createSocket(SocketType.PAIR);
             assert (replies != null);
 
             //create ZAP handler and get ready for requests
-            Socket handler = ctx.createSocket(ZMQ.REP);
+            Socket handler = ctx.createSocket(SocketType.REP);
             assert (handler != null);
             return Arrays.asList(handler, replies);
         }

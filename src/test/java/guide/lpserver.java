@@ -2,6 +2,7 @@ package guide;
 
 import java.util.Random;
 
+import org.zeromq.SocketType;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQ.Socket;
 import org.zeromq.ZContext;
@@ -21,7 +22,7 @@ public class lpserver
         Random rand = new Random(System.nanoTime());
 
         try (ZContext context = new ZContext()) {
-            Socket server = context.createSocket(ZMQ.REP);
+            Socket server = context.createSocket(SocketType.REP);
             server.bind("tcp://*:5555");
 
             int cycles = 0;

@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 
+import org.zeromq.SocketType;
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQ.Poller;
@@ -25,14 +26,14 @@ public class clonecli4
     public void run()
     {
         try (ZContext ctx = new ZContext()) {
-            Socket snapshot = ctx.createSocket(ZMQ.DEALER);
+            Socket snapshot = ctx.createSocket(SocketType.DEALER);
             snapshot.connect("tcp://localhost:5556");
 
-            Socket subscriber = ctx.createSocket(ZMQ.SUB);
+            Socket subscriber = ctx.createSocket(SocketType.SUB);
             subscriber.connect("tcp://localhost:5557");
             subscriber.subscribe(SUBTREE.getBytes(ZMQ.CHARSET));
 
-            Socket push = ctx.createSocket(ZMQ.PUSH);
+            Socket push = ctx.createSocket(SocketType.PUSH);
             push.connect("tcp://localhost:5558");
 
             // get state snapshot

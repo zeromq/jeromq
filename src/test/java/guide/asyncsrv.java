@@ -2,12 +2,9 @@ package guide;
 
 import java.util.Random;
 
-import org.zeromq.ZContext;
-import org.zeromq.ZFrame;
-import org.zeromq.ZMQ;
+import org.zeromq.*;
 import org.zeromq.ZMQ.Poller;
 import org.zeromq.ZMQ.Socket;
-import org.zeromq.ZMsg;
 
 //
 //Asynchronous client-to-server (DEALER to ROUTER)
@@ -33,7 +30,7 @@ public class asyncsrv
         public void run()
         {
             try (ZContext ctx = new ZContext()) {
-                Socket client = ctx.createSocket(ZMQ.DEALER);
+                Socket client = ctx.createSocket(SocketType.DEALER);
 
                 //  Set random identity to make tracing easier
                 String identity = String.format(
@@ -75,11 +72,11 @@ public class asyncsrv
         {
             try (ZContext ctx = new ZContext()) {
                 //  Frontend socket talks to clients over TCP
-                Socket frontend = ctx.createSocket(ZMQ.ROUTER);
+                Socket frontend = ctx.createSocket(SocketType.ROUTER);
                 frontend.bind("tcp://*:5570");
 
                 //  Backend socket talks to workers over inproc
-                Socket backend = ctx.createSocket(ZMQ.DEALER);
+                Socket backend = ctx.createSocket(SocketType.DEALER);
                 backend.bind("inproc://backend");
 
                 //  Launch pool of worker threads, precise number is not critical
@@ -107,7 +104,7 @@ public class asyncsrv
         @Override
         public void run()
         {
-            Socket worker = ctx.createSocket(ZMQ.DEALER);
+            Socket worker = ctx.createSocket(SocketType.DEALER);
             worker.connect("inproc://backend");
 
             while (!Thread.currentThread().isInterrupted()) {

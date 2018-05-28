@@ -3,6 +3,7 @@ package guide;
 import java.util.LinkedList;
 import java.util.Queue;
 
+import org.zeromq.SocketType;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQ.Poller;
 import org.zeromq.ZMQ.Socket;
@@ -23,7 +24,7 @@ public class lbbroker
         {
             //  Prepare our context and sockets
             try (ZContext context = new ZContext()) {
-                Socket client = context.createSocket(ZMQ.REQ);
+                Socket client = context.createSocket(SocketType.REQ);
                 ZHelper.setId(client); //  Set a printable identity
 
                 client.connect("ipc://frontend.ipc");
@@ -49,7 +50,7 @@ public class lbbroker
         {
             //  Prepare our context and sockets
             try (ZContext context = new ZContext()) {
-                Socket worker = context.createSocket(ZMQ.REQ);
+                Socket worker = context.createSocket(SocketType.REQ);
                 ZHelper.setId(worker); //  Set a printable identity
 
                 worker.connect("ipc://backend.ipc");
@@ -85,8 +86,8 @@ public class lbbroker
     {
         //  Prepare our context and sockets
         try (ZContext context = new ZContext()) {
-            Socket frontend = context.createSocket(ZMQ.ROUTER);
-            Socket backend = context.createSocket(ZMQ.ROUTER);
+            Socket frontend = context.createSocket(SocketType.ROUTER);
+            Socket backend = context.createSocket(SocketType.ROUTER);
             frontend.bind("ipc://frontend.ipc");
             backend.bind("ipc://backend.ipc");
 

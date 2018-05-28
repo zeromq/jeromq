@@ -14,12 +14,11 @@ public class TestZContext
     public void testZContext()
     {
         ZContext ctx = new ZContext();
-        ctx.createSocket(ZMQ.PAIR);
-        ctx.createSocket(ZMQ.XREQ);
-        ctx.createSocket(ZMQ.REQ);
-        ctx.createSocket(ZMQ.REP);
-        ctx.createSocket(ZMQ.PUB);
-        ctx.createSocket(ZMQ.SUB);
+        ctx.createSocket(SocketType.PAIR);
+        ctx.createSocket(SocketType.REQ);
+        ctx.createSocket(SocketType.REP);
+        ctx.createSocket(SocketType.PUB);
+        ctx.createSocket(SocketType.SUB);
         ctx.close();
         assertThat(ctx.getSockets().isEmpty(), is(true));
     }
@@ -28,8 +27,8 @@ public class TestZContext
     public void testZContextSocketCloseBeforeContextClose()
     {
         ZContext ctx = new ZContext();
-        Socket s1 = ctx.createSocket(ZMQ.PUSH);
-        Socket s2 = ctx.createSocket(ZMQ.PULL);
+        Socket s1 = ctx.createSocket(SocketType.PUSH);
+        Socket s2 = ctx.createSocket(SocketType.PULL);
         s1.close();
         s2.close();
         ctx.close();
@@ -74,7 +73,7 @@ public class TestZContext
         ZContext ctx1 = new ZContext();
         ctx1.setMain(false);
         @SuppressWarnings("unused")
-        Socket s = ctx1.createSocket(ZMQ.PAIR);
+        Socket s = ctx1.createSocket(SocketType.PAIR);
         ctx1.close();
         assertThat(ctx1.getSockets().isEmpty(), is(true));
         assertThat(ctx1.getContext(), notNullValue());
@@ -85,12 +84,12 @@ public class TestZContext
     {
         ZContext ctx = new ZContext();
         try {
-            Socket s = ctx.createSocket(ZMQ.PUB);
+            Socket s = ctx.createSocket(SocketType.PUB);
             assertThat(s, notNullValue());
-            assertThat(s.getType(), is(ZMQ.PUB));
-            Socket s1 = ctx.createSocket(ZMQ.REQ);
+            assertThat(s.getType(), is(SocketType.PUB));
+            Socket s1 = ctx.createSocket(SocketType.REQ);
             assertThat(s1, notNullValue());
-            assertThat(s1.getType(), is(ZMQ.REQ));
+            assertThat(s1.getType(), is(SocketType.REQ));
             assertThat(ctx.getSockets().size(), is(2));
         }
         finally {
@@ -103,7 +102,7 @@ public class TestZContext
     {
         ZContext ctx = new ZContext();
         try {
-            Socket s = ctx.createSocket(ZMQ.PUB);
+            Socket s = ctx.createSocket(SocketType.PUB);
             assertThat(s, notNullValue());
             assertThat(ctx.getSockets().size(), is(1));
 
@@ -120,7 +119,7 @@ public class TestZContext
     public void testShadow()
     {
         ZContext ctx = new ZContext();
-        Socket s = ctx.createSocket(ZMQ.PUB);
+        Socket s = ctx.createSocket(SocketType.PUB);
         assertThat(s, notNullValue());
         assertThat(ctx.getSockets().size(), is(1));
 
@@ -128,7 +127,7 @@ public class TestZContext
         shadowCtx.setMain(false);
         assertThat(shadowCtx.getSockets().size(), is(0));
         @SuppressWarnings("unused")
-        Socket s1 = shadowCtx.createSocket(ZMQ.SUB);
+        Socket s1 = shadowCtx.createSocket(SocketType.SUB);
         assertThat(shadowCtx.getSockets().size(), is(1));
         assertThat(ctx.getSockets().size(), is(1));
 

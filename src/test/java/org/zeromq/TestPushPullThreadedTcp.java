@@ -115,12 +115,12 @@ public class TestPushPullThreadedTcp
 
         ZContext ctx = new ZContext();
 
-        ZMQ.Socket receiver = ctx.createSocket(ZMQ.PULL);
+        ZMQ.Socket receiver = ctx.createSocket(SocketType.PULL);
         assertThat(receiver, notNullValue());
         receiver.setImmediate(false);
         final int port = receiver.bindToRandomPort("tcp://localhost");
 
-        ZMQ.Socket sender = ctx.createSocket(ZMQ.PUSH);
+        ZMQ.Socket sender = ctx.createSocket(SocketType.PUSH);
         assertThat(sender, notNullValue());
         boolean rc = sender.connect("tcp://localhost:" + port);
         assertThat(rc, is(true));

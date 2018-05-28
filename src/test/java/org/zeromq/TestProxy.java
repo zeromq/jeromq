@@ -36,7 +36,7 @@ public class TestProxy
             Context ctx = ZMQ.context(1);
             assertThat(ctx, notNullValue());
 
-            Socket socket = ctx.socket(ZMQ.REQ);
+            Socket socket = ctx.socket(SocketType.REQ);
             boolean rc;
             rc = socket.setIdentity(id(name));
             assertThat(rc, is(true));
@@ -102,7 +102,7 @@ public class TestProxy
             Thread.currentThread().setName(name);
             System.out.println("Start " + name);
 
-            Socket socket = ctx.socket(ZMQ.DEALER);
+            Socket socket = ctx.socket(SocketType.DEALER);
             boolean rc;
             rc = socket.setIdentity(id(name));
             assertThat(rc, is(true));
@@ -177,16 +177,16 @@ public class TestProxy
             assert (ctx != null);
 
             setName("Proxy");
-            Socket frontend = ctx.socket(ZMQ.ROUTER);
+            Socket frontend = ctx.socket(SocketType.ROUTER);
 
             assertThat(frontend, notNullValue());
             frontend.bind(this.frontend);
 
-            Socket backend = ctx.socket(ZMQ.DEALER);
+            Socket backend = ctx.socket(SocketType.DEALER);
             assertThat(backend, notNullValue());
             backend.bind(this.backend);
 
-            Socket control = ctx.socket(ZMQ.PAIR);
+            Socket control = ctx.socket(SocketType.PAIR);
             assertThat(control, notNullValue());
             control.bind(this.control);
 
@@ -235,7 +235,7 @@ public class TestProxy
         executor.awaitTermination(40, TimeUnit.SECONDS);
 
         Context ctx = ZMQ.context(1);
-        Socket control = ctx.socket(ZMQ.PAIR);
+        Socket control = ctx.socket(SocketType.PAIR);
         control.connect(controlEndpoint);
         control.send(ZMQ.PROXY_TERMINATE);
         proxy.join();

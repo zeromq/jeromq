@@ -4,6 +4,7 @@ import java.nio.ByteBuffer;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.zeromq.SocketType;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQ.Socket;
 import org.zeromq.ZContext;
@@ -21,7 +22,7 @@ public class clonesrv1
     public void run()
     {
         try (ZContext ctx = new ZContext()) {
-            Socket publisher = ctx.createSocket(ZMQ.PUB);
+            Socket publisher = ctx.createSocket(SocketType.PUB);
             publisher.bind("tcp://*:5556");
 
             try {

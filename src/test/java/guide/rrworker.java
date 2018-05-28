@@ -1,5 +1,6 @@
 package guide;
 
+import org.zeromq.SocketType;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQ.Socket;
 import org.zeromq.ZContext;
@@ -13,7 +14,7 @@ public class rrworker
     {
         try (ZContext context = new ZContext()) {
             //  Socket to talk to server
-            Socket responder = context.createSocket(ZMQ.REP);
+            Socket responder = context.createSocket(SocketType.REP);
             responder.connect("tcp://localhost:5560");
 
             while (!Thread.currentThread().isInterrupted()) {

@@ -3,6 +3,7 @@ package guide;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.zeromq.SocketType;
 import org.zeromq.ZContext;
 import org.zeromq.ZFrame;
 import org.zeromq.ZMQ;
@@ -16,9 +17,9 @@ public class lvcache
     public static void main(String[] args)
     {
         try (ZContext context = new ZContext()) {
-            Socket frontend = context.createSocket(ZMQ.SUB);
+            Socket frontend = context.createSocket(SocketType.SUB);
             frontend.bind("tcp://*:5557");
-            Socket backend = context.createSocket(ZMQ.XPUB);
+            Socket backend = context.createSocket(SocketType.XPUB);
             backend.bind("tcp://*:5558");
 
             //  Subscribe to every single topic from publisher

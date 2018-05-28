@@ -1,5 +1,6 @@
 package guide;
 
+import org.zeromq.SocketType;
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQ.Poller;
@@ -129,10 +130,10 @@ public class bstarsrv
         //      -b  backup server, at tcp://localhost:5002
 
         try (ZContext ctx = new ZContext()) {
-            Socket statepub = ctx.createSocket(ZMQ.PUB);
-            Socket statesub = ctx.createSocket(ZMQ.SUB);
+            Socket statepub = ctx.createSocket(SocketType.PUB);
+            Socket statesub = ctx.createSocket(SocketType.SUB);
             statesub.subscribe(ZMQ.SUBSCRIPTION_ALL);
-            Socket frontend = ctx.createSocket(ZMQ.ROUTER);
+            Socket frontend = ctx.createSocket(SocketType.ROUTER);
             bstarsrv fsm = new bstarsrv();
 
             if (argv.length == 1 && argv[0].equals("-p")) {

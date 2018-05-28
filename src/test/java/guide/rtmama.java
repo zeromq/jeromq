@@ -1,5 +1,6 @@
 package guide;
 
+import org.zeromq.SocketType;
 import org.zeromq.ZMQ;
 import org.zeromq.ZContext;
 
@@ -18,7 +19,7 @@ public class rtmama
         public void run()
         {
             try (ZContext context = new ZContext()) {
-                ZMQ.Socket worker = context.createSocket(ZMQ.REQ);
+                ZMQ.Socket worker = context.createSocket(SocketType.REQ);
                 // worker.setIdentity(); will set a random id automatically
                 worker.connect("ipc://routing.ipc");
 
@@ -39,7 +40,7 @@ public class rtmama
     public static void main(String[] args)
     {
         try (ZContext context = new ZContext()) {
-            ZMQ.Socket client = context.createSocket(ZMQ.ROUTER);
+            ZMQ.Socket client = context.createSocket(SocketType.ROUTER);
             client.bind("ipc://routing.ipc");
 
             for (int i = 0; i != NBR_WORKERS; i++) {

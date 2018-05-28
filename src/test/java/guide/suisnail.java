@@ -4,6 +4,7 @@ import java.util.Random;
 
 //  Suicidal Snail
 
+import org.zeromq.SocketType;
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQ.Socket;
@@ -25,7 +26,7 @@ public class suisnail
         public void run(Object[] args, ZContext ctx, Socket pipe)
         {
             //  Subscribe to everything
-            Socket subscriber = ctx.createSocket(ZMQ.SUB);
+            Socket subscriber = ctx.createSocket(SocketType.SUB);
             subscriber.subscribe(ZMQ.SUBSCRIPTION_ALL);
             subscriber.connect("tcp://localhost:5556");
 
@@ -63,7 +64,7 @@ public class suisnail
         public void run(Object[] args, ZContext ctx, Socket pipe)
         {
             //  Prepare publisher
-            Socket publisher = ctx.createSocket(ZMQ.PUB);
+            Socket publisher = ctx.createSocket(SocketType.PUB);
             publisher.bind("tcp://*:5556");
 
             while (true) {

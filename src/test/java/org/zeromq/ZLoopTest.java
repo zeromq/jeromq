@@ -25,10 +25,10 @@ public class ZLoopTest
         ctx = new ZContext();
         assertThat(ctx, notNullValue());
 
-        output = ctx.createSocket(ZMQ.PAIR);
+        output = ctx.createSocket(SocketType.PAIR);
         assertThat(output, notNullValue());
         output.bind("inproc://zloop.test");
-        input = ctx.createSocket(ZMQ.PAIR);
+        input = ctx.createSocket(SocketType.PAIR);
         assertThat(input, notNullValue());
         input.connect("inproc://zloop.test");
 

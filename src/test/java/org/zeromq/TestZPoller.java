@@ -46,7 +46,7 @@ public class TestZPoller
         public Server(ZContext context, int port)
         {
             this.port = port;
-            socket = context.createSocket(ZMQ.PUSH);
+            socket = context.createSocket(SocketType.PUSH);
             poller = new ZPoller(context);
         }
 
@@ -88,7 +88,7 @@ public class TestZPoller
 
         final ZContext context = new ZContext();
         final ZPoller poller = new ZPoller(context.createSelector());
-        final ZMQ.Socket receiver = context.createSocket(ZMQ.PULL);
+        final ZMQ.Socket receiver = context.createSocket(SocketType.PULL);
 
         final Server client = new Server(context, port);
         client.start();
@@ -220,7 +220,7 @@ public class TestZPoller
         ZPoller poller = new ZPoller(itemCreator, ctx);
 
         try {
-            Socket socket = ctx.createSocket(ZMQ.ROUTER);
+            Socket socket = ctx.createSocket(SocketType.ROUTER);
             ItemHolder holder = itemCreator.create(socket, null, 0);
 
             assertThat(holder, is(holder));
@@ -242,7 +242,7 @@ public class TestZPoller
         ZPoller poller = new ZPoller(itemCreator, ctx);
 
         try {
-            Socket socket = ctx.createSocket(ZMQ.ROUTER);
+            Socket socket = ctx.createSocket(SocketType.ROUTER);
             ItemHolder holder = poller.create(socket, null, 0);
 
             ItemHolder other = new ZPoller.ZPollItem(socket, null, 0);
@@ -251,7 +251,7 @@ public class TestZPoller
             other = new ZPoller.ZPollItem(socket, new EventsHandlerAdapter(), 0);
             assertThat(other, is(not(equalTo(holder))));
 
-            socket = ctx.createSocket(ZMQ.ROUTER);
+            socket = ctx.createSocket(SocketType.ROUTER);
             other = new ZPoller.ZPollItem(socket, null, 0);
             assertThat(other, is(not(equalTo(holder))));
 
@@ -274,7 +274,7 @@ public class TestZPoller
         ZContext ctx = new ZContext();
         ZPoller poller = new ZPoller(ctx);
         try {
-            Socket socket = ctx.createSocket(ZMQ.XPUB);
+            Socket socket = ctx.createSocket(SocketType.XPUB);
             poller.register(socket, new EventsHandlerAdapter());
 
             boolean rc = poller.readable(socket);
@@ -298,7 +298,7 @@ public class TestZPoller
         ZContext ctx = new ZContext();
         ZPoller poller = new ZPoller(ctx);
         try {
-            Socket socket = ctx.createSocket(ZMQ.XPUB);
+            Socket socket = ctx.createSocket(SocketType.XPUB);
             poller.register(socket, ZPoller.OUT);
 
             boolean rc = poller.writable(socket);
@@ -322,7 +322,7 @@ public class TestZPoller
         ZContext ctx = new ZContext();
         ZPoller poller = new ZPoller(ctx);
         try {
-            Socket socket = ctx.createSocket(ZMQ.XPUB);
+            Socket socket = ctx.createSocket(SocketType.XPUB);
             poller.register(socket, ZPoller.ERR);
 
             boolean rc = poller.error(socket);
@@ -346,7 +346,7 @@ public class TestZPoller
         ZContext ctx = new ZContext();
         ZPoller poller = new ZPoller(ctx);
         try {
-            Socket socket = ctx.createSocket(ZMQ.XPUB);
+            Socket socket = ctx.createSocket(SocketType.XPUB);
             ItemHolder holder = poller.create(socket, null, 0);
             boolean rc = poller.register(holder);
             assertThat(rc, is(true));
@@ -363,7 +363,7 @@ public class TestZPoller
         ZContext ctx = new ZContext();
         ZPoller poller = new ZPoller(ctx);
         try {
-            Socket socket = ctx.createSocket(ZMQ.XPUB);
+            Socket socket = ctx.createSocket(SocketType.XPUB);
             Iterable<ItemHolder> items = poller.items(null);
             assertThat(items, notNullValue());
 

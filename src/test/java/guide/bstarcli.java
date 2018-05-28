@@ -1,5 +1,6 @@
 package guide;
 
+import org.zeromq.SocketType;
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQ.Poller;
@@ -22,7 +23,7 @@ public class bstarcli
             System.out.printf("I: connecting to server at %s...\n",
                               server[serverNbr]);
 
-            Socket client = ctx.createSocket(ZMQ.REQ);
+            Socket client = ctx.createSocket(SocketType.REQ);
             client.connect(server[serverNbr]);
 
             Poller poller = ctx.createPoller(1);
@@ -67,7 +68,7 @@ public class bstarcli
                         serverNbr = (serverNbr + 1) % 2;
                         Thread.sleep(SETTLE_DELAY);
                         System.out.printf("I: connecting to server at %s...\n", server[serverNbr]);
-                        client = ctx.createSocket(ZMQ.REQ);
+                        client = ctx.createSocket(SocketType.REQ);
                         client.connect(server[serverNbr]);
                         poller.register(client, ZMQ.Poller.POLLIN);
 

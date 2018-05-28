@@ -303,7 +303,7 @@ public class ZMonitor implements Closeable
         @Override
         public List<Socket> createSockets(ZContext ctx, Object... args)
         {
-            monitor = ctx.createSocket(ZMQ.PAIR);
+            monitor = ctx.createSocket(SocketType.PAIR);
             assert (monitor != null);
 
             return Collections.singletonList(monitor);

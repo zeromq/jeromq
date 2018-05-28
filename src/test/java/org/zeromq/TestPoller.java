@@ -27,7 +27,7 @@ public class TestPoller
         public void run()
         {
             ZMQ.Context context = ZMQ.context(1);
-            Socket pullConnect = context.socket(ZMQ.PULL);
+            Socket pullConnect = context.socket(SocketType.PULL);
 
             pullConnect.connect(address);
 
@@ -52,7 +52,7 @@ public class TestPoller
         ZMQ.Context context = ZMQ.context(1);
 
         //  Socket to send messages to
-        ZMQ.Socket sender = context.socket(ZMQ.PUSH);
+        ZMQ.Socket sender = context.socket(SocketType.PUSH);
         sender.setImmediate(false);
         sender.bind(addr);
 

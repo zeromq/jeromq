@@ -1,5 +1,6 @@
 package guide;
 
+import org.zeromq.SocketType;
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQ.Poller;
@@ -16,7 +17,7 @@ public class flclient1
     private static ZMsg tryRequest(ZContext ctx, String endpoint, ZMsg request)
     {
         System.out.printf("I: trying echo service at %s...\n", endpoint);
-        Socket client = ctx.createSocket(ZMQ.REQ);
+        Socket client = ctx.createSocket(SocketType.REQ);
         client.connect(endpoint);
 
         //  Send request, wait safely for reply

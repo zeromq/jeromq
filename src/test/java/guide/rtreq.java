@@ -2,6 +2,7 @@ package guide;
 
 import java.util.Random;
 
+import org.zeromq.SocketType;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQ.Socket;
 import org.zeromq.ZContext;
@@ -20,7 +21,7 @@ public class rtreq
         public void run()
         {
             try (ZContext context = new ZContext()) {
-                Socket worker = context.createSocket(ZMQ.REQ);
+                Socket worker = context.createSocket(SocketType.REQ);
                 ZHelper.setId(worker); //  Set a printable identity
 
                 worker.connect("tcp://localhost:5671");
@@ -58,7 +59,7 @@ public class rtreq
     public static void main(String[] args) throws Exception
     {
         try (ZContext context = new ZContext()) {
-            Socket broker = context.createSocket(ZMQ.ROUTER);
+            Socket broker = context.createSocket(SocketType.ROUTER);
             broker.bind("tcp://*:5671");
 
             for (int workerNbr = 0; workerNbr < NBR_WORKERS; workerNbr++) {

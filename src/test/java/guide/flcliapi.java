@@ -5,12 +5,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.zeromq.ZContext;
-import org.zeromq.ZMQ;
+import org.zeromq.*;
 import org.zeromq.ZMQ.Poller;
 import org.zeromq.ZMQ.Socket;
-import org.zeromq.ZMsg;
-import org.zeromq.ZThread;
 import org.zeromq.ZThread.IAttachedRunnable;
 
 //  flcliapi class - Freelance Pattern agent class
@@ -149,7 +146,7 @@ public class flcliapi
         {
             this.ctx = ctx;
             this.pipe = pipe;
-            router = ctx.createSocket(ZMQ.ROUTER);
+            router = ctx.createSocket(SocketType.ROUTER);
             servers = new HashMap<String, Server>();
             actives = new ArrayList<Server>();
         }

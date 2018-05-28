@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.zeromq.SocketType;
 import org.zeromq.ZContext;
 import org.zeromq.ZLoop;
 import org.zeromq.ZLoop.IZLoopHandler;
@@ -202,7 +203,7 @@ public class clonesrv6
             //  Get state snapshot if necessary
             if (srv.kvmap == null) {
                 srv.kvmap = new HashMap<String, kvmsg>();
-                Socket snapshot = srv.ctx.createSocket(ZMQ.DEALER);
+                Socket snapshot = srv.ctx.createSocket(SocketType.DEALER);
                 snapshot.connect(String.format("tcp://localhost:%d", srv.peer));
 
                 System.out.printf("I: asking for snapshot from: tcp://localhost:%d\n", srv.peer);
@@ -254,7 +255,7 @@ public class clonesrv6
     {
         if (primary) {
             bStar = new bstar(true, "tcp://*:5003", "tcp://localhost:5004");
-            bStar.voter("tcp://*:5556", ZMQ.ROUTER, new Snapshots(), this);
+            bStar.voter("tcp://*:5556", SocketType.ROUTER, new Snapshots(), this);
 
             port = 5556;
             peer = 5566;
@@ -262,7 +263,7 @@ public class clonesrv6
         }
         else {
             bStar = new bstar(false, "tcp://*:5004", "tcp://localhost:5003");
-            bStar.voter("tcp://*:5566", ZMQ.ROUTER, new Snapshots(), this);
+            bStar.voter("tcp://*:5566", SocketType.ROUTER, new Snapshots(), this);
 
             port = 5566;
             peer = 5556;
@@ -278,14 +279,14 @@ public class clonesrv6
         bStar.setVerbose(true);
 
         //  Set up our clone server sockets
-        publisher = ctx.createSocket(ZMQ.PUB);
-        collector = ctx.createSocket(ZMQ.SUB);
+        publisher = ctx.createSocket(SocketType.PUB);
+        collector = ctx.createSocket(SocketType.SUB);
         collector.subscribe(ZMQ.SUBSCRIPTION_ALL);
         publisher.bind(String.format("tcp://*:%d", port + 1));
         collector.bind(String.format("tcp://*:%d", port + 2));
 
         //  Set up our own clone client interface to peer
-        subscriber = ctx.createSocket(ZMQ.SUB);
+        subscriber = ctx.createSocket(SocketType.SUB);
         subscriber.subscribe(ZMQ.SUBSCRIPTION_ALL);
         subscriber.connect(String.format("tcp://localhost:%d", peer + 1));
     }

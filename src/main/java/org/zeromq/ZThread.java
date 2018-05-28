@@ -86,7 +86,7 @@ public class ZThread
 
     public static Socket fork(ZContext ctx, IAttachedRunnable runnable, Object... args)
     {
-        Socket pipe = ctx.createSocket(ZMQ.PAIR);
+        Socket pipe = ctx.createSocket(SocketType.PAIR);
 
         if (pipe != null) {
             pipe.bind(String.format("inproc://zctx-pipe-%d", pipe.hashCode()));
@@ -97,7 +97,7 @@ public class ZThread
 
         //  Connect child pipe to our pipe
         ZContext ccontext = ZContext.shadow(ctx);
-        Socket cpipe = ccontext.createSocket(ZMQ.PAIR);
+        Socket cpipe = ccontext.createSocket(SocketType.PAIR);
         if (cpipe == null) {
             return null;
         }

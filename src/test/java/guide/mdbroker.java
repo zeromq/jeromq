@@ -6,10 +6,7 @@ import java.util.Formatter;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.zeromq.ZContext;
-import org.zeromq.ZFrame;
-import org.zeromq.ZMQ;
-import org.zeromq.ZMsg;
+import org.zeromq.*;
 
 /**
 *  Majordomo Protocol broker
@@ -98,7 +95,7 @@ public class mdbroker
         this.waiting = new ArrayDeque<Worker>();
         this.heartbeatAt = System.currentTimeMillis() + HEARTBEAT_INTERVAL;
         this.ctx = new ZContext();
-        this.socket = ctx.createSocket(ZMQ.ROUTER);
+        this.socket = ctx.createSocket(SocketType.ROUTER);
     }
 
     // ---------------------------------------------------------------------

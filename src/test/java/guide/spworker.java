@@ -2,11 +2,8 @@ package guide;
 
 import java.util.Random;
 
-import org.zeromq.ZContext;
-import org.zeromq.ZFrame;
-import org.zeromq.ZMQ;
+import org.zeromq.*;
 import org.zeromq.ZMQ.Socket;
-import org.zeromq.ZMsg;
 
 //
 // Simple Pirate worker
@@ -21,7 +18,7 @@ public class spworker
     public static void main(String[] args) throws Exception
     {
         try (ZContext ctx = new ZContext()) {
-            Socket worker = ctx.createSocket(ZMQ.REQ);
+            Socket worker = ctx.createSocket(SocketType.REQ);
 
             //  Set random identity to make tracing easier
             Random rand = new Random(System.nanoTime());

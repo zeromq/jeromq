@@ -2,6 +2,7 @@ package guide;
 
 import java.util.Random;
 
+import org.zeromq.SocketType;
 import org.zeromq.ZMQ;
 import org.zeromq.ZContext;
 
@@ -16,7 +17,7 @@ public class wuserver
     {
         //  Prepare our context and publisher
         try (ZContext context = new ZContext()) {
-            ZMQ.Socket publisher = context.createSocket(ZMQ.PUB);
+            ZMQ.Socket publisher = context.createSocket(SocketType.PUB);
             publisher.bind("tcp://*:5556");
             publisher.bind("ipc://weather");
 

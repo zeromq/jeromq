@@ -38,7 +38,7 @@ public class XpubXsubZTest
                 Thread.currentThread().setName("Subscriber");
                 final ZContext ctx = new ZContext();
                 try {
-                    final ZMQ.Socket requester = ctx.createSocket(ZMQ.SUB);
+                    final ZMQ.Socket requester = ctx.createSocket(SocketType.SUB);
                     requester.connect("tcp://localhost:" + back);
                     requester.subscribe("hello".getBytes(ZMQ.CHARSET));
 
@@ -61,7 +61,7 @@ public class XpubXsubZTest
             {
                 Thread.currentThread().setName("Publisher");
                 try {
-                    ZMQ.Socket pub = ctx.createSocket(ZMQ.PUB);
+                    ZMQ.Socket pub = ctx.createSocket(SocketType.PUB);
                     pub.connect("tcp://localhost:" + front);
                     while (numberReceived.get() < max) {
                         ZMsg message = ZMsg.newStringMsg("hello", "world");
@@ -108,17 +108,17 @@ public class XpubXsubZTest
             public void run()
             {
                 Thread.currentThread().setName("Proxy");
-                ZMQ.Socket xpub = ctx.createSocket(ZMQ.XPUB);
+                ZMQ.Socket xpub = ctx.createSocket(SocketType.XPUB);
                 xpub.bind("tcp://*:" + back);
-                ZMQ.Socket xsub = ctx.createSocket(ZMQ.XSUB);
+                ZMQ.Socket xsub = ctx.createSocket(SocketType.XSUB);
                 xsub.bind("tcp://*:" + front);
-                ZMQ.Socket ctrl = ctx.createSocket(ZMQ.PAIR);
+                ZMQ.Socket ctrl = ctx.createSocket(SocketType.PAIR);
                 ctrl.bind("inproc://ctrl-proxy");
                 ZMQ.proxy(xpub, xsub, null, ctrl);
             }
         });
         final AtomicReference<Throwable> error = testIssue476(front, back, max, service, ctx);
-        ZMQ.Socket ctrl = ctx.createSocket(ZMQ.PAIR);
+        ZMQ.Socket ctrl = ctx.createSocket(SocketType.PAIR);
         ctrl.connect("inproc://ctrl-proxy");
         ctrl.send(ZMQ.PROXY_TERMINATE);
         ctrl.close();
@@ -149,13 +149,13 @@ public class XpubXsubZTest
             public Socket create(ZContext ctx, Plug place, Object... args)
             {
                 if (place == Plug.FRONT) {
-                    return ctx.createSocket(ZMQ.XSUB);
+                    return ctx.createSocket(SocketType.XSUB);
                 }
                 if (place == Plug.BACK) {
-                    return ctx.createSocket(ZMQ.XPUB);
+                    return ctx.createSocket(SocketType.XPUB);
                 }
                 if (place == Plug.CAPTURE) {
-                    return ctx.createSocket(ZMQ.PUB);
+                    return ctx.createSocket(SocketType.PUB);
                 }
                 return null;
             }
@@ -204,13 +204,13 @@ public class XpubXsubZTest
             public Socket create(ZContext ctx, Plug place, Object... args)
             {
                 if (place == Plug.FRONT) {
-                    return ctx.createSocket(ZMQ.XSUB);
+                    return ctx.createSocket(SocketType.XSUB);
                 }
                 if (place == Plug.BACK) {
-                    return ctx.createSocket(ZMQ.XPUB);
+                    return ctx.createSocket(SocketType.XPUB);
                 }
                 if (place == Plug.CAPTURE) {
-                    return ctx.createSocket(ZMQ.PUB);
+                    return ctx.createSocket(SocketType.PUB);
                 }
                 return null;
             }

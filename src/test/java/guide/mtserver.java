@@ -1,5 +1,6 @@
 package guide;
 
+import org.zeromq.SocketType;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQ.Socket;
 import org.zeromq.ZContext;
@@ -22,7 +23,7 @@ public class mtserver
         @Override
         public void run()
         {
-            ZMQ.Socket socket = context.createSocket(ZMQ.REP);
+            ZMQ.Socket socket = context.createSocket(SocketType.REP);
             socket.connect("inproc://workers");
 
             while (true) {
@@ -47,10 +48,10 @@ public class mtserver
     public static void main(String[] args)
     {
         try (ZContext context = new ZContext()) {
-            Socket clients = context.createSocket(ZMQ.ROUTER);
+            Socket clients = context.createSocket(SocketType.ROUTER);
             clients.bind("tcp://*:5555");
 
-            Socket workers = context.createSocket(ZMQ.DEALER);
+            Socket workers = context.createSocket(SocketType.DEALER);
             workers.bind("inproc://workers");
 
             for (int thread_nbr = 0; thread_nbr < 5; thread_nbr++) {

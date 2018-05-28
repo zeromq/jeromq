@@ -7,6 +7,7 @@ import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.UUID;
 
+import org.zeromq.SocketType;
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQ.Socket;
@@ -328,9 +329,9 @@ public class kvmsg
 
         //  Prepare our context and sockets
         try (ZContext ctx = new ZContext()) {
-            Socket output = ctx.createSocket(ZMQ.DEALER);
+            Socket output = ctx.createSocket(SocketType.DEALER);
             output.bind("ipc://kvmsg_selftest.ipc");
-            Socket input = ctx.createSocket(ZMQ.DEALER);
+            Socket input = ctx.createSocket(SocketType.DEALER);
             input.connect("ipc://kvmsg_selftest.ipc");
 
             Map<String, kvmsg> kvmap = new HashMap<String, kvmsg>();

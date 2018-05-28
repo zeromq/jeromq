@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.zeromq.SocketType;
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQ.Socket;
@@ -21,7 +22,7 @@ public class clonecli1
     public void run()
     {
         try (ZContext ctx = new ZContext()) {
-            Socket subscriber = ctx.createSocket(ZMQ.SUB);
+            Socket subscriber = ctx.createSocket(SocketType.SUB);
             subscriber.connect("tcp://localhost:5556");
             subscriber.subscribe(ZMQ.SUBSCRIPTION_ALL);
 

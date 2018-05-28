@@ -1,5 +1,6 @@
 package guide;
 
+import org.zeromq.SocketType;
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQ.Poller;
@@ -25,7 +26,7 @@ public class flclient2
     public flclient2()
     {
         ctx = new ZContext();
-        socket = ctx.createSocket(ZMQ.DEALER);
+        socket = ctx.createSocket(SocketType.DEALER);
     }
 
     public void destroy()

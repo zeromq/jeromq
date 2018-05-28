@@ -110,8 +110,8 @@ public class ParanoidPiratServerWithLazyPiratClientTest
         {
             Thread.currentThread().setName("Queue");
             final ZContext ctx = new ZContext();
-            final Socket frontend = ctx.createSocket(ZMQ.ROUTER);
-            final Socket backend = ctx.createSocket(ZMQ.ROUTER);
+            final Socket frontend = ctx.createSocket(SocketType.ROUTER);
+            final Socket backend = ctx.createSocket(SocketType.ROUTER);
             frontend.bind("tcp://*:" + portQueue); //  For clients
             backend.bind("tcp://*:" + portWorkers); //  For workers
 
@@ -207,7 +207,7 @@ public class ParanoidPiratServerWithLazyPiratClientTest
 
         private Socket workerSocket(ZContext ctx)
         {
-            final Socket worker = ctx.createSocket(ZMQ.DEALER);
+            final Socket worker = ctx.createSocket(SocketType.DEALER);
             worker.connect("tcp://localhost:" + portWorkers);
 
             //  Tell queue we're ready for work
@@ -357,7 +357,7 @@ public class ParanoidPiratServerWithLazyPiratClientTest
             Thread.currentThread().setName("Client");
             final ZContext ctx = new ZContext();
             System.out.println("I: Client - connecting to server");
-            Socket client = ctx.createSocket(ZMQ.REQ);
+            Socket client = ctx.createSocket(SocketType.REQ);
             assert (client != null);
             client.connect("tcp://localhost:" + portQueue);
 
@@ -410,7 +410,7 @@ public class ParanoidPiratServerWithLazyPiratClientTest
                         poller.unregister(client);
                         ctx.destroySocket(client);
                         System.out.println("I: Client - reconnecting to server");
-                        client = ctx.createSocket(ZMQ.REQ);
+                        client = ctx.createSocket(SocketType.REQ);
                         client.connect("tcp://localhost:" + portQueue);
                         poller.register(client, Poller.POLLIN);
                         //  Send request again, on new socket

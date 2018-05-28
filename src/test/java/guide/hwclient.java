@@ -6,6 +6,7 @@ package guide;
 //  Sends "Hello" to server, expects "World" back
 //
 
+import org.zeromq.SocketType;
 import org.zeromq.ZMQ;
 import org.zeromq.ZContext;
 
@@ -17,7 +18,7 @@ public class hwclient
             //  Socket to talk to server
             System.out.println("Connecting to hello world server");
 
-            ZMQ.Socket socket = context.createSocket(ZMQ.REQ);
+            ZMQ.Socket socket = context.createSocket(SocketType.REQ);
             socket.connect("tcp://localhost:5555");
 
             for (int requestNbr = 0; requestNbr != 10; requestNbr++) {

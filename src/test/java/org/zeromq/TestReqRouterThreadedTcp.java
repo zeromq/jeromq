@@ -43,7 +43,7 @@ public class TestReqRouterThreadedTcp
         {
             ZContext ctx = new ZContext();
 
-            ZMQ.Socket server = ctx.createSocket(ZMQ.ROUTER);
+            ZMQ.Socket server = ctx.createSocket(SocketType.ROUTER);
             server.bind("tcp://localhost:" + port);
 
             System.out.println("Server started");
@@ -82,7 +82,7 @@ public class TestReqRouterThreadedTcp
         {
             ZContext ctx = new ZContext();
 
-            ZMQ.Socket client = ctx.createSocket(ZMQ.REQ);
+            ZMQ.Socket client = ctx.createSocket(SocketType.REQ);
 
             client.connect("tcp://localhost:" + port);
 

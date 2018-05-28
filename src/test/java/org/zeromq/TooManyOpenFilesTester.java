@@ -50,7 +50,7 @@ public class TooManyOpenFilesTester
         {
             ZContext ctx = new ZContext(1);
 
-            Socket server = ctx.createSocket(ZMQ.ROUTER);
+            Socket server = ctx.createSocket(SocketType.ROUTER);
 
             server.bind("tcp://localhost:" + port);
 
@@ -106,7 +106,7 @@ public class TooManyOpenFilesTester
         {
             ZContext ctx = new ZContext(1);
 
-            Socket client = ctx.createSocket(ZMQ.REQ);
+            Socket client = ctx.createSocket(SocketType.REQ);
 
             client.setIdentity("ID".getBytes());
             client.connect("tcp://localhost:" + port);

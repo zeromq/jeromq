@@ -4,6 +4,7 @@ package guide;
 //Custom routing Router to Papa (ROUTER to REP)
 //
 
+import org.zeromq.SocketType;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQ.Socket;
 import org.zeromq.ZContext;
@@ -14,10 +15,10 @@ public class rtpapa
     public static void main(String[] args)
     {
         try (ZContext context = new ZContext()) {
-            Socket client = context.createSocket(ZMQ.ROUTER);
+            Socket client = context.createSocket(SocketType.ROUTER);
             client.bind("ipc://routing.ipc");
 
-            Socket worker = context.createSocket(ZMQ.REP);
+            Socket worker = context.createSocket(SocketType.REP);
             worker.setIdentity("A".getBytes(ZMQ.CHARSET));
             worker.connect("ipc://routing.ipc");
 

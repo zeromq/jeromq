@@ -41,7 +41,7 @@ public class DealerDealerTest
         @Override
         public void run()
         {
-            ZMQ.Socket worker = context.socket(ZMQ.DEALER);
+            ZMQ.Socket worker = context.socket(SocketType.DEALER);
             worker.connect(host);
 
             int msg = messagesCount;
@@ -69,7 +69,7 @@ public class DealerDealerTest
                         System.out.println("Reconnecting...");
                     }
                     worker.close();
-                    worker = context.socket(ZMQ.DEALER);
+                    worker = context.socket(SocketType.DEALER);
                     worker.connect(host);
                 }
 
@@ -99,7 +99,7 @@ public class DealerDealerTest
             @Override
             public void run()
             {
-                final ZMQ.Socket server = context.socket(ZMQ.DEALER);
+                final ZMQ.Socket server = context.socket(SocketType.DEALER);
                 server.bind(host);
                 int msg = messagesCount;
 

@@ -1,5 +1,6 @@
 package guide;
 
+import org.zeromq.SocketType;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQ.Socket;
 import org.zeromq.ZContext;
@@ -18,7 +19,7 @@ public class syncpub
     {
         try (ZContext context = new ZContext()) {
             //  Socket to talk to clients
-            Socket publisher = context.createSocket(ZMQ.PUB);
+            Socket publisher = context.createSocket(SocketType.PUB);
             publisher.setLinger(5000);
             // In 0MQ 3.x pub socket could drop messages if sub can follow the
             // generation of pub messages
@@ -26,7 +27,7 @@ public class syncpub
             publisher.bind("tcp://*:5561");
 
             //  Socket to receive signals
-            Socket syncservice = context.createSocket(ZMQ.REP);
+            Socket syncservice = context.createSocket(SocketType.REP);
             syncservice.bind("tcp://*:5562");
 
             System.out.println("Waiting for subscribers");

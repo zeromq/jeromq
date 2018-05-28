@@ -20,7 +20,7 @@ public class TestZActor
             public List<Socket> createSockets(ZContext ctx, Object... args)
             {
                 assert ("TEST".equals(args[0]));
-                return Arrays.asList(ctx.createSocket(ZMQ.PUB));
+                return Arrays.asList(ctx.createSocket(SocketType.PUB));
             }
 
             @Override

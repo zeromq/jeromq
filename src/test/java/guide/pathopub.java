@@ -2,6 +2,7 @@ package guide;
 
 import java.util.Random;
 
+import org.zeromq.SocketType;
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQ.Socket;
@@ -13,7 +14,7 @@ public class pathopub
     public static void main(String[] args) throws Exception
     {
         try (ZContext context = new ZContext()) {
-            Socket publisher = context.createSocket(ZMQ.PUB);
+            Socket publisher = context.createSocket(SocketType.PUB);
             if (args.length == 1)
                 publisher.connect(args[0]);
             else publisher.bind("tcp://*:5556");
