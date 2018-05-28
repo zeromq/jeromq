@@ -119,7 +119,8 @@ public class ZContext implements Closeable
      * @return
      *          Newly created Socket object
      */
-    public Socket createSocket(SocketType type){
+    public Socket createSocket(SocketType type)
+    {
         // Create and register socket
         Socket socket = context.socket(type);
         socket.setRcvHWM(this.rcvhwm);
@@ -142,7 +143,8 @@ public class ZContext implements Closeable
      *          Newly created Socket object
      */
     @Deprecated
-    public Socket createSocket(int type){
+    public Socket createSocket(int type)
+    {
         return createSocket(SocketType.type(type));
     }
 

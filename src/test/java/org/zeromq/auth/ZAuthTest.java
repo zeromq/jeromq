@@ -11,7 +11,12 @@ import java.io.IOException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.zeromq.*;
+import org.zeromq.SocketType;
+import org.zeromq.ZAuth;
+import org.zeromq.ZCert;
+import org.zeromq.ZCertStore;
+import org.zeromq.ZContext;
+import org.zeromq.ZMQ;
 
 /**
  * Test are basically the java-ports based on <a href="http://hintjens.com/blog:49">Using ZeroMQ Security (part 2)</a>

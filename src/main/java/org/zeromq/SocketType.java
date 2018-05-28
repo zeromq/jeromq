@@ -334,19 +334,23 @@ public enum SocketType {
 
     private final int socketType;
 
-    SocketType(int socketType) {
+    SocketType(int socketType)
+    {
         this.socketType = socketType;
     }
 
-    public static SocketType type(int baseType) {
+    public static SocketType type(int baseType)
+    {
         for (SocketType type : values()) {
-            if (type.type() == baseType)
+            if (type.type() == baseType) {
                 return type;
+            }
         }
         throw new IllegalArgumentException("no socket type found with value " + baseType);
     }
 
-    public int type() {
+    public int type()
+    {
         return socketType;
     }
 }
