@@ -2,6 +2,7 @@ package guide;
 
 import java.util.StringTokenizer;
 
+import org.zeromq.SocketType;
 import org.zeromq.ZMQ;
 import org.zeromq.ZContext;
 
@@ -17,7 +18,7 @@ public class wuclient
         try (ZContext context = new ZContext()) {
             //  Socket to talk to server
             System.out.println("Collecting updates from weather server");
-            ZMQ.Socket subscriber = context.createSocket(ZMQ.SUB);
+            ZMQ.Socket subscriber = context.createSocket(SocketType.SUB);
             subscriber.connect("tcp://localhost:5556");
 
             //  Subscribe to zipcode, default is NYC, 10001

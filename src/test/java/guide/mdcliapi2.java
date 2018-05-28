@@ -2,10 +2,7 @@ package guide;
 
 import java.util.Formatter;
 
-import org.zeromq.ZContext;
-import org.zeromq.ZFrame;
-import org.zeromq.ZMQ;
-import org.zeromq.ZMsg;
+import org.zeromq.*;
 
 /**
  * Majordomo Protocol Client API, asynchronous Java version. Implements the
@@ -47,7 +44,7 @@ public class mdcliapi2
         if (client != null) {
             ctx.destroySocket(client);
         }
-        client = ctx.createSocket(ZMQ.DEALER);
+        client = ctx.createSocket(SocketType.DEALER);
         client.connect(broker);
         if (verbose)
             log.format("I: connecting to broker at %s...\n", broker);

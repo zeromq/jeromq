@@ -2,12 +2,9 @@ package guide;
 
 import java.util.ArrayList;
 
-import org.zeromq.ZContext;
-import org.zeromq.ZFrame;
-import org.zeromq.ZMQ;
+import org.zeromq.*;
 import org.zeromq.ZMQ.Poller;
 import org.zeromq.ZMQ.Socket;
-import org.zeromq.ZMsg;
 
 //
 // Simple Pirate queue
@@ -22,8 +19,8 @@ public class spqueue
     public static void main(String[] args)
     {
         try (ZContext ctx = new ZContext()) {
-            Socket frontend = ctx.createSocket(ZMQ.ROUTER);
-            Socket backend = ctx.createSocket(ZMQ.ROUTER);
+            Socket frontend = ctx.createSocket(SocketType.ROUTER);
+            Socket backend = ctx.createSocket(SocketType.ROUTER);
             frontend.bind("tcp://*:5555"); //  For clients
             backend.bind("tcp://*:5556"); //  For workers
 

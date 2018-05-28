@@ -3,12 +3,9 @@ package guide;
 import java.util.ArrayList;
 import java.util.Random;
 
-import org.zeromq.ZContext;
-import org.zeromq.ZFrame;
-import org.zeromq.ZMQ;
+import org.zeromq.*;
 import org.zeromq.ZMQ.Poller;
 import org.zeromq.ZMQ.Socket;
-import org.zeromq.ZMsg;
 
 //  Broker peering simulation (part 3)
 //  Prototypes the full flow of status and tasks
@@ -35,9 +32,9 @@ public class peering3
         public void run()
         {
             try (ZContext ctx = new ZContext()) {
-                Socket client = ctx.createSocket(ZMQ.REQ);
+                Socket client = ctx.createSocket(SocketType.REQ);
                 client.connect(String.format("ipc://%s-localfe.ipc", self));
-                Socket monitor = ctx.createSocket(ZMQ.PUSH);
+                Socket monitor = ctx.createSocket(SocketType.PUSH);
                 monitor.connect(String.format("ipc://%s-monitor.ipc", self));
                 Random rand = new Random(System.nanoTime());
 
@@ -99,7 +96,7 @@ public class peering3
         {
             Random rand = new Random(System.nanoTime());
             try (ZContext ctx = new ZContext()) {
-                Socket worker = ctx.createSocket(ZMQ.REQ);
+                Socket worker = ctx.createSocket(SocketType.REQ);
                 worker.connect(String.format("ipc://%s-localbe.ipc", self));
 
                 //  Tell broker we're ready for work
@@ -147,18 +144,18 @@ public class peering3
 
         try (ZContext ctx = new ZContext()) {
             //  Prepare local frontend and backend
-            Socket localfe = ctx.createSocket(ZMQ.ROUTER);
+            Socket localfe = ctx.createSocket(SocketType.ROUTER);
             localfe.bind(String.format("ipc://%s-localfe.ipc", self));
-            Socket localbe = ctx.createSocket(ZMQ.ROUTER);
+            Socket localbe = ctx.createSocket(SocketType.ROUTER);
             localbe.bind(String.format("ipc://%s-localbe.ipc", self));
 
             //  Bind cloud frontend to endpoint
-            Socket cloudfe = ctx.createSocket(ZMQ.ROUTER);
+            Socket cloudfe = ctx.createSocket(SocketType.ROUTER);
             cloudfe.setIdentity(self.getBytes(ZMQ.CHARSET));
             cloudfe.bind(String.format("ipc://%s-cloud.ipc", self));
 
             //  Connect cloud backend to all peers
-            Socket cloudbe = ctx.createSocket(ZMQ.ROUTER);
+            Socket cloudbe = ctx.createSocket(SocketType.ROUTER);
             cloudbe.setIdentity(self.getBytes(ZMQ.CHARSET));
             int argn;
             for (argn = 1; argn < argv.length; argn++) {
@@ -170,11 +167,11 @@ public class peering3
             }
 
             //  Bind state backend to endpoint
-            Socket statebe = ctx.createSocket(ZMQ.PUB);
+            Socket statebe = ctx.createSocket(SocketType.PUB);
             statebe.bind(String.format("ipc://%s-state.ipc", self));
 
             //  Connect statefe to all peers
-            Socket statefe = ctx.createSocket(ZMQ.SUB);
+            Socket statefe = ctx.createSocket(SocketType.SUB);
             statefe.subscribe(ZMQ.SUBSCRIPTION_ALL);
             for (argn = 1; argn < argv.length; argn++) {
                 String peer = argv[argn];
@@ -185,7 +182,7 @@ public class peering3
             }
 
             //  Prepare monitor socket
-            Socket monitor = ctx.createSocket(ZMQ.PULL);
+            Socket monitor = ctx.createSocket(SocketType.PULL);
             monitor.bind(String.format("ipc://%s-monitor.ipc", self));
 
             //  Start local workers

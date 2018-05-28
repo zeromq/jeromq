@@ -33,7 +33,7 @@ public class PushPullTest
 
             ZMQ.Context context = ZMQ.context(1);
             assertThat(context, notNullValue());
-            ZMQ.Socket socket = context.socket(ZMQ.PUSH);
+            ZMQ.Socket socket = context.socket(SocketType.PUSH);
             assertThat(socket, notNullValue());
 
             // Socket options
@@ -79,7 +79,7 @@ public class PushPullTest
 
             ZMQ.Context context = ZMQ.context(1);
             assertThat(context, notNullValue());
-            ZMQ.Socket socket = context.socket(ZMQ.PULL);
+            ZMQ.Socket socket = context.socket(SocketType.PULL);
             assertThat(socket, notNullValue());
 
             // Options Section

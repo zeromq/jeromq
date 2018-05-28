@@ -2,12 +2,9 @@ package guide;
 
 import java.util.Random;
 
-import org.zeromq.ZContext;
-import org.zeromq.ZFrame;
-import org.zeromq.ZMQ;
+import org.zeromq.*;
 import org.zeromq.ZMQ.Poller;
 import org.zeromq.ZMQ.Socket;
-import org.zeromq.ZMsg;
 
 //
 // Paranoid Pirate worker
@@ -28,7 +25,7 @@ public class ppworker
 
     private static Socket worker_socket(ZContext ctx)
     {
-        Socket worker = ctx.createSocket(ZMQ.DEALER);
+        Socket worker = ctx.createSocket(SocketType.DEALER);
         worker.connect("tcp://localhost:5556");
 
         //  Tell queue we're ready for work

@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
+import org.zeromq.SocketType;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQ.Context;
 import org.zeromq.ZMQ.Socket;
@@ -46,11 +47,11 @@ public class ZHelper
 
     public static List<Socket> buildZPipe(Context ctx)
     {
-        Socket socket1 = ctx.socket(ZMQ.PAIR);
+        Socket socket1 = ctx.socket(SocketType.PAIR);
         socket1.setLinger(0);
         socket1.setHWM(1);
 
-        Socket socket2 = ctx.socket(ZMQ.PAIR);
+        Socket socket2 = ctx.socket(SocketType.PAIR);
         socket2.setLinger(0);
         socket2.setHWM(1);
 

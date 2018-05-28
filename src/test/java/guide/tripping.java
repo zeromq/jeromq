@@ -1,10 +1,7 @@
 package guide;
 
-import org.zeromq.ZContext;
-import org.zeromq.ZFrame;
-import org.zeromq.ZMQ;
+import org.zeromq.*;
 import org.zeromq.ZMQ.Socket;
-import org.zeromq.ZMsg;
 
 /**
 * Round-trip demonstrator. Broker, Worker and Client are mocked as separate
@@ -18,8 +15,8 @@ public class tripping
         public void run()
         {
             try (ZContext ctx = new ZContext()) {
-                Socket frontend = ctx.createSocket(ZMQ.ROUTER);
-                Socket backend = ctx.createSocket(ZMQ.ROUTER);
+                Socket frontend = ctx.createSocket(SocketType.ROUTER);
+                Socket backend = ctx.createSocket(SocketType.ROUTER);
                 frontend.setHWM(0);
                 backend.setHWM(0);
                 frontend.bind("tcp://*:5555");
@@ -65,7 +62,7 @@ public class tripping
         public void run()
         {
             try (ZContext ctx = new ZContext()) {
-                Socket worker = ctx.createSocket(ZMQ.DEALER);
+                Socket worker = ctx.createSocket(SocketType.DEALER);
                 worker.setHWM(0);
                 worker.setIdentity("W".getBytes(ZMQ.CHARSET));
                 worker.connect("tcp://localhost:5556");
@@ -85,7 +82,7 @@ public class tripping
         public void run()
         {
             try (ZContext ctx = new ZContext()) {
-                Socket client = ctx.createSocket(ZMQ.DEALER);
+                Socket client = ctx.createSocket(SocketType.DEALER);
                 client.setHWM(0);
                 client.setIdentity("C".getBytes(ZMQ.CHARSET));
                 client.connect("tcp://localhost:5555");

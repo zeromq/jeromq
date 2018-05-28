@@ -2,10 +2,7 @@ package guide;
 
 import java.util.Formatter;
 
-import org.zeromq.ZContext;
-import org.zeromq.ZFrame;
-import org.zeromq.ZMQ;
-import org.zeromq.ZMsg;
+import org.zeromq.*;
 
 /**
 * Majordomo Protocol Client API, Java version Implements the MDP/Worker spec at
@@ -59,7 +56,7 @@ public class mdcliapi
         if (client != null) {
             ctx.destroySocket(client);
         }
-        client = ctx.createSocket(ZMQ.REQ);
+        client = ctx.createSocket(SocketType.REQ);
         client.connect(broker);
         if (verbose)
             log.format("I: connecting to broker at %s\n", broker);

@@ -2,6 +2,7 @@ package guide;
 
 import java.util.Random;
 
+import org.zeromq.SocketType;
 import org.zeromq.ZMQ;
 import org.zeromq.ZContext;
 
@@ -16,11 +17,11 @@ public class taskvent
     {
         try (ZContext context = new ZContext()) {
             //  Socket to send messages on
-            ZMQ.Socket sender = context.createSocket(ZMQ.PUSH);
+            ZMQ.Socket sender = context.createSocket(SocketType.PUSH);
             sender.bind("tcp://*:5557");
 
             //  Socket to send messages on
-            ZMQ.Socket sink = context.createSocket(ZMQ.PUSH);
+            ZMQ.Socket sink = context.createSocket(SocketType.PUSH);
             sink.connect("tcp://localhost:5558");
 
             System.out.println("Press Enter when the workers are ready: ");

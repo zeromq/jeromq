@@ -1,12 +1,9 @@
 package guide;
 
-import org.zeromq.ZContext;
-import org.zeromq.ZLoop;
+import org.zeromq.*;
 import org.zeromq.ZLoop.IZLoopHandler;
-import org.zeromq.ZMQ;
 import org.zeromq.ZMQ.PollItem;
 import org.zeromq.ZMQ.Socket;
-import org.zeromq.ZMsg;
 
 //  bstar class - Binary Star reactor
 public class bstar
@@ -224,11 +221,11 @@ public class bstar
         state = primary ? State.STATE_PRIMARY : State.STATE_BACKUP;
 
         //  Create publisher for state going to peer
-        statepub = ctx.createSocket(ZMQ.PUB);
+        statepub = ctx.createSocket(SocketType.PUB);
         statepub.bind(local);
 
         //  Create subscriber for state coming from peer
-        statesub = ctx.createSocket(ZMQ.SUB);
+        statesub = ctx.createSocket(SocketType.SUB);
         statesub.subscribe(ZMQ.SUBSCRIPTION_ALL);
         statesub.connect(remote);
 
@@ -259,7 +256,7 @@ public class bstar
     //  on this socket provide the CLIENT_REQUEST events for the Binary Star
     //  FSM and are passed to the provided application handler. We require
     //  exactly one voter per {{bstar}} instance:
-    public int voter(String endpoint, int type, IZLoopHandler handler, Object arg)
+    public int voter(String endpoint, SocketType type, IZLoopHandler handler, Object arg)
     {
         //  Hold actual handler+arg so we can call this later
         Socket socket = ctx.createSocket(type);

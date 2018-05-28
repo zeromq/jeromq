@@ -2,6 +2,7 @@ package guide;
 
 import java.util.Random;
 
+import org.zeromq.SocketType;
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQ.Socket;
@@ -13,7 +14,7 @@ public class pathosub
     public static void main(String[] args)
     {
         try (ZContext context = new ZContext()) {
-            Socket subscriber = context.createSocket(ZMQ.SUB);
+            Socket subscriber = context.createSocket(SocketType.SUB);
             if (args.length == 1)
                 subscriber.connect(args[0]);
             else subscriber.connect("tcp://localhost:5556");

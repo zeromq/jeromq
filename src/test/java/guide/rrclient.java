@@ -1,5 +1,6 @@
 package guide;
 
+import org.zeromq.SocketType;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQ.Socket;
 import org.zeromq.ZContext;
@@ -16,7 +17,7 @@ public class rrclient
     {
         try (ZContext context = new ZContext()) {
             //  Socket to talk to server
-            Socket requester = context.createSocket(ZMQ.REQ);
+            Socket requester = context.createSocket(SocketType.REQ);
             requester.connect("tcp://localhost:5559");
 
             System.out.println("launch and connect client.");

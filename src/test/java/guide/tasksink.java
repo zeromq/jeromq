@@ -1,5 +1,6 @@
 package guide;
 
+import org.zeromq.SocketType;
 import org.zeromq.ZMQ;
 import org.zeromq.ZContext;
 
@@ -14,7 +15,7 @@ public class tasksink
     {
         //  Prepare our context and socket
         try (ZContext context = new ZContext()) {
-            ZMQ.Socket receiver = context.createSocket(ZMQ.PULL);
+            ZMQ.Socket receiver = context.createSocket(SocketType.PULL);
             receiver.bind("tcp://*:5558");
 
             //  Wait for start of batch

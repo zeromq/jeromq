@@ -1,5 +1,6 @@
 package guide;
 
+import org.zeromq.SocketType;
 import org.zeromq.ZMQ;
 import org.zeromq.ZContext;
 
@@ -12,13 +13,13 @@ public class taskwork2
     public static void main(String[] args) throws InterruptedException
     {
         try (ZContext context = new ZContext()) {
-            ZMQ.Socket receiver = context.createSocket(ZMQ.PULL);
+            ZMQ.Socket receiver = context.createSocket(SocketType.PULL);
             receiver.connect("tcp://localhost:5557");
 
-            ZMQ.Socket sender = context.createSocket(ZMQ.PUSH);
+            ZMQ.Socket sender = context.createSocket(SocketType.PUSH);
             sender.connect("tcp://localhost:5558");
 
-            ZMQ.Socket controller = context.createSocket(ZMQ.SUB);
+            ZMQ.Socket controller = context.createSocket(SocketType.SUB);
             controller.connect("tcp://localhost:5559");
             controller.subscribe(ZMQ.SUBSCRIPTION_ALL);
 

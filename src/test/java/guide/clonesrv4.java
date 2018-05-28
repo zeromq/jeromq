@@ -5,6 +5,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.zeromq.SocketType;
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQ.Poller;
@@ -20,13 +21,13 @@ public class clonesrv4
     public void run()
     {
         try (ZContext ctx = new ZContext()) {
-            Socket snapshot = ctx.createSocket(ZMQ.ROUTER);
+            Socket snapshot = ctx.createSocket(SocketType.ROUTER);
             snapshot.bind("tcp://*:5556");
 
-            Socket publisher = ctx.createSocket(ZMQ.PUB);
+            Socket publisher = ctx.createSocket(SocketType.PUB);
             publisher.bind("tcp://*:5557");
 
-            Socket collector = ctx.createSocket(ZMQ.PULL);
+            Socket collector = ctx.createSocket(SocketType.PULL);
             collector.bind("tcp://*:5558");
 
             Poller poller = ctx.createPoller(2);

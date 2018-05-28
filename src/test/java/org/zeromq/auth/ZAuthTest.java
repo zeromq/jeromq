@@ -11,6 +11,7 @@ import java.io.IOException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.zeromq.SocketType;
 import org.zeromq.ZAuth;
 import org.zeromq.ZCert;
 import org.zeromq.ZCertStore;
@@ -56,12 +57,12 @@ public class ZAuthTest
             auth.replies(true);
 
             //  Create and bind server socket
-            ZMQ.Socket server = ctx.createSocket(ZMQ.PUSH);
+            ZMQ.Socket server = ctx.createSocket(SocketType.PUSH);
             server.setZapDomain("test");
             final int port = server.bindToRandomPort("tcp://*");
 
             //  Create and connect client socket
-            ZMQ.Socket client = ctx.createSocket(ZMQ.PULL);
+            ZMQ.Socket client = ctx.createSocket(SocketType.PULL);
             boolean rc = client.connect("tcp://127.0.0.1:" + port);
             assertThat(rc, is(true));
 
@@ -98,12 +99,12 @@ public class ZAuthTest
             auth.allow("127.0.0.1");
 
             //  Create and bind server socket
-            ZMQ.Socket server = ctx.createSocket(ZMQ.PUSH);
+            ZMQ.Socket server = ctx.createSocket(SocketType.PUSH);
             server.setZapDomain("test");
             final int port = server.bindToRandomPort("tcp://*");
 
             //  Create and connect client socket
-            ZMQ.Socket client = ctx.createSocket(ZMQ.PULL);
+            ZMQ.Socket client = ctx.createSocket(SocketType.PULL);
             boolean rc = client.connect("tcp://127.0.0.1:" + port);
             assertThat(rc, is(true));
 
@@ -140,12 +141,12 @@ public class ZAuthTest
             auth.allow("127.0.0.1");
 
             //  Create and bind server socket
-            ZMQ.Socket server = ctx.createSocket(ZMQ.PUSH);
+            ZMQ.Socket server = ctx.createSocket(SocketType.PUSH);
             //            server.setZapDomain("test"); // no domain, so no NULL authentication mechanism
             final int port = server.bindToRandomPort("tcp://*");
 
             //  Create and connect client socket
-            ZMQ.Socket client = ctx.createSocket(ZMQ.PULL);
+            ZMQ.Socket client = ctx.createSocket(SocketType.PULL);
             boolean rc = client.connect("tcp://127.0.0.1:" + port);
             assertThat(rc, is(true));
 
@@ -185,13 +186,13 @@ public class ZAuthTest
             auth.configurePlain("*", PASSWORDS_FILE);
 
             //  Create and bind server socket
-            ZMQ.Socket server = ctx.createSocket(ZMQ.PUSH);
+            ZMQ.Socket server = ctx.createSocket(SocketType.PUSH);
             server.setPlainServer(true);
             server.setZapDomain("global".getBytes());
             final int port = server.bindToRandomPort("tcp://*");
 
             //  Create and connect client socket
-            ZMQ.Socket client = ctx.createSocket(ZMQ.PULL);
+            ZMQ.Socket client = ctx.createSocket(SocketType.PULL);
             client.setPlainUsername("admin".getBytes());
             client.setPlainPassword("secret".getBytes());
             boolean rc = client.connect("tcp://127.0.0.1:" + port);
@@ -234,13 +235,13 @@ public class ZAuthTest
             auth.configurePlain("*", PASSWORDS_FILE);
 
             //  Create and bind server socket
-            ZMQ.Socket server = ctx.createSocket(ZMQ.PUSH);
+            ZMQ.Socket server = ctx.createSocket(SocketType.PUSH);
             server.setPlainServer(true);
             server.setZapDomain("global".getBytes());
             final int port = server.bindToRandomPort("tcp://*");
 
             //  Create and connect client socket
-            ZMQ.Socket client = ctx.createSocket(ZMQ.PULL);
+            ZMQ.Socket client = ctx.createSocket(SocketType.PULL);
             client.setPlainUsername("admin".getBytes());
             client.setPlainPassword("wrong".getBytes());
             boolean rc = client.connect("tcp://127.0.0.1:" + port);
@@ -285,14 +286,14 @@ public class ZAuthTest
             ZCert serverCert = new ZCert();
 
             //  Create and bind server socket
-            ZMQ.Socket server = ctx.createSocket(ZMQ.PUSH);
+            ZMQ.Socket server = ctx.createSocket(SocketType.PUSH);
             server.setZapDomain("global".getBytes());
             server.setCurveServer(true);
             serverCert.apply(server);
             final int port = server.bindToRandomPort("tcp://*");
 
             //  Create and connect client socket
-            ZMQ.Socket client = ctx.createSocket(ZMQ.PULL);
+            ZMQ.Socket client = ctx.createSocket(SocketType.PULL);
             clientCert.apply(client);
             client.setCurveServerKey(serverCert.getPublicKey());
             boolean rc = client.connect("tcp://127.0.0.1:" + port);
@@ -351,7 +352,7 @@ public class ZAuthTest
             ZCert serverCert = new ZCert();
 
             //  Create and bind server socket
-            ZMQ.Socket server = ctx.createSocket(ZMQ.PUSH);
+            ZMQ.Socket server = ctx.createSocket(SocketType.PUSH);
             server.setZapDomain("global".getBytes());
             server.setCurveServer(true);
             server.setCurvePublicKey(serverCert.getPublicKey());
@@ -359,7 +360,7 @@ public class ZAuthTest
             final int port = server.bindToRandomPort("tcp://*");
 
             //  Create and connect client socket
-            ZMQ.Socket client = ctx.createSocket(ZMQ.PULL);
+            ZMQ.Socket client = ctx.createSocket(SocketType.PULL);
             client.setCurvePublicKey(clientCert.getPublicKey());
             client.setCurveSecretKey(clientCert.getSecretKey());
             client.setCurveServerKey(serverCert.getPublicKey());
@@ -404,12 +405,12 @@ public class ZAuthTest
             auth.deny("127.0.0.1");
 
             //  Create and bind server socket
-            ZMQ.Socket server = ctx.createSocket(ZMQ.PUSH);
+            ZMQ.Socket server = ctx.createSocket(SocketType.PUSH);
             server.setZapDomain("global".getBytes());
             final int port = server.bindToRandomPort("tcp://*");
 
             //  Create and connect client socket
-            ZMQ.Socket client = ctx.createSocket(ZMQ.PULL);
+            ZMQ.Socket client = ctx.createSocket(SocketType.PULL);
             boolean rc = client.connect("tcp://127.0.0.1:" + port);
             assertThat(rc, is(true));
 
@@ -447,12 +448,12 @@ public class ZAuthTest
             auth.deny("127.0.0.2");
 
             //  Create and bind server socket
-            ZMQ.Socket server = ctx.createSocket(ZMQ.PUSH);
+            ZMQ.Socket server = ctx.createSocket(SocketType.PUSH);
             server.setZapDomain("global".getBytes());
             final int port = server.bindToRandomPort("tcp://*");
 
             //  Create and connect client socket
-            ZMQ.Socket client = ctx.createSocket(ZMQ.PULL);
+            ZMQ.Socket client = ctx.createSocket(SocketType.PULL);
             boolean rc = client.connect("tcp://127.0.0.1:" + port);
             assertThat(rc, is(true));
 
@@ -490,12 +491,12 @@ public class ZAuthTest
             auth.allow("127.0.0.2");
 
             //  Create and bind server socket
-            ZMQ.Socket server = ctx.createSocket(ZMQ.PUSH);
+            ZMQ.Socket server = ctx.createSocket(SocketType.PUSH);
             server.setZapDomain("global".getBytes());
             final int port = server.bindToRandomPort("tcp://*");
 
             //  Create and connect client socket
-            ZMQ.Socket client = ctx.createSocket(ZMQ.PULL);
+            ZMQ.Socket client = ctx.createSocket(SocketType.PULL);
             boolean rc = client.connect("tcp://127.0.0.1:" + port);
             assertThat(rc, is(true));
 
@@ -533,12 +534,12 @@ public class ZAuthTest
             auth.allow("127.0.0.1");
 
             //  Create and bind server socket
-            ZMQ.Socket server = ctx.createSocket(ZMQ.PUSH);
+            ZMQ.Socket server = ctx.createSocket(SocketType.PUSH);
             server.setZapDomain("global".getBytes());
             final int port = server.bindToRandomPort("tcp://*");
 
             //  Create and connect client socket
-            ZMQ.Socket client = ctx.createSocket(ZMQ.PULL);
+            ZMQ.Socket client = ctx.createSocket(SocketType.PULL);
             boolean rc = client.connect("tcp://127.0.0.1:" + port);
             assertThat(rc, is(true));
 
@@ -585,14 +586,14 @@ public class ZAuthTest
             ZCert serverCert = new ZCert();
 
             //  Create and bind server socket
-            ZMQ.Socket server = ctx.createSocket(ZMQ.PUSH);
+            ZMQ.Socket server = ctx.createSocket(SocketType.PUSH);
             server.setZapDomain("global".getBytes());
             server.setCurveServer(true);
             serverCert.apply(server);
             final int port = server.bindToRandomPort("tcp://*");
 
             //  Create and connect client socket
-            ZMQ.Socket client = ctx.createSocket(ZMQ.PULL);
+            ZMQ.Socket client = ctx.createSocket(SocketType.PULL);
             clientCert.apply(client);
             client.setCurveServerKey(serverCert.getPublicKey());
             boolean rc = client.connect("tcp://127.0.0.1:" + port);

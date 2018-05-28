@@ -1,5 +1,6 @@
 package guide;
 
+import org.zeromq.SocketType;
 import org.zeromq.ZLoop;
 import org.zeromq.ZLoop.IZLoopHandler;
 import org.zeromq.ZMQ;
@@ -30,12 +31,12 @@ public class bstarsrv2
         if (argv.length == 1 && argv[0].equals("-p")) {
             System.out.printf("I: Primary active, waiting for backup (passive)\n");
             bs = new bstar(true, "tcp://*:5003", "tcp://localhost:5004");
-            bs.voter("tcp://*:5001", ZMQ.ROUTER, Echo, null);
+            bs.voter("tcp://*:5001", SocketType.ROUTER, Echo, null);
         }
         else if (argv.length == 1 && argv[0].equals("-b")) {
             System.out.printf("I: Backup passive, waiting for primary (active)\n");
             bs = new bstar(false, "tcp://*:5004", "tcp://localhost:5003");
-            bs.voter("tcp://*:5002", ZMQ.ROUTER, Echo, null);
+            bs.voter("tcp://*:5002", SocketType.ROUTER, Echo, null);
         }
         else {
             System.out.printf("Usage: bstarsrv { -p | -b }\n");

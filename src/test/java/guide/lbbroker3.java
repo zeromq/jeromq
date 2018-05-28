@@ -4,14 +4,9 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.Queue;
 
-import org.zeromq.ZContext;
-import org.zeromq.ZFrame;
-import org.zeromq.ZLoop;
-import org.zeromq.ZMQ;
+import org.zeromq.*;
 import org.zeromq.ZMQ.PollItem;
 import org.zeromq.ZMQ.Socket;
-import org.zeromq.ZMsg;
-import org.zeromq.ZThread;
 
 /**
  * Load-balancing broker
@@ -35,7 +30,7 @@ public class lbbroker3
         {
             //  Prepare our context and sockets
             try (ZContext context = new ZContext()) {
-                Socket client = context.createSocket(ZMQ.REQ);
+                Socket client = context.createSocket(SocketType.REQ);
                 ZHelper.setId(client); //  Set a printable identity
 
                 client.connect("ipc://frontend.ipc");
@@ -58,7 +53,7 @@ public class lbbroker3
         {
             //  Prepare our context and sockets
             try (ZContext context = new ZContext()) {
-                Socket worker = context.createSocket(ZMQ.REQ);
+                Socket worker = context.createSocket(SocketType.REQ);
                 ZHelper.setId(worker); //  Set a printable identity
 
                 worker.connect("ipc://backend.ipc");
@@ -155,8 +150,8 @@ public class lbbroker3
         //  Prepare our context and sockets
         try (ZContext context = new ZContext()) {
             LBBroker arg = new LBBroker();
-            arg.frontend = context.createSocket(ZMQ.ROUTER);
-            arg.backend = context.createSocket(ZMQ.ROUTER);
+            arg.frontend = context.createSocket(SocketType.ROUTER);
+            arg.backend = context.createSocket(SocketType.ROUTER);
             arg.frontend.bind("ipc://frontend.ipc");
             arg.backend.bind("ipc://backend.ipc");
 

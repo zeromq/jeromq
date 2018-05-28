@@ -24,14 +24,14 @@ public class TestRapidOpenCloseSocket
   {
     ZContext ctx = new ZContext();
 
-    Socket recvMsgSock = ctx.createSocket(ZMQ.PULL);
+    Socket recvMsgSock = ctx.createSocket(SocketType.PULL);
     recvMsgSock.bind("tcp://*:" + Utils.findOpenPort());
-    Socket processMsgSock = ctx.createSocket(ZMQ.PUSH);
+    Socket processMsgSock = ctx.createSocket(SocketType.PUSH);
     processMsgSock.bind("inproc://process-msg");
 
     List<Socket> workerSocks = new ArrayList<Socket>();
     for (int i = 0; i < 5; i++) {
-      Socket workerSock = ctx.createSocket(ZMQ.PULL);
+      Socket workerSock = ctx.createSocket(SocketType.PULL);
       workerSock.connect("inproc://process-msg");
       workerSocks.add(workerSock);
     }

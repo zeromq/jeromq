@@ -1,15 +1,5 @@
 package org.zeromq;
 
-import java.io.Closeable;
-import java.nio.ByteBuffer;
-import java.nio.channels.SelectableChannel;
-import java.nio.channels.Selector;
-import java.nio.charset.Charset;
-import java.util.LinkedList;
-import java.util.Random;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import zmq.Ctx;
 import zmq.SocketBase;
 import zmq.ZError;
@@ -20,6 +10,16 @@ import zmq.io.mechanism.Mechanisms;
 import zmq.msg.MsgAllocator;
 import zmq.util.Draft;
 import zmq.util.Z85;
+
+import java.io.Closeable;
+import java.nio.ByteBuffer;
+import java.nio.channels.SelectableChannel;
+import java.nio.channels.Selector;
+import java.nio.charset.Charset;
+import java.util.LinkedList;
+import java.util.Random;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * The ØMQ lightweight messaging kernel is a library which extends the standard socket interfaces
@@ -41,7 +41,7 @@ import zmq.util.Z85;
  * Individual ØMQ sockets are not thread safe except in the case
  * where full memory barriers are issued when migrating a socket from one thread to another.
  * <br/>
- * In practice this means applications can create a socket in one thread with {@link ZMQ.Context#socket(int)}
+ * In practice this means applications can create a socket in one thread with * {@link ZMQ.Context#socket(SocketType)}
  * and then pass it to a newly created thread as part of thread initialization.
  * <p/>
  * <h2>Multiple contexts</h2>
@@ -98,357 +98,81 @@ public class ZMQ
      * Socket flag to indicate a nonblocking send or recv mode.
      */
     public static final int DONTWAIT = zmq.ZMQ.ZMQ_DONTWAIT;
-    public static final int NOBLOCK  = zmq.ZMQ.ZMQ_DONTWAIT;
+    public static final int NOBLOCK = zmq.ZMQ.ZMQ_DONTWAIT;
 
-    // Socket types, used when creating a Socket.
-    /**
-     * Flag to specify a exclusive pair of sockets.
-     * <p/>
-     * A socket of type PAIR can only be connected to a single peer at any one time.
-     * <br/>
-     * No message routing or filtering is performed on messages sent over a PAIR socket.
-     * <br/>
-     * When a PAIR socket enters the mute state due to having reached the high water mark for the connected peer,
-     * or if no peer is connected, then any send() operations on the socket shall block until the peer becomes available for sending;
-     * messages are not discarded.
-     * <p/>
-     * <table summary="" border="1">
-     *   <th colspan="2">Summary of socket characteristics</th>
-     *   <tr><td>Compatible peer sockets</td><td>PAIR</td></tr>
-     *   <tr><td>Direction</td><td>Bidirectional</td></tr>
-     *   <tr><td>Send/receive pattern</td><td>Unrestricted</td></tr>
-     *   <tr><td>Incoming routing strategy</td><td>N/A</td></tr>
-     *   <tr><td>Outgoing routing strategy</td><td>N/A</td></tr>
-     *   <tr><td>Action in mute state</td><td>Block</td></tr>
-     * </table>
-     * <p/>
-     * <strong>PAIR sockets are designed for inter-thread communication across the inproc transport
-     * and do not implement functionality such as auto-reconnection.
-     * PAIR sockets are considered experimental and may have other missing or broken aspects.</strong>
-     */
-    public static final int PAIR       = zmq.ZMQ.ZMQ_PAIR;
-    /**
-     * Flag to specify a PUB socket, receiving side must be a SUB or XSUB.
-     * <p/>
-     * A socket of type PUB is used by a publisher to distribute data.
-     * <br/>
-     * Messages sent are distributed in a fan out fashion to all connected peers.
-     * <br/>
-     * The {@link ZMQ.Socket#recv()} function is not implemented for this socket type.
-     * <br/>
-     * When a PUB socket enters the mute state due to having reached the high water mark for a subscriber,
-     * then any messages that would be sent to the subscriber in question shall instead be dropped until the mute state ends.
-     * <br/>
-     * The send methods shall never block for this socket type.
-     * <p/>
-     * <table summary="" border="1">
-     *   <th colspan="2">Summary of socket characteristics</th>
-     *   <tr><td>Compatible peer sockets</td><td>{@link ZMQ#SUB}, {@link ZMQ#XSUB}</td></tr>
-     *   <tr><td>Direction</td><td>Unidirectional</td></tr>
-     *   <tr><td>Send/receive pattern</td><td>Send only</td></tr>
-     *   <tr><td>Incoming routing strategy</td><td>N/A</td></tr>
-     *   <tr><td>Outgoing routing strategy</td><td>Fan out</td></tr>
-     *   <tr><td>Action in mute state</td><td>Drop</td></tr>
-     * </table>
-     */
-    public static final int PUB        = zmq.ZMQ.ZMQ_PUB;
-    /**
-     * Flag to specify the receiving part of the PUB or XPUB socket.
-     * <p/>
-     * A socket of type SUB is used by a subscriber to subscribe to data distributed by a publisher.
-     * <br/>
-     * Initially a SUB socket is not subscribed to any messages,
-     * use the {@link ZMQ.Socket#subscribe(byte[])} option to specify which messages to subscribe to.
-     * <br/>
-     * The send methods are not implemented for this socket type.
-     * <p/>
-     * <table summary="" border="1">
-     *   <th colspan="2">Summary of socket characteristics</th>
-     *   <tr><td>Compatible peer sockets</td><td>{@link ZMQ#PUB}, {@link ZMQ#XPUB}</td></tr>
-     *   <tr><td>Direction</td><td>Unidirectional</td></tr>
-     *   <tr><td>Send/receive pattern</td><td>Receive only</td></tr>
-     *   <tr><td>Incoming routing strategy</td><td>Fair-queued</td></tr>
-     *   <tr><td>Outgoing routing strategy</td><td>N/A</td></tr>
-     * </table>
-     */
-    public static final int SUB        = zmq.ZMQ.ZMQ_SUB;
-    /**
-     * Flag to specify a REQ socket, receiving side must be a REP or ROUTER.
-     * <p/>
-     * A socket of type REQ is used by a client to send requests to and receive replies from a service.
-     * <br/>
-     * This socket type allows only an alternating sequence of send(request) and subsequent recv(reply) calls.
-     * <br/>
-     * Each request sent is round-robined among all services, and each reply received is matched with the last issued request.
-     * <br/>
-     * If no services are available, then any send operation on the socket shall block until at least one service becomes available.
-     * <br/>
-     * The REQ socket shall not discard messages.
-     * <p/>
-     * <table summary="" border="1">
-     *   <th colspan="2">Summary of socket characteristics</th>
-     *   <tr><td>Compatible peer sockets</td><td>{@link ZMQ#REP}, {@link ZMQ#ROUTER}</td></tr>
-     *   <tr><td>Direction</td><td>Bidirectional</td></tr>
-     *   <tr><td>Send/receive pattern</td><td>Send, Receive, Send, Receive, ...</td></tr>
-     *   <tr><td>Incoming routing strategy</td><td>Last peer</td></tr>
-     *   <tr><td>Outgoing routing strategy</td><td>Round-robin</td></tr>
-     *   <tr><td>Action in mute state</td><td>Block</td></tr>
-     * </table>
-     */
-    public static final int REQ        = zmq.ZMQ.ZMQ_REQ;
-    /**
-     * Flag to specify the receiving part of a REQ or DEALER socket.
-     * <p/>
-     * A socket of type REP is used by a service to receive requests from and send replies to a client.
-     * <br/>
-     * This socket type allows only an alternating sequence of recv(request) and subsequent send(reply) calls.
-     * <br/>
-     * Each request received is fair-queued from among all clients, and each reply sent is routed to the client that issued the last request.
-     * <br/>
-     * If the original requester does not exist any more the reply is silently discarded.
-     * <p/>
-     * <table summary="" border="1">
-     *   <th colspan="2">Summary of socket characteristics</th>
-     *   <tr><td>Compatible peer sockets</td><td>{@link ZMQ#REQ}, {@link ZMQ#DEALER}</td></tr>
-     *   <tr><td>Direction</td><td>Bidirectional</td></tr>
-     *   <tr><td>Send/receive pattern</td><td>Receive, Send, Receive, Send, ...</td></tr>
-     *   <tr><td>Incoming routing strategy</td><td>Fair-queued</td></tr>
-     *   <tr><td>Outgoing routing strategy</td><td>Last peer</td></tr>
-     * </table>
-     */
-    public static final int REP        = zmq.ZMQ.ZMQ_REP;
-    /**
-     * Flag to specify a DEALER socket (aka XREQ).
-     * <p/>
-     * DEALER is really a combined ventilator / sink
-     * that does load-balancing on output and fair-queuing on input
-     * with no other semantics. It is the only socket type that lets
-     * you shuffle messages out to N nodes and shuffle the replies
-     * back, in a raw bidirectional asynch pattern.
-     * <p/>
-     * A socket of type DEALER is an advanced pattern used for extending request/reply sockets.
-     * <br/>
-     * Each message sent is round-robined among all connected peers, and each message received is fair-queued from all connected peers.
-     * <br/>
-     * When a DEALER socket enters the mute state due to having reached the high water mark for all peers,
-     * or if there are no peers at all, then any send() operations on the socket shall block
-     * until the mute state ends or at least one peer becomes available for sending; messages are not discarded.
-     * <br/>
-     * When a DEALER socket is connected to a {@link ZMQ#REP} socket each message sent must consist of an empty message part, the delimiter, followed by one or more body parts.
-     * <p/>
-     * <table summary="" border="1">
-     *   <th colspan="2">Summary of socket characteristics</th>
-     *   <tr><td>Compatible peer sockets</td><td>{@link ZMQ#ROUTER}, {@link ZMQ#REP}, {@link ZMQ#DEALER}</td></tr>
-     *   <tr><td>Direction</td><td>Bidirectional</td></tr>
-     *   <tr><td>Send/receive pattern</td><td>Unrestricted</td></tr>
-     *   <tr><td>Incoming routing strategy</td><td>Fair-queued</td></tr>
-     *   <tr><td>Outgoing routing strategy</td><td>Round-robin</td></tr>
-     *   <tr><td>Action in mute state</td><td>Block</td></tr>
-     * </table>
-     */
-    public static final int DEALER     = zmq.ZMQ.ZMQ_DEALER;
-    /**
-    * Old alias for DEALER flag.
-    * Flag to specify a XREQ socket, receiving side must be a XREP.
-    *
-    * @deprecated  As of release 3.0 of zeromq, replaced by {@link #DEALER}
-    */
+    // Socket types, used when creating a Socket. Note that all of the int types here is
+    // deprecated, use SocketType instead
+
     @Deprecated
-    public static final int XREQ       = DEALER;
+    public static final int PAIR = zmq.ZMQ.ZMQ_PAIR;
+
+    @Deprecated
+    public static final int PUB = zmq.ZMQ.ZMQ_PUB;
+    @Deprecated
+    public static final int SUB = zmq.ZMQ.ZMQ_SUB;
+
+    @Deprecated
+    public static final int REQ = zmq.ZMQ.ZMQ_REQ;
+
+    @Deprecated
+    public static final int REP = zmq.ZMQ.ZMQ_REP;
+
+    @Deprecated
+    public static final int DEALER = zmq.ZMQ.ZMQ_DEALER;
     /**
-     * Flag to specify ROUTER socket (aka XREP).
-     * <p/>
-     * ROUTER is the socket that creates and consumes request-reply
-     * routing envelopes. It is the only socket type that lets you route
-     * messages to specific connections if you know their identities.
-     * <p/>
-     * A socket of type ROUTER is an advanced socket type used for extending request/reply sockets.
-     * <p/>
-     * When receiving messages a ROUTER socket shall prepend a message part containing the identity
-     * of the originating peer to the message before passing it to the application.
-     * <br/>
-     * Messages received are fair-queued from among all connected peers.
-     * <p/>
-     * When sending messages a ROUTER socket shall remove the first part of the message
-     * and use it to determine the identity of the peer the message shall be routed to.
-     * If the peer does not exist anymore the message shall be silently discarded by default,
-     * unless {@link ZMQ.Socket#setRouterMandatory(boolean)} socket option is set to true.
-     * <p/>
-     * When a ROUTER socket enters the mute state due to having reached the high water mark for all peers,
-     * then any messages sent to the socket shall be dropped until the mute state ends.
-     * <br/>
-     * Likewise, any messages routed to a peer for which the individual high water mark has been reached shall also be dropped,
-     * , unless {@link ZMQ.Socket#setRouterMandatory(boolean)} socket option is set to true.
-     * <p/>
-     * When a {@link ZMQ#REQ} socket is connected to a ROUTER socket, in addition to the identity of the originating peer
-     * each message received shall contain an empty delimiter message part.
-     * <br/>
-     * Hence, the entire structure of each received message as seen by the application becomes:
-     * one or more identity parts,
-     * delimiter part,
-     * one or more body parts.
-     * <p/>
-     * When sending replies to a REQ socket the application must include the delimiter part.
-     * <p/>
-     * <table summary="" border="1">
-     *   <th colspan="2">Summary of socket characteristics</th>
-     *   <tr><td>Compatible peer sockets</td><td>{@link ZMQ#DEALER}, {@link ZMQ#REQ}, {@link ZMQ#ROUTER}</td></tr>
-     *   <tr><td>Direction</td><td>Bidirectional</td></tr>
-     *   <tr><td>Send/receive pattern</td><td>Unrestricted</td></tr>
-     *   <tr><td>Incoming routing strategy</td><td>Fair-queued</td></tr>
-     *   <tr><td>Outgoing routing strategy</td><td>See text</td></tr>
-     *   <tr><td>Action in mute state</td><td>Drop (See text)</td></tr>
-     * </table>
+     * Old alias for DEALER flag.
+     * Flag to specify a XREQ socket, receiving side must be a XREP.
+     *
+     * @deprecated As of release 3.0 of zeromq, replaced by {@link #DEALER}
      */
-    public static final int ROUTER     = zmq.ZMQ.ZMQ_ROUTER;
+    @Deprecated
+    public static final int XREQ = DEALER;
+
+    @Deprecated
+    public static final int ROUTER = zmq.ZMQ.ZMQ_ROUTER;
     /**
      * Old alias for ROUTER flag.
      * Flag to specify the receiving part of a XREQ socket.
      *
-     * @deprecated  As of release 3.0 of zeromq, replaced by {@link #ROUTER}
+     * @deprecated As of release 3.0 of zeromq, replaced by {@link #ROUTER}
      */
     @Deprecated
-    public static final int XREP       = ROUTER;
-    /**
-     * Flag to specify the receiving part of a PUSH socket.
-     * <p/>
-     * A socket of type ZMQ_PULL is used by a pipeline node to receive messages from upstream pipeline nodes.
-     * <br/>
-     * Messages are fair-queued from among all connected upstream nodes.
-     * <br/>
-     * The send() function is not implemented for this socket type.
-     * <p/>
-     * <table summary="" border="1">
-     *   <th colspan="2">Summary of socket characteristics</th>
-     *   <tr><td>Compatible peer sockets</td><td>{@link ZMQ#PUSH}</td></tr>
-     *   <tr><td>Direction</td><td>Unidirectional</td></tr>
-     *   <tr><td>Send/receive pattern</td><td>Receive only</td></tr>
-     *   <tr><td>Incoming routing strategy</td><td>Fair-queued</td></tr>
-     *   <tr><td>Outgoing routing strategy</td><td>N/A</td></tr>
-     *   <tr><td>Action in mute state</td><td>Block</td></tr>
-     * </table>
-     */
-    public static final int PULL       = zmq.ZMQ.ZMQ_PULL;
-    /**
-     * Flag to specify a PUSH socket, receiving side must be a PULL.
-     * <p/>
-     * A socket of type PUSH is used by a pipeline node to send messages to downstream pipeline nodes.
-     * <br/>
-     * Messages are round-robined to all connected downstream nodes.
-     * <br/>
-     * The recv() function is not implemented for this socket type.
-     * <br/>
-     * When a PUSH socket enters the mute state due to having reached the high water mark for all downstream nodes,
-     * or if there are no downstream nodes at all, then any send() operations on the socket shall block until the mute state ends
-     * or at least one downstream node becomes available for sending; messages are not discarded.
-     * <p/>
-     * <table summary="" border="1">
-     *   <th colspan="2">Summary of socket characteristics</th>
-     *   <tr><td>Compatible peer sockets</td><td>{@link ZMQ#PULL}</td></tr>
-     *   <tr><td>Direction</td><td>Unidirectional</td></tr>
-     *   <tr><td>Send/receive pattern</td><td>Send only</td></tr>
-     *   <tr><td>Incoming routing strategy</td><td>N/A</td></tr>
-     *   <tr><td>Outgoing routing strategy</td><td>Round-robin</td></tr>
-     *   <tr><td>Action in mute state</td><td>Block</td></tr>
-     * </table>
-     */
-    public static final int PUSH       = zmq.ZMQ.ZMQ_PUSH;
-    /**
-     * Flag to specify a XPUB socket, receiving side must be a SUB or XSUB.
-     * <p/>
-     * Subscriptions can be received as a message. Subscriptions start with
-     * a '1' byte. Unsubscriptions start with a '0' byte.
-     * <p/>
-     * Same as {@link ZMQ#PUB} except that you can receive subscriptions from the peers in form of incoming messages.
-     * <br/>
-     * Subscription message is a byte 1 (for subscriptions) or byte 0 (for unsubscriptions) followed by the subscription body.
-     * <br/>
-     * Messages without a sub/unsub prefix are also received, but have no effect on subscription status.
-     * <p/>
-     * <table summary="" border="1">
-     *   <th colspan="2">Summary of socket characteristics</th>
-     *   <tr><td>Compatible peer sockets</td><td>{@link ZMQ#SUB}, {@link ZMQ#XSUB}</td></tr>
-     *   <tr><td>Direction</td><td>Unidirectional</td></tr>
-     *   <tr><td>Send/receive pattern</td><td>Send messages, receive subscriptions</td></tr>
-     *   <tr><td>Incoming routing strategy</td><td>N/A</td></tr>
-     *   <tr><td>Outgoing routing strategy</td><td>Fan out</td></tr>
-     *   <tr><td>Action in mute state</td><td>Drop</td></tr>
-     * </table>
-     */
-    public static final int XPUB       = zmq.ZMQ.ZMQ_XPUB;
-    /**
-     * Flag to specify the receiving part of the PUB or XPUB socket.
-     * <p/>
-     * Same as {@link ZMQ#SUB} except that you subscribe by sending subscription messages to the socket.
-     * <br/>
-     * Subscription message is a byte 1 (for subscriptions) or byte 0 (for unsubscriptions) followed by the subscription body.
-     * <br/>
-     * Messages without a sub/unsub prefix may also be sent, but have no effect on subscription status.
-     * <p/>
-     * <table summary="" border="1">
-     *   <th colspan="2">Summary of socket characteristics</th>
-     *   <tr><td>Compatible peer sockets</td><td>{@link ZMQ#PUB}, {@link ZMQ#XPUB}</td></tr>
-     *   <tr><td>Direction</td><td>Unidirectional</td></tr>
-     *   <tr><td>Send/receive pattern</td><td>Receive messages, send subscriptions</td></tr>
-     *   <tr><td>Incoming routing strategy</td><td>Fair-queued</td></tr>
-     *   <tr><td>Outgoing routing strategy</td><td>N/A</td></tr>
-     *   <tr><td>Action in mute state</td><td>Drop</td></tr>
-     * </table>
-     */
-    public static final int XSUB       = zmq.ZMQ.ZMQ_XSUB;
-    /**
-     * Flag to specify a STREAM socket.
-     * <p/>
-     * A socket of type STREAM is used to send and receive TCP data from a non-ØMQ peer, when using the tcp:// transport.
-     * A STREAM socket can act as client and/or server, sending and/or receiving TCP data asynchronously.
-     * <br/>
-     * When receiving TCP data, a STREAM socket shall prepend a message part containing the identity
-     * of the originating peer to the message before passing it to the application.
-     * <br/>
-     * Messages received are fair-queued from among all connected peers.
-     * When sending TCP data, a STREAM socket shall remove the first part of the message
-     * and use it to determine the identity of the peer the message shall be routed to,
-     * and unroutable messages shall cause an EHOSTUNREACH or EAGAIN error.
-     * <br/>
-     * To open a connection to a server, use the {@link ZMQ.Socket#connect(String)} call, and then fetch the socket identity using the {@link ZMQ.Socket#getIdentity()} call.
-     * To close a specific connection, send the identity frame followed by a zero-length message.
-     * When a connection is made, a zero-length message will be received by the application.
-     * Similarly, when the peer disconnects (or the connection is lost), a zero-length message will be received by the application.
-     * The {@link ZMQ#SNDMORE} flag is ignored on data frames. You must send one identity frame followed by one data frame.
-     * <br/>
-     * Also, please note that omitting the SNDMORE flag will prevent sending further data (from any client) on the same socket.
-     * <p/>
-     * <table summary="" border="1">
-     *   <th colspan="2">Summary of socket characteristics</th>
-     *   <tr><td>Compatible peer sockets</td><td>none</td></tr>
-     *   <tr><td>Direction</td><td>Bidirectional</td></tr>
-     *   <tr><td>Send/receive pattern</td><td>Unrestricted</td></tr>
-     *   <tr><td>Incoming routing strategy</td><td>Fair-queued</td></tr>
-     *   <tr><td>Outgoing routing strategy</td><td>See text</td></tr>
-     *   <tr><td>Action in mute state</td><td>EAGAIN</td></tr>
-     * </table>
-     */
-    public static final int STREAM     = zmq.ZMQ.ZMQ_STREAM;
+    public static final int XREP = ROUTER;
+
+    @Deprecated
+    public static final int PULL = zmq.ZMQ.ZMQ_PULL;
+
+    @Deprecated
+    public static final int PUSH = zmq.ZMQ.ZMQ_PUSH;
+
+    @Deprecated
+    public static final int XPUB = zmq.ZMQ.ZMQ_XPUB;
+
+    @Deprecated
+    public static final int XSUB = zmq.ZMQ.ZMQ_XSUB;
+
+    @Deprecated
+    public static final int STREAM = zmq.ZMQ.ZMQ_STREAM;
     /**
      * Flag to specify a STREAMER device.
      */
     @Deprecated
-    public static final int STREAMER   = zmq.ZMQ.ZMQ_STREAMER;
+    public static final int STREAMER = zmq.ZMQ.ZMQ_STREAMER;
     /**
      * Flag to specify a FORWARDER device.
      */
     @Deprecated
-    public static final int FORWARDER  = zmq.ZMQ.ZMQ_FORWARDER;
+    public static final int FORWARDER = zmq.ZMQ.ZMQ_FORWARDER;
     /**
      * Flag to specify a QUEUE device.
      */
     @Deprecated
-    public static final int QUEUE      = zmq.ZMQ.ZMQ_QUEUE;
+    public static final int QUEUE = zmq.ZMQ.ZMQ_QUEUE;
     /**
      * @see org.zeromq.ZMQ#PULL
      */
     @Deprecated
-    public static final int UPSTREAM   = PULL;
+    public static final int UPSTREAM = PULL;
     /**
      * @see org.zeromq.ZMQ#PUSH
      */
@@ -461,83 +185,83 @@ public class ZMQ
      * established to a remote peer. This can happen either synchronous
      * or asynchronous. Value is the FD of the newly connected socket.
      */
-    public static final int EVENT_CONNECTED          = zmq.ZMQ.ZMQ_EVENT_CONNECTED;
+    public static final int EVENT_CONNECTED = zmq.ZMQ.ZMQ_EVENT_CONNECTED;
     /**
      * EVENT_CONNECT_DELAYED: synchronous connect failed, it's being polled.
      * The EVENT_CONNECT_DELAYED event triggers when an immediate connection
      * attempt is delayed and its completion is being polled for. Value has
      * no meaning.
      */
-    public static final int EVENT_CONNECT_DELAYED    = zmq.ZMQ.ZMQ_EVENT_CONNECT_DELAYED;
+    public static final int EVENT_CONNECT_DELAYED = zmq.ZMQ.ZMQ_EVENT_CONNECT_DELAYED;
     /**
      * @see org.zeromq.ZMQ#EVENT_CONNECT_DELAYED
      */
     @Deprecated
-    public static final int EVENT_DELAYED            = EVENT_CONNECT_DELAYED;
+    public static final int EVENT_DELAYED = EVENT_CONNECT_DELAYED;
     /**
      * EVENT_CONNECT_RETRIED: asynchronous connect / reconnection attempt.
      * The EVENT_CONNECT_RETRIED event triggers when a connection attempt is
      * being handled by reconnect timer. The reconnect interval's recomputed
      * for each attempt. Value is the reconnect interval.
      */
-    public static final int EVENT_CONNECT_RETRIED    = zmq.ZMQ.ZMQ_EVENT_CONNECT_RETRIED;
+    public static final int EVENT_CONNECT_RETRIED = zmq.ZMQ.ZMQ_EVENT_CONNECT_RETRIED;
     /**
      * @see org.zeromq.ZMQ#EVENT_CONNECT_RETRIED
      */
     @Deprecated
-    public static final int EVENT_RETRIED            = EVENT_CONNECT_RETRIED;
+    public static final int EVENT_RETRIED = EVENT_CONNECT_RETRIED;
     /**
      * EVENT_LISTENING: socket bound to an address, ready to accept connections.
      * The EVENT_LISTENING event triggers when a socket's successfully bound to
      * a an interface. Value is the FD of the newly bound socket.
      */
-    public static final int EVENT_LISTENING          = zmq.ZMQ.ZMQ_EVENT_LISTENING;
+    public static final int EVENT_LISTENING = zmq.ZMQ.ZMQ_EVENT_LISTENING;
     /**
      * EVENT_BIND_FAILED: socket could not bind to an address.
      * The EVENT_BIND_FAILED event triggers when a socket could not bind to a
      * given interface. Value is the errno generated by the bind call.
      */
-    public static final int EVENT_BIND_FAILED        = zmq.ZMQ.ZMQ_EVENT_BIND_FAILED;
+    public static final int EVENT_BIND_FAILED = zmq.ZMQ.ZMQ_EVENT_BIND_FAILED;
     /**
      * EVENT_ACCEPTED: connection accepted to bound interface.
      * The EVENT_ACCEPTED event triggers when a connection from a remote peer
      * has been established with a socket's listen address. Value is the FD of
      * the accepted socket.
      */
-    public static final int EVENT_ACCEPTED           = zmq.ZMQ.ZMQ_EVENT_ACCEPTED;
+    public static final int EVENT_ACCEPTED = zmq.ZMQ.ZMQ_EVENT_ACCEPTED;
     /**
      * EVENT_ACCEPT_FAILED: could not accept client connection.
      * The EVENT_ACCEPT_FAILED event triggers when a connection attempt to a
      * socket's bound address fails. Value is the errno generated by accept.
      */
-    public static final int EVENT_ACCEPT_FAILED      = zmq.ZMQ.ZMQ_EVENT_ACCEPT_FAILED;
+    public static final int EVENT_ACCEPT_FAILED = zmq.ZMQ.ZMQ_EVENT_ACCEPT_FAILED;
     /**
      * EVENT_CLOSED: connection closed.
      * The EVENT_CLOSED event triggers when a connection's underlying
      * descriptor has been closed. Value is the former FD of the for the
      * closed socket. FD has been closed already!
      */
-    public static final int EVENT_CLOSED             = zmq.ZMQ.ZMQ_EVENT_CLOSED;
+    public static final int EVENT_CLOSED = zmq.ZMQ.ZMQ_EVENT_CLOSED;
     /**
      * EVENT_CLOSE_FAILED: connection couldn't be closed.
      * The EVENT_CLOSE_FAILED event triggers when a descriptor could not be
      * released back to the OS. Implementation note: ONLY FOR IPC SOCKETS.
      * Value is the errno generated by unlink.
      */
-    public static final int EVENT_CLOSE_FAILED       = zmq.ZMQ.ZMQ_EVENT_CLOSE_FAILED;
+    public static final int EVENT_CLOSE_FAILED = zmq.ZMQ.ZMQ_EVENT_CLOSE_FAILED;
     /**
      * EVENT_DISCONNECTED: broken session.
      * The EVENT_DISCONNECTED event triggers when the stream engine (tcp and
      * ipc specific) detects a corrupted / broken session. Value is the FD of
      * the socket.
      */
-    public static final int EVENT_DISCONNECTED       = zmq.ZMQ.ZMQ_EVENT_DISCONNECTED;
+    public static final int EVENT_DISCONNECTED = zmq.ZMQ.ZMQ_EVENT_DISCONNECTED;
     /**
      * EVENT_MONITOR_STOPPED: monitor has been stopped.
      * The EVENT_MONITOR_STOPPED event triggers when the monitor for a socket is
      * stopped.
      */
-    public static final int EVENT_MONITOR_STOPPED    = zmq.ZMQ.ZMQ_EVENT_MONITOR_STOPPED;
+    public static final int EVENT_MONITOR_STOPPED = zmq.ZMQ.ZMQ_EVENT_MONITOR_STOPPED;
     /**
      * EVENT_HANDSHAKE_PROTOCOL: protocol has been successfully negotiated.
      * The EVENT_HANDSHAKE_PROTOCOL event triggers when the stream engine (tcp and ipc)
@@ -549,14 +273,14 @@ public class ZMQ
      * EVENT_ALL: all events known.
      * The EVENT_ALL constant can be used to set up a monitor for all known events.
      */
-    public static final int EVENT_ALL                = zmq.ZMQ.ZMQ_EVENT_ALL;
+    public static final int EVENT_ALL = zmq.ZMQ.ZMQ_EVENT_ALL;
 
     public static final byte[] MESSAGE_SEPARATOR = zmq.ZMQ.MESSAGE_SEPARATOR;
 
     public static final byte[] SUBSCRIPTION_ALL = zmq.ZMQ.SUBSCRIPTION_ALL;
 
-    public static final byte[] PROXY_PAUSE     = zmq.ZMQ.PROXY_PAUSE;
-    public static final byte[] PROXY_RESUME    = zmq.ZMQ.PROXY_RESUME;
+    public static final byte[] PROXY_PAUSE = zmq.ZMQ.PROXY_PAUSE;
+    public static final byte[] PROXY_RESUME = zmq.ZMQ.PROXY_RESUME;
     public static final byte[] PROXY_TERMINATE = zmq.ZMQ.PROXY_TERMINATE;
 
     public static final Charset CHARSET = zmq.ZMQ.CHARSET;
@@ -568,13 +292,171 @@ public class ZMQ
     /**
      * Create a new Context.
      *
-     * @param ioThreads
-     *            Number of threads to use, usually 1 is sufficient for most use cases.
+     * @param ioThreads Number of threads to use, usually 1 is sufficient for most use cases.
      * @return the Context
      */
     public static Context context(int ioThreads)
     {
         return new Context(ioThreads);
+    }
+
+    @Deprecated
+    public static boolean device(int type, Socket frontend, Socket backend)
+    {
+        return zmq.ZMQ.proxy(frontend.base, backend.base, null);
+    }
+
+    /**
+     * Starts the built-in 0MQ proxy in the current application thread.
+     * The proxy connects a frontend socket to a backend socket. Conceptually, data flows from frontend to backend.
+     * Depending on the socket types, replies may flow in the opposite direction. The direction is conceptual only;
+     * the proxy is fully symmetric and there is no technical difference between frontend and backend.
+     * <p>
+     * Before calling ZMQ.proxy() you must set any socket options, and connect or bind both frontend and backend sockets.
+     * The two conventional proxy models are:
+     * <p>
+     * ZMQ.proxy() runs in the current thread and returns only if/when the current context is closed.
+     *
+     * @param frontend ZMQ.Socket
+     * @param backend  ZMQ.Socket
+     * @param capture  If the capture socket is not NULL, the proxy shall send all messages, received on both
+     *                 frontend and backend, to the capture socket. The capture socket should be a
+     *                 ZMQ_PUB, ZMQ_DEALER, ZMQ_PUSH, or ZMQ_PAIR socket.
+     */
+    public static boolean proxy(Socket frontend, Socket backend, Socket capture)
+    {
+        return zmq.ZMQ.proxy(frontend.base, backend.base, capture != null ? capture.base : null);
+    }
+
+    public static boolean proxy(Socket frontend, Socket backend, Socket capture, Socket control)
+    {
+        return zmq.ZMQ.proxy(
+                frontend.base,
+                backend.base,
+                capture == null ? null : capture.base,
+                control == null ? null : control.base);
+    }
+
+    public static int poll(Selector selector, PollItem[] items, long timeout)
+    {
+        return poll(selector, items, items.length, timeout);
+    }
+
+    public static int poll(Selector selector, PollItem[] items, int count, long timeout)
+    {
+        zmq.poll.PollItem[] pollItems = new zmq.poll.PollItem[count];
+        for (int i = 0; i < count; i++) {
+            pollItems[i] = items[i].base;
+        }
+
+        return zmq.ZMQ.poll(selector, pollItems, count, timeout);
+    }
+
+    /**
+     * @return Major version number of the ZMQ library.
+     */
+    public static int getMajorVersion()
+    {
+        return zmq.ZMQ.ZMQ_VERSION_MAJOR;
+    }
+
+    /**
+     * @return Major version number of the ZMQ library.
+     */
+    public static int getMinorVersion()
+    {
+        return zmq.ZMQ.ZMQ_VERSION_MINOR;
+    }
+
+    /**
+     * @return Major version number of the ZMQ library.
+     */
+    public static int getPatchVersion()
+    {
+        return zmq.ZMQ.ZMQ_VERSION_PATCH;
+    }
+
+    /**
+     * @return Full version number of the ZMQ library used for comparing versions.
+     */
+    public static int getFullVersion()
+    {
+        return zmq.ZMQ.makeVersion(zmq.ZMQ.ZMQ_VERSION_MAJOR, zmq.ZMQ.ZMQ_VERSION_MINOR, zmq.ZMQ.ZMQ_VERSION_PATCH);
+    }
+
+    /**
+     * @param major Version major component.
+     * @param minor Version minor component.
+     * @param patch Version patch component.
+     * @return Comparible single int version number.
+     */
+    public static int makeVersion(final int major, final int minor, final int patch)
+    {
+        return zmq.ZMQ.makeVersion(major, minor, patch);
+    }
+
+    /**
+     * @return String version number in the form major.minor.patch.
+     */
+    public static String getVersionString()
+    {
+        return "" + zmq.ZMQ.ZMQ_VERSION_MAJOR + "." + zmq.ZMQ.ZMQ_VERSION_MINOR + "." + zmq.ZMQ.ZMQ_VERSION_PATCH;
+    }
+
+    public static void msleep(long millis)
+    {
+        zmq.ZMQ.msleep(millis);
+    }
+
+    public static void sleep(long seconds)
+    {
+        zmq.ZMQ.sleep(seconds);
+    }
+
+    public static void sleep(long amount, TimeUnit unit)
+    {
+        zmq.ZMQ.sleep(amount, unit);
+    }
+
+    public enum Error
+    {
+        ENOTSUP(ZError.ENOTSUP),
+        EPROTONOSUPPORT(ZError.EPROTONOSUPPORT),
+        ENOBUFS(ZError.ENOBUFS),
+        ENETDOWN(ZError.ENETDOWN),
+        EADDRINUSE(ZError.EADDRINUSE),
+        EADDRNOTAVAIL(ZError.EADDRNOTAVAIL),
+        ECONNREFUSED(ZError.ECONNREFUSED),
+        EINPROGRESS(ZError.EINPROGRESS),
+        EHOSTUNREACH(ZError.EHOSTUNREACH),
+        EMTHREAD(ZError.EMTHREAD),
+        EFSM(ZError.EFSM),
+        ENOCOMPATPROTO(ZError.ENOCOMPATPROTO),
+        ETERM(ZError.ETERM),
+        ENOTSOCK(ZError.ENOTSOCK),
+        EAGAIN(ZError.EAGAIN);
+
+        private final int code;
+
+        Error(int code)
+        {
+            this.code = code;
+        }
+
+        public static Error findByCode(int code)
+        {
+            for (Error e : Error.values()) {
+                if (e.getCode() == code) {
+                    return e;
+                }
+            }
+            throw new IllegalArgumentException("Unknown " + Error.class.getName() + " enum code:" + code);
+        }
+
+        public int getCode()
+        {
+            return code;
+        }
     }
 
     /**
@@ -585,13 +467,12 @@ public class ZMQ
     public static class Context implements Closeable
     {
         private final AtomicBoolean closed = new AtomicBoolean(false);
-        private final Ctx           ctx;
+        private final Ctx ctx;
 
         /**
          * Class constructor.
          *
-         * @param ioThreads
-         *            size of the threads pool to handle I/O operations.
+         * @param ioThreads size of the threads pool to handle I/O operations.
          */
         protected Context(int ioThreads)
         {
@@ -699,13 +580,18 @@ public class ZMQ
          * to at least one endpoint with {@link org.zeromq.ZMQ.Socket#connect(String)},
          * or at least one endpoint must be created for accepting incoming connections with {@link org.zeromq.ZMQ.Socket#bind(String)}.
          *
-         * @param type
-         *            the socket type.
+         * @param type the socket type.
          * @return the newly created Socket.
          */
-        public Socket socket(int type)
+        public Socket socket(SocketType type)
         {
             return new Socket(this, type);
+        }
+
+        @Deprecated
+        public Socket socket(int type)
+        {
+            return socket(SocketType.type(type));
         }
 
         /**
@@ -744,8 +630,8 @@ public class ZMQ
         /**
          * Create a new Poller within this context, with a specified initial size.
          * DO NOT FORGET TO CLOSE THE POLLER AFTER USE with {@link Poller#close()}
-         * @param size
-         *            the poller initial size.
+         *
+         * @param size the poller initial size.
          * @return the newly created Poller.
          */
         public Poller poller(int size)
@@ -857,24 +743,22 @@ public class ZMQ
         //  This port range is defined by IANA for dynamic or private ports
         //  We use this when choosing a port for dynamic binding.
         private static final int DYNFROM = 0xc000;
-        private static final int DYNTO   = 0xffff;
+        private static final int DYNTO = 0xffff;
 
-        private final Ctx           ctx;
-        private final SocketBase    base;
+        private final Ctx ctx;
+        private final SocketBase base;
         private final AtomicBoolean isClosed = new AtomicBoolean(false);
 
         /**
          * Class constructor.
          *
-         * @param context
-         *            a 0MQ context previously created.
-         * @param type
-         *            the socket type.
+         * @param context a 0MQ context previously created.
+         * @param type    the socket type.
          */
-        protected Socket(Context context, int type)
+        protected Socket(Context context, SocketType type)
         {
             ctx = context.ctx;
-            base = ctx.createSocket(type);
+            base = ctx.createSocket(type.type());
         }
 
         protected Socket(SocketBase base)
@@ -912,9 +796,9 @@ public class ZMQ
          *
          * @return the socket type.
          */
-        public int getType()
+        public SocketType getType()
         {
-            return base.getSocketOpt(zmq.ZMQ.ZMQ_TYPE);
+            return SocketType.type(base.getSocketOpt(zmq.ZMQ.ZMQ_TYPE));
         }
 
         /**
@@ -959,11 +843,10 @@ public class ZMQ
          * attempting to terminate the socket's context with Ctx#term() shall block until either all pending messages have been sent to a peer,
          * or the linger period expires, after which any pending messages shall be discarded.
          *
-         * @param value
-         *            the linger period in milliseconds.
+         * @param value the linger period in milliseconds.
          * @return true if the option was set, otherwise false
-         * @deprecated the linger option has only integer range, use {@link #setLinger(int)} instead
          * @see #getLinger()
+         * @deprecated the linger option has only integer range, use {@link #setLinger(int)} instead
          */
         @Deprecated
         public boolean setLinger(long value)
@@ -985,8 +868,7 @@ public class ZMQ
          * attempting to terminate the socket's context with Ctx#term() shall block until either all pending messages have been sent to a peer,
          * or the linger period expires, after which any pending messages shall be discarded.
          *
-         * @param value
-         *            the linger period in milliseconds.
+         * @param value the linger period in milliseconds.
          * @return true if the option was set, otherwise false
          * @see #getLinger()
          */
@@ -1000,7 +882,7 @@ public class ZMQ
          * The reconnection interval is the period ØMQ shall wait between attempts to reconnect
          * disconnected peers when using connection-oriented transports.
          * The value -1 means no reconnection.
-         *
+         * <p>
          * CAUTION: The reconnection interval may be randomized by ØMQ to prevent reconnection storms in topologies with a large number of peers per socket.
          *
          * @return the reconnectIVL.
@@ -1018,8 +900,8 @@ public class ZMQ
          * The value -1 means no reconnection.
          *
          * @return true if the option was set, otherwise false
-         * @deprecated reconnect interval option uses integer range, use {@link #setReconnectIVL(int)} instead
          * @see #getReconnectIVL()
+         * @deprecated reconnect interval option uses integer range, use {@link #setReconnectIVL(int)} instead
          */
         @Deprecated
         public boolean setReconnectIVL(long value)
@@ -1063,8 +945,8 @@ public class ZMQ
          *
          * @param value the maximum length of the queue of outstanding peer connections.
          * @return true if the option was set, otherwise false.
-         * @deprecated this option uses integer range, use {@link #setBacklog(int)} instead.
          * @see #getBacklog()
+         * @deprecated this option uses integer range, use {@link #setBacklog(int)} instead.
          */
         @Deprecated
         public boolean setBacklog(long value)
@@ -1109,6 +991,7 @@ public class ZMQ
          * between sending ZMTP heartbeats for the specified socket.
          * If this option is set and is greater than 0,
          * then a PING ZMTP command will be sent every ZMQ_HEARTBEAT_IVL milliseconds.
+         *
          * @return heartbeat interval in milliseconds
          */
         public int getHeartbeatIvl()
@@ -1125,6 +1008,7 @@ public class ZMQ
          * if there is no traffic received after sending the PING command,
          * but the received traffic does not have to be a PONG command
          * - any received traffic will cancel the timeout.
+         *
          * @return heartbeat timeout in milliseconds
          */
         public int getHeartbeatTimeout()
@@ -1141,6 +1025,7 @@ public class ZMQ
          * This option does not have any effect if ZMQ_HEARTBEAT_IVL is not set or is 0.
          * Internally, this value is rounded down to the nearest decisecond,
          * any value less than 100 will have no effect.
+         *
          * @return heartbeat time-to-live in milliseconds
          */
         public int getHeartbeatTtl()
@@ -1151,10 +1036,11 @@ public class ZMQ
         /**
          * The ZMQ_HEARTBEAT_CONTEXT option shall set the ping context
          * of the peer for ZMTP heartbeats.
-         *
+         * <p>
          * This API is in DRAFT state and is subject to change at ANY time until declared stable.
-         *
+         * <p>
          * If this option is set, every ping message sent for heartbeat will contain this context.
+         *
          * @return the context to be sent with ping messages. Empty array by default.
          */
         @Draft
@@ -1184,6 +1070,7 @@ public class ZMQ
          * between sending ZMTP heartbeats for the specified socket.
          * If this option is set and is greater than 0,
          * then a PING ZMTP command will be sent every ZMQ_HEARTBEAT_IVL milliseconds.
+         *
          * @param heartbeatIvl heartbeat interval in milliseconds
          * @return true if the option was set, otherwise false
          */
@@ -1201,6 +1088,7 @@ public class ZMQ
          * if there is no traffic received after sending the PING command,
          * but the received traffic does not have to be a PONG command
          * - any received traffic will cancel the timeout.
+         *
          * @param heartbeatTimeout heartbeat timeout in milliseconds
          * @return true if the option was set, otherwise false
          */
@@ -1218,6 +1106,7 @@ public class ZMQ
          * This option does not have any effect if ZMQ_HEARTBEAT_IVL is not set or is 0.
          * Internally, this value is rounded down to the nearest decisecond,
          * any value less than 100 will have no effect.
+         *
          * @param heartbeatTtl heartbeat time-to-live in milliseconds
          * @return true if the option was set, otherwise false
          */
@@ -1229,10 +1118,11 @@ public class ZMQ
         /**
          * The ZMQ_HEARTBEAT_CONTEXT option shall set the ping context
          * of the peer for ZMTP heartbeats.
-         *
+         * <p>
          * This API is in DRAFT state and is subject to change at ANY time until declared stable.
-         *
+         * <p>
          * If this option is set, every ping message sent for heartbeat will contain this context.
+         *
          * @param pingContext the context to be sent with ping messages.
          * @return true if the option was set, otherwise false
          */
@@ -1291,8 +1181,8 @@ public class ZMQ
          * Default value means no exponential backoff is performed and reconnect interval calculations are only based on ZMQ_RECONNECT_IVL.
          *
          * @return true if the option was set, otherwise false
-         * @deprecated this option uses integer range, use {@link #setReconnectIVLMax(int)} instead
          * @see #getReconnectIVLMax()
+         * @deprecated this option uses integer range, use {@link #setReconnectIVLMax(int)} instead
          */
         @Deprecated
         public boolean setReconnectIVLMax(long value)
@@ -1366,13 +1256,13 @@ public class ZMQ
          * If this limit has been reached the socket shall enter an exceptional state and depending on the socket type,
          * ØMQ shall take appropriate action such as blocking or dropping sent messages.
          * Refer to the individual socket descriptions in zmq_socket(3) for details on the exact action taken for each socket type.
-         *
+         * <p>
          * CAUTION: ØMQ does not guarantee that the socket will accept as many as ZMQ_SNDHWM messages,
          * and the actual limit may be as much as 60-70% lower depending on the flow of messages on the socket.
          *
          * @return true if the option was set, otherwise false.
-         * @deprecated this option uses integer range, use {@link #setSndHWM(int)} instead
          * @see #getSndHWM()
+         * @deprecated this option uses integer range, use {@link #setSndHWM(int)} instead
          */
         @Deprecated
         public boolean setSndHWM(long value)
@@ -1388,7 +1278,7 @@ public class ZMQ
          * If this limit has been reached the socket shall enter an exceptional state and depending on the socket type,
          * ØMQ shall take appropriate action such as blocking or dropping sent messages.
          * Refer to the individual socket descriptions in zmq_socket(3) for details on the exact action taken for each socket type.
-         *
+         * <p>
          * CAUTION: ØMQ does not guarantee that the socket will accept as many as ZMQ_SNDHWM messages,
          * and the actual limit may be as much as 60-70% lower depending on the flow of messages on the socket.
          *
@@ -1428,8 +1318,8 @@ public class ZMQ
          * Refer to the individual socket descriptions in zmq_socket(3) for details on the exact action taken for each socket type.
          *
          * @return true if the option was set, otherwise false
-         * @deprecated this option uses integer range, use {@link #setRcvHWM(int)} instead
          * @see #getRcvHWM()
+         * @deprecated this option uses integer range, use {@link #setRcvHWM(int)} instead
          */
         @Deprecated
         public boolean setRcvHWM(long value)
@@ -1456,9 +1346,8 @@ public class ZMQ
         }
 
         /**
-         * @see #setHWM(int)
-         *
          * @return the High Water Mark.
+         * @see #setHWM(int)
          */
         @Deprecated
         public int getHWM()
@@ -1470,14 +1359,13 @@ public class ZMQ
          * The 'ZMQ_HWM' option shall set the high water mark for the specified 'socket'. The high
          * water mark is a hard limit on the maximum number of outstanding messages 0MQ shall queue
          * in memory for any single peer that the specified 'socket' is communicating with.
-         *
+         * <p>
          * If this limit has been reached the socket shall enter an exceptional state and depending
          * on the socket type, 0MQ shall take appropriate action such as blocking or dropping sent
          * messages. Refer to the individual socket descriptions in the man page of zmq_socket[3] for
          * details on the exact action taken for each socket type.
          *
-         * @param hwm
-         *            the number of messages to queue.
+         * @param hwm the number of messages to queue.
          * @return true if the option was set, otherwise false.
          * @deprecated this option uses integer range, use {@link #setHWM(int)} instead
          */
@@ -1494,14 +1382,13 @@ public class ZMQ
          * The 'ZMQ_HWM' option shall set the high water mark for the specified 'socket'. The high
          * water mark is a hard limit on the maximum number of outstanding messages 0MQ shall queue
          * in memory for any single peer that the specified 'socket' is communicating with.
-         *
+         * <p>
          * If this limit has been reached the socket shall enter an exceptional state and depending
          * on the socket type, 0MQ shall take appropriate action such as blocking or dropping sent
          * messages. Refer to the individual socket descriptions in the man page of zmq_socket[3] for
          * details on the exact action taken for each socket type.
          *
-         * @param hwm
-         *            the number of messages to queue.
+         * @param hwm the number of messages to queue.
          * @return true if the option was set, otherwise false
          */
         public boolean setHWM(int hwm)
@@ -1513,9 +1400,8 @@ public class ZMQ
         }
 
         /**
-         * @see #setSwap(long)
-         *
          * @return the number of messages to swap at most.
+         * @see #setSwap(long)
          */
         @Deprecated
         public long getSwap()
@@ -1576,8 +1462,7 @@ public class ZMQ
          * high water mark; in this case outstanding messages shall be offloaded to storage on disk
          * rather than held in memory.
          *
-         * @param value
-         *            The value of 'ZMQ_SWAP' defines the maximum size of the swap space in bytes.
+         * @param value The value of 'ZMQ_SWAP' defines the maximum size of the swap space in bytes.
          */
         @Deprecated
         public boolean setSwap(long value)
@@ -1586,9 +1471,8 @@ public class ZMQ
         }
 
         /**
-         * @see #setAffinity(long)
-         *
          * @return the affinity.
+         * @see #setAffinity(long)
          */
         public long getAffinity()
         {
@@ -1598,19 +1482,18 @@ public class ZMQ
         /**
          * Get the Affinity. The 'ZMQ_AFFINITY' option shall set the I/O thread affinity for newly
          * created connections on the specified 'socket'.
-         *
+         * <p>
          * Affinity determines which threads from the 0MQ I/O thread pool associated with the
          * socket's _context_ shall handle newly created connections. A value of zero specifies no
          * affinity, meaning that work shall be distributed fairly among all 0MQ I/O threads in the
          * thread pool. For non-zero values, the lowest bit corresponds to thread 1, second lowest
          * bit to thread 2 and so on. For example, a value of 3 specifies that subsequent
          * connections on 'socket' shall be handled exclusively by I/O threads 1 and 2.
-         *
+         * <p>
          * See also  in the man page of init[3] for details on allocating the number of I/O threads for a
          * specific _context_.
          *
-         * @param value
-         *            the io_thread affinity.
+         * @param value the io_thread affinity.
          * @return true if the option was set, otherwise false
          */
         public boolean setAffinity(long value)
@@ -1619,9 +1502,8 @@ public class ZMQ
         }
 
         /**
-         * @see #setIdentity(byte[])
-         *
          * @return the Identitiy.
+         * @see #setIdentity(byte[])
          */
         public byte[] getIdentity()
         {
@@ -1633,13 +1515,13 @@ public class ZMQ
          * identity determines if existing 0MQ infastructure (_message queues_, _forwarding
          * devices_) shall be identified with a specific application and persist across multiple
          * runs of the application.
-         *
+         * <p>
          * If the socket has no identity, each run of an application is completely separate from
          * other runs. However, with identity set the socket shall re-use any existing 0MQ
          * infrastructure configured by the previous run(s). Thus the application may receive
          * messages that were sent in the meantime, _message queue_ limits shall be shared with
          * previous run(s) and so on.
-         *
+         * <p>
          * Identity should be at least one byte and at most 255 bytes long. Identities starting with
          * binary zero are reserved for use by 0MQ infrastructure.
          *
@@ -1652,9 +1534,8 @@ public class ZMQ
         }
 
         /**
-         * @see #setRate(long)
-         *
          * @return the Rate.
+         * @see #setRate(long)
          */
         public long getRate()
         {
@@ -1691,7 +1572,7 @@ public class ZMQ
          * using the specified 'socket'. The recovery interval determines the maximum time in
          * seconds that a receiver can be absent from a multicast group before unrecoverable data
          * loss will occur.
-         *
+         * <p>
          * CAUTION: Exercise care when setting large recovery intervals as the data needed for
          * recovery will be held in memory. For example, a 1 minute recovery interval at a data rate
          * of 1Gbps requires a 7GB in-memory buffer. {Purpose of this Method}
@@ -1779,9 +1660,8 @@ public class ZMQ
         }
 
         /**
-         * @see #setMulticastLoop(boolean)
-         *
          * @return the Multicast Loop.
+         * @see #setMulticastLoop(boolean)
          */
         @Deprecated
         public boolean hasMulticastLoop()
@@ -1806,9 +1686,8 @@ public class ZMQ
         }
 
         /**
-         * @see #setMulticastHops(long)
-         *
          * @return the Multicast Hops.
+         * @see #setMulticastHops(long)
          */
         public long getMulticastHops()
         {
@@ -1890,12 +1769,12 @@ public class ZMQ
         }
 
         /**
-        * Override SO_KEEPALIVE socket option (where supported by OS) to enable keep-alive packets for a socket
-        * connection. Possible values are -1, 0, 1. The default value -1 will skip all overrides and do the OS default.
-        *
-        * @param value The value of 'ZMQ_TCP_KEEPALIVE' to turn TCP keepalives on (1) or off (0).
-        * @return true if the option was set, otherwise false.
-        */
+         * Override SO_KEEPALIVE socket option (where supported by OS) to enable keep-alive packets for a socket
+         * connection. Possible values are -1, 0, 1. The default value -1 will skip all overrides and do the OS default.
+         *
+         * @param value The value of 'ZMQ_TCP_KEEPALIVE' to turn TCP keepalives on (1) or off (0).
+         * @return true if the option was set, otherwise false.
+         */
         @Deprecated
         public boolean setTCPKeepAlive(long value)
         {
@@ -1903,9 +1782,8 @@ public class ZMQ
         }
 
         /**
-         * @see #setTCPKeepAlive(long)
-         *
          * @return the keep alive setting.
+         * @see #setTCPKeepAlive(long)
          */
         @Deprecated
         public long getTCPKeepAliveSetting()
@@ -1926,9 +1804,8 @@ public class ZMQ
         }
 
         /**
-         * @see #setTCPKeepAliveCount(long)
-         *
          * @return the keep alive count.
+         * @see #setTCPKeepAliveCount(long)
          */
         public long getTCPKeepAliveCount()
         {
@@ -1940,7 +1817,7 @@ public class ZMQ
          * and do the OS default.
          *
          * @param value The value of 'ZMQ_TCP_KEEPALIVE_INTVL' defines the interval between keepalives. Unit is OS
-         *            dependent.
+         *              dependent.
          * @return true if the option was set, otherwise false.
          */
         public boolean setTCPKeepAliveInterval(long value)
@@ -1949,9 +1826,8 @@ public class ZMQ
         }
 
         /**
-         * @see #setTCPKeepAliveInterval(long)
-         *
          * @return the keep alive interval.
+         * @see #setTCPKeepAliveInterval(long)
          */
         public long getTCPKeepAliveInterval()
         {
@@ -1963,7 +1839,7 @@ public class ZMQ
          * -1 will skip all overrides and do the OS default.
          *
          * @param value The value of 'ZMQ_TCP_KEEPALIVE_IDLE' defines the interval between the last data packet sent
-         *            over the socket and the first keepalive probe. Unit is OS dependent.
+         *              over the socket and the first keepalive probe. Unit is OS dependent.
          * @return true if the option was set, otherwise false
          */
         public boolean setTCPKeepAliveIdle(long value)
@@ -1972,9 +1848,8 @@ public class ZMQ
         }
 
         /**
-         * @see #setTCPKeepAliveIdle(long)
-         *
          * @return the keep alive idle value.
+         * @see #setTCPKeepAliveIdle(long)
          */
         public long getTCPKeepAliveIdle()
         {
@@ -2002,8 +1877,8 @@ public class ZMQ
          * @param value underlying kernel transmit buffer size for the 'socket' in bytes
          *              A value of zero means leave the OS default unchanged.
          * @return true if the option was set, otherwise false
-         * @deprecated this option uses integer range, use {@link #setSendBufferSize(int)} instead
          * @see #getSendBufferSize()
+         * @deprecated this option uses integer range, use {@link #setSendBufferSize(int)} instead
          */
         @Deprecated
         public boolean setSendBufferSize(long value)
@@ -2048,8 +1923,8 @@ public class ZMQ
          * @param value Underlying kernel receive buffer size for the 'socket' in bytes.
          *              A value of zero means leave the OS default unchanged.
          * @return true if the option was set, otherwise false
-         * @deprecated this option uses integer range, use {@link #setReceiveBufferSize(int)} instead
          * @see #getReceiveBufferSize()
+         * @deprecated this option uses integer range, use {@link #setReceiveBufferSize(int)} instead
          */
         @Deprecated
         public boolean setReceiveBufferSize(long value)
@@ -2119,7 +1994,7 @@ public class ZMQ
          * The 'ZMQ_SUBSCRIBE' option shall establish a new message filter on a 'ZMQ_SUB' socket.
          * Newly created 'ZMQ_SUB' sockets shall filter out all incoming messages, therefore you
          * should call this option to establish an initial message filter.
-         *
+         * <p>
          * An empty 'option_value' of length zero shall subscribe to all incoming messages. A
          * non-empty 'option_value' shall subscribe to all messages beginning with the specified
          * prefix. Mutiple filters may be attached to a single 'ZMQ_SUB' socket, in which case a
@@ -2137,7 +2012,7 @@ public class ZMQ
          * The 'ZMQ_SUBSCRIBE' option shall establish a new message filter on a 'ZMQ_SUB' socket.
          * Newly created 'ZMQ_SUB' sockets shall filter out all incoming messages, therefore you
          * should call this option to establish an initial message filter.
-         *
+         * <p>
          * An empty 'option_value' of length zero shall subscribe to all incoming messages. A
          * non-empty 'option_value' shall subscribe to all messages beginning with the specified
          * prefix. Mutiple filters may be attached to a single 'ZMQ_SUB' socket, in which case a
@@ -2183,6 +2058,7 @@ public class ZMQ
 
         /**
          * Set custom Encoder
+         *
          * @param cls
          * @return true if the option was set, otherwise false
          */
@@ -2194,6 +2070,7 @@ public class ZMQ
 
         /**
          * Set custom Decoder
+         *
          * @param cls
          * @return true if the option was set, otherwise false
          */
@@ -2208,6 +2085,7 @@ public class ZMQ
          * It means that after this limit, there will be a slight penalty cost at the creation,
          * but the subsequent operations will be faster.
          * Set to 0 or negative to disable the threshold mechanism.
+         *
          * @param threshold the threshold to set for the size limit of messages. 0 or negative to disable this system.
          * @return true if the option was set, otherwise false.
          */
@@ -2220,6 +2098,7 @@ public class ZMQ
          * Gets the limit threshold where messages of a given size will be allocated using Direct ByteBuffer.
          * It means that after this limit, there will be a slight penalty cost at the creation,
          * but the subsequent operations will be faster.
+         *
          * @return the threshold
          */
         public int getMsgAllocationHeapThreshold()
@@ -2229,6 +2108,7 @@ public class ZMQ
 
         /**
          * Sets a custom message allocator.
+         *
          * @param allocator the custom allocator.
          * @return true if the option was set, otherwise false.
          */
@@ -2332,7 +2212,7 @@ public class ZMQ
          * If that option is set to true, the ROUTER socket shall hand-over the connection to the new client and disconnect the existing one.
          *
          * @param handover A value of false, (default) the ROUTER socket shall reject clients trying to connect with an already-used identity
-         *                  A value of true, the ROUTER socket shall hand-over the connection to the new client and disconnect the existing one
+         *                 A value of true, the ROUTER socket shall hand-over the connection to the new client and disconnect the existing one
          * @return true if the option was set, otherwise false.
          */
         public boolean setRouterHandover(boolean handover)
@@ -2366,9 +2246,8 @@ public class ZMQ
         }
 
         /**
-         * @see #setIPv4Only (boolean)
-         *
          * @return the IPV4ONLY
+         * @see #setIPv4Only (boolean)
          * @deprecated use {@link #isIPv6()} instead (inverted logic: ipv4 = true <==> ipv6 = false)
          */
         @Deprecated
@@ -2436,9 +2315,8 @@ public class ZMQ
         }
 
         /**
-         * @see #setTCPKeepAlive(int)
-         *
          * @return the keep alive setting.
+         * @see #setTCPKeepAlive(int)
          */
         public int getTCPKeepAlive()
         {
@@ -2459,7 +2337,6 @@ public class ZMQ
 
         /**
          * @see #setDelayAttachOnConnect(boolean)
-         *
          * @deprecated use {@link #setImmediate(boolean)} instead (inverted logic: immediate = true <==> delay attach on connect = false)
          */
         @Deprecated
@@ -2470,7 +2347,7 @@ public class ZMQ
 
         /**
          * Accept messages only when connections are made
-         *
+         * <p>
          * If set to true, will delay the attachment of a pipe on connect until the underlying connection
          * has completed. This will cause the socket to block if there are no other connections, but will
          * prevent queues from filling on pipes awaiting connection
@@ -2511,7 +2388,7 @@ public class ZMQ
 
         /**
          * Accept messages immediately or only when connections are made
-         *
+         * <p>
          * By default queues will fill on outgoing connections even if the connection has not completed.
          * This can lead to "lost" messages on sockets with round-robin routing (REQ, PUSH, DEALER).
          * If this option is set to false, messages shall be queued only to completed connections.
@@ -2678,8 +2555,8 @@ public class ZMQ
          *
          * @param server true if the role of the socket should be server for PLAIN security.
          * @return true if the option was set, otherwise false.
-         * @deprecated the naming is inconsistent with jzmq, please use {@link #setPlainServer(boolean)} instead
          * @see #isAsServerPlain()
+         * @deprecated the naming is inconsistent with jzmq, please use {@link #setPlainServer(boolean)} instead
          */
         @Deprecated
         public boolean setAsServerPlain(boolean server)
@@ -2707,8 +2584,8 @@ public class ZMQ
          * Returns the ZMQ_PLAIN_SERVER option, if any, previously set on the socket.
          *
          * @return true if the role of the socket should be server for the PLAIN mechanism.
-         * @deprecated the naming is inconsistent with jzmq, please use {@link #getPlainServer()} instead
          * @see #setAsServerPlain(boolean)
+         * @deprecated the naming is inconsistent with jzmq, please use {@link #getPlainServer()} instead
          */
         @Deprecated
         public boolean isAsServerPlain()
@@ -2720,8 +2597,8 @@ public class ZMQ
          * Returns the ZMQ_PLAIN_SERVER option, if any, previously set on the socket.
          *
          * @return true if the role of the socket should be server for the PLAIN mechanism.
-         * @deprecated the naming is inconsistent with jzmq, please use {@link #getPlainServer()} instead
          * @see #setAsServerPlain(boolean)
+         * @deprecated the naming is inconsistent with jzmq, please use {@link #getPlainServer()} instead
          */
         @Deprecated
         public boolean getAsServerPlain()
@@ -2828,8 +2705,8 @@ public class ZMQ
          *
          * @param server true if the role of the socket should be server for CURVE mechanism
          * @return true if the option was set
-         * @deprecated the naming is inconsistent with jzmq, please use {@link #setCurveServer(boolean)} instead
          * @see #isAsServerCurve()
+         * @deprecated the naming is inconsistent with jzmq, please use {@link #setCurveServer(boolean)} instead
          */
         @Deprecated
         public boolean setAsServerCurve(boolean server)
@@ -2859,8 +2736,8 @@ public class ZMQ
          * Tells if the socket will act as server for CURVE security.
          *
          * @return true if the role of the socket should be server for CURVE mechanism.
-         * @deprecated the naming is inconsistent with jzmq, please use {@link #getCurveServer()} instead
          * @see #setAsServerCurve(boolean)
+         * @deprecated the naming is inconsistent with jzmq, please use {@link #getCurveServer()} instead
          */
         @Deprecated
         public boolean isAsServerCurve()
@@ -2883,8 +2760,8 @@ public class ZMQ
          * Tells if the socket will act as server for CURVE security.
          *
          * @return true if the role of the socket should be server for CURVE mechanism.
-         * @deprecated the naming is inconsistent with jzmq, please use {@link #getCurveServer()} instead
          * @see #setAsServerCurve(boolean)
+         * @deprecated the naming is inconsistent with jzmq, please use {@link #getCurveServer()} instead
          */
         @Deprecated
         public boolean getAsServerCurve()
@@ -2978,31 +2855,6 @@ public class ZMQ
             return (byte[]) base.getSocketOptx(zmq.ZMQ.ZMQ_CURVE_SECRETKEY);
         }
 
-        public enum Mechanism
-        {
-            NULL(Mechanisms.NULL),
-            PLAIN(Mechanisms.PLAIN),
-            CURVE(Mechanisms.CURVE);
-            // TODO add GSSAPI once it is implemented
-
-            private final Mechanisms mech;
-
-            Mechanism(Mechanisms zmq)
-            {
-                this.mech = zmq;
-            }
-
-            private static Mechanism find(Mechanisms mech)
-            {
-                for (Mechanism candidate : values()) {
-                    if (candidate.mech == mech) {
-                        return candidate;
-                    }
-                }
-                return null;
-            }
-        }
-
         /**
          * The ZMQ_MECHANISM option shall retrieve the current security mechanism for the socket.
          *
@@ -3016,8 +2868,7 @@ public class ZMQ
         /**
          * Bind to network interface. Start listening for new connections.
          *
-         * @param addr
-         *            the endpoint to bind to.
+         * @param addr the endpoint to bind to.
          * @return true if the socket was bound, otherwise false.
          */
         public boolean bind(String addr)
@@ -3031,8 +2882,7 @@ public class ZMQ
          * Bind to network interface to a random port. Start listening for new
          * connections.
          *
-         * @param addr
-         *            the endpoint to bind to.
+         * @param addr the endpoint to bind to.
          */
         public int bindToRandomPort(String addr)
         {
@@ -3043,12 +2893,9 @@ public class ZMQ
          * Bind to network interface to a random port. Start listening for new
          * connections.
          *
-         * @param addr
-         *            the endpoint to bind to.
-         * @param min
-         *            The minimum port in the range of ports to try.
-         * @param max
-         *            The maximum port in the range of ports to try.
+         * @param addr the endpoint to bind to.
+         * @param min  The minimum port in the range of ports to try.
+         * @param max  The maximum port in the range of ports to try.
          */
         public int bindToRandomPort(String addr, int min, int max)
         {
@@ -3103,8 +2950,7 @@ public class ZMQ
          * A ZMQ_ROUTER socket enters its normal ready state for a specific peer
          * only when handshaking is complete for that peer, which may take an arbitrary time.
          *
-         * @param addr
-         *            the endpoint to connect to.
+         * @param addr the endpoint to connect to.
          * @return true if the socket was connected, otherwise false.
          */
         public boolean connect(String addr)
@@ -3117,8 +2963,7 @@ public class ZMQ
         /**
          * Disconnect from remote application.
          *
-         * @param addr
-         *            the endpoint to disconnect from.
+         * @param addr the endpoint to disconnect from.
          * @return true if successful.
          */
         public boolean disconnect(String addr)
@@ -3129,8 +2974,7 @@ public class ZMQ
         /**
          * Stop accepting connections on a socket.
          *
-         * @param addr
-         *            the endpoint to unbind from.
+         * @param addr the endpoint to unbind from.
          * @return true if successful.
          */
         public boolean unbind(String addr)
@@ -3142,7 +2986,7 @@ public class ZMQ
          * Queues a message created from data, so it can be sent.
          *
          * @param data the data to send. The data is either a single-part message by itself,
-         * or the last part of a multi-part message.
+         *             or the last part of a multi-part message.
          * @return true when it has been queued on the socket and ØMQ has assumed responsibility for the message.
          * This does not indicate that the message has been transmitted to the network.
          */
@@ -3166,19 +3010,19 @@ public class ZMQ
         /**
          * Queues a message created from data.
          *
-         * @param data the data to send.
+         * @param data  the data to send.
          * @param flags a combination (with + or |) of the flags defined below:
-         * <ul>
-         * <li>{@link org.zeromq.ZMQ#DONTWAIT DONTWAIT}:
-         * For socket types ({@link org.zeromq.ZMQ#DEALER DEALER}, {@link org.zeromq.ZMQ#PUSH PUSH})
-         * that block when there are no available peers (or all peers have full high-water mark),
-         * specifies that the operation should be performed in non-blocking mode.
-         * If the message cannot be queued on the socket, the method shall fail with errno set to EAGAIN.</li>
-         * <li>{@link org.zeromq.ZMQ#SNDMORE SNDMORE}:
-         * Specifies that the message being sent is a multi-part message,
-         * and that further message parts are to follow.</li>
-         * <li>0 : blocking send of a single-part message or the last of a multi-part message</li>
-         * </ul>
+         *              <ul>
+         *              <li>{@link org.zeromq.ZMQ#DONTWAIT DONTWAIT}:
+         *              For socket types ({@link org.zeromq.ZMQ#DEALER DEALER}, {@link org.zeromq.ZMQ#PUSH PUSH})
+         *              that block when there are no available peers (or all peers have full high-water mark),
+         *              specifies that the operation should be performed in non-blocking mode.
+         *              If the message cannot be queued on the socket, the method shall fail with errno set to EAGAIN.</li>
+         *              <li>{@link org.zeromq.ZMQ#SNDMORE SNDMORE}:
+         *              Specifies that the message being sent is a multi-part message,
+         *              and that further message parts are to follow.</li>
+         *              <li>0 : blocking send of a single-part message or the last of a multi-part message</li>
+         *              </ul>
          * @return true when it has been queued on the socket and ØMQ has assumed responsibility for the message.
          * This does not indicate that the message has been transmitted to the network.
          */
@@ -3191,7 +3035,7 @@ public class ZMQ
          * Queues a message created from data, so it can be sent.
          *
          * @param data the data to send. The data is either a single-part message by itself,
-         * or the last part of a multi-part message.
+         *             or the last part of a multi-part message.
          * @return true when it has been queued on the socket and ØMQ has assumed responsibility for the message.
          * This does not indicate that the message has been transmitted to the network.
          */
@@ -3215,19 +3059,19 @@ public class ZMQ
         /**
          * Queues a message created from data, so it can be sent.
          *
-         * @param data the data to send.
+         * @param data  the data to send.
          * @param flags a combination (with + or |) of the flags defined below:
-         * <ul>
-         * <li>{@link org.zeromq.ZMQ#DONTWAIT DONTWAIT}:
-         * For socket types ({@link org.zeromq.ZMQ#DEALER DEALER}, {@link org.zeromq.ZMQ#PUSH PUSH})
-         * that block when there are no available peers (or all peers have full high-water mark),
-         * specifies that the operation should be performed in non-blocking mode.
-         * If the message cannot be queued on the socket, the method shall fail with errno set to EAGAIN.</li>
-         * <li>{@link org.zeromq.ZMQ#SNDMORE SNDMORE}:
-         * Specifies that the message being sent is a multi-part message,
-         * and that further message parts are to follow.</li>
-         * <li>0 : blocking send of a single-part message or the last of a multi-part message</li>
-         * </ul>
+         *              <ul>
+         *              <li>{@link org.zeromq.ZMQ#DONTWAIT DONTWAIT}:
+         *              For socket types ({@link org.zeromq.ZMQ#DEALER DEALER}, {@link org.zeromq.ZMQ#PUSH PUSH})
+         *              that block when there are no available peers (or all peers have full high-water mark),
+         *              specifies that the operation should be performed in non-blocking mode.
+         *              If the message cannot be queued on the socket, the method shall fail with errno set to EAGAIN.</li>
+         *              <li>{@link org.zeromq.ZMQ#SNDMORE SNDMORE}:
+         *              Specifies that the message being sent is a multi-part message,
+         *              and that further message parts are to follow.</li>
+         *              <li>0 : blocking send of a single-part message or the last of a multi-part message</li>
+         *              </ul>
          * @return true when it has been queued on the socket and ØMQ has assumed responsibility for the message.
          * This does not indicate that the message has been transmitted to the network.
          */
@@ -3245,21 +3089,21 @@ public class ZMQ
         /**
          * Queues a message created from data, so it can be sent.
          *
-         * @param data the data to send.
-         * @param off the index of the first byte to be sent.
+         * @param data   the data to send.
+         * @param off    the index of the first byte to be sent.
          * @param length the number of bytes to be sent.
-         * @param flags a combination (with + or |) of the flags defined below:
-         * <ul>
-         * <li>{@link org.zeromq.ZMQ#DONTWAIT DONTWAIT}:
-         * For socket types ({@link org.zeromq.ZMQ#DEALER DEALER}, {@link org.zeromq.ZMQ#PUSH PUSH})
-         * that block when there are no available peers (or all peers have full high-water mark),
-         * specifies that the operation should be performed in non-blocking mode.
-         * If the message cannot be queued on the socket, the method shall fail with errno set to EAGAIN.</li>
-         * <li>{@link org.zeromq.ZMQ#SNDMORE SNDMORE}:
-         * Specifies that the message being sent is a multi-part message,
-         * and that further message parts are to follow.</li>
-         * <li>0 : blocking send of a single-part message or the last of a multi-part message</li>
-         * </ul>
+         * @param flags  a combination (with + or |) of the flags defined below:
+         *               <ul>
+         *               <li>{@link org.zeromq.ZMQ#DONTWAIT DONTWAIT}:
+         *               For socket types ({@link org.zeromq.ZMQ#DEALER DEALER}, {@link org.zeromq.ZMQ#PUSH PUSH})
+         *               that block when there are no available peers (or all peers have full high-water mark),
+         *               specifies that the operation should be performed in non-blocking mode.
+         *               If the message cannot be queued on the socket, the method shall fail with errno set to EAGAIN.</li>
+         *               <li>{@link org.zeromq.ZMQ#SNDMORE SNDMORE}:
+         *               Specifies that the message being sent is a multi-part message,
+         *               and that further message parts are to follow.</li>
+         *               <li>0 : blocking send of a single-part message or the last of a multi-part message</li>
+         *               </ul>
          * @return true when it has been queued on the socket and ØMQ has assumed responsibility for the message.
          * This does not indicate that the message has been transmitted to the network.
          */
@@ -3279,19 +3123,19 @@ public class ZMQ
         /**
          * Queues a message created from data, so it can be sent.
          *
-         * @param data ByteBuffer payload
+         * @param data  ByteBuffer payload
          * @param flags a combination (with + or |) of the flags defined below:
-         * <ul>
-         * <li>{@link org.zeromq.ZMQ#DONTWAIT DONTWAIT}:
-         * For socket types ({@link org.zeromq.ZMQ#DEALER DEALER}, {@link org.zeromq.ZMQ#PUSH PUSH})
-         * that block when there are no available peers (or all peers have full high-water mark),
-         * specifies that the operation should be performed in non-blocking mode.
-         * If the message cannot be queued on the socket, the method shall fail with errno set to EAGAIN.</li>
-         * <li>{@link org.zeromq.ZMQ#SNDMORE SNDMORE}:
-         * Specifies that the message being sent is a multi-part message,
-         * and that further message parts are to follow.</li>
-         * <li>0 : blocking send of a single-part message or the last of a multi-part message</li>
-         * </ul>
+         *              <ul>
+         *              <li>{@link org.zeromq.ZMQ#DONTWAIT DONTWAIT}:
+         *              For socket types ({@link org.zeromq.ZMQ#DEALER DEALER}, {@link org.zeromq.ZMQ#PUSH PUSH})
+         *              that block when there are no available peers (or all peers have full high-water mark),
+         *              specifies that the operation should be performed in non-blocking mode.
+         *              If the message cannot be queued on the socket, the method shall fail with errno set to EAGAIN.</li>
+         *              <li>{@link org.zeromq.ZMQ#SNDMORE SNDMORE}:
+         *              Specifies that the message being sent is a multi-part message,
+         *              and that further message parts are to follow.</li>
+         *              <li>0 : blocking send of a single-part message or the last of a multi-part message</li>
+         *              </ul>
          * @return the number of bytes queued, -1 on error
          */
         public int sendByteBuffer(ByteBuffer data, int flags)
@@ -3319,14 +3163,14 @@ public class ZMQ
          * Receives a message.
          *
          * @param flags either:
-         * <ul>
-         * <li>{@link org.zeromq.ZMQ#DONTWAIT DONTWAIT}:
-         * Specifies that the operation should be performed in non-blocking mode.
-         * If there are no messages available on the specified socket,
-         * the method shall fail with errno set to EAGAIN and return null.</li>
-         * <li>0 : receive operation blocks until one message is successfully retrieved,
-         * or stops when timeout set by {@link #setReceiveTimeOut(int)} expires.</li>
-         * </ul>
+         *              <ul>
+         *              <li>{@link org.zeromq.ZMQ#DONTWAIT DONTWAIT}:
+         *              Specifies that the operation should be performed in non-blocking mode.
+         *              If there are no messages available on the specified socket,
+         *              the method shall fail with errno set to EAGAIN and return null.</li>
+         *              <li>0 : receive operation blocks until one message is successfully retrieved,
+         *              or stops when timeout set by {@link #setReceiveTimeOut(int)} expires.</li>
+         *              </ul>
          * @return the message received, as an array of bytes; null on error.
          */
         public byte[] recv(int flags)
@@ -3344,23 +3188,20 @@ public class ZMQ
         /**
          * Receives a message in to a specified buffer.
          *
-         * @param buffer
-         *            byte[] to copy zmq message payload in to.
-         * @param offset
-         *            offset in buffer to write data
-         * @param len
-         *            max bytes to write to buffer.
-         *            If len is smaller than the incoming message size,
-         *            the message will be truncated.
-         * @param flags either:
-         * <ul>
-         * <li>{@link org.zeromq.ZMQ#DONTWAIT DONTWAIT}:
-         * Specifies that the operation should be performed in non-blocking mode.
-         * If there are no messages available on the specified socket,
-         * the method shall fail with errno set to EAGAIN and return null.</li>
-         * <li>0 : receive operation blocks until one message is successfully retrieved,
-         * or stops when timeout set by {@link #setReceiveTimeOut(int)} expires.</li>
-         * </ul>
+         * @param buffer byte[] to copy zmq message payload in to.
+         * @param offset offset in buffer to write data
+         * @param len    max bytes to write to buffer.
+         *               If len is smaller than the incoming message size,
+         *               the message will be truncated.
+         * @param flags  either:
+         *               <ul>
+         *               <li>{@link org.zeromq.ZMQ#DONTWAIT DONTWAIT}:
+         *               Specifies that the operation should be performed in non-blocking mode.
+         *               If there are no messages available on the specified socket,
+         *               the method shall fail with errno set to EAGAIN and return null.</li>
+         *               <li>0 : receive operation blocks until one message is successfully retrieved,
+         *               or stops when timeout set by {@link #setReceiveTimeOut(int)} expires.</li>
+         *               </ul>
          * @return the number of bytes read, -1 on error
          */
         public int recv(byte[] buffer, int offset, int len, int flags)
@@ -3378,15 +3219,15 @@ public class ZMQ
          * Receives a message into the specified ByteBuffer.
          *
          * @param buffer the buffer to copy the zmq message payload into
-         * @param flags either:
-         * <ul>
-         * <li>{@link org.zeromq.ZMQ#DONTWAIT DONTWAIT}:
-         * Specifies that the operation should be performed in non-blocking mode.
-         * If there are no messages available on the specified socket,
-         * the method shall fail with errno set to EAGAIN and return null.</li>
-         * <li>0 : receive operation blocks until one message is successfully retrieved,
-         * or stops when timeout set by {@link #setReceiveTimeOut(int)} expires.</li>
-         * </ul>
+         * @param flags  either:
+         *               <ul>
+         *               <li>{@link org.zeromq.ZMQ#DONTWAIT DONTWAIT}:
+         *               Specifies that the operation should be performed in non-blocking mode.
+         *               If there are no messages available on the specified socket,
+         *               the method shall fail with errno set to EAGAIN and return null.</li>
+         *               <li>0 : receive operation blocks until one message is successfully retrieved,
+         *               or stops when timeout set by {@link #setReceiveTimeOut(int)} expires.</li>
+         *               </ul>
          * @return the number of bytes read, -1 on error
          */
         public int recvByteBuffer(ByteBuffer buffer, int flags)
@@ -3403,7 +3244,6 @@ public class ZMQ
         }
 
         /**
-         *
          * @return the message received, as a String object; null on no message.
          */
         public String recvStr()
@@ -3415,14 +3255,14 @@ public class ZMQ
          * Receives a message as a string.
          *
          * @param flags either:
-         * <ul>
-         * <li>{@link org.zeromq.ZMQ#DONTWAIT DONTWAIT}:
-         * Specifies that the operation should be performed in non-blocking mode.
-         * If there are no messages available on the specified socket,
-         * the method shall fail with errno set to EAGAIN and return null.</li>
-         * <li>0 : receive operation blocks until one message is successfully retrieved,
-         * or stops when timeout set by {@link #setReceiveTimeOut(int)} expires.</li>
-         * </ul>
+         *              <ul>
+         *              <li>{@link org.zeromq.ZMQ#DONTWAIT DONTWAIT}:
+         *              Specifies that the operation should be performed in non-blocking mode.
+         *              If there are no messages available on the specified socket,
+         *              the method shall fail with errno set to EAGAIN and return null.</li>
+         *              <li>0 : receive operation blocks until one message is successfully retrieved,
+         *              or stops when timeout set by {@link #setReceiveTimeOut(int)} expires.</li>
+         *              </ul>
          * @return the message received, as a String object; null on no message.
          */
         public String recvStr(int flags)
@@ -3438,14 +3278,14 @@ public class ZMQ
 
         /**
          * Start a monitoring socket where events can be received.
-         *
+         * <p>
          * Lets an application thread track socket events (like connects) on a ZeroMQ socket.
          * Each call to this method creates a {@link ZMQ#PAIR} socket and binds that to the specified inproc:// endpoint.
          * To collect the socket events, you must create your own PAIR socket, and connect that to the endpoint.
          * <br/>
          * Supports only connection-oriented transports, that is, TCP, IPC.
          *
-         * @param addr the endpoint to receive events from. (must be inproc transport)
+         * @param addr   the endpoint to receive events from. (must be inproc transport)
          * @param events the events of interest. A bitmask of the socket events you wish to monitor. To monitor all events, use the event value {@link ZMQ#EVENT_ALL}.
          * @return true if monitor socket setup is successful
          * @throws ZMQException
@@ -3473,6 +3313,31 @@ public class ZMQ
         {
             return base.toString();
         }
+
+        public enum Mechanism
+        {
+            NULL(Mechanisms.NULL),
+            PLAIN(Mechanisms.PLAIN),
+            CURVE(Mechanisms.CURVE);
+            // TODO add GSSAPI once it is implemented
+
+            private final Mechanisms mech;
+
+            Mechanism(Mechanisms zmq)
+            {
+                this.mech = zmq;
+            }
+
+            private static Mechanism find(Mechanisms mech)
+            {
+                for (Mechanism candidate : values()) {
+                    if (candidate.mech == mech) {
+                        return candidate;
+                    }
+                }
+                return null;
+            }
+        }
     }
 
     /**
@@ -3486,7 +3351,7 @@ public class ZMQ
          * For standard sockets this is equivalent to the POLLIN flag of the poll() system call
          * and generally means that at least one byte of data may be read from fd without blocking.
          */
-        public static final int POLLIN  = zmq.ZMQ.ZMQ_POLLIN;
+        public static final int POLLIN = zmq.ZMQ.ZMQ_POLLIN;
         /**
          * For ØMQ sockets, at least one message may be sent to the socket without blocking.
          * <br/>
@@ -3502,15 +3367,15 @@ public class ZMQ
          */
         public static final int POLLERR = zmq.ZMQ.ZMQ_POLLERR;
 
-        private static final int SIZE_DEFAULT   = 32;
+        private static final int SIZE_DEFAULT = 32;
         private static final int SIZE_INCREMENT = 16;
 
         private final Selector selector;
-        private final Context  context;
+        private final Context context;
 
         private PollItem[] items;
-        private int        next;
-        private int        used;
+        private int next;
+        private int used;
 
         private long timeout;
 
@@ -3520,10 +3385,8 @@ public class ZMQ
         /**
          * Class constructor.
          *
-         * @param context
-         *            a 0MQ context previously created.
-         * @param size
-         *            the number of Sockets this poller will contain.
+         * @param context a 0MQ context previously created.
+         * @param size    the number of Sockets this poller will contain.
          */
         protected Poller(Context context, int size)
         {
@@ -3543,8 +3406,7 @@ public class ZMQ
         /**
          * Class constructor.
          *
-         * @param context
-         *            a 0MQ context previously created.
+         * @param context a 0MQ context previously created.
          */
         protected Poller(Context context)
         {
@@ -3560,8 +3422,7 @@ public class ZMQ
         /**
          * Register a Socket for polling on all events.
          *
-         * @param socket
-         *            the Socket we are registering.
+         * @param socket the Socket we are registering.
          * @return the index identifying this Socket in the poll set.
          */
         public int register(Socket socket)
@@ -3572,8 +3433,7 @@ public class ZMQ
         /**
          * Register a Channel for polling on all events.
          *
-         * @param channel
-         *            the Channel we are registering.
+         * @param channel the Channel we are registering.
          * @return the index identifying this Channel in the poll set.
          */
         public int register(SelectableChannel channel)
@@ -3583,13 +3443,11 @@ public class ZMQ
 
         /**
          * Register a Socket for polling on the specified events.
-         *
+         * <p>
          * Automatically grow the internal representation if needed.
          *
-         * @param socket
-         *            the Socket we are registering.
-         * @param events
-         *            a mask composed by XORing POLLIN, POLLOUT and POLLERR.
+         * @param socket the Socket we are registering.
+         * @param events a mask composed by XORing POLLIN, POLLOUT and POLLERR.
          * @return the index identifying this Socket in the poll set.
          */
         public int register(Socket socket, int events)
@@ -3599,13 +3457,11 @@ public class ZMQ
 
         /**
          * Register a Socket for polling on the specified events.
-         *
+         * <p>
          * Automatically grow the internal representation if needed.
          *
-         * @param channel
-         *            the Channel we are registering.
-         * @param events
-         *            a mask composed by XORing POLLIN, POLLOUT and POLLERR.
+         * @param channel the Channel we are registering.
+         * @param events  a mask composed by XORing POLLIN, POLLOUT and POLLERR.
          * @return the index identifying this Channel in the poll set.
          */
         public int register(SelectableChannel channel, int events)
@@ -3615,11 +3471,10 @@ public class ZMQ
 
         /**
          * Register a Channel for polling on the specified events.
-         *
+         * <p>
          * Automatically grow the internal representation if needed.
          *
-         * @param item
-         *            the PollItem we are registering.
+         * @param item the PollItem we are registering.
          * @return the index identifying this Channel in the poll set.
          */
         public int register(PollItem item)
@@ -3629,7 +3484,7 @@ public class ZMQ
 
         /**
          * Register a Socket for polling on the specified events.
-         *
+         * <p>
          * Automatically grow the internal representation if needed.
          *
          * @param item the PollItem we are registering.
@@ -3661,8 +3516,7 @@ public class ZMQ
         /**
          * Unregister a Socket for polling on the specified events.
          *
-         * @param socket
-         *          the Socket to be unregistered
+         * @param socket the Socket to be unregistered
          */
         public void unregister(Socket socket)
         {
@@ -3672,8 +3526,7 @@ public class ZMQ
         /**
          * Unregister a Socket for polling on the specified events.
          *
-         * @param channel
-         *          the Socket to be unregistered
+         * @param channel the Socket to be unregistered
          */
         public void unregister(SelectableChannel channel)
         {
@@ -3706,8 +3559,7 @@ public class ZMQ
         /**
          * Get the PollItem associated with an index.
          *
-         * @param index
-         *            the desired index.
+         * @param index the desired index.
          * @return the PollItem associated with that index (or null).
          */
         public PollItem getItem(int index)
@@ -3721,8 +3573,7 @@ public class ZMQ
         /**
          * Get the socket associated with an index.
          *
-         * @param index
-         *            the desired index.
+         * @param index the desired index.
          * @return the Socket associated with that index (or null).
          */
         public Socket getSocket(int index)
@@ -3748,8 +3599,7 @@ public class ZMQ
         /**
          * Set the poll timeout.
          *
-         * @param timeout
-         *            the desired poll timeout in milliseconds.
+         * @param timeout the desired poll timeout in milliseconds.
          * @deprecated Timeout handling has been moved to the poll() methods.
          */
         @Deprecated
@@ -3802,16 +3652,13 @@ public class ZMQ
          * Since ZeroMQ 3.0, the timeout parameter is in <i>milliseconds<i>,
          * but prior to this the unit was <i>microseconds</i>.
          *
-         * @param tout
-         *            the timeout, as per zmq_poll ();
-         *            if -1, it will block indefinitely until an event
-         *            happens; if 0, it will return immediately;
-         *            otherwise, it will wait for at most that many
-         *            milliseconds/microseconds (see above).
-         *
-         * @see "http://api.zeromq.org/3-0:zmq-poll"
-         *
+         * @param tout the timeout, as per zmq_poll ();
+         *             if -1, it will block indefinitely until an event
+         *             happens; if 0, it will return immediately;
+         *             otherwise, it will wait for at most that many
+         *             milliseconds/microseconds (see above).
          * @return how many objects where signaled by poll ()
+         * @see "http://api.zeromq.org/3-0:zmq-poll"
          */
         public int poll(long tout)
         {
@@ -3845,7 +3692,6 @@ public class ZMQ
          * Check whether the specified element in the poll set was signaled for input.
          *
          * @param index
-         *
          * @return true if the element was signaled.
          */
         public boolean pollin(int index)
@@ -3861,7 +3707,6 @@ public class ZMQ
          * Check whether the specified element in the poll set was signaled for output.
          *
          * @param index
-         *
          * @return true if the element was signaled.
          */
         public boolean pollout(int index)
@@ -3877,7 +3722,6 @@ public class ZMQ
          * Check whether the specified element in the poll set was signaled for error.
          *
          * @param index
-         *
          * @return true if the element was signaled.
          */
         public boolean pollerr(int index)
@@ -3893,7 +3737,7 @@ public class ZMQ
     public static class PollItem
     {
         private final zmq.poll.PollItem base;
-        private final Socket            socket;
+        private final Socket socket;
 
         public PollItem(Socket socket, int ops)
         {
@@ -3968,157 +3812,13 @@ public class ZMQ
         }
     }
 
-    public enum Error
-    {
-        ENOTSUP(ZError.ENOTSUP),
-        EPROTONOSUPPORT(ZError.EPROTONOSUPPORT),
-        ENOBUFS(ZError.ENOBUFS),
-        ENETDOWN(ZError.ENETDOWN),
-        EADDRINUSE(ZError.EADDRINUSE),
-        EADDRNOTAVAIL(ZError.EADDRNOTAVAIL),
-        ECONNREFUSED(ZError.ECONNREFUSED),
-        EINPROGRESS(ZError.EINPROGRESS),
-        EHOSTUNREACH(ZError.EHOSTUNREACH),
-        EMTHREAD(ZError.EMTHREAD),
-        EFSM(ZError.EFSM),
-        ENOCOMPATPROTO(ZError.ENOCOMPATPROTO),
-        ETERM(ZError.ETERM),
-        ENOTSOCK(ZError.ENOTSOCK),
-        EAGAIN(ZError.EAGAIN);
-
-        private final int code;
-
-        Error(int code)
-        {
-            this.code = code;
-        }
-
-        public int getCode()
-        {
-            return code;
-        }
-
-        public static Error findByCode(int code)
-        {
-            for (Error e : Error.values()) {
-                if (e.getCode() == code) {
-                    return e;
-                }
-            }
-            throw new IllegalArgumentException("Unknown " + Error.class.getName() + " enum code:" + code);
-        }
-    }
-
-    @Deprecated
-    public static boolean device(int type, Socket frontend, Socket backend)
-    {
-        return zmq.ZMQ.proxy(frontend.base, backend.base, null);
-    }
-
-    /**
-     * Starts the built-in 0MQ proxy in the current application thread.
-     * The proxy connects a frontend socket to a backend socket. Conceptually, data flows from frontend to backend.
-     * Depending on the socket types, replies may flow in the opposite direction. The direction is conceptual only;
-     * the proxy is fully symmetric and there is no technical difference between frontend and backend.
-     *
-     * Before calling ZMQ.proxy() you must set any socket options, and connect or bind both frontend and backend sockets.
-     * The two conventional proxy models are:
-     *
-     * ZMQ.proxy() runs in the current thread and returns only if/when the current context is closed.
-     * @param frontend ZMQ.Socket
-     * @param backend ZMQ.Socket
-     * @param capture If the capture socket is not NULL, the proxy shall send all messages, received on both
-     *                frontend and backend, to the capture socket. The capture socket should be a
-     *                ZMQ_PUB, ZMQ_DEALER, ZMQ_PUSH, or ZMQ_PAIR socket.
-     */
-    public static boolean proxy(Socket frontend, Socket backend, Socket capture)
-    {
-        return zmq.ZMQ.proxy(frontend.base, backend.base, capture != null ? capture.base : null);
-    }
-
-    public static boolean proxy(Socket frontend, Socket backend, Socket capture, Socket control)
-    {
-        return zmq.ZMQ.proxy(
-                             frontend.base,
-                             backend.base,
-                             capture == null ? null : capture.base,
-                             control == null ? null : control.base);
-    }
-
-    public static int poll(Selector selector, PollItem[] items, long timeout)
-    {
-        return poll(selector, items, items.length, timeout);
-    }
-
-    public static int poll(Selector selector, PollItem[] items, int count, long timeout)
-    {
-        zmq.poll.PollItem[] pollItems = new zmq.poll.PollItem[count];
-        for (int i = 0; i < count; i++) {
-            pollItems[i] = items[i].base;
-        }
-
-        return zmq.ZMQ.poll(selector, pollItems, count, timeout);
-    }
-
-    /**
-     * @return Major version number of the ZMQ library.
-     */
-    public static int getMajorVersion()
-    {
-        return zmq.ZMQ.ZMQ_VERSION_MAJOR;
-    }
-
-    /**
-     * @return Major version number of the ZMQ library.
-     */
-    public static int getMinorVersion()
-    {
-        return zmq.ZMQ.ZMQ_VERSION_MINOR;
-    }
-
-    /**
-     * @return Major version number of the ZMQ library.
-     */
-    public static int getPatchVersion()
-    {
-        return zmq.ZMQ.ZMQ_VERSION_PATCH;
-    }
-
-    /**
-     * @return Full version number of the ZMQ library used for comparing versions.
-     */
-    public static int getFullVersion()
-    {
-        return zmq.ZMQ.makeVersion(zmq.ZMQ.ZMQ_VERSION_MAJOR, zmq.ZMQ.ZMQ_VERSION_MINOR, zmq.ZMQ.ZMQ_VERSION_PATCH);
-    }
-
-    /**
-     * @param major Version major component.
-     * @param minor Version minor component.
-     * @param patch Version patch component.
-     *
-     * @return Comparible single int version number.
-     */
-    public static int makeVersion(final int major, final int minor, final int patch)
-    {
-        return zmq.ZMQ.makeVersion(major, minor, patch);
-    }
-
-    /**
-     * @return String version number in the form major.minor.patch.
-     */
-    public static String getVersionString()
-    {
-        return "" + zmq.ZMQ.ZMQ_VERSION_MAJOR + "." + zmq.ZMQ.ZMQ_VERSION_MINOR + "." + zmq.ZMQ.ZMQ_VERSION_PATCH;
-    }
-
     /**
      * Inner class: Event.
      * Monitor socket event class
      */
     public static class Event
     {
-        private final int    event;
+        private final int event;
         private final Object value;
         private final String address;
 
@@ -4127,6 +3827,33 @@ public class ZMQ
             this.event = event;
             this.value = value;
             this.address = address;
+        }
+
+        /**
+         * Receive an event from a monitor socket.
+         *
+         * @param socket the socket
+         * @param flags  the flags to apply to the receive operation.
+         * @return the received event or null if no message was received.
+         * @throws ZMQException
+         */
+        public static Event recv(Socket socket, int flags)
+        {
+            zmq.ZMQ.Event e = zmq.ZMQ.Event.read(socket.base, flags);
+            return e != null ? new Event(e.event, e.arg, e.addr) : null;
+        }
+
+        /**
+         * Receive an event from a monitor socket.
+         * Does a blocking recv.
+         *
+         * @param socket the socket
+         * @return the received event.
+         * @throws ZMQException
+         */
+        public static Event recv(Socket socket)
+        {
+            return Event.recv(socket, 0);
         }
 
         public int getEvent()
@@ -4143,51 +3870,11 @@ public class ZMQ
         {
             return address;
         }
-
-        /**
-         * Receive an event from a monitor socket.
-         * @param socket the socket
-         * @param flags the flags to apply to the receive operation.
-         * @return the received event or null if no message was received.
-         * @throws ZMQException
-         */
-        public static Event recv(Socket socket, int flags)
-        {
-            zmq.ZMQ.Event e = zmq.ZMQ.Event.read(socket.base, flags);
-            return e != null ? new Event(e.event, e.arg, e.addr) : null;
-        }
-
-        /**
-         * Receive an event from a monitor socket.
-         * Does a blocking recv.
-         * @param socket the socket
-         * @return the received event.
-         * @throws ZMQException
-         */
-        public static Event recv(Socket socket)
-        {
-            return Event.recv(socket, 0);
-        }
-    }
-
-    public static void msleep(long millis)
-    {
-        zmq.ZMQ.msleep(millis);
-    }
-
-    public static void sleep(long seconds)
-    {
-        zmq.ZMQ.sleep(seconds);
-    }
-
-    public static void sleep(long amount, TimeUnit unit)
-    {
-        zmq.ZMQ.sleep(amount, unit);
     }
 
     /**
      * Class that interfaces the generation of CURVE key pairs.
-     *
+     * <p>
      * The CURVE mechanism defines a mechanism for secure authentication and confidentiality for communications between a client and a server.
      * CURVE is intended for use on public networks.
      * The CURVE mechanism is defined by this document: http://rfc.zeromq.org/spec:25.
@@ -4217,64 +3904,42 @@ public class ZMQ
      * <p/>
      * For test cases, the client shall use this long-term key pair (specified as hexadecimal and in Z85):
      * <ul>
-     *  <li>public:
-     *      <ul>
-     *          <li>BB88471D65E2659B30C55A5321CEBB5AAB2B70A398645C26DCA2B2FCB43FC518</li>
-     *          <li>Yne@$w-vo<fVvi]a<NY6T1ed:M$fCG*[IaLV{hID</li>
-     *      </ul>
-     *  </li>
-     *  <li>secret:
-     *      <ul>
-     *          <li>7BB864B489AFA3671FBE69101F94B38972F24816DFB01B51656B3FEC8DFD0888</li>
-     *          <li>D:)Q[IlAW!ahhC2ac:9*A}h:p?([4%wOTJ%JR%cs</li>
-     *      </ul>
-     *  </li>
+     * <li>public:
+     * <ul>
+     * <li>BB88471D65E2659B30C55A5321CEBB5AAB2B70A398645C26DCA2B2FCB43FC518</li>
+     * <li>Yne@$w-vo<fVvi]a<NY6T1ed:M$fCG*[IaLV{hID</li>
+     * </ul>
+     * </li>
+     * <li>secret:
+     * <ul>
+     * <li>7BB864B489AFA3671FBE69101F94B38972F24816DFB01B51656B3FEC8DFD0888</li>
+     * <li>D:)Q[IlAW!ahhC2ac:9*A}h:p?([4%wOTJ%JR%cs</li>
+     * </ul>
+     * </li>
      * </ul>
      * <br/>
      * And the server shall use this long-term key pair (specified as hexadecimal and in Z85):
      * <ul>
-     *  <li>public:
-     *      <ul>
-     *          <li>54FCBA24E93249969316FB617C872BB0C1D1FF14800427C594CBFACF1BC2D652</li>
-     *          <li>rq:rM>}U?@Lns47E1%kR.o@n%FcmmsL/@{H8]yf7</li>
-     *      </ul>
-     *  </li>
-     *  <li>secret:
-     *      <ul>
-     *          <li>8E0BDD697628B91D8F245587EE95C5B04D48963F79259877B49CD9063AEAD3B7</li>
-     *          <li>JTKVSB%%)wK0E.X)V>+}o?pNmC{O&4W4b!Ni{Lh6</li>
-     *      </ul>
-     *  </li>
+     * <li>public:
+     * <ul>
+     * <li>54FCBA24E93249969316FB617C872BB0C1D1FF14800427C594CBFACF1BC2D652</li>
+     * <li>rq:rM>}U?@Lns47E1%kR.o@n%FcmmsL/@{H8]yf7</li>
+     * </ul>
+     * </li>
+     * <li>secret:
+     * <ul>
+     * <li>8E0BDD697628B91D8F245587EE95C5B04D48963F79259877B49CD9063AEAD3B7</li>
+     * <li>JTKVSB%%)wK0E.X)V>+}o?pNmC{O&4W4b!Ni{Lh6</li>
+     * </ul>
+     * </li>
      * </ul>
      */
     public static class Curve
     {
         /**
-         * A container for a public and a corresponding secret key
-         */
-        public static class KeyPair
-        {
-            /**
-             * Z85-encoded public key.
-             */
-            public final String publicKey;
-
-            /**
-             * Z85-encoded secret key.
-             */
-            public final String secretKey;
-
-            public KeyPair(final String publicKey, final String secretKey)
-            {
-                this.publicKey = publicKey;
-                this.secretKey = secretKey;
-            }
-        }
-
-        /**
          * Returns a newly generated random keypair consisting of a public key
          * and a secret key.
-         *
+         * <p>
          * <p>The keys are encoded using {@link #z85Encode}.</p>
          *
          * @return Randomly generated {@link KeyPair}
@@ -4307,7 +3972,7 @@ public class ZMQ
          * A 32-byte CURVE key is encoded as 40 ASCII characters plus a null terminator.
          * <br/>
          * The function shall encode the binary block specified into a string.
-         *
+         * <p>
          * <p>The encoding shall follow the ZMQ RFC 32 specification.</p>
          *
          * @param key Key to be encoded
@@ -4316,6 +3981,28 @@ public class ZMQ
         public static String z85Encode(byte[] key)
         {
             return zmq.io.mechanism.curve.Curve.z85EncodePublic(key);
+        }
+
+        /**
+         * A container for a public and a corresponding secret key
+         */
+        public static class KeyPair
+        {
+            /**
+             * Z85-encoded public key.
+             */
+            public final String publicKey;
+
+            /**
+             * Z85-encoded secret key.
+             */
+            public final String secretKey;
+
+            public KeyPair(final String publicKey, final String secretKey)
+            {
+                this.publicKey = publicKey;
+                this.secretKey = secretKey;
+            }
         }
     }
 }

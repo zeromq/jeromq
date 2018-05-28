@@ -1,5 +1,6 @@
 package guide;
 
+import org.zeromq.SocketType;
 import org.zeromq.ZMQ;
 import org.zeromq.ZContext;
 
@@ -15,11 +16,11 @@ public class msreader
         //  Prepare our context and sockets
         try (ZContext context = new ZContext()) {
             // Connect to task ventilator
-            ZMQ.Socket receiver = context.createSocket(ZMQ.PULL);
+            ZMQ.Socket receiver = context.createSocket(SocketType.PULL);
             receiver.connect("tcp://localhost:5557");
 
             //  Connect to weather server
-            ZMQ.Socket subscriber = context.createSocket(ZMQ.SUB);
+            ZMQ.Socket subscriber = context.createSocket(SocketType.SUB);
             subscriber.connect("tcp://localhost:5556");
             subscriber.subscribe("10001 ".getBytes(ZMQ.CHARSET));
 

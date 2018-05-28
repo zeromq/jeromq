@@ -27,10 +27,10 @@ public class TestZProxy
         {
             Socket socket = null;
             if (place == ZProxy.Plug.FRONT) {
-                socket = ctx.createSocket(ZMQ.ROUTER);
+                socket = ctx.createSocket(SocketType.ROUTER);
             }
             if (place == ZProxy.Plug.BACK) {
-                socket = ctx.createSocket(ZMQ.DEALER);
+                socket = ctx.createSocket(SocketType.DEALER);
             }
             return socket;
         }

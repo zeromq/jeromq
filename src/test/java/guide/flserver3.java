@@ -1,10 +1,7 @@
 package guide;
 
-import org.zeromq.ZContext;
-import org.zeromq.ZFrame;
-import org.zeromq.ZMQ;
+import org.zeromq.*;
 import org.zeromq.ZMQ.Socket;
-import org.zeromq.ZMsg;
 
 //  Freelance server - Model 3
 //  Uses an ROUTER/ROUTER socket but just one thread
@@ -18,7 +15,7 @@ public class flserver3
             //  Prepare server socket with predictable identity
             String bindEndpoint = "tcp://*:5555";
             String connectEndpoint = "tcp://localhost:5555";
-            Socket server = ctx.createSocket(ZMQ.ROUTER);
+            Socket server = ctx.createSocket(SocketType.ROUTER);
             server.setIdentity(connectEndpoint.getBytes(ZMQ.CHARSET));
             server.bind(bindEndpoint);
             System.out.printf("I: service is ready at %s\n", bindEndpoint);

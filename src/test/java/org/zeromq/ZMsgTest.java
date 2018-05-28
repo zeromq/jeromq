@@ -34,7 +34,7 @@ public class ZMsgTest
     public void testRecvFrame() throws Exception
     {
         ZMQ.Context ctx = ZMQ.context(0);
-        ZMQ.Socket socket = ctx.socket(ZMQ.PULL);
+        ZMQ.Socket socket = ctx.socket(SocketType.PULL);
 
         ZFrame frame = ZFrame.recvFrame(socket, ZMQ.NOBLOCK);
         assertThat(frame, nullValue());
@@ -47,7 +47,7 @@ public class ZMsgTest
     public void testRecvMsg() throws Exception
     {
         ZMQ.Context ctx = ZMQ.context(0);
-        ZMQ.Socket socket = ctx.socket(ZMQ.PULL);
+        ZMQ.Socket socket = ctx.socket(SocketType.PULL);
 
         ZMsg msg = ZMsg.recvMsg(socket, ZMQ.NOBLOCK);
         assertThat(msg, nullValue());
@@ -60,8 +60,8 @@ public class ZMsgTest
     public void testRecvNullByteMsg() throws Exception
     {
         ZMQ.Context ctx = ZMQ.context(0);
-        ZMQ.Socket sender = ctx.socket(ZMQ.PUSH);
-        ZMQ.Socket receiver = ctx.socket(ZMQ.PULL);
+        ZMQ.Socket sender = ctx.socket(SocketType.PUSH);
+        ZMQ.Socket receiver = ctx.socket(SocketType.PULL);
 
         receiver.bind("inproc://" + this.hashCode());
         sender.connect("inproc://" + this.hashCode());
@@ -253,9 +253,9 @@ public class ZMsgTest
     {
         ZContext ctx = new ZContext();
 
-        Socket output = ctx.createSocket(ZMQ.PAIR);
+        Socket output = ctx.createSocket(SocketType.PAIR);
         output.bind("inproc://zmsg.test");
-        Socket input = ctx.createSocket(ZMQ.PAIR);
+        Socket input = ctx.createSocket(SocketType.PAIR);
         input.connect("inproc://zmsg.test");
 
         // Test send and receive of a single ZMsg
@@ -281,9 +281,9 @@ public class ZMsgTest
     {
         ZContext ctx = new ZContext();
 
-        Socket output = ctx.createSocket(ZMQ.PAIR);
+        Socket output = ctx.createSocket(SocketType.PAIR);
         output.bind("inproc://zmsg.test2");
-        Socket input = ctx.createSocket(ZMQ.PAIR);
+        Socket input = ctx.createSocket(SocketType.PAIR);
         input.connect("inproc://zmsg.test2");
 
         ZMsg msg = new ZMsg();
@@ -436,9 +436,9 @@ public class ZMsgTest
     {
         ZContext ctx = new ZContext();
 
-        Socket output = ctx.createSocket(ZMQ.PAIR);
+        Socket output = ctx.createSocket(SocketType.PAIR);
         output.bind("inproc://zmsg.test");
-        Socket input = ctx.createSocket(ZMQ.PAIR);
+        Socket input = ctx.createSocket(SocketType.PAIR);
         input.connect("inproc://zmsg.test");
 
         ZMsg msg = ZMsg.newStringMsg("Foo", "Bar");

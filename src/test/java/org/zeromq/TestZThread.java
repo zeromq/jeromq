@@ -26,7 +26,7 @@ public class TestZThread
             {
                 ZContext ctx = new ZContext();
 
-                Socket push = ctx.createSocket(ZMQ.PUSH);
+                Socket push = ctx.createSocket(SocketType.PUSH);
                 assertThat(push, notNullValue());
 
                 ctx.close();
@@ -55,7 +55,7 @@ public class TestZThread
             public void run(Object[] args, ZContext ctx, Socket pipe)
             {
                 //  Create a socket to check it'll be automatically deleted
-                ctx.createSocket(ZMQ.PUSH);
+                ctx.createSocket(SocketType.PUSH);
                 pipe.recvStr();
                 pipe.send("pong");
             }

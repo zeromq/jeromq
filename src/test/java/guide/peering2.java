@@ -4,12 +4,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Random;
 
-import org.zeromq.ZContext;
-import org.zeromq.ZFrame;
-import org.zeromq.ZMQ;
+import org.zeromq.*;
 import org.zeromq.ZMQ.Poller;
 import org.zeromq.ZMQ.Socket;
-import org.zeromq.ZMsg;
 
 //  Broker peering simulation (part 2)
 //  Prototypes the request-reply flow
@@ -32,7 +29,7 @@ public class peering2
         public void run()
         {
             try (ZContext ctx = new ZContext()) {
-                Socket client = ctx.createSocket(ZMQ.REQ);
+                Socket client = ctx.createSocket(SocketType.REQ);
                 client.connect(String.format("ipc://%s-localfe.ipc", self));
 
                 while (true) {
@@ -61,7 +58,7 @@ public class peering2
         public void run()
         {
             try (ZContext ctx = new ZContext()) {
-                Socket worker = ctx.createSocket(ZMQ.REQ);
+                Socket worker = ctx.createSocket(SocketType.REQ);
                 worker.connect(String.format("ipc://%s-localbe.ipc", self));
 
                 //  Tell broker we're ready for work
@@ -99,12 +96,12 @@ public class peering2
 
         try (ZContext ctx = new ZContext()) {
             //  Bind cloud frontend to endpoint
-            Socket cloudfe = ctx.createSocket(ZMQ.ROUTER);
+            Socket cloudfe = ctx.createSocket(SocketType.ROUTER);
             cloudfe.setIdentity(self.getBytes(ZMQ.CHARSET));
             cloudfe.bind(String.format("ipc://%s-cloud.ipc", self));
 
             //  Connect cloud backend to all peers
-            Socket cloudbe = ctx.createSocket(ZMQ.ROUTER);
+            Socket cloudbe = ctx.createSocket(SocketType.ROUTER);
             cloudbe.setIdentity(self.getBytes(ZMQ.CHARSET));
             int argn;
             for (argn = 1; argn < argv.length; argn++) {
@@ -116,9 +113,9 @@ public class peering2
             }
 
             //  Prepare local frontend and backend
-            Socket localfe = ctx.createSocket(ZMQ.ROUTER);
+            Socket localfe = ctx.createSocket(SocketType.ROUTER);
             localfe.bind(String.format("ipc://%s-localfe.ipc", self));
-            Socket localbe = ctx.createSocket(ZMQ.ROUTER);
+            Socket localbe = ctx.createSocket(SocketType.ROUTER);
             localbe.bind(String.format("ipc://%s-localbe.ipc", self));
 
             //  Get user to tell us when we can start

@@ -17,7 +17,7 @@ public class ZMonitorTest
     public void testZMonitorImpossibleWorkflows() throws IOException
     {
         final ZContext ctx = new ZContext();
-        final Socket socket = ctx.createSocket(ZMQ.DEALER);
+        final Socket socket = ctx.createSocket(SocketType.DEALER);
 
         final ZMonitor monitor = new ZMonitor(ctx, socket);
 
@@ -41,8 +41,8 @@ public class ZMonitorTest
     public void testZMonitor() throws IOException
     {
         final ZContext ctx = new ZContext();
-        final Socket client = ctx.createSocket(ZMQ.DEALER);
-        final Socket server = ctx.createSocket(ZMQ.DEALER);
+        final Socket client = ctx.createSocket(SocketType.DEALER);
+        final Socket server = ctx.createSocket(SocketType.DEALER);
 
         final ZMonitor clientMonitor = new ZMonitor(ctx, client);
         clientMonitor.verbose(true);

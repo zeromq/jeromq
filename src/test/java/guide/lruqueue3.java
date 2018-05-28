@@ -3,13 +3,9 @@ package guide;
 import java.util.LinkedList;
 import java.util.Queue;
 
-import org.zeromq.ZContext;
-import org.zeromq.ZFrame;
-import org.zeromq.ZLoop;
-import org.zeromq.ZMQ;
+import org.zeromq.*;
 import org.zeromq.ZMQ.PollItem;
 import org.zeromq.ZMQ.Socket;
-import org.zeromq.ZMsg;
 
 class ClientThread3 extends Thread
 {
@@ -18,7 +14,7 @@ class ClientThread3 extends Thread
     {
         //  Prepare our context and sockets
         try (ZContext context = new ZContext()) {
-            Socket client = context.createSocket(ZMQ.REQ);
+            Socket client = context.createSocket(SocketType.REQ);
 
             //  Initialize random number generator
             client.connect("ipc://frontend.ipc");
@@ -53,7 +49,7 @@ class WorkerThread3 extends Thread
     {
         //  Prepare our context and sockets
         try (ZContext context = new ZContext()) {
-            Socket worker = context.createSocket(ZMQ.REQ);
+            Socket worker = context.createSocket(SocketType.REQ);
 
             worker.connect("ipc://backend.ipc");
 
@@ -154,8 +150,8 @@ public class lruqueue3
         //  Prepare our context and sockets
         try (ZContext context = new ZContext()) {
             LRUQueueArg arg = new LRUQueueArg();
-            Socket frontend = context.createSocket(ZMQ.ROUTER);
-            Socket backend = context.createSocket(ZMQ.ROUTER);
+            Socket frontend = context.createSocket(SocketType.ROUTER);
+            Socket backend = context.createSocket(SocketType.ROUTER);
             arg.frontend = frontend;
             arg.backend = backend;
 

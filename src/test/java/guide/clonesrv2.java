@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
 
+import org.zeromq.SocketType;
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQ.Poller;
@@ -26,7 +27,7 @@ public class clonesrv2
     public void run()
     {
         try (ZContext ctx = new ZContext()) {
-            Socket publisher = ctx.createSocket(ZMQ.PUB);
+            Socket publisher = ctx.createSocket(SocketType.PUB);
             publisher.bind("tcp://*:5557");
 
             Socket updates = ZThread.fork(ctx, new StateManager());
@@ -67,7 +68,7 @@ public class clonesrv2
         {
             pipe.send("READY"); // optional
 
-            Socket snapshot = ctx.createSocket(ZMQ.ROUTER);
+            Socket snapshot = ctx.createSocket(SocketType.ROUTER);
             snapshot.bind("tcp://*:5556");
 
             Poller poller = ctx.createPoller(2);

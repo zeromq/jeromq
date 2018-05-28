@@ -1,5 +1,6 @@
 package guide;
 
+import org.zeromq.SocketType;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQ.Poller;
 import org.zeromq.ZMQ.Socket;
@@ -16,8 +17,8 @@ public class rrbroker
     {
         //  Prepare our context and sockets
         try (ZContext context = new ZContext()) {
-            Socket frontend = context.createSocket(ZMQ.ROUTER);
-            Socket backend = context.createSocket(ZMQ.DEALER);
+            Socket frontend = context.createSocket(SocketType.ROUTER);
+            Socket backend = context.createSocket(SocketType.DEALER);
             frontend.bind("tcp://*:5559");
             backend.bind("tcp://*:5560");
 

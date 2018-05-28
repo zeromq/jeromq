@@ -14,8 +14,8 @@ public class TestDisconnectInprocZeromq
         boolean isSubscribed = false;
 
         ZContext ctx = new ZContext();
-        ZMQ.Socket pubSocket = ctx.createSocket(ZMQ.XPUB);
-        ZMQ.Socket subSocket = ctx.createSocket(ZMQ.SUB);
+        ZMQ.Socket pubSocket = ctx.createSocket(SocketType.XPUB);
+        ZMQ.Socket subSocket = ctx.createSocket(SocketType.SUB);
 
         subSocket.subscribe("foo".getBytes());
         pubSocket.bind("inproc://someInProcDescriptor");

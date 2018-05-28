@@ -2,11 +2,8 @@ package guide;
 
 import java.util.Random;
 
-import org.zeromq.ZContext;
-import org.zeromq.ZFrame;
-import org.zeromq.ZMQ;
+import org.zeromq.*;
 import org.zeromq.ZMQ.Socket;
-import org.zeromq.ZThread;
 import org.zeromq.ZThread.IAttachedRunnable;
 
 //  Espresso Pattern
@@ -22,7 +19,7 @@ public class espresso
         public void run(Object[] args, ZContext ctx, Socket pipe)
         {
             //  Subscribe to "A" and "B"
-            Socket subscriber = ctx.createSocket(ZMQ.SUB);
+            Socket subscriber = ctx.createSocket(SocketType.SUB);
             subscriber.connect("tcp://localhost:6001");
             subscriber.subscribe("A".getBytes(ZMQ.CHARSET));
             subscriber.subscribe("B".getBytes(ZMQ.CHARSET));
@@ -45,7 +42,7 @@ public class espresso
         @Override
         public void run(Object[] args, ZContext ctx, Socket pipe)
         {
-            Socket publisher = ctx.createSocket(ZMQ.PUB);
+            Socket publisher = ctx.createSocket(SocketType.PUB);
             publisher.bind("tcp://*:6000");
             Random rand = new Random(System.currentTimeMillis());
 
@@ -93,9 +90,9 @@ public class espresso
             ZThread.fork(ctx, new Publisher());
             ZThread.fork(ctx, new Subscriber());
 
-            Socket subscriber = ctx.createSocket(ZMQ.XSUB);
+            Socket subscriber = ctx.createSocket(SocketType.XSUB);
             subscriber.connect("tcp://localhost:6000");
-            Socket publisher = ctx.createSocket(ZMQ.XPUB);
+            Socket publisher = ctx.createSocket(SocketType.XPUB);
             publisher.bind("tcp://*:6001");
             Socket listener = ZThread.fork(ctx, new Listener());
             ZMQ.proxy(subscriber, publisher, listener);

@@ -2,6 +2,7 @@ package guide;
 
 import java.util.Random;
 
+import org.zeromq.SocketType;
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQ.Poller;
@@ -28,11 +29,11 @@ public class peering1
 
         try (ZContext ctx = new ZContext()) {
             //  Bind state backend to endpoint
-            Socket statebe = ctx.createSocket(ZMQ.PUB);
+            Socket statebe = ctx.createSocket(SocketType.PUB);
             statebe.bind(String.format("ipc://%s-state.ipc", self));
 
             //  Connect statefe to all peers
-            Socket statefe = ctx.createSocket(ZMQ.SUB);
+            Socket statefe = ctx.createSocket(SocketType.SUB);
             statefe.subscribe(ZMQ.SUBSCRIPTION_ALL);
             int argn;
             for (argn = 1; argn < argv.length; argn++) {

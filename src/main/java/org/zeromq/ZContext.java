@@ -115,11 +115,11 @@ public class ZContext implements Closeable
      * Creates a new managed socket within this ZContext instance.
      * Use this to get automatic management of the socket at shutdown
      * @param type
-     *          socket type (see ZMQ static class members)
+     *          socket type
      * @return
      *          Newly created Socket object
      */
-    public Socket createSocket(int type)
+    public Socket createSocket(SocketType type)
     {
         // Create and register socket
         Socket socket = context.socket(type);
@@ -133,6 +133,19 @@ public class ZContext implements Closeable
             mutex.unlock();
         }
         return socket;
+    }
+
+    /**
+     * @deprecated use {@link this.createSocket(SocketType)}
+     * @param type
+     *          socket type (see ZMQ static class members)
+     * @return
+     *          Newly created Socket object
+     */
+    @Deprecated
+    public Socket createSocket(int type)
+    {
+        return createSocket(SocketType.type(type));
     }
 
     /**

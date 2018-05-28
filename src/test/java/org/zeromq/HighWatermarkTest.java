@@ -45,11 +45,11 @@ public class HighWatermarkTest
             ZContext context = new ZContext(1);
 
             //  Socket to send messages on
-            ZMQ.Socket sender = context.createSocket(ZMQ.PUSH);
+            ZMQ.Socket sender = context.createSocket(SocketType.PUSH);
             sender.setImmediate(false);
             sender.bind(dispatch);
 
-            ZMQ.Socket controller = context.createSocket(ZMQ.SUB);
+            ZMQ.Socket controller = context.createSocket(SocketType.SUB);
             controller.subscribe(ZMQ.SUBSCRIPTION_ALL);
             controller.connect(control);
 
@@ -109,16 +109,16 @@ public class HighWatermarkTest
             ZContext context = new ZContext(1);
 
             //  Socket to receive messages on
-            ZMQ.Socket receiver = context.createSocket(ZMQ.PULL);
+            ZMQ.Socket receiver = context.createSocket(SocketType.PULL);
             receiver.setImmediate(false);
             receiver.connect(dispatch);
 
             //  Socket to send messages to
-            ZMQ.Socket sender = context.createSocket(ZMQ.PUSH);
+            ZMQ.Socket sender = context.createSocket(SocketType.PUSH);
             sender.setImmediate(false);
             sender.connect(collect);
 
-            ZMQ.Socket controller = context.createSocket(ZMQ.SUB);
+            ZMQ.Socket controller = context.createSocket(SocketType.SUB);
             controller.subscribe("FINISH");
             controller.connect(control);
 
@@ -208,11 +208,11 @@ public class HighWatermarkTest
             //  Prepare our context and socket
             ZContext context = new ZContext(1);
 
-            ZMQ.Socket receiver = context.createSocket(ZMQ.PULL);
+            ZMQ.Socket receiver = context.createSocket(SocketType.PULL);
             receiver.setImmediate(false);
             receiver.bind(collect);
 
-            ZMQ.Socket controller = context.createSocket(ZMQ.PUB);
+            ZMQ.Socket controller = context.createSocket(SocketType.PUB);
             controller.bind(control);
 
             try {

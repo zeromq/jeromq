@@ -1,10 +1,7 @@
 package guide;
 
-import org.zeromq.ZContext;
-import org.zeromq.ZFrame;
-import org.zeromq.ZMQ;
+import org.zeromq.*;
 import org.zeromq.ZMQ.Socket;
-import org.zeromq.ZMsg;
 
 //  Freelance server - Model 2
 //  Does some work, replies OK, with message sequencing
@@ -18,7 +15,7 @@ public class flserver2
         }
 
         try (ZContext ctx = new ZContext()) {
-            Socket server = ctx.createSocket(ZMQ.REP);
+            Socket server = ctx.createSocket(SocketType.REP);
             server.bind(args[0]);
 
             System.out.printf("I: echo service is ready at %s\n", args[0]);

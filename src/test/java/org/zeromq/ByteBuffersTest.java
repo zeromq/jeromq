@@ -28,7 +28,7 @@ public class ByteBuffersTest
         {
             System.out.println("Start client thread ");
             ZMQ.Context context = ZMQ.context(1);
-            Socket pullConnect = context.socket(ZMQ.PULL);
+            Socket pullConnect = context.socket(SocketType.PULL);
 
             pullConnect.connect("tcp://127.0.0.1:" + port);
             pullConnect.recv(0);
@@ -48,8 +48,8 @@ public class ByteBuffersTest
         ZMQ.Socket push = null;
         ZMQ.Socket pull = null;
         try {
-            push = context.socket(ZMQ.PUSH);
-            pull = context.socket(ZMQ.PULL);
+            push = context.socket(SocketType.PUSH);
+            pull = context.socket(SocketType.PULL);
             pull.bind("tcp://*:" + port);
             push.connect("tcp://localhost:" + port);
 
@@ -90,8 +90,8 @@ public class ByteBuffersTest
         ZMQ.Socket push = null;
         ZMQ.Socket pull = null;
         try {
-            push = context.socket(ZMQ.PUSH);
-            pull = context.socket(ZMQ.PULL);
+            push = context.socket(SocketType.PUSH);
+            pull = context.socket(SocketType.PULL);
             pull.bind("tcp://*:" + port);
             push.connect("tcp://localhost:" + port);
 
@@ -147,8 +147,8 @@ public class ByteBuffersTest
         ZMQ.Socket push = null;
         ZMQ.Socket pull = null;
         try {
-            push = context.socket(ZMQ.PUSH);
-            pull = context.socket(ZMQ.PULL);
+            push = context.socket(SocketType.PUSH);
+            pull = context.socket(SocketType.PULL);
             pull.bind("tcp://*:" + port);
             push.connect("tcp://localhost:" + port);
 
@@ -208,8 +208,8 @@ public class ByteBuffersTest
         ZMQ.Socket push = null;
         ZMQ.Socket pull = null;
         try {
-            push = context.socket(ZMQ.PUSH);
-            pull = context.socket(ZMQ.PULL);
+            push = context.socket(SocketType.PUSH);
+            pull = context.socket(SocketType.PULL);
             pull.bind("tcp://*:" + port);
             push.connect("tcp://localhost:" + port);
 

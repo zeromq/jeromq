@@ -1,5 +1,6 @@
 package guide;
 
+import org.zeromq.SocketType;
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQ.Poller;
@@ -22,7 +23,7 @@ public class lpclient
     {
         try (ZContext ctx = new ZContext()) {
             System.out.println("I: connecting to server");
-            Socket client = ctx.createSocket(ZMQ.REQ);
+            Socket client = ctx.createSocket(SocketType.REQ);
             assert (client != null);
             client.connect(SERVER_ENDPOINT);
 
@@ -80,7 +81,7 @@ public class lpclient
                         poller.unregister(client);
                         ctx.destroySocket(client);
                         System.out.println("I: reconnecting to server\n");
-                        client = ctx.createSocket(ZMQ.REQ);
+                        client = ctx.createSocket(SocketType.REQ);
                         client.connect(SERVER_ENDPOINT);
                         poller.register(client, Poller.POLLIN);
                         //  Send request again, on new socket

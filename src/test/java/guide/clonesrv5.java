@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.zeromq.SocketType;
 import org.zeromq.ZContext;
 import org.zeromq.ZLoop;
 import org.zeromq.ZLoop.IZLoopHandler;
@@ -116,11 +117,11 @@ public class clonesrv5
         loop.verbose(false);
 
         //  Set up our clone server sockets
-        snapshot = ctx.createSocket(ZMQ.ROUTER);
+        snapshot = ctx.createSocket(SocketType.ROUTER);
         snapshot.bind(String.format("tcp://*:%d", port));
-        publisher = ctx.createSocket(ZMQ.PUB);
+        publisher = ctx.createSocket(SocketType.PUB);
         publisher.bind(String.format("tcp://*:%d", port + 1));
-        collector = ctx.createSocket(ZMQ.PULL);
+        collector = ctx.createSocket(SocketType.PULL);
         collector.bind(String.format("tcp://*:%d", port + 2));
     }
 

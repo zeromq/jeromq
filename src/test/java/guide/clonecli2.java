@@ -3,6 +3,7 @@ package guide;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.zeromq.SocketType;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQ.Socket;
 import org.zeromq.ZContext;
@@ -20,10 +21,10 @@ public class clonecli2
     public void run()
     {
         try (ZContext ctx = new ZContext()) {
-            Socket snapshot = ctx.createSocket(ZMQ.DEALER);
+            Socket snapshot = ctx.createSocket(SocketType.DEALER);
             snapshot.connect("tcp://localhost:5556");
 
-            Socket subscriber = ctx.createSocket(ZMQ.SUB);
+            Socket subscriber = ctx.createSocket(SocketType.SUB);
             subscriber.connect("tcp://localhost:5557");
             subscriber.subscribe(ZMQ.SUBSCRIPTION_ALL);
 

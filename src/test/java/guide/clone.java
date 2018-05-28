@@ -3,12 +3,9 @@ package guide;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.zeromq.ZContext;
-import org.zeromq.ZMQ;
+import org.zeromq.*;
 import org.zeromq.ZMQ.Poller;
 import org.zeromq.ZMQ.Socket;
-import org.zeromq.ZMsg;
-import org.zeromq.ZThread;
 import org.zeromq.ZThread.IAttachedRunnable;
 
 public class clone
@@ -107,9 +104,9 @@ public class clone
             this.address = address;
             this.port = port;
 
-            snapshot = ctx.createSocket(ZMQ.DEALER);
+            snapshot = ctx.createSocket(SocketType.DEALER);
             snapshot.connect(String.format("%s:%d", address, port));
-            subscriber = ctx.createSocket(ZMQ.SUB);
+            subscriber = ctx.createSocket(SocketType.SUB);
             subscriber.connect(String.format("%s:%d", address, port + 1));
             subscriber.subscribe(subtree.getBytes(ZMQ.CHARSET));
         }
@@ -153,7 +150,7 @@ public class clone
             kvmap = new HashMap<String, String>();
             subtree = "";
             state = STATE_INITIAL;
-            publisher = ctx.createSocket(ZMQ.PUB);
+            publisher = ctx.createSocket(SocketType.PUB);
 
             server = new Server[SERVER_MAX];
         }

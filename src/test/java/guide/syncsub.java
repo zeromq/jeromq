@@ -1,5 +1,6 @@
 package guide;
 
+import org.zeromq.SocketType;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQ.Socket;
 import org.zeromq.ZContext;
@@ -14,12 +15,12 @@ public class syncsub
     {
         try (ZContext context = new ZContext()) {
             //  First, connect our subscriber socket
-            Socket subscriber = context.createSocket(ZMQ.SUB);
+            Socket subscriber = context.createSocket(SocketType.SUB);
             subscriber.connect("tcp://localhost:5561");
             subscriber.subscribe(ZMQ.SUBSCRIPTION_ALL);
 
             //  Second, synchronize with publisher
-            Socket syncclient = context.createSocket(ZMQ.REQ);
+            Socket syncclient = context.createSocket(SocketType.REQ);
             syncclient.connect("tcp://localhost:5562");
 
             //  - send a synchronization request

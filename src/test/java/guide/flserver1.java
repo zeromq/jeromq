@@ -1,5 +1,6 @@
 package guide;
 
+import org.zeromq.SocketType;
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 import org.zeromq.ZMQ.Socket;
@@ -17,7 +18,7 @@ public class flserver1
         }
 
         try (ZContext ctx = new ZContext()) {
-            Socket server = ctx.createSocket(ZMQ.REP);
+            Socket server = ctx.createSocket(SocketType.REP);
             server.bind(args[0]);
 
             System.out.printf("I: echo service is ready at %s\n", args[0]);

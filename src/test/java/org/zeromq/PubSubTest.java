@@ -34,7 +34,7 @@ public class PubSubTest
             @Override
             public void run()
             {
-                ZMQ.Socket publisher = context.socket(ZMQ.PUB);
+                ZMQ.Socket publisher = context.socket(SocketType.PUB);
                 publisher.bind(address);
                 int count = messagesNumber;
                 while (count-- > 0) {
@@ -51,7 +51,7 @@ public class PubSubTest
             @Override
             public void run()
             {
-                ZMQ.Socket subscriber = context.socket(ZMQ.SUB);
+                ZMQ.Socket subscriber = context.socket(SocketType.SUB);
                 subscriber.connect(address);
                 subscriber.subscribe(ZMQ.SUBSCRIPTION_ALL);
                 int count = messagesNumber;
@@ -95,10 +95,10 @@ public class PubSubTest
     public void testPubConnectSubBindIssue289and342() throws IOException
     {
         ZMQ.Context context = ZMQ.context(1);
-        Socket pub = context.socket(ZMQ.XPUB);
+        Socket pub = context.socket(SocketType.XPUB);
         assertThat(pub, notNullValue());
 
-        Socket sub = context.socket(ZMQ.SUB);
+        Socket sub = context.socket(SocketType.SUB);
         assertThat(sub, notNullValue());
         boolean rc = sub.subscribe(new byte[0]);
         assertThat(rc, is(true));
@@ -135,7 +135,7 @@ public class PubSubTest
             {
                 final ZMQ.Context ctx = ZMQ.context(1);
                 assertThat(ctx, notNullValue());
-                final ZMQ.Socket pub = ctx.socket(ZMQ.PUB);
+                final ZMQ.Socket pub = ctx.socket(SocketType.PUB);
                 assertThat(pub, notNullValue());
 
                 boolean rc = pub.bind("tcp://*:" + port);
@@ -161,7 +161,7 @@ public class PubSubTest
             {
                 final ZMQ.Context ctx = ZMQ.context(1);
                 assertThat(ctx, notNullValue());
-                final ZMQ.Socket sub = ctx.socket(ZMQ.SUB);
+                final ZMQ.Socket sub = ctx.socket(SocketType.SUB);
                 assertThat(sub, notNullValue());
 
                 boolean rc = sub.setReceiveTimeOut(3000);

@@ -36,9 +36,9 @@ public class ZFrameTest
     public void testSending()
     {
         ZContext ctx = new ZContext();
-        Socket output = ctx.createSocket(ZMQ.PAIR);
+        Socket output = ctx.createSocket(SocketType.PAIR);
         output.bind("inproc://zframe.test");
-        Socket input = ctx.createSocket(ZMQ.PAIR);
+        Socket input = ctx.createSocket(SocketType.PAIR);
         input.connect("inproc://zframe.test");
 
         // Send five different frames, test ZFRAME_MORE
@@ -72,9 +72,9 @@ public class ZFrameTest
     public void testReceiving()
     {
         ZContext ctx = new ZContext();
-        Socket output = ctx.createSocket(ZMQ.PAIR);
+        Socket output = ctx.createSocket(SocketType.PAIR);
         output.bind("inproc://zframe.test");
-        Socket input = ctx.createSocket(ZMQ.PAIR);
+        Socket input = ctx.createSocket(SocketType.PAIR);
         input.connect("inproc://zframe.test");
 
         // Send same frame five times
@@ -110,9 +110,9 @@ public class ZFrameTest
     public void testStringFrames()
     {
         ZContext ctx = new ZContext();
-        Socket output = ctx.createSocket(ZMQ.PAIR);
+        Socket output = ctx.createSocket(SocketType.PAIR);
         output.bind("inproc://zframe.test");
-        Socket input = ctx.createSocket(ZMQ.PAIR);
+        Socket input = ctx.createSocket(SocketType.PAIR);
         input.connect("inproc://zframe.test");
 
         ZFrame f1 = new ZFrame("Hello");
