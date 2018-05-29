@@ -205,9 +205,9 @@ public class ZContext implements Closeable
      * @param args forked runnable args
      * @return pipe or null if there was an error
      */
-    public Socket fork(ZThread.IAttachedRunnable runnable,Object... args)
+    public Socket fork(ZThread.IAttachedRunnable runnable, Object... args)
     {
-        return ZThread.fork(this,runnable,args);
+        return ZThread.fork(this, runnable, args);
     }
 
     /**

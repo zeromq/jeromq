@@ -13,7 +13,7 @@ public class ZDigestTest
     public void testData()
     {
         byte[] buf = new byte[1024];
-        Arrays.fill(buf , (byte) 0xAA);
+        Arrays.fill(buf, (byte) 0xAA);
 
         ZDigest digest = new ZDigest();
 
@@ -29,7 +29,7 @@ public class ZDigestTest
     public void testSize()
     {
         byte[] buf = new byte[1024];
-        Arrays.fill(buf , (byte) 0xAA);
+        Arrays.fill(buf, (byte) 0xAA);
 
         ZDigest digest = new ZDigest();
 
@@ -47,7 +47,7 @@ public class ZDigestTest
     public void testString()
     {
         byte[] buf = new byte[1024];
-        Arrays.fill(buf , (byte) 0xAA);
+        Arrays.fill(buf, (byte) 0xAA);
 
         ZDigest digest = new ZDigest();
 

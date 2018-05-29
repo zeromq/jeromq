@@ -1,17 +1,16 @@
 package org.zeromq;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.junit.Assert.assertThat;
-
-import java.util.concurrent.CountDownLatch;
-
 import org.junit.Ignore;
 import org.junit.Test;
 import org.zeromq.ZMQ.Socket;
 import org.zeromq.ZThread.IAttachedRunnable;
-
 import zmq.ZError;
+
+import java.util.concurrent.CountDownLatch;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.junit.Assert.assertThat;
 
 public class TestZThread
 {
@@ -19,17 +18,14 @@ public class TestZThread
     public void testDetached()
     {
         final CountDownLatch stopped = new CountDownLatch(1);
-        ZThread.IDetachedRunnable detached = args -> {
+        ZThread.start((args) -> {
             ZContext ctx = new ZContext();
-
             Socket push = ctx.createSocket(SocketType.PUSH);
             assertThat(push, notNullValue());
 
             ctx.close();
             stopped.countDown();
-        };
-
-        ZThread.start(detached);
+        });
         try {
             stopped.await();
         }
