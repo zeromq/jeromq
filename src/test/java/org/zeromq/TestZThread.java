@@ -19,19 +19,14 @@ public class TestZThread
     public void testDetached()
     {
         final CountDownLatch stopped = new CountDownLatch(1);
-        ZThread.IDetachedRunnable detached = new ZThread.IDetachedRunnable()
-        {
-            @Override
-            public void run(Object[] args)
-            {
-                ZContext ctx = new ZContext();
+        ZThread.IDetachedRunnable detached = args -> {
+            ZContext ctx = new ZContext();
 
-                Socket push = ctx.createSocket(SocketType.PUSH);
-                assertThat(push, notNullValue());
+            Socket push = ctx.createSocket(SocketType.PUSH);
+            assertThat(push, notNullValue());
 
-                ctx.close();
-                stopped.countDown();
-            }
+            ctx.close();
+            stopped.countDown();
         };
 
         ZThread.start(detached);
@@ -49,16 +44,11 @@ public class TestZThread
     {
         final ZContext ctx = new ZContext();
 
-        ZThread.IAttachedRunnable attached = new ZThread.IAttachedRunnable()
-        {
-            @Override
-            public void run(Object[] args, ZContext ctx, Socket pipe)
-            {
-                //  Create a socket to check it'll be automatically deleted
-                ctx.createSocket(SocketType.PUSH);
-                pipe.recvStr();
-                pipe.send("pong");
-            }
+        ZThread.IAttachedRunnable attached = (args, ctx1, pipe) -> {
+            //  Create a socket to check it'll be automatically deleted
+            ctx1.createSocket(SocketType.PUSH);
+            pipe.recvStr();
+            pipe.send("pong");
         };
 
         Socket pipe = ZThread.fork(ctx, attached);
@@ -78,14 +68,9 @@ public class TestZThread
     public void testClosePipe()
     {
         ZContext ctx = new ZContext();
-        IAttachedRunnable runnable = new IAttachedRunnable()
-        {
-            @Override
-            public void run(Object[] args, ZContext ctx, Socket pipe)
-            {
-                pipe.recvStr();
-                pipe.send("pong");
-            }
+        IAttachedRunnable runnable = (args, ctx1, pipe) -> {
+            pipe.recvStr();
+            pipe.send("pong");
         };
         Socket pipe = ZThread.fork(ctx, runnable);
 
