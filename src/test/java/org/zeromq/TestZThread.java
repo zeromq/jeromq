@@ -38,7 +38,7 @@ public class TestZThread
     public void testFork()
     {
         final ZContext ctx = new ZContext();
-        
+
         Socket pipe = ZThread.fork(ctx, (args, ctx1, pipe1) -> {
             //  Create a socket to check it'll be automatically deleted
             ctx1.createSocket(SocketType.PUSH);
