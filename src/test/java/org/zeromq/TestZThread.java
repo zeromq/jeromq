@@ -18,11 +18,10 @@ public class TestZThread
     {
         final CountDownLatch stopped = new CountDownLatch(1);
         ZThread.start((args) -> {
-            ZContext ctx = new ZContext();
-            Socket push = ctx.createSocket(SocketType.PUSH);
-            assertThat(push, notNullValue());
-
-            ctx.close();
+            try (ZContext ctx = new ZContext()) {
+                Socket push = ctx.createSocket(SocketType.PUSH);
+                assertThat(push, notNullValue());
+            }
             stopped.countDown();
         });
         try {
