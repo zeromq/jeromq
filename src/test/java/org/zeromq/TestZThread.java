@@ -40,14 +40,13 @@ public class TestZThread
     {
         final ZContext ctx = new ZContext();
 
-        ZThread.IAttachedRunnable attached = (args, ctx1, pipe) -> {
+
+        Socket pipe = ZThread.fork(ctx, (args, ctx1, pipe1) -> {
             //  Create a socket to check it'll be automatically deleted
             ctx1.createSocket(SocketType.PUSH);
-            pipe.recvStr();
-            pipe.send("pong");
-        };
-
-        Socket pipe = ZThread.fork(ctx, attached);
+            pipe1.recvStr();
+            pipe1.send("pong");
+        });
         assertThat(pipe, notNullValue());
 
         pipe.send("ping");
@@ -64,11 +63,10 @@ public class TestZThread
     public void testClosePipe()
     {
         ZContext ctx = new ZContext();
-        IAttachedRunnable runnable = (args, ctx1, pipe) -> {
-            pipe.recvStr();
-            pipe.send("pong");
-        };
-        Socket pipe = ZThread.fork(ctx, runnable);
+        Socket pipe = ZThread.fork(ctx, (args, ctx1, pipe1) -> {
+            pipe1.recvStr();
+            pipe1.send("pong");
+        });
 
         assertThat(pipe, notNullValue());
 
