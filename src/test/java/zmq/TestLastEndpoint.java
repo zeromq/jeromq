@@ -37,7 +37,7 @@ public class TestLastEndpoint
 
         bindAndVerify(sb, "tcp://127.0.0.1:" + port1);
         bindAndVerify(sb, "tcp://127.0.0.1:" + port2);
-        bindAndVerify(sb, "ipc:///tmp/testep" + UUID.randomUUID().toString());
+        bindAndVerify(sb, "ipc:///tmp/test-" + UUID.randomUUID().toString());
 
         sb.close();
         ctx.terminate();
