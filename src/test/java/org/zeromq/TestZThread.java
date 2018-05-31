@@ -1,17 +1,15 @@
 package org.zeromq;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.junit.Assert.assertThat;
-
-import java.util.concurrent.CountDownLatch;
-
 import org.junit.Ignore;
 import org.junit.Test;
 import org.zeromq.ZMQ.Socket;
-import org.zeromq.ZThread.IAttachedRunnable;
-
 import zmq.ZError;
+
+import java.util.concurrent.CountDownLatch;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.junit.Assert.assertThat;
 
 public class TestZThread
 {
@@ -19,22 +17,13 @@ public class TestZThread
     public void testDetached()
     {
         final CountDownLatch stopped = new CountDownLatch(1);
-        ZThread.IDetachedRunnable detached = new ZThread.IDetachedRunnable()
-        {
-            @Override
-            public void run(Object[] args)
-            {
-                ZContext ctx = new ZContext();
-
+        ZThread.start((args) -> {
+            try (ZContext ctx = new ZContext()) {
                 Socket push = ctx.createSocket(SocketType.PUSH);
                 assertThat(push, notNullValue());
-
-                ctx.close();
-                stopped.countDown();
             }
-        };
-
-        ZThread.start(detached);
+            stopped.countDown();
+        });
         try {
             stopped.await();
         }
@@ -49,19 +38,12 @@ public class TestZThread
     {
         final ZContext ctx = new ZContext();
 
-        ZThread.IAttachedRunnable attached = new ZThread.IAttachedRunnable()
-        {
-            @Override
-            public void run(Object[] args, ZContext ctx, Socket pipe)
-            {
-                //  Create a socket to check it'll be automatically deleted
-                ctx.createSocket(SocketType.PUSH);
-                pipe.recvStr();
-                pipe.send("pong");
-            }
-        };
-
-        Socket pipe = ZThread.fork(ctx, attached);
+        Socket pipe = ZThread.fork(ctx, (args, ctx1, pipe1) -> {
+            //  Create a socket to check it'll be automatically deleted
+            ctx1.createSocket(SocketType.PUSH);
+            pipe1.recvStr();
+            pipe1.send("pong");
+        });
         assertThat(pipe, notNullValue());
 
         pipe.send("ping");
@@ -78,16 +60,10 @@ public class TestZThread
     public void testClosePipe()
     {
         ZContext ctx = new ZContext();
-        IAttachedRunnable runnable = new IAttachedRunnable()
-        {
-            @Override
-            public void run(Object[] args, ZContext ctx, Socket pipe)
-            {
-                pipe.recvStr();
-                pipe.send("pong");
-            }
-        };
-        Socket pipe = ZThread.fork(ctx, runnable);
+        Socket pipe = ZThread.fork(ctx, (args, ctx1, pipe1) -> {
+            pipe1.recvStr();
+            pipe1.send("pong");
+        });
 
         assertThat(pipe, notNullValue());
 

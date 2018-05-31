@@ -14,7 +14,7 @@ public class ZDataTest
     public void testPrint()
     {
         byte[] buf = new byte[10];
-        Arrays.fill(buf , (byte) 0xAA);
+        Arrays.fill(buf, (byte) 0xAA);
         ZData data = new ZData(buf);
 
         data.print(System.out, "ZData: ");
@@ -24,7 +24,7 @@ public class ZDataTest
     public void testPrintNonPrintable()
     {
         byte[] buf = new byte[12];
-        Arrays.fill(buf , (byte) 0x04);
+        Arrays.fill(buf, (byte) 0x04);
         ZData data = new ZData(buf);
 
         data.print(System.out, "ZData: ");
@@ -43,7 +43,7 @@ public class ZDataTest
     public void testToStringNonPrintable()
     {
         byte[] buf = new byte[2];
-        Arrays.fill(buf , (byte) 0x04);
+        Arrays.fill(buf, (byte) 0x04);
         ZData data = new ZData(buf);
 
         String string = data.toString();

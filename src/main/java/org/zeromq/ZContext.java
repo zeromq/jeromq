@@ -198,6 +198,19 @@ public class ZContext implements Closeable
     }
 
     /**
+     * Create an attached thread, An attached thread gets a ctx and a PAIR pipe back to its
+     * parent. It must monitor its pipe, and exit if the pipe becomes unreadable
+     *
+     * @param runnable attached thread
+     * @param args forked runnable args
+     * @return pipe or null if there was an error
+     */
+    public Socket fork(ZThread.IAttachedRunnable runnable, Object... args)
+    {
+        return ZThread.fork(this, runnable, args);
+    }
+
+    /**
      * @return the ioThreads
      */
     public int getIoThreads()

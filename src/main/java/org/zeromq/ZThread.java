@@ -9,11 +9,13 @@ public class ZThread
     {
     }
 
+    @FunctionalInterface
     public interface IAttachedRunnable
     {
         void run(Object[] args, ZContext ctx, Socket pipe);
     }
 
+    @FunctionalInterface
     public interface IDetachedRunnable
     {
         void run(Object[] args);
