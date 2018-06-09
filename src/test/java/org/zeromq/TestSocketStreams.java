@@ -27,7 +27,8 @@ public class TestSocketStreams
 
             final byte[] expected = new byte[]{0x11, 0x22, 0x33};
             push.send(expected);
-            Optional<byte[]> first = pull.recvStream().findFirst();
+            Optional<byte[]> first = pull.recvStream().peek(System.out::print).findFirst();
+            System.out.println();
             assertTrue(first.isPresent());
             assertArrayEquals(expected, first.get());
         }
@@ -46,7 +47,8 @@ public class TestSocketStreams
 
             final String expected = "Hello";
             push.send(expected);
-            Optional<String> first = pull.recvStrStream().findFirst();
+            Optional<String> first = pull.recvStrStream().peek(System.out::print).findFirst();
+            System.out.println();
             assertTrue(first.isPresent());
             assertEquals(expected, first.get());
         }
