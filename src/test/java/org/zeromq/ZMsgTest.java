@@ -132,8 +132,8 @@ public class ZMsgTest
     {
         ZMsg msg = new ZMsg()
                 .add(new byte[0])
-                .add(new byte[] { (byte) 0xAA })
-                .dump();
+                .add(new byte[] { (byte) 0xAA });
+        msg.dump();
 
         StringBuilder out = new StringBuilder();
         msg.dump(out);
