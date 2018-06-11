@@ -83,9 +83,10 @@ public class ZMsg implements Iterable<ZFrame>, Deque<ZFrame>
      * @param str
      *              String to add to list
      */
-    public void addString(String str)
+    public ZMsg addString(String str)
     {
         frames.add(new ZFrame(str));
+        return this;
     }
 
     /**
@@ -113,12 +114,13 @@ public class ZMsg implements Iterable<ZFrame>, Deque<ZFrame>
      * Message takes ownership of frame, will destroy it when message is sent.
      * @param frame
      */
-    public void wrap(ZFrame frame)
+    public ZMsg wrap(ZFrame frame)
     {
         if (frame != null) {
             push(new ZFrame(""));
             push(frame);
         }
+        return this;
     }
 
     /**
@@ -381,7 +383,7 @@ public class ZMsg implements Iterable<ZFrame>, Deque<ZFrame>
      * Dump the message in human readable format. This should only be used
      * for debugging and tracing, inefficient in handling large messages.
      **/
-    public void dump(Appendable out)
+    public ZMsg dump(Appendable out)
     {
         try {
             StringWriter sw = new StringWriter();
@@ -396,55 +398,65 @@ public class ZMsg implements Iterable<ZFrame>, Deque<ZFrame>
         catch (IOException e) {
             throw new RuntimeException("Message dump exception " + super.toString(), e);
         }
+        return this;
     }
 
-    public void dump()
+    public ZMsg dump()
     {
         dump(System.out);
+        return this;
     }
 
     // ********* Convenience Deque methods for common data types *** //
 
-    public void addFirst(String stringValue)
+    public ZMsg addFirst(String stringValue)
     {
         addFirst(new ZFrame(stringValue));
+        return this;
     }
 
-    public void addFirst(byte[] data)
+    public ZMsg addFirst(byte[] data)
     {
         addFirst(new ZFrame(data));
+        return this;
     }
 
-    public void addLast(String stringValue)
+    public ZMsg addLast(String stringValue)
     {
         addLast(new ZFrame(stringValue));
+        return this;
     }
 
-    public void addLast(byte[] data)
+    public ZMsg addLast(byte[] data)
     {
         addLast(new ZFrame(data));
+        return this;
     }
 
     // ********* Convenience Queue methods for common data types *** //
 
-    public void push(String str)
+    public ZMsg push(String str)
     {
         push(new ZFrame(str));
+        return this;
     }
 
-    public void push(byte[] data)
+    public ZMsg push(byte[] data)
     {
         push(new ZFrame(data));
+        return this;
     }
 
-    public boolean add(String stringValue)
+    public ZMsg add(String stringValue)
     {
-        return add(new ZFrame(stringValue));
+        add(new ZFrame(stringValue));
+        return this;
     }
 
-    public boolean add(byte[] data)
+    public ZMsg add(byte[] data)
     {
-        return add(new ZFrame(data));
+        add(new ZFrame(data));
+        return this;
     }
 
     // ********* Implement Iterable Interface *************** //
@@ -674,14 +686,15 @@ public class ZMsg implements Iterable<ZFrame>, Deque<ZFrame>
         return frames.size();
     }
 
-    public void append(ZMsg msg)
+    public ZMsg append(ZMsg msg)
     {
         if (msg == null) {
-            return;
+            return this;
         }
         for (ZFrame frame : msg.frames) {
             add(frame);
         }
+        return this;
     }
 
     /**
