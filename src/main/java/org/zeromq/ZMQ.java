@@ -20,6 +20,7 @@ import java.util.LinkedList;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Stream;
 
 /**
  * The ØMQ lightweight messaging kernel is a library which extends the standard socket interfaces
@@ -3160,6 +3161,16 @@ public class ZMQ
         }
 
         /**
+         * Stream of incoming messages
+         *
+         * @return infinite stream of the incoming messages
+         */
+        public Stream<byte[]> recvStream()
+        {
+            return Stream.generate(this::recv);
+        }
+
+        /**
          * Receives a message.
          *
          * @param flags either:
@@ -3249,6 +3260,14 @@ public class ZMQ
         public String recvStr()
         {
             return recvStr(0);
+        }
+
+        /**
+         * @return infinite stream of the incoming messages as a String object
+         */
+        public Stream<String> recvStrStream()
+        {
+            return Stream.generate(this::recvStr);
         }
 
         /**

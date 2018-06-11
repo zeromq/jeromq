@@ -136,7 +136,7 @@ public class ZContext implements Closeable
     }
 
     /**
-     * @deprecated use {@link this.createSocket(SocketType)}
+     * @deprecated use {@link #createSocket(SocketType)}
      * @param type
      *          socket type (see ZMQ static class members)
      * @return
