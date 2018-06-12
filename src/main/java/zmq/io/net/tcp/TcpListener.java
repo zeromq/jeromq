@@ -250,30 +250,6 @@ public class TcpListener extends Own implements IPollEvents
     }
 
     @Override
-    public void inEvent()
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void outEvent()
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void connectEvent()
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void timerEvent(int id)
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public String toString()
     {
         return getClass().getSimpleName() + "[" + options.socketId + "]";

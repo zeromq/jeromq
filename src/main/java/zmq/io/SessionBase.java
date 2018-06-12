@@ -600,30 +600,6 @@ public class SessionBase extends Own implements Pipe.IPipeEvents, IPollEvents
     }
 
     @Override
-    public void inEvent()
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void outEvent()
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void connectEvent()
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void acceptEvent()
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public final void incSeqnum()
     {
         super.incSeqnum();
