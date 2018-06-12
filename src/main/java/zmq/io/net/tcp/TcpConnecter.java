@@ -362,12 +362,6 @@ public class TcpConnecter extends Own implements IPollEvents
     }
 
     @Override
-    public void acceptEvent()
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public void inEvent()
     {
         // connected but attaching to stream engine is not completed. do nothing

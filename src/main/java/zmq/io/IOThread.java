@@ -81,30 +81,6 @@ public class IOThread extends ZObject implements IPollEvents, Closeable
         }
     }
 
-    @Override
-    public void outEvent()
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void connectEvent()
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void acceptEvent()
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void timerEvent(int id)
-    {
-        throw new UnsupportedOperationException();
-    }
-
     Poller getPoller()
     {
         assert (poller != null);

@@ -1060,18 +1060,6 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
         checkDestroy();
     }
 
-    @Override
-    public final void outEvent()
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public final void timerEvent(int id)
-    {
-        throw new UnsupportedOperationException();
-    }
-
     //  To be called after processing commands or invoking any command
     //  handlers explicitly. If required, it will deallocate the socket.
     private void checkDestroy()
@@ -1368,17 +1356,5 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
         {
             return address;
         }
-    }
-
-    @Override
-    public final void connectEvent()
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public final void acceptEvent()
-    {
-        throw new UnsupportedOperationException();
     }
 }

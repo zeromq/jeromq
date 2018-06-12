@@ -1369,18 +1369,6 @@ public class StreamEngine implements IEngine, IPollEvents
     }
 
     @Override
-    public void connectEvent()
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void acceptEvent()
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public String toString()
     {
         return getClass().getSimpleName() + socket + "-" + zmtpVersion;
