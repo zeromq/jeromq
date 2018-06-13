@@ -3163,8 +3163,11 @@ public class ZMQ
         /**
          * Stream of incoming messages
          *
+         * This API is in DRAFT state and is subject to change at ANY time until declared stable
+         *
          * @return infinite stream of the incoming messages
          */
+        @Draft
         public Stream<byte[]> recvStream()
         {
             return Stream.generate(this::recv);
@@ -3263,8 +3266,11 @@ public class ZMQ
         }
 
         /**
+         * This API is in DRAFT state and is subject to change at ANY time until declared stable
+         *
          * @return infinite stream of the incoming messages as a String object
          */
+        @Draft
         public Stream<String> recvStrStream()
         {
             return Stream.generate(this::recvStr);
