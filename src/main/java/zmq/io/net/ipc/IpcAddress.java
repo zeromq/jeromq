@@ -9,6 +9,7 @@ import zmq.io.net.Address;
 import zmq.io.net.ProtocolFamily;
 import zmq.io.net.StandardProtocolFamily;
 import zmq.io.net.tcp.TcpAddress;
+import zmq.util.Utils;
 
 public class IpcAddress implements Address.IZAddress
 {
@@ -53,16 +54,31 @@ public class IpcAddress implements Address.IZAddress
     }
 
     @Override
+    public String toString(int port)
+    {
+        if ("*".equals(name)) {
+            String suffix = Utils.unhash(port - 10000);
+            return "ipc://" + suffix;
+        }
+        return toString();
+    }
+
+    @Override
     public InetSocketAddress resolve(String name, boolean ipv6, boolean local)
     {
         this.name = name;
 
         int hash = name.hashCode();
-        if (hash < 0) {
-            hash = -hash;
+        if ("*".equals(name)) {
+            hash = 0;
         }
-        hash = hash % 55536;
-        hash += 10000;
+        else {
+            if (hash < 0) {
+                hash = -hash;
+            }
+            hash = hash % 55536;
+            hash += 10000;
+        }
 
         try {
             return new InetSocketAddress(InetAddress.getByName(null), hash);

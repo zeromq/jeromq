@@ -370,7 +370,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
             // Save last endpoint URI
             options.lastEndpoint = listener.getAddress();
 
-            addEndpoint(addr, listener, null);
+            addEndpoint(options.lastEndpoint, listener, null);
             return true;
         }
 
@@ -386,7 +386,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
             // Save last endpoint URI
             options.lastEndpoint = listener.getAddress();
 
-            addEndpoint(addr, listener, null);
+            addEndpoint(options.lastEndpoint, listener, null);
             return true;
         }
 

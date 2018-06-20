@@ -4,17 +4,159 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertThat;
 
+import java.io.IOException;
+
 import org.junit.Test;
 
 import zmq.util.Utils;
 
 public class TestTermEndpoint
 {
-    @Test
-    public void testTermEndpoint() throws Exception
+    protected String endpointWildcard()
+    {
+        return "tcp://127.0.0.1:" + '*';
+    }
+
+    protected String endpointNormal() throws IOException
     {
         int port = Utils.findOpenPort();
-        String ep = "tcp://127.0.0.1:" + port;
+        return "tcp://127.0.0.1:" + port;
+    }
+
+    @Test
+    public void testUnbindWildcard()
+    {
+        String ep = endpointWildcard();
+        Ctx ctx = ZMQ.init(1);
+        assertThat(ctx, notNullValue());
+
+        SocketBase push = ZMQ.socket(ctx, ZMQ.ZMQ_PUSH);
+        assertThat(push, notNullValue());
+        boolean rc = ZMQ.bind(push, ep);
+        assertThat(rc, is(true));
+
+        ep = (String) ZMQ.getSocketOptionExt(push, ZMQ.ZMQ_LAST_ENDPOINT);
+
+        SocketBase pull = ZMQ.socket(ctx, ZMQ.ZMQ_PULL);
+        assertThat(pull, notNullValue());
+        rc = ZMQ.connect(pull, ep);
+        assertThat(rc, is(true));
+
+        //  Pass one message through to ensure the connection is established.
+        int r = ZMQ.send(push, "ABC", 0);
+        assertThat(r, is(3));
+        Msg msg = ZMQ.recv(pull, 0);
+        assertThat(msg.size(), is(3));
+
+        // Unbind the lisnening endpoint
+        rc = ZMQ.unbind(push, ep);
+        assertThat(rc, is(true));
+
+        // Let events some time
+        ZMQ.sleep(1);
+
+        //  Check that sending would block (there's no outbound connection).
+        r = ZMQ.send(push, "ABC", ZMQ.ZMQ_DONTWAIT);
+        assertThat(r, is(-1));
+
+        //  Clean up.
+        ZMQ.close(pull);
+        ZMQ.close(push);
+        ZMQ.term(ctx);
+    }
+
+    @Test
+    public void testDisconnectWildcard()
+    {
+        String ep = endpointWildcard();
+
+        Ctx ctx = ZMQ.init(1);
+        assertThat(ctx, notNullValue());
+
+        SocketBase push = ZMQ.socket(ctx, ZMQ.ZMQ_PUSH);
+        assertThat(push, notNullValue());
+        boolean rc = ZMQ.bind(push, ep);
+        assertThat(rc, is(true));
+
+        ep = (String) ZMQ.getSocketOptionExt(push, ZMQ.ZMQ_LAST_ENDPOINT);
+
+        SocketBase pull = ZMQ.socket(ctx, ZMQ.ZMQ_PULL);
+        assertThat(pull, notNullValue());
+        rc = ZMQ.connect(pull, ep);
+        assertThat(rc, is(true));
+
+        //  Pass one message through to ensure the connection is established.
+        int r = ZMQ.send(push, "ABC", 0);
+        assertThat(r, is(3));
+        Msg msg = ZMQ.recv(pull, 0);
+        assertThat(msg.size(), is(3));
+
+        // Disconnect the bound endpoint
+        rc = ZMQ.disconnect(push, ep);
+        assertThat(rc, is(true));
+
+        // Let events some time
+        ZMQ.sleep(1);
+
+        //  Check that sending would block (there's no outbound connection).
+        r = ZMQ.send(push, "ABC", ZMQ.ZMQ_DONTWAIT);
+        assertThat(r, is(-1));
+
+        //  Clean up.
+        ZMQ.close(pull);
+        ZMQ.close(push);
+        ZMQ.term(ctx);
+    }
+
+    @Test
+    public void testUnbindWildcardByWildcard()
+    {
+        String ep = endpointWildcard();
+        Ctx ctx = ZMQ.init(1);
+        assertThat(ctx, notNullValue());
+
+        SocketBase push = ZMQ.socket(ctx, ZMQ.ZMQ_PUSH);
+        assertThat(push, notNullValue());
+        boolean rc = ZMQ.bind(push, ep);
+        assertThat(rc, is(true));
+
+        // Unbind the lisnening endpoint
+        rc = ZMQ.unbind(push, ep);
+        assertThat(rc, is(false));
+        assertThat(push.errno.get(), is(ZError.ENOENT));
+
+        //  Clean up.
+        ZMQ.close(push);
+        ZMQ.term(ctx);
+    }
+
+    @Test
+    public void testDisconnectWildcardByWildcard()
+    {
+        String ep = endpointWildcard();
+
+        Ctx ctx = ZMQ.init(1);
+        assertThat(ctx, notNullValue());
+
+        SocketBase push = ZMQ.socket(ctx, ZMQ.ZMQ_PUSH);
+        assertThat(push, notNullValue());
+        boolean rc = ZMQ.bind(push, ep);
+        assertThat(rc, is(true));
+
+        // Disconnect the bound endpoint
+        rc = ZMQ.disconnect(push, ep);
+        assertThat(rc, is(false));
+        assertThat(push.errno.get(), is(ZError.ENOENT));
+
+        //  Clean up.
+        ZMQ.close(push);
+        ZMQ.term(ctx);
+    }
+
+    @Test
+    public void testUnbind() throws Exception
+    {
+        String ep = endpointNormal();
         Ctx ctx = ZMQ.init(1);
         assertThat(ctx, notNullValue());
 
@@ -49,27 +191,29 @@ public class TestTermEndpoint
         ZMQ.close(pull);
         ZMQ.close(push);
         ZMQ.term(ctx);
+    }
 
-        //  Now the other way round.
-        System.out.println("disconnect endpoint test running...");
-
-        ctx = ZMQ.init(1);
+    @Test
+    public void testDisconnect() throws Exception
+    {
+        String ep = endpointNormal();
+        Ctx ctx = ZMQ.init(1);
         assertThat(ctx, notNullValue());
 
-        push = ZMQ.socket(ctx, ZMQ.ZMQ_PUSH);
+        SocketBase push = ZMQ.socket(ctx, ZMQ.ZMQ_PUSH);
         assertThat(push, notNullValue());
-        rc = ZMQ.bind(push, ep);
+        boolean rc = ZMQ.bind(push, ep);
         assertThat(rc, is(true));
 
-        pull = ZMQ.socket(ctx, ZMQ.ZMQ_PULL);
+        SocketBase pull = ZMQ.socket(ctx, ZMQ.ZMQ_PULL);
         assertThat(pull, notNullValue());
         rc = ZMQ.connect(pull, ep);
         assertThat(rc, is(true));
 
         //  Pass one message through to ensure the connection is established.
-        r = ZMQ.send(push, "ABC", 0);
+        int r = ZMQ.send(push, "ABC", 0);
         assertThat(r, is(3));
-        msg = ZMQ.recv(pull, 0);
+        Msg msg = ZMQ.recv(pull, 0);
         assertThat(msg.size(), is(3));
 
         // Disconnect the bound endpoint

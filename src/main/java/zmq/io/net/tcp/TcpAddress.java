@@ -54,15 +54,26 @@ public class TcpAddress implements Address.IZAddress
     @Override
     public String toString()
     {
+        return toString(address.getPort());
+    }
+
+    // The opposite to resolve()
+    @Override
+    public String toString(int port)
+    {
         if (address == null) {
             return "";
         }
 
+        int addressPort = address.getPort();
+        if (addressPort == 0) {
+            addressPort = port;
+        }
         if (address.getAddress() instanceof Inet6Address) {
-            return "tcp://[" + address.getAddress().getHostAddress() + "]:" + address.getPort();
+            return "tcp://[" + address.getAddress().getHostAddress() + "]:" + addressPort;
         }
         else {
-            return "tcp://" + address.getAddress().getHostAddress() + ":" + address.getPort();
+            return "tcp://" + address.getAddress().getHostAddress() + ":" + addressPort;
         }
     }
 

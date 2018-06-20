@@ -12,6 +12,7 @@ import zmq.io.IOObject;
 import zmq.io.IOThread;
 import zmq.io.SessionBase;
 import zmq.io.StreamEngine;
+import zmq.io.net.Address.IZAddress;
 import zmq.io.net.StandardProtocolFamily;
 import zmq.poll.IPollEvents;
 import zmq.poll.Poller;
@@ -148,7 +149,13 @@ public class TcpListener extends Own implements IPollEvents
 
     public String getAddress()
     {
-        return address.toString();
+        return address(address);
+    }
+
+    protected String address(IZAddress address)
+    {
+        int port = fd.socket().getLocalPort();
+        return address.toString(port);
     }
 
     //  Set address to listen on.
@@ -191,6 +198,8 @@ public class TcpListener extends Own implements IPollEvents
             //  Bind the socket to the network interface and port.
             // NB: fd.socket().bind(...) for Android environments
             fd.socket().bind(address.address(), options.backlog);
+            // find the address in case of wildcard
+            endpoint = getAddress();
         }
         catch (IOException e) {
             close();

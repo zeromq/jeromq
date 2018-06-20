@@ -1,6 +1,7 @@
 package zmq.util;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
 
@@ -8,6 +9,17 @@ import org.junit.Test;
 
 public class TestUtils
 {
+    @Test
+    public void testUnhash()
+    {
+        // theoretically up to 65535 but let's be greedy and waste 10 ms
+        for (int port = 0; port < 100_000; ++port) {
+            String hash = Utils.unhash(port);
+            assertThat(hash, notNullValue());
+            assertThat(hash.hashCode(), is(port));
+        }
+    }
+
     @Test
     public void testRealloc()
     {

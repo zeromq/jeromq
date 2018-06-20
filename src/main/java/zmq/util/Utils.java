@@ -33,6 +33,33 @@ public class Utils
         return bytes;
     }
 
+    /**
+     * Finds a string whose hashcode is the number in input.
+     *
+     * @param port the port to find String hashcode-equivalent of. Has to be positive or 0.
+     * @return a String whose hashcode is the number in input.
+     */
+    public static String unhash(int port)
+    {
+        return unhash(new StringBuilder(), port, 'z').toString();
+    }
+
+    private static StringBuilder unhash(StringBuilder builder, int port, char boundary)
+    {
+        int div = port / 31;
+        int remainder = port % 31;
+        if (div <= boundary) {
+            if (div != 0) {
+                builder.append((char) div);
+            }
+        }
+        else {
+            unhash(builder, div, boundary);
+        }
+        builder.append((char) remainder);
+        return builder;
+    }
+
     public static int findOpenPort() throws IOException
     {
         final ServerSocket tmpSocket = new ServerSocket(0, 0);
