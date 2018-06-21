@@ -13,7 +13,6 @@ import zmq.Ctx;
 import zmq.Msg;
 import zmq.SocketBase;
 import zmq.ZMQ;
-import zmq.util.Utils;
 
 public class StreamEngineTest
 {
@@ -32,11 +31,13 @@ public class StreamEngineTest
         SocketBase receiver = ZMQ.socket(ctx, ZMQ.ZMQ_PULL);
         assertThat(receiver, notNullValue());
 
-        final int port = Utils.findOpenPort();
-        final String addr = "tcp://localhost:" + port;
+        String addr = "tcp://localhost:*";
 
         rc = ZMQ.bind(receiver, addr);
         assertThat(rc, is(true));
+
+        addr = (String) ZMQ.getSocketOptionExt(receiver, ZMQ.ZMQ_LAST_ENDPOINT);
+        assertThat(addr, notNullValue());
 
         rc = ZMQ.connect(sender, addr);
         assertThat(rc, is(true));

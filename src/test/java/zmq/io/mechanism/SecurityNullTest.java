@@ -16,7 +16,7 @@ import zmq.Helper;
 import zmq.Msg;
 import zmq.SocketBase;
 import zmq.ZMQ;
-import zmq.util.Utils;
+import zmq.util.TestUtils;
 
 public class SecurityNullTest
 {
@@ -83,8 +83,7 @@ public class SecurityNullTest
     @Test
     public void testNullMechanismSecurity() throws IOException, InterruptedException
     {
-        int port = Utils.findOpenPort();
-        String host = "tcp://127.0.0.1:" + port;
+        String host = "tcp://127.0.0.1:*";
 
         Ctx ctx = ZMQ.createContext();
 
@@ -111,7 +110,11 @@ public class SecurityNullTest
 
         rc = ZMQ.bind(server, host);
         assertThat(rc, is(true));
-        rc = ZMQ.connect(client, host);
+
+        String endpoint = (String) ZMQ.getSocketOptionExt(server, ZMQ.ZMQ_LAST_ENDPOINT);
+        assertThat(endpoint, notNullValue());
+
+        rc = ZMQ.connect(client, endpoint);
         assertThat(rc, is(true));
 
         Helper.bounce(server, client);
@@ -128,11 +131,14 @@ public class SecurityNullTest
         assertThat(client, notNullValue());
 
         ZMQ.setSocketOption(server, ZMQ.ZMQ_ZAP_DOMAIN, "WRONG");
-        port = Utils.findOpenPort();
-        host = "tcp://127.0.0.1:" + port;
+
         rc = ZMQ.bind(server, host);
         assertThat(rc, is(true));
-        rc = ZMQ.connect(client, host);
+
+        endpoint = (String) ZMQ.getSocketOptionExt(server, ZMQ.ZMQ_LAST_ENDPOINT);
+        assertThat(endpoint, notNullValue());
+
+        rc = ZMQ.connect(client, endpoint);
         assertThat(rc, is(true));
 
         Helper.expectBounceFail(server, client);
@@ -147,11 +153,13 @@ public class SecurityNullTest
         assertThat(client, notNullValue());
 
         ZMQ.setSocketOption(server, ZMQ.ZMQ_ZAP_DOMAIN, "TEST");
-        port = Utils.findOpenPort();
-        host = "tcp://127.0.0.1:" + port;
         rc = ZMQ.bind(server, host);
         assertThat(rc, is(true));
-        rc = ZMQ.connect(client, host);
+
+        endpoint = (String) ZMQ.getSocketOptionExt(server, ZMQ.ZMQ_LAST_ENDPOINT);
+        assertThat(endpoint, notNullValue());
+
+        rc = ZMQ.connect(client, endpoint);
         assertThat(rc, is(true));
 
         Helper.bounce(server, client);
@@ -162,12 +170,13 @@ public class SecurityNullTest
         server = ZMQ.socket(ctx, ZMQ.ZMQ_DEALER);
         assertThat(server, notNullValue());
         ZMQ.setSocketOption(server, ZMQ.ZMQ_ZAP_DOMAIN, "WRONG");
-        port = Utils.findOpenPort();
-        host = "tcp://127.0.0.1:" + port;
         rc = ZMQ.bind(server, host);
         assertThat(rc, is(true));
 
-        Socket sock = new Socket("127.0.0.1", port);
+        endpoint = (String) ZMQ.getSocketOptionExt(server, ZMQ.ZMQ_LAST_ENDPOINT);
+        assertThat(endpoint, notNullValue());
+
+        Socket sock = new Socket("127.0.0.1", TestUtils.port(endpoint));
         // send anonymous ZMTP/1.0 greeting
         OutputStream out = sock.getOutputStream();
         out.write(new StringBuilder().append(0x01).append(0x00).toString().getBytes(ZMQ.CHARSET));

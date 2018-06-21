@@ -8,16 +8,13 @@ import java.io.IOException;
 
 import org.junit.Test;
 
-import zmq.util.Utils;
-
 public class ConnectRidTest
 {
     @Test
     public void testStream2stream() throws IOException, InterruptedException
     {
         System.out.println("Test Stream 2 stream");
-        int port = Utils.findOpenPort();
-        String host = "tcp://localhost:" + port;
+        String host = "tcp://localhost:*";
 
         Msg msg = new Msg("hi 1".getBytes(ZMQ.CHARSET));
 
@@ -33,6 +30,9 @@ public class ConnectRidTest
 
         boolean rc = ZMQ.bind(bind, host);
         assert (rc);
+
+        host = (String) ZMQ.getSocketOptionExt(bind, ZMQ.ZMQ_LAST_ENDPOINT);
+        assertThat(host, notNullValue());
 
         //  Set up connection stream.
         SocketBase connect = ZMQ.socket(ctx, ZMQ.ZMQ_STREAM);
@@ -89,8 +89,7 @@ public class ConnectRidTest
 
     private void testRouter2router(boolean named) throws IOException, InterruptedException
     {
-        int port = Utils.findOpenPort();
-        String host = "tcp://localhost:" + port;
+        String host = "tcp://localhost:*";
 
         Msg msg = new Msg("hi 1".getBytes(ZMQ.CHARSET));
 
@@ -105,6 +104,9 @@ public class ConnectRidTest
 
         boolean rc = ZMQ.bind(bind, host);
         assert (rc);
+
+        host = (String) ZMQ.getSocketOptionExt(bind, ZMQ.ZMQ_LAST_ENDPOINT);
+        assertThat(host, notNullValue());
 
         //  Set up connection stream.
         SocketBase connect = ZMQ.socket(ctx, ZMQ.ZMQ_ROUTER);

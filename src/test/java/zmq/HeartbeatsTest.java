@@ -12,7 +12,7 @@ import java.net.Socket;
 
 import org.junit.Test;
 
-import zmq.util.Utils;
+import zmq.util.TestUtils;
 
 public class HeartbeatsTest
 {
@@ -21,9 +21,8 @@ public class HeartbeatsTest
     public void testHeartbeatReq() throws IOException
     {
         final int heartbeatInterval = 100;
-        final int port = Utils.findOpenPort();
 
-        final String addr = String.format("tcp://localhost:%s", port);
+        String addr = "tcp://localhost:*";
 
         Ctx ctx = ZMQ.init(1);
         assertThat(ctx, notNullValue());
@@ -32,12 +31,15 @@ public class HeartbeatsTest
         assertThat(req, notNullValue());
         boolean rc = req.setSocketOpt(ZMQ.ZMQ_HEARTBEAT_IVL, heartbeatInterval);
         assertThat(rc, is(true));
-        rc = req.connect(addr);
-        assertThat(rc, is(true));
-
         SocketBase rep = ctx.createSocket(ZMQ.ZMQ_REP);
         assertThat(rep, notNullValue());
         rc = rep.bind(addr);
+        assertThat(rc, is(true));
+
+        addr = (String) ZMQ.getSocketOptionExt(rep, ZMQ.ZMQ_LAST_ENDPOINT);
+        assertThat(addr, notNullValue());
+
+        rc = req.connect(addr);
         assertThat(rc, is(true));
 
         final long start = System.currentTimeMillis();
@@ -70,15 +72,17 @@ public class HeartbeatsTest
         Ctx ctx = ZMQ.createContext();
         assertThat(ctx, notNullValue());
 
-        int port = Utils.findOpenPort();
-        SocketBase server = prepServerSocket(ctx, true, false, port);
+        SocketBase server = prepServerSocket(ctx, true, false);
         assertThat(server, notNullValue());
 
         SocketBase monitor = ZMQ.socket(ctx, ZMQ.ZMQ_PAIR);
         boolean rc = monitor.connect("inproc://monitor");
         assertThat(rc, is(true));
 
-        Socket socket = new Socket("127.0.0.1", port);
+        String endpoint = (String) ZMQ.getSocketOptionExt(server, ZMQ.ZMQ_LAST_ENDPOINT);
+        assertThat(endpoint, notNullValue());
+
+        Socket socket = new Socket("127.0.0.1", TestUtils.port(endpoint));
 
         // Mock a ZMTP 3 client so we can forcibly time out a connection
         mockHandshake(socket);
@@ -109,8 +113,7 @@ public class HeartbeatsTest
         Ctx ctx = ZMQ.createContext();
         assertThat(ctx, notNullValue());
 
-        int port = Utils.findOpenPort();
-        SocketBase server = prepServerSocket(ctx, false, false, port);
+        SocketBase server = prepServerSocket(ctx, false, false);
         assertThat(server, notNullValue());
 
         SocketBase monitor = ZMQ.socket(ctx, ZMQ.ZMQ_PAIR);
@@ -129,7 +132,10 @@ public class HeartbeatsTest
         rc = ZMQ.setSocketOption(client, ZMQ.ZMQ_HEARTBEAT_IVL, 250);
         assertThat(rc, is(true));
 
-        rc = ZMQ.connect(client, "tcp://127.0.0.1:" + port);
+        String endpoint = (String) ZMQ.getSocketOptionExt(server, ZMQ.ZMQ_LAST_ENDPOINT);
+        assertThat(endpoint, notNullValue());
+
+        rc = ZMQ.connect(client, endpoint);
         assertThat(rc, is(true));
 
         // By now everything should report as connected
@@ -174,8 +180,7 @@ public class HeartbeatsTest
         Ctx ctx = ZMQ.createContext();
         assertThat(ctx, notNullValue());
 
-        int port = Utils.findOpenPort();
-        SocketBase server = prepServerSocket(ctx, true, context, curve, port);
+        SocketBase server = prepServerSocket(ctx, true, context, curve);
         assertThat(server, notNullValue());
 
         SocketBase monitor = ZMQ.socket(ctx, ZMQ.ZMQ_PAIR);
@@ -189,7 +194,10 @@ public class HeartbeatsTest
             setupCurve(client, false);
         }
 
-        rc = ZMQ.connect(client, "tcp://127.0.0.1:" + port);
+        String endpoint = (String) ZMQ.getSocketOptionExt(server, ZMQ.ZMQ_LAST_ENDPOINT);
+        assertThat(endpoint, notNullValue());
+
+        rc = ZMQ.connect(client, endpoint);
         assertThat(rc, is(true));
 
         ZMQ.msleep(400);
@@ -208,12 +216,12 @@ public class HeartbeatsTest
         ZMQ.term(ctx);
     }
 
-    private SocketBase prepServerSocket(Ctx ctx, boolean heartBeats, boolean curve, int port)
+    private SocketBase prepServerSocket(Ctx ctx, boolean heartBeats, boolean curve)
     {
-        return prepServerSocket(ctx, heartBeats, new byte[0], curve, port);
+        return prepServerSocket(ctx, heartBeats, new byte[0], curve);
     }
 
-    private SocketBase prepServerSocket(Ctx ctx, boolean heartBeats, byte[] pingContext, boolean curve, int port)
+    private SocketBase prepServerSocket(Ctx ctx, boolean heartBeats, byte[] pingContext, boolean curve)
     {
         SocketBase server = ctx.createSocket(ZMQ.ZMQ_ROUTER);
         assertThat(server, notNullValue());
@@ -233,7 +241,7 @@ public class HeartbeatsTest
             setupCurve(server, true);
         }
 
-        rc = ZMQ.bind(server, "tcp://127.0.0.1:" + port);
+        rc = ZMQ.bind(server, "tcp://127.0.0.1:*");
         assertThat(rc, is(true));
 
         rc = ZMQ.monitorSocket(

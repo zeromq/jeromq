@@ -45,8 +45,7 @@ public class TestPairTcp
     @Test
     public void testPairConnectSecondClientIssue285() throws IOException
     {
-        int port = Utils.findOpenPort();
-        String host = "tcp://127.0.0.1:" + port;
+        String host = "tcp://127.0.0.1:*";
 
         Ctx ctx = ZMQ.init(1);
         assertThat(ctx, notNullValue());
@@ -54,6 +53,9 @@ public class TestPairTcp
         assertThat(bind, notNullValue());
         boolean brc = ZMQ.bind(bind, host);
         assertThat(brc, is(true));
+
+        host = (String) ZMQ.getSocketOptionExt(bind, ZMQ.ZMQ_LAST_ENDPOINT);
+        assertThat(host, notNullValue());
 
         SocketBase first = ZMQ.socket(ctx, ZMQ.ZMQ_PAIR);
         assertThat(first, notNullValue());

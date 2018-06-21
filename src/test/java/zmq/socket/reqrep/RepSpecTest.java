@@ -18,7 +18,6 @@ import zmq.Msg;
 import zmq.SocketBase;
 import zmq.ZMQ;
 import zmq.socket.AbstractSpecTest;
-import zmq.util.Utils;
 
 public class RepSpecTest extends AbstractSpecTest
 {
@@ -26,8 +25,7 @@ public class RepSpecTest extends AbstractSpecTest
     public void testSpecFairQueueIn() throws IOException, InterruptedException
     {
         Ctx ctx = ZMQ.createContext();
-        int port = Utils.findOpenPort();
-        List<String> binds = Arrays.asList("inproc://a", "tcp://127.0.0.1:" + port);
+        List<String> binds = Arrays.asList("inproc://a", "tcp://127.0.0.1:*");
 
         for (String bindAddress : binds) {
             // SHALL receive incoming messages from its peers using a fair-queuing
@@ -42,8 +40,7 @@ public class RepSpecTest extends AbstractSpecTest
     public void testSpecEnvelope() throws IOException, InterruptedException
     {
         Ctx ctx = ZMQ.createContext();
-        int port = Utils.findOpenPort();
-        List<String> binds = Arrays.asList("inproc://a", "tcp://127.0.0.1:" + port);
+        List<String> binds = Arrays.asList("inproc://a", "tcp://127.0.0.1:*");
 
         for (String bindAddress : binds) {
             // For an incoming message:
@@ -68,7 +65,10 @@ public class RepSpecTest extends AbstractSpecTest
         SocketBase dealer = ZMQ.socket(ctx, connectType);
         assertThat(dealer, notNullValue());
 
-        rc = ZMQ.connect(dealer, address);
+        String host = (String) ZMQ.getSocketOptionExt(rep, ZMQ.ZMQ_LAST_ENDPOINT);
+        assertThat(host, notNullValue());
+
+        rc = ZMQ.connect(dealer, host);
         assertThat(rc, is(true));
 
         // minimal envelope
@@ -115,7 +115,10 @@ public class RepSpecTest extends AbstractSpecTest
             rc = ZMQ.setSocketOption(sender, ZMQ.ZMQ_RCVTIMEO, timeout);
             assertThat(rc, is(true));
 
-            rc = ZMQ.connect(sender, address);
+            String host = (String) ZMQ.getSocketOptionExt(rep, ZMQ.ZMQ_LAST_ENDPOINT);
+            assertThat(host, notNullValue());
+
+            rc = ZMQ.connect(sender, host);
             assertThat(rc, is(true));
         }
 

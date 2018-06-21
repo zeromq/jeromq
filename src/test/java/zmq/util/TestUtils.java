@@ -9,6 +9,11 @@ import org.junit.Test;
 
 public class TestUtils
 {
+    public static int port(String endpoint)
+    {
+        return Integer.parseInt(endpoint.substring(endpoint.lastIndexOf(':') + 1));
+    }
+
     @Test
     public void testUnhash()
     {

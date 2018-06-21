@@ -19,7 +19,7 @@ import zmq.SocketBase;
 import zmq.ZError;
 import zmq.ZMQ;
 import zmq.ZMQ.Event;
-import zmq.util.Utils;
+import zmq.util.TestUtils;
 
 public abstract class AbstractProtocolVersion
 {
@@ -60,8 +60,7 @@ public abstract class AbstractProtocolVersion
     protected byte[] assertProtocolVersion(int version, List<ByteBuffer> raws, String payload)
             throws IOException, InterruptedException
     {
-        int port = Utils.findOpenPort();
-        String host = "tcp://localhost:" + port;
+        String host = "tcp://localhost:*";
 
         Ctx ctx = ZMQ.init(1);
         assertThat(ctx, notNullValue());
@@ -81,6 +80,8 @@ public abstract class AbstractProtocolVersion
         rc = ZMQ.bind(receiver, host);
         assertThat(rc, is(true));
 
+        String ep = (String) ZMQ.getSocketOptionExt(receiver, ZMQ.ZMQ_LAST_ENDPOINT);
+        int port = TestUtils.port(ep);
         Socket sender = new Socket("127.0.0.1", port);
         OutputStream out = sender.getOutputStream();
         for (ByteBuffer raw : raws) {

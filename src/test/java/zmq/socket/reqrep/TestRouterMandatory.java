@@ -10,7 +10,6 @@ import zmq.Ctx;
 import zmq.SocketBase;
 import zmq.ZError;
 import zmq.ZMQ;
-import zmq.util.Utils;
 
 public class TestRouterMandatory
 {
@@ -20,8 +19,6 @@ public class TestRouterMandatory
         int rc;
         boolean brc;
 
-        int port = Utils.findOpenPort();
-
         Ctx ctx = ZMQ.init(1);
         assertThat(ctx, notNullValue());
 
@@ -29,7 +26,7 @@ public class TestRouterMandatory
         ZMQ.setSocketOption(sa, ZMQ.ZMQ_SNDHWM, 1);
         assertThat(sa, notNullValue());
 
-        brc = ZMQ.bind(sa, "tcp://127.0.0.1:" + port);
+        brc = ZMQ.bind(sa, "tcp://127.0.0.1:*");
         assertThat(brc, is(true));
 
         // Sending a message to an unknown peer with the default setting
@@ -55,7 +52,10 @@ public class TestRouterMandatory
         ZMQ.setSocketOption(sb, ZMQ.ZMQ_RCVHWM, 1);
         ZMQ.setSocketOption(sb, ZMQ.ZMQ_IDENTITY, "X");
 
-        brc = ZMQ.connect(sb, "tcp://127.0.0.1:" + port);
+        String host = (String) ZMQ.getSocketOptionExt(sa, ZMQ.ZMQ_LAST_ENDPOINT);
+        assertThat(host, notNullValue());
+
+        brc = ZMQ.connect(sb, host);
 
         // wait until connect
         Thread.sleep(1000);

@@ -17,7 +17,6 @@ import zmq.SocketBase;
 import zmq.ZError;
 import zmq.ZMQ;
 import zmq.socket.AbstractSpecTest;
-import zmq.util.Utils;
 
 public class DealerSpecTest extends AbstractSpecTest
 {
@@ -25,8 +24,7 @@ public class DealerSpecTest extends AbstractSpecTest
     public void testSpecFairQueueIn() throws IOException, InterruptedException
     {
         Ctx ctx = ZMQ.createContext();
-        int port = Utils.findOpenPort();
-        List<String> binds = Arrays.asList("inproc://a", "tcp://127.0.0.1:" + port);
+        List<String> binds = Arrays.asList("inproc://a", "tcp://127.0.0.1:*");
 
         for (String bindAddress : binds) {
             // SHALL receive incoming messages from its peers using a fair-queuing
@@ -41,8 +39,7 @@ public class DealerSpecTest extends AbstractSpecTest
     public void testSpecRoundRobinOut() throws IOException, InterruptedException
     {
         Ctx ctx = ZMQ.createContext();
-        int port = Utils.findOpenPort();
-        List<String> binds = Arrays.asList("inproc://a", "tcp://127.0.0.1:" + port);
+        List<String> binds = Arrays.asList("inproc://a", "tcp://127.0.0.1:*");
 
         for (String bindAddress : binds) {
             // SHALL route outgoing messages to available peers using a round-robin
@@ -57,8 +54,7 @@ public class DealerSpecTest extends AbstractSpecTest
     public void testSpecBlockOnSendNoPeers() throws IOException, InterruptedException
     {
         Ctx ctx = ZMQ.createContext();
-        int port = Utils.findOpenPort();
-        List<String> binds = Arrays.asList("inproc://a", "tcp://127.0.0.1:" + port);
+        List<String> binds = Arrays.asList("inproc://a", "tcp://127.0.0.1:*");
 
         for (String bindAddress : binds) {
             // SHALL block on sending, or return a suitable error, when it has no connected peers.
@@ -73,8 +69,7 @@ public class DealerSpecTest extends AbstractSpecTest
     public void testSpecDestroyQueueOnDisconnect() throws IOException, InterruptedException
     {
         Ctx ctx = ZMQ.createContext();
-        int port = Utils.findOpenPort();
-        List<String> binds = Arrays.asList("inproc://a", "tcp://127.0.0.1:" + port);
+        List<String> binds = Arrays.asList("inproc://a", "tcp://127.0.0.1:*");
 
         for (String bindAddress : binds) {
             // SHALL create a double queue when a peer connects to it. If this peer
@@ -136,7 +131,10 @@ public class DealerSpecTest extends AbstractSpecTest
             rc = ZMQ.setSocketOption(reps, ZMQ.ZMQ_RCVTIMEO, timeout);
             assertThat(rc, is(true));
 
-            rc = ZMQ.connect(reps, address);
+            String host = (String) ZMQ.getSocketOptionExt(dealer, ZMQ.ZMQ_LAST_ENDPOINT);
+            assertThat(host, notNullValue());
+
+            rc = ZMQ.connect(reps, host);
             assertThat(rc, is(true));
         }
 
@@ -188,7 +186,10 @@ public class DealerSpecTest extends AbstractSpecTest
             rc = ZMQ.setSocketOption(sender, ZMQ.ZMQ_RCVTIMEO, timeout);
             assertThat(rc, is(true));
 
-            rc = ZMQ.connect(sender, address);
+            String host = (String) ZMQ.getSocketOptionExt(receiver, ZMQ.ZMQ_LAST_ENDPOINT);
+            assertThat(host, notNullValue());
+
+            rc = ZMQ.connect(sender, host);
             assertThat(rc, is(true));
         }
 

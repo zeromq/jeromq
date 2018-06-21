@@ -20,6 +20,7 @@ import zmq.SocketBase;
 import zmq.ZError;
 import zmq.ZMQ;
 import zmq.io.mechanism.curve.Curve;
+import zmq.util.TestUtils;
 import zmq.util.Utils;
 import zmq.util.Z85;
 
@@ -149,8 +150,7 @@ public class SecurityCurveTest
         String serverPublic = serverKeys[0];
         String serverSecret = serverKeys[1];
 
-        int port = Utils.findOpenPort();
-        String host = "tcp://127.0.0.1:" + port;
+        String host = "tcp://127.0.0.1:*";
 
         Ctx ctx = ZMQ.createContext();
 
@@ -174,6 +174,9 @@ public class SecurityCurveTest
         ZMQ.setSocketOption(server, ZMQ.ZMQ_IDENTITY, "IDENT");
         rc = ZMQ.bind(server, host);
         assertThat(rc, is(true));
+
+        host = (String) ZMQ.getSocketOptionExt(server, ZMQ.ZMQ_LAST_ENDPOINT);
+        int port = TestUtils.port(host);
 
         //  Check CURVE security with valid credentials
         System.out.println("Test Correct CURVE security");

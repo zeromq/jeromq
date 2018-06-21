@@ -11,7 +11,6 @@ import zmq.Msg;
 import zmq.SocketBase;
 import zmq.ZError;
 import zmq.ZMQ;
-import zmq.util.Utils;
 
 public class RouterMandatoryTest
 {
@@ -21,15 +20,13 @@ public class RouterMandatoryTest
         int sent;
         boolean rc;
 
-        int port = Utils.findOpenPort();
-
         Ctx ctx = ZMQ.init(1);
         assertThat(ctx, notNullValue());
 
         SocketBase router = ZMQ.socket(ctx, ZMQ.ZMQ_ROUTER);
         assertThat(router, notNullValue());
 
-        rc = ZMQ.bind(router, "tcp://127.0.0.1:" + port);
+        rc = ZMQ.bind(router, "tcp://127.0.0.1:*");
         assertThat(rc, is(true));
 
         // Sending a message to an unknown peer with the default setting
@@ -56,7 +53,10 @@ public class RouterMandatoryTest
 
         ZMQ.setSocketOption(dealer, ZMQ.ZMQ_IDENTITY, "X");
 
-        rc = ZMQ.connect(dealer, "tcp://127.0.0.1:" + port);
+        String host = (String) ZMQ.getSocketOptionExt(router, ZMQ.ZMQ_LAST_ENDPOINT);
+        assertThat(host, notNullValue());
+
+        rc = ZMQ.connect(dealer, host);
         assertThat(rc, is(true));
 
         //  Get message from dealer to know when connection is ready
@@ -89,8 +89,6 @@ public class RouterMandatoryTest
 
         System.out.print("Starting router mandatory HWM test");
 
-        int port = Utils.findOpenPort();
-
         Ctx ctx = ZMQ.init(1);
         assertThat(ctx, notNullValue());
 
@@ -101,7 +99,7 @@ public class RouterMandatoryTest
         ZMQ.setSocketOption(router, ZMQ.ZMQ_SNDHWM, 1);
         ZMQ.setSocketOption(router, ZMQ.ZMQ_LINGER, 1);
 
-        rc = ZMQ.bind(router, "tcp://127.0.0.1:" + port);
+        rc = ZMQ.bind(router, "tcp://127.0.0.1:*");
         assertThat(rc, is(true));
 
         //  Create dealer called "X" and connect it to our router, configure HWM
@@ -111,7 +109,10 @@ public class RouterMandatoryTest
         ZMQ.setSocketOption(dealer, ZMQ.ZMQ_RCVHWM, 1);
         ZMQ.setSocketOption(dealer, ZMQ.ZMQ_IDENTITY, "X");
 
-        rc = ZMQ.connect(dealer, "tcp://127.0.0.1:" + port);
+        String host = (String) ZMQ.getSocketOptionExt(router, ZMQ.ZMQ_LAST_ENDPOINT);
+        assertThat(host, notNullValue());
+
+        rc = ZMQ.connect(dealer, host);
         assertThat(rc, is(true));
 
         System.out.print(".");

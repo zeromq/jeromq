@@ -8,27 +8,23 @@ import java.io.IOException;
 
 import org.junit.Test;
 
-import zmq.util.Utils;
-
 public class TestShutdownStress
 {
     private static final int THREAD_COUNT = 100;
 
     class Worker implements Runnable
     {
-        int        port;
         SocketBase s;
 
         Worker(SocketBase s) throws IOException
         {
-            this.port = Utils.findOpenPort();
             this.s = s;
         }
 
         @Override
         public void run()
         {
-            boolean rc = ZMQ.connect(s, "tcp://127.0.0.1:" + port);
+            boolean rc = ZMQ.connect(s, "tcp://127.0.0.1:*");
             assertThat(rc, is(true));
 
             //  Start closing the socket while the connecting process is underway.
@@ -41,8 +37,6 @@ public class TestShutdownStress
     {
         Thread[] threads = new Thread[THREAD_COUNT];
 
-        int randomPort = Utils.findOpenPort();
-
         for (int j = 0; j != 10; j++) {
             Ctx ctx = ZMQ.init(7);
             assertThat(ctx, notNullValue());
@@ -50,7 +44,7 @@ public class TestShutdownStress
             SocketBase s1 = ZMQ.socket(ctx, ZMQ.ZMQ_PUB);
             assertThat(s1, notNullValue());
 
-            boolean rc = ZMQ.bind(s1, "tcp://127.0.0.1:" + randomPort);
+            boolean rc = ZMQ.bind(s1, "tcp://127.0.0.1:*");
             assertThat(rc, is(true));
 
             for (int i = 0; i != THREAD_COUNT; i++) {
