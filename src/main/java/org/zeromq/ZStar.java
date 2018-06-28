@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.LockSupport;
+import java.util.function.BiFunction;
 
 import org.zeromq.ZMQ.Socket;
 import org.zeromq.ZThread.IAttachedRunnable;
@@ -122,6 +122,7 @@ public class ZStar implements ZAgent
     /**
      * Utility class with callback for when the Star has finished its performances.
      */
+    @FunctionalInterface
     public interface TimeTaker
     {
         /**
@@ -131,13 +132,12 @@ public class ZStar implements ZAgent
          * @param ctx the shadow context
          */
         void party(ZContext ctx);
-
     }
 
     // party time easily done. Wait for the specified amount of time
     public static void party(long time, TimeUnit unit)
     {
-        LockSupport.parkNanos(TimeUnit.NANOSECONDS.convert(time, unit));
+        ZMQ.sleep(time, unit);
     }
 
     // contract for a creator of stars
@@ -301,7 +301,28 @@ public class ZStar implements ZAgent
     public ZStar(final ZContext context, final SelectorCreator selector, final Fortune fortune, String motdelafin,
             final Object... bags)
     {
+        this(context, selector, fortune, ZAgent.Creator::create, motdelafin, bags);
+    }
+
+    /**
+     * Creates a new ZStar.
+     *
+     * @param context
+     *            the main context used. If null, a new context will be created
+     *            and closed at the stop of the operation.
+     * <b>If not null, it is the responsibility of the caller to close it.</b>
+     *
+     * @param selector   the creator of the selector used on the Plateau.
+     * @param fortune    the creator of stars on the Plateau. Not null.
+     * @param agent      the creator of the agent. Not null.
+     * @param motdelafin the final word used to mark the end of the star. Null to disable this mechanism.
+     * @param bags       the optional arguments that will be passed to the distant star
+     */
+    public ZStar(final ZContext context, final SelectorCreator selector, final Fortune fortune,
+            BiFunction<Socket, String, ZAgent> agent, String motdelafin, final Object... bags)
+    {
         super();
+        assert (agent != null);
         assert (fortune != null);
         // entering platform to load trucks
 
@@ -353,7 +374,7 @@ public class ZStar implements ZAgent
         // now going to the plateau
         Socket phone = ZThread.fork(chef, plateau, train.toArray());
 
-        agent = agent(phone, motdelafin);
+        this.agent = agent.apply(phone, motdelafin);
     }
 
     // context of the star. never null
@@ -368,14 +389,11 @@ public class ZStar implements ZAgent
     /**
      * Creates a new agent for the star.
      *
-     * This method is called in the constructor so don't rely on private members to do the job.
-     * Apart from that, it is the last call so can be safely overridden from the ZStar point-of-view
-     * BUT if you don't make it final, one of your subclass could make you misery...
-     *
      * @param phone   the socket used to communicate with the star
      * @param secret  the specific keyword indicating the death of the star and locking the agent. Null to override the lock mechanism.
      * @return the newly created agent for the star.
      */
+    @Deprecated
     protected ZAgent agent(Socket phone, String secret)
     {
         return ZAgent.Creator.create(phone, secret);
