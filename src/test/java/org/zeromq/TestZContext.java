@@ -9,7 +9,6 @@ import org.zeromq.ZMQ.Socket;
 
 public class TestZContext
 {
-    @SuppressWarnings("deprecation")
     @Test
     public void testZContext()
     {
@@ -86,10 +85,10 @@ public class TestZContext
         try {
             Socket s = ctx.createSocket(SocketType.PUB);
             assertThat(s, notNullValue());
-            assertThat(s.getType(), is(SocketType.PUB));
+            assertThat(s.getSocketType(), is(SocketType.PUB));
             Socket s1 = ctx.createSocket(SocketType.REQ);
             assertThat(s1, notNullValue());
-            assertThat(s1.getType(), is(SocketType.REQ));
+            assertThat(s1.getSocketType(), is(SocketType.REQ));
             assertThat(ctx.getSockets().size(), is(2));
         }
         finally {

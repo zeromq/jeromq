@@ -1183,7 +1183,7 @@ public class TestZMQ
         final Socket socket = ctx.socket(SocketType.REQ);
         assertThat(socket, notNullValue());
 
-        SocketType rc = socket.getType();
+        SocketType rc = socket.getSocketType();
         assertThat(rc, is(SocketType.REQ));
 
         socket.close();
