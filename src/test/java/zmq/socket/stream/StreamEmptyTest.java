@@ -12,15 +12,13 @@ import zmq.Ctx;
 import zmq.Msg;
 import zmq.SocketBase;
 import zmq.ZMQ;
-import zmq.util.Utils;
 
 public class StreamEmptyTest
 {
     @Test
     public void testStreamEmpty() throws IOException, InterruptedException
     {
-        int port = Utils.findOpenPort();
-        String host = "tcp://localhost:" + port;
+        String host = "tcp://localhost:*";
 
         Ctx ctx = ZMQ.init(1);
         assert (ctx != null);
@@ -31,6 +29,9 @@ public class StreamEmptyTest
 
         boolean rc = ZMQ.bind(bind, host);
         assert (rc);
+
+        host = (String) ZMQ.getSocketOptionExt(bind, ZMQ.ZMQ_LAST_ENDPOINT);
+        assertThat(host, notNullValue());
 
         //  Set up connection stream.
         SocketBase connect = ZMQ.socket(ctx, ZMQ.ZMQ_DEALER);

@@ -1,6 +1,7 @@
 package zmq.socket.pubsub;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertThat;
 
 import java.io.IOException;
@@ -11,7 +12,6 @@ import zmq.Ctx;
 import zmq.SocketBase;
 import zmq.ZError;
 import zmq.ZMQ;
-import zmq.util.Utils;
 
 public class PubSubHwmTest
 {
@@ -144,7 +144,6 @@ public class PubSubHwmTest
         int secondCount = 1100;
         int hwm = 11024;
 
-        int port = Utils.findOpenPort();
         Ctx ctx = ZMQ.createContext();
 
         // Set up bind socket
@@ -152,8 +151,11 @@ public class PubSubHwmTest
         boolean rc = ZMQ.setSocketOption(pub, ZMQ.ZMQ_SNDHWM, hwm);
         assertThat(rc, is(true));
 
-        rc = ZMQ.bind(pub, "tcp://localhost:" + port);
+        rc = ZMQ.bind(pub, "tcp://localhost:*");
         assertThat(rc, is(true));
+
+        String host = (String) ZMQ.getSocketOptionExt(pub, ZMQ.ZMQ_LAST_ENDPOINT);
+        assertThat(host, notNullValue());
 
         // Set up connect socket
         SocketBase sub = ctx.createSocket(ZMQ.ZMQ_SUB);
@@ -161,7 +163,7 @@ public class PubSubHwmTest
         rc = ZMQ.setSocketOption(sub, ZMQ.ZMQ_RCVHWM, hwm);
         assertThat(rc, is(true));
 
-        rc = ZMQ.connect(sub, "tcp://localhost:" + port);
+        rc = ZMQ.connect(sub, host);
         assertThat(rc, is(true));
 
         rc = ZMQ.setSocketOption(sub, ZMQ.ZMQ_SUBSCRIBE, new byte[0]);

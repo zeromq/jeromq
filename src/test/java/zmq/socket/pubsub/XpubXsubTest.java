@@ -24,8 +24,6 @@ public class XpubXsubTest
     @Test
     public void testXpubSub() throws InterruptedException, IOException, ExecutionException
     {
-        final int port = Utils.findOpenPort();
-
         final Ctx ctx = zmq.ZMQ.createContext();
         assertThat(ctx, notNullValue());
 
@@ -37,12 +35,14 @@ public class XpubXsubTest
         rc = zmq.ZMQ.setSocketOption(sub, zmq.ZMQ.ZMQ_SUBSCRIBE, "topix");
         assertThat(rc, is(true));
 
-        rc = zmq.ZMQ.connect(sub, "tcp://127.0.0.1:" + port);
+        SocketBase pub = zmq.ZMQ.socket(ctx, zmq.ZMQ.ZMQ_XPUB);
+        rc = zmq.ZMQ.bind(pub, "tcp://127.0.0.1:*");
         assertThat(rc, is(true));
 
-        SocketBase pub = zmq.ZMQ.socket(ctx, zmq.ZMQ.ZMQ_XPUB);
+        String endpoint = (String) ZMQ.getSocketOptionExt(pub, ZMQ.ZMQ_LAST_ENDPOINT);
+        assertThat(endpoint, notNullValue());
 
-        rc = zmq.ZMQ.bind(pub, "tcp://127.0.0.1:" + port);
+        rc = zmq.ZMQ.connect(sub, endpoint);
         assertThat(rc, is(true));
 
         zmq.ZMQ.msleep(1000);
@@ -96,22 +96,21 @@ public class XpubXsubTest
     @Test
     public void testXpubXSub() throws InterruptedException, IOException, ExecutionException
     {
-        final int port = Utils.findOpenPort();
-
         final Ctx ctx = zmq.ZMQ.createContext();
         assertThat(ctx, notNullValue());
 
         boolean rc;
         Msg msg;
 
-        SocketBase sub = zmq.ZMQ.socket(ctx, zmq.ZMQ.ZMQ_XSUB);
-
-        rc = zmq.ZMQ.connect(sub, "tcp://127.0.0.1:" + port);
+        SocketBase pub = zmq.ZMQ.socket(ctx, zmq.ZMQ.ZMQ_XPUB);
+        rc = zmq.ZMQ.bind(pub, "tcp://127.0.0.1:*");
         assertThat(rc, is(true));
 
-        SocketBase pub = zmq.ZMQ.socket(ctx, zmq.ZMQ.ZMQ_XPUB);
+        String endpoint = (String) ZMQ.getSocketOptionExt(pub, ZMQ.ZMQ_LAST_ENDPOINT);
+        assertThat(endpoint, notNullValue());
 
-        rc = zmq.ZMQ.bind(pub, "tcp://127.0.0.1:" + port);
+        SocketBase sub = zmq.ZMQ.socket(ctx, zmq.ZMQ.ZMQ_XSUB);
+        rc = zmq.ZMQ.connect(sub, endpoint);
         assertThat(rc, is(true));
 
         zmq.ZMQ.msleep(300);

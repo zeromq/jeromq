@@ -10,14 +10,12 @@ import zmq.Ctx;
 import zmq.Msg;
 import zmq.SocketBase;
 import zmq.ZMQ;
-import zmq.util.Utils;
 
 public class TestPubsubTcp
 {
     @Test
     public void testPubsubTcp() throws Exception
     {
-        int port = Utils.findOpenPort();
         Ctx ctx = ZMQ.createContext();
         assertThat(ctx, notNullValue());
 
@@ -25,8 +23,11 @@ public class TestPubsubTcp
         assertThat(pubBind, notNullValue());
         ZMQ.setSocketOption(pubBind, ZMQ.ZMQ_XPUB_NODROP, true);
 
-        boolean rc = ZMQ.bind(pubBind, "tcp://127.0.0.1:" + port);
+        boolean rc = ZMQ.bind(pubBind, "tcp://127.0.0.1:*");
         assertThat(rc, is(true));
+
+        String host = (String) ZMQ.getSocketOptionExt(pubBind, ZMQ.ZMQ_LAST_ENDPOINT);
+        assertThat(host, notNullValue());
 
         SocketBase subConnect = ZMQ.socket(ctx, ZMQ.ZMQ_SUB);
         assertThat(subConnect, notNullValue());
@@ -34,7 +35,7 @@ public class TestPubsubTcp
         rc = subConnect.setSocketOpt(ZMQ.ZMQ_SUBSCRIBE, "topic");
         assertThat(rc, is(true));
 
-        rc = ZMQ.connect(subConnect, "tcp://127.0.0.1:" + port);
+        rc = ZMQ.connect(subConnect, host);
         assertThat(rc, is(true));
 
         ZMQ.sleep(1);

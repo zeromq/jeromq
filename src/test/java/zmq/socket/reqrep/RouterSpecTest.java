@@ -19,7 +19,6 @@ import zmq.Msg;
 import zmq.SocketBase;
 import zmq.ZMQ;
 import zmq.socket.AbstractSpecTest;
-import zmq.util.Utils;
 
 public class RouterSpecTest extends AbstractSpecTest
 {
@@ -27,8 +26,7 @@ public class RouterSpecTest extends AbstractSpecTest
     public void testFairQueueIn() throws IOException, InterruptedException
     {
         Ctx ctx = ZMQ.createContext();
-        int port = Utils.findOpenPort();
-        List<String> binds = Arrays.asList("inproc://a", "tcp://127.0.0.1:" + port);
+        List<String> binds = Arrays.asList("inproc://a", "tcp://127.0.0.1:*");
 
         for (String bindAddress : binds) {
             // SHALL receive incoming messages from its peers using a fair-queuing
@@ -44,8 +42,7 @@ public class RouterSpecTest extends AbstractSpecTest
     public void testDestroyQueueOnDisconnect() throws IOException, InterruptedException
     {
         Ctx ctx = ZMQ.createContext();
-        int port = Utils.findOpenPort();
-        List<String> binds = Arrays.asList("inproc://a", "tcp://127.0.0.1:" + port);
+        List<String> binds = Arrays.asList("inproc://a", "tcp://127.0.0.1:*");
 
         for (String bindAddress : binds) {
             // SHALL create a double queue when a peer connects to it. If this peer
@@ -71,6 +68,9 @@ public class RouterSpecTest extends AbstractSpecTest
 
         rc = ZMQ.bind(receiver, address);
         assertThat(rc, is(true));
+
+        address = (String) ZMQ.getSocketOptionExt(receiver, ZMQ.ZMQ_LAST_ENDPOINT);
+        assertThat(address, notNullValue());
 
         int services = 5;
         List<SocketBase> senders = new ArrayList<>();

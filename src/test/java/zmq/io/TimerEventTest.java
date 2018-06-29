@@ -15,7 +15,7 @@ import zmq.Ctx;
 import zmq.SocketBase;
 import zmq.ZError;
 import zmq.ZMQ;
-import zmq.util.Utils;
+import zmq.util.TestUtils;
 
 public class TimerEventTest
 {
@@ -64,7 +64,6 @@ public class TimerEventTest
     @Test
     public void testHandshakeTimeout() throws IOException, InterruptedException
     {
-        int port = Utils.findOpenPort();
         int handshakeInterval = 10;
 
         Ctx ctx = ZMQ.createContext();
@@ -82,10 +81,13 @@ public class TimerEventTest
         SocketMonitor monitor = new SocketMonitor(ctx, "inproc://monitor");
         monitor.start();
 
-        rc = ZMQ.bind(socket, "tcp://127.0.0.1:" + port);
+        rc = ZMQ.bind(socket, "tcp://127.0.0.1:*");
         assertThat(rc, is(true));
 
-        Socket sender = new Socket("127.0.0.1", port);
+        String endpoint = (String) ZMQ.getSocketOptionExt(socket, ZMQ.ZMQ_LAST_ENDPOINT);
+        assertThat(endpoint, notNullValue());
+
+        Socket sender = new Socket("127.0.0.1", TestUtils.port(endpoint));
         OutputStream out = sender.getOutputStream();
         out.write(incompleteHandshake());
         out.flush();

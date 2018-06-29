@@ -7,8 +7,6 @@ import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
-import zmq.util.Utils;
-
 public class TestMonitor
 {
     static class SocketMonitor extends Thread
@@ -64,8 +62,7 @@ public class TestMonitor
     @Test
     public void testMonitor() throws Exception
     {
-        int port = Utils.findOpenPort();
-        String addr = "tcp://127.0.0.1:" + port;
+        String addr = "tcp://127.0.0.1:*";
         SocketMonitor[] threads = new SocketMonitor[3];
         //  Create the infrastructure
         Ctx ctx = ZMQ.init(1);
@@ -91,6 +88,9 @@ public class TestMonitor
         ZMQ.sleep(1);
         rc = ZMQ.bind(rep, addr);
         assertThat(rc, is(true));
+
+        addr = (String) ZMQ.getSocketOptionExt(rep, ZMQ.ZMQ_LAST_ENDPOINT);
+        assertThat(addr, notNullValue());
 
         SocketBase req = ZMQ.socket(ctx, ZMQ.ZMQ_REQ);
         assertThat(req, notNullValue());

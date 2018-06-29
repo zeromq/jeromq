@@ -13,7 +13,6 @@ import zmq.Ctx;
 import zmq.Msg;
 import zmq.SocketBase;
 import zmq.ZMQ;
-import zmq.util.Utils;
 
 public class StreamTest
 {
@@ -30,8 +29,7 @@ public class StreamTest
         standardGreeting[14] = 'L';
         standardGreeting[15] = 'L';
 
-        int port = Utils.findOpenPort();
-        String host = "tcp://localhost:" + port;
+        String host = "tcp://localhost:*";
 
         Ctx ctx = ZMQ.init(1);
         assertThat(ctx, notNullValue());
@@ -45,6 +43,9 @@ public class StreamTest
 
         rc = ZMQ.bind(stream, host);
         assertThat(rc, is(true));
+
+        host = (String) ZMQ.getSocketOptionExt(stream, ZMQ.ZMQ_LAST_ENDPOINT);
+        assertThat(host, notNullValue());
 
         //  We'll be using this socket as the other peer
         SocketBase dealer = ZMQ.socket(ctx, ZMQ.ZMQ_DEALER);
@@ -212,8 +213,7 @@ public class StreamTest
     @Test
     public void testStream2stream() throws IOException, InterruptedException
     {
-        int port = Utils.findOpenPort();
-        String host = "tcp://localhost:" + port;
+        String host = "tcp://localhost:*";
 
         Ctx ctx = ZMQ.init(1);
         assertThat(ctx, notNullValue());
@@ -224,6 +224,9 @@ public class StreamTest
 
         boolean rc = ZMQ.bind(bind, host);
         assertThat(rc, is(true));
+
+        host = (String) ZMQ.getSocketOptionExt(bind, ZMQ.ZMQ_LAST_ENDPOINT);
+        assertThat(host, notNullValue());
 
         //  Set up connection stream.
         SocketBase connect = ZMQ.socket(ctx, ZMQ.ZMQ_STREAM);

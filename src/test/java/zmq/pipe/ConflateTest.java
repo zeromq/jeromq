@@ -9,7 +9,6 @@ import zmq.Ctx;
 import zmq.Helper;
 import zmq.SocketBase;
 import zmq.ZMQ;
-import zmq.util.Utils;
 
 public class ConflateTest
 {
@@ -22,8 +21,7 @@ public class ConflateTest
         SocketBase in = ZMQ.socket(ctx, ZMQ.ZMQ_PULL);
         assert (in != null);
 
-        int port = Utils.findOpenPort();
-        String host = "tcp://localhost:" + port;
+        String host = "tcp://localhost:*";
         int conflate = 1;
 
         ZMQ.setSocketOption(in, ZMQ.ZMQ_CONFLATE, conflate);
@@ -34,7 +32,8 @@ public class ConflateTest
         SocketBase out = ZMQ.socket(ctx, ZMQ.ZMQ_PUSH);
         assert (out != null);
 
-        rc = ZMQ.connect(out, host);
+        String ep = (String) ZMQ.getSocketOptionExt(in, ZMQ.ZMQ_LAST_ENDPOINT);
+        rc = ZMQ.connect(out, ep);
         assert (rc);
 
         int messageCount = 20;

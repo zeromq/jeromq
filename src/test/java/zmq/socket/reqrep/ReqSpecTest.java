@@ -18,7 +18,6 @@ import zmq.SocketBase;
 import zmq.ZError;
 import zmq.ZMQ;
 import zmq.socket.AbstractSpecTest;
-import zmq.util.Utils;
 
 public class ReqSpecTest extends AbstractSpecTest
 {
@@ -26,8 +25,7 @@ public class ReqSpecTest extends AbstractSpecTest
     public void testSpecMessageFormat() throws IOException, InterruptedException
     {
         Ctx ctx = ZMQ.createContext();
-        int port = Utils.findOpenPort();
-        List<String> binds = Arrays.asList("inproc://a", "tcp://127.0.0.1:" + port);
+        List<String> binds = Arrays.asList("inproc://a", "tcp://127.0.0.1:*");
 
         for (String bindAddress : binds) {
             // The request and reply messages SHALL have this format on the wire:
@@ -44,8 +42,7 @@ public class ReqSpecTest extends AbstractSpecTest
     public void testSpecRoundRobinOut() throws IOException, InterruptedException
     {
         Ctx ctx = ZMQ.createContext();
-        int port = Utils.findOpenPort();
-        List<String> binds = Arrays.asList("inproc://a", "tcp://127.0.0.1:" + port);
+        List<String> binds = Arrays.asList("inproc://a", "tcp://127.0.0.1:*");
 
         for (String bindAddress : binds) {
             // SHALL route outgoing messages to connected peers using a round-robin
@@ -60,8 +57,7 @@ public class ReqSpecTest extends AbstractSpecTest
     public void testSpecBlockOnSendNoPeers() throws IOException, InterruptedException
     {
         Ctx ctx = ZMQ.createContext();
-        int port = Utils.findOpenPort();
-        List<String> binds = Arrays.asList("inproc://a", "tcp://127.0.0.1:" + port);
+        List<String> binds = Arrays.asList("inproc://a", "tcp://127.0.0.1:*");
 
         for (String bindAddress : binds) {
             // SHALL block on sending, or return a suitable error, when it has no
@@ -77,8 +73,7 @@ public class ReqSpecTest extends AbstractSpecTest
     public void testSpecOnlyListensToCurrentPeer() throws IOException, InterruptedException
     {
         Ctx ctx = ZMQ.createContext();
-        int port = Utils.findOpenPort();
-        List<String> binds = Arrays.asList("inproc://a", "tcp://127.0.0.1:" + port);
+        List<String> binds = Arrays.asList("inproc://a", "tcp://127.0.0.1:*");
 
         for (String bindAddress : binds) {
             // SHALL accept an incoming message only from the last peer that it sent a
@@ -117,7 +112,10 @@ public class ReqSpecTest extends AbstractSpecTest
             rc = ZMQ.setSocketOption(connect, ZMQ.ZMQ_ROUTER_MANDATORY, true);
             assertThat(rc, is(true));
 
-            rc = ZMQ.connect(connect, bindAddress);
+            String host = (String) ZMQ.getSocketOptionExt(socket, ZMQ.ZMQ_LAST_ENDPOINT);
+            assertThat(host, notNullValue());
+
+            rc = ZMQ.connect(connect, host);
             assertThat(rc, is(true));
         }
 
@@ -203,7 +201,10 @@ public class ReqSpecTest extends AbstractSpecTest
             rc = ZMQ.setSocketOption(reps, ZMQ.ZMQ_RCVTIMEO, timeout);
             assertThat(rc, is(true));
 
-            rc = ZMQ.connect(reps, address);
+            String host = (String) ZMQ.getSocketOptionExt(req, ZMQ.ZMQ_LAST_ENDPOINT);
+            assertThat(host, notNullValue());
+
+            rc = ZMQ.connect(reps, host);
             assertThat(rc, is(true));
         }
 
@@ -246,7 +247,10 @@ public class ReqSpecTest extends AbstractSpecTest
         SocketBase router = ZMQ.socket(ctx, connectType);
         assertThat(router, notNullValue());
 
-        rc = ZMQ.connect(router, address);
+        String host = (String) ZMQ.getSocketOptionExt(req, ZMQ.ZMQ_LAST_ENDPOINT);
+        assertThat(host, notNullValue());
+
+        rc = ZMQ.connect(router, host);
         assertThat(rc, is(true));
 
         // Send a multi-part request.
