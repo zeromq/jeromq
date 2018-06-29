@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.util.Arrays;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 import zmq.Config;
 import zmq.Msg;
@@ -35,16 +37,7 @@ import zmq.util.Wire;
 // e.g. TCP socket or an UNIX domain socket.
 public class StreamEngine implements IEngine, IPollEvents
 {
-    private final class ProducePingMessage extends MessageProcessor.Adapter
-    {
-        @Override
-        public Msg nextMsg()
-        {
-            return producePingMessage();
-        }
-    }
-
-    private final class ProducePongMessage extends MessageProcessor.Adapter
+    private final class ProducePongMessage implements Supplier<Msg>
     {
         private final byte[] pingContext;
 
@@ -55,162 +48,9 @@ public class StreamEngine implements IEngine, IPollEvents
         }
 
         @Override
-        public Msg nextMsg()
+        public Msg get()
         {
             return producePongMessage(pingContext);
-        }
-    }
-
-    private final class HandshakeCommand extends MessageProcessor.Adapter
-    {
-        @Override
-        public Msg nextMsg()
-        {
-            return nextHandshakeCommand();
-        }
-
-        @Override
-        public boolean processMsg(Msg msg)
-        {
-            return processHandshakeCommand(msg);
-        }
-    }
-
-    private final class PushMsgToSession extends MessageProcessor.Adapter
-    {
-        @Override
-        public Msg nextMsg()
-        {
-            return pullMsgFromSession();
-        }
-
-        @Override
-        public boolean processMsg(Msg msg)
-        {
-            return pushMsgToSession(msg);
-        }
-    }
-
-    private final class PushRawMsgToSession extends MessageProcessor.Adapter
-    {
-        @Override
-        public boolean processMsg(Msg msg)
-        {
-            return pushRawMsgToSession(msg);
-        }
-    }
-
-    private final class WriteCredential extends MessageProcessor.Adapter
-    {
-        @Override
-        public boolean processMsg(Msg msg)
-        {
-            return writeCredential(msg);
-        }
-    }
-
-    private final class DecodeAndPush extends MessageProcessor.Adapter
-    {
-        @Override
-        public boolean processMsg(Msg msg)
-        {
-            assert (mechanism != null);
-
-            msg = mechanism.decode(msg);
-            if (msg == null) {
-                return false;
-            }
-            if (hasTimeoutTimer) {
-                hasTimeoutTimer = false;
-                ioObject.cancelTimer(HEARTBEAT_TIMEOUT_TIMER_ID);
-            }
-            if (hasTtlTimer) {
-                hasTtlTimer = false;
-                ioObject.cancelTimer(HEARTBEAT_TTL_TIMER_ID);
-            }
-            if (msg.isCommand()) {
-                StreamEngine.this.processHeartbeatMessage(msg);
-            }
-
-            if (metadata != null) {
-                msg.setMetadata(metadata);
-            }
-            boolean rc = session.pushMsg(msg);
-            if (!rc) {
-                if (errno.is(ZError.EAGAIN)) {
-                    processMsg = pushOneThenDecodeAndPush;
-                }
-                return false;
-            }
-            return true;
-        }
-    }
-
-    private final class PullAndEncode extends MessageProcessor.Adapter
-    {
-        @Override
-        public Msg nextMsg()
-        {
-            assert (mechanism != null);
-
-            Msg msg = session.pullMsg();
-            if (msg == null) {
-                return null;
-
-            }
-            msg = mechanism.encode(msg);
-            return msg;
-        }
-    }
-
-    private final class PushOneThenDecodeAndPush extends MessageProcessor.Adapter
-    {
-        @Override
-        public boolean processMsg(Msg msg)
-        {
-            boolean rc = session.pushMsg(msg);
-            if (rc) {
-                processMsg = decodeAndPush;
-            }
-            return rc;
-        }
-    }
-
-    private final class Identity implements MessageProcessor
-    {
-        @Override
-        public Msg nextMsg()
-        {
-            return identityMsg();
-        }
-
-        @Override
-        public boolean processMsg(Msg msg)
-        {
-            return processIdentityMsg(msg);
-        }
-    }
-
-    // used to implement FSM actions
-    private interface MessageProcessor
-    {
-        Msg nextMsg();
-
-        boolean processMsg(Msg msg);
-
-        public static class Adapter implements MessageProcessor
-        {
-            @Override
-            public Msg nextMsg()
-            {
-                throw new UnsupportedOperationException("nextMsg is not implemented and should not be used here");
-            }
-
-            @Override
-            public boolean processMsg(Msg msg)
-            {
-                throw new UnsupportedOperationException("processMsg is not implemented and should not be used here");
-            }
         }
     }
 
@@ -290,8 +130,8 @@ public class StreamEngine implements IEngine, IPollEvents
 
     private boolean plugged;
 
-    private MessageProcessor nextMsg;
-    private MessageProcessor processMsg;
+    private Supplier<Msg>          nextMsg;
+    private Function<Msg, Boolean> processMsg;
 
     private boolean ioError;
 
@@ -338,8 +178,8 @@ public class StreamEngine implements IEngine, IPollEvents
         greetingSize = V2_GREETING_SIZE;
         this.options = options;
         this.endpoint = endpoint;
-        nextMsg = identity;
-        processMsg = identity;
+        nextMsg = nextIdentity;
+        processMsg = processIdentity;
 
         outpos = new ValueReference<>();
 
@@ -590,7 +430,7 @@ public class StreamEngine implements IEngine, IPollEvents
             }
 
             Msg msg = decoder.msg();
-            rc = processMsg.processMsg(msg);
+            rc = processMsg.apply(msg);
             if (!rc) {
                 break;
             }
@@ -630,7 +470,7 @@ public class StreamEngine implements IEngine, IPollEvents
             outsize = encoder.encode(outpos, 0);
 
             while (outsize < Config.OUT_BATCH_SIZE.getValue()) {
-                Msg msg = nextMsg.nextMsg();
+                Msg msg = nextMsg.get();
                 if (msg == null) {
                     break;
                 }
@@ -707,7 +547,7 @@ public class StreamEngine implements IEngine, IPollEvents
 
         boolean rc;
         Msg msg = decoder.msg();
-        rc = processMsg.processMsg(msg);
+        rc = processMsg.apply(msg);
         if (!rc) {
             if (errno.is(ZError.EAGAIN)) {
                 session.flush();
@@ -732,7 +572,7 @@ public class StreamEngine implements IEngine, IPollEvents
                 break;
             }
             msg = decoder.msg();
-            rc = processMsg.processMsg(msg);
+            rc = processMsg.apply(msg);
             if (!rc) {
                 break;
             }
@@ -904,7 +744,7 @@ public class StreamEngine implements IEngine, IPollEvents
             //  will come from the socket.
             nextMsg = pullMsgFromSession;
             //  We are expecting identity message.
-            processMsg = identity;
+            processMsg = processIdentity;
 
         }
         else if (greetingRecv.get(revisionPos) == Protocol.V1.revision) {
@@ -1026,7 +866,8 @@ public class StreamEngine implements IEngine, IPollEvents
         return true;
     }
 
-    private final MessageProcessor identity = new Identity();
+    private final Function<Msg, Boolean> processIdentity = this::processIdentityMsg;
+    private final Supplier<Msg>          nextIdentity    = this::identityMsg;
 
     private Msg nextHandshakeCommand()
     {
@@ -1035,7 +876,7 @@ public class StreamEngine implements IEngine, IPollEvents
         if (mechanism.status() == Mechanism.Status.READY) {
             mechanismReady();
 
-            return pullAndEncode.nextMsg();
+            return pullAndEncode.get();
         }
         else if (mechanism.status() == Mechanism.Status.ERROR) {
             errno.set(ZError.EPROTO);
@@ -1079,8 +920,8 @@ public class StreamEngine implements IEngine, IPollEvents
         return rc == 0;
     }
 
-    private final MessageProcessor processHandshakeCommand = new HandshakeCommand();
-    private final MessageProcessor nextHandshakeCommand    = processHandshakeCommand;
+    private final Function<Msg, Boolean> processHandshakeCommand = this::processHandshakeCommand;
+    private final Supplier<Msg>          nextHandshakeCommand    = this::nextHandshakeCommand;
 
     @Override
     public void zapMsgAvailable()
@@ -1154,8 +995,8 @@ public class StreamEngine implements IEngine, IPollEvents
         return session.pushMsg(msg);
     }
 
-    private final MessageProcessor pushMsgToSession   = new PushMsgToSession();
-    private final MessageProcessor pullMsgFromSession = pushMsgToSession;
+    private final Function<Msg, Boolean> pushMsgToSession   = this::pushMsgToSession;
+    private final Supplier<Msg>          pullMsgFromSession = this::pullMsgFromSession;
 
     private boolean pushRawMsgToSession(Msg msg)
     {
@@ -1165,7 +1006,7 @@ public class StreamEngine implements IEngine, IPollEvents
         return pushMsgToSession(msg);
     }
 
-    private final MessageProcessor pushRawMsgToSession = new PushRawMsgToSession();
+    private final Function<Msg, Boolean> pushRawMsgToSession = this::pushRawMsgToSession;
 
     private boolean writeCredential(Msg msg)
     {
@@ -1184,18 +1025,73 @@ public class StreamEngine implements IEngine, IPollEvents
             }
         }
         processMsg = decodeAndPush;
-        return decodeAndPush.processMsg(msg);
+        return decodeAndPush.apply(msg);
     }
 
-    private final MessageProcessor writeCredential = new WriteCredential();
+    private final Function<Msg, Boolean> writeCredential = this::writeCredential;
 
-    private final MessageProcessor pullAndEncode = new PullAndEncode();
+    private Msg pullAndEncode()
+    {
+        assert (mechanism != null);
 
-    private final MessageProcessor decodeAndPush = new DecodeAndPush();
+        Msg msg = session.pullMsg();
+        if (msg == null) {
+            return null;
 
-    private final MessageProcessor pushOneThenDecodeAndPush = new PushOneThenDecodeAndPush();
+        }
+        msg = mechanism.encode(msg);
+        return msg;
+    }
 
-    private final MessageProcessor producePingMessage = new ProducePingMessage();
+    private final Supplier<Msg> pullAndEncode = this::pullAndEncode;
+
+    private boolean decodeAndPush(Msg msg)
+    {
+        assert (mechanism != null);
+
+        msg = mechanism.decode(msg);
+        if (msg == null) {
+            return false;
+        }
+        if (hasTimeoutTimer) {
+            hasTimeoutTimer = false;
+            ioObject.cancelTimer(HEARTBEAT_TIMEOUT_TIMER_ID);
+        }
+        if (hasTtlTimer) {
+            hasTtlTimer = false;
+            ioObject.cancelTimer(HEARTBEAT_TTL_TIMER_ID);
+        }
+        if (msg.isCommand()) {
+            StreamEngine.this.processHeartbeatMessage(msg);
+        }
+
+        if (metadata != null) {
+            msg.setMetadata(metadata);
+        }
+        boolean rc = session.pushMsg(msg);
+        if (!rc) {
+            if (errno.is(ZError.EAGAIN)) {
+                processMsg = pushOneThenDecodeAndPush;
+            }
+            return false;
+        }
+        return true;
+    }
+
+    private final Function<Msg, Boolean> decodeAndPush = this::decodeAndPush;
+
+    private boolean pushOneThenDecodeAndPush(Msg msg)
+    {
+        boolean rc = session.pushMsg(msg);
+        if (rc) {
+            processMsg = decodeAndPush;
+        }
+        return rc;
+    }
+
+    private final Function<Msg, Boolean> pushOneThenDecodeAndPush = this::pushOneThenDecodeAndPush;
+
+    private final Supplier<Msg> producePingMessage = this::producePingMessage;
 
     //  Function to handle network disconnections.
     private void error(ErrorReason error)
@@ -1204,7 +1100,7 @@ public class StreamEngine implements IEngine, IPollEvents
             //  For raw sockets, send a final 0-length message to the application
             //  so that it knows the peer has been disconnected.
             Msg terminator = new Msg();
-            processMsg.processMsg(terminator);
+            processMsg.apply(terminator);
         }
         assert (session != null);
         socket.eventDisconnected(endpoint, fd);
