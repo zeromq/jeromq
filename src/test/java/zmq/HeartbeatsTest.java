@@ -5,6 +5,7 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -69,10 +70,21 @@ public class HeartbeatsTest
     @Test
     public void testHeartbeatTimeout() throws IOException, InterruptedException
     {
+        testHeartbeatTimeout(false);
+    }
+
+    @Test
+    public void testHeartbeatTimeoutWithContext() throws IOException, InterruptedException
+    {
+        testHeartbeatTimeout(true);
+    }
+
+    private void testHeartbeatTimeout(boolean mockPing) throws IOException, InterruptedException
+    {
         Ctx ctx = ZMQ.createContext();
         assertThat(ctx, notNullValue());
 
-        SocketBase server = prepServerSocket(ctx, true, false);
+        SocketBase server = prepServerSocket(ctx, !mockPing, false);
         assertThat(server, notNullValue());
 
         SocketBase monitor = ZMQ.socket(ctx, ZMQ.ZMQ_PAIR);
@@ -86,14 +98,19 @@ public class HeartbeatsTest
 
         // Mock a ZMTP 3 client so we can forcibly time out a connection
         mockHandshake(socket);
+        if (mockPing) {
+            mockPing(socket);
+        }
 
         // By now everything should report as connected
         ZMQ.Event event = ZMQ.Event.read(monitor);
         assertThat(event.event, is(ZMQ.ZMQ_EVENT_ACCEPTED));
 
-        // We should have been disconnected
-        event = ZMQ.Event.read(monitor);
-        assertThat(event.event, is(ZMQ.ZMQ_EVENT_DISCONNECTED));
+        if (!mockPing) {
+            // We should have been disconnected
+            event = ZMQ.Event.read(monitor);
+            assertThat(event.event, is(ZMQ.ZMQ_EVENT_DISCONNECTED));
+        }
 
         socket.close();
 
@@ -347,23 +364,135 @@ public class HeartbeatsTest
         out.flush();
 
         recvWithRetry(socket, 43);
+
     }
 
-    private void recvWithRetry(Socket socket, int bytes) throws IOException
+    private void mockPing(Socket socket) throws IOException
     {
+        //  test PING context - should be replicated in the PONG
+        //  to avoid timeouts, do a bulk send
+        byte[] ping = new byte[12];
+        int idx = 0;
+        ping[idx++] = 4;
+        ping[idx++] = 10;
+        ping[idx++] = 4;
+        ping[idx++] = 'P';
+        ping[idx++] = 'I';
+        ping[idx++] = 'N';
+        ping[idx++] = 'G';
+        ping[idx++] = 0;
+        ping[idx++] = 0;
+        ping[idx++] = 'L';
+        ping[idx++] = 'O';
+        ping[idx++] = 'L';
+
+        OutputStream out = socket.getOutputStream();
+        out.write(ping);
+        out.flush();
+
+        //  test a larger body that won't fit in a small message
+        // and should get truncated
+        ping = new byte[65];
+        idx = 0;
+        ping[idx++] = 4;
+        ping[idx++] = 65;
+        ping[idx++] = 4;
+        ping[idx++] = 'P';
+        ping[idx++] = 'I';
+        ping[idx++] = 'N';
+        ping[idx++] = 'G';
+        ping[idx++] = 0;
+        ping[idx++] = 0;
+        ping[idx++] = 'L';
+        ping[idx++] = 'O';
+        ping[idx++] = 'O';
+        ping[idx++] = 'O';
+        ping[idx++] = 'O';
+        ping[idx++] = 'O';
+        ping[idx++] = 'O';
+        ping[idx++] = 'O';
+        ping[idx++] = 'O';
+        ping[idx++] = 'O';
+        ping[idx++] = 'O';
+        ping[idx++] = 'O';
+        ping[idx++] = 'O';
+        ping[idx++] = 'O';
+        ping[idx++] = 'O';
+        ping[idx++] = 'O';
+        ping[idx++] = 'L';
+
+        out.write(ping);
+        out.flush();
+
+        //  small pong
+        ping = new byte[10];
+        idx = 0;
+        ping[idx++] = 4;
+        ping[idx++] = 8;
+        ping[idx++] = 4;
+        ping[idx++] = 'P';
+        ping[idx++] = 'O';
+        ping[idx++] = 'N';
+        ping[idx++] = 'G';
+        ping[idx++] = 'L';
+        ping[idx++] = 'O';
+        ping[idx++] = 'L';
+
+        byte[] pong = recvWithRetry(socket, 10);
+        assertThat(pong, is(ping));
+
+        //  large pong
+        ping = new byte[23];
+        idx = 0;
+        ping[idx++] = 4;
+        ping[idx++] = 21;
+        ping[idx++] = 4;
+        ping[idx++] = 'P';
+        ping[idx++] = 'O';
+        ping[idx++] = 'N';
+        ping[idx++] = 'G';
+        ping[idx++] = 'L';
+        ping[idx++] = 'O';
+        ping[idx++] = 'O';
+        ping[idx++] = 'O';
+        ping[idx++] = 'O';
+        ping[idx++] = 'O';
+        ping[idx++] = 'O';
+        ping[idx++] = 'O';
+        ping[idx++] = 'O';
+        ping[idx++] = 'O';
+        ping[idx++] = 'O';
+        ping[idx++] = 'O';
+        ping[idx++] = 'O';
+        ping[idx++] = 'O';
+        ping[idx++] = 'O';
+        ping[idx++] = 'O';
+
+        out.write(ping);
+        out.flush();
+
+        pong = recvWithRetry(socket, 23);
+        assertThat(pong, is(ping));
+    }
+
+    private byte[] recvWithRetry(Socket socket, int bytes) throws IOException
+    {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
         int received = 0;
         byte[] data = new byte[bytes];
         while (true) {
             InputStream in = socket.getInputStream();
-            int rc = in.read(data, received, data.length);
+            int rc = in.read(data, received, bytes - received);
             if (rc < 0) {
                 break;
             }
+            out.write(data, received, rc);
             received += rc;
             assert (received <= bytes);
             if (received == bytes) {
                 break;
             }
         }
+        return out.toByteArray();
     }
 }

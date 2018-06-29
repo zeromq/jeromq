@@ -1062,7 +1062,7 @@ public class StreamEngine implements IEngine, IPollEvents
             ioObject.cancelTimer(HEARTBEAT_TTL_TIMER_ID);
         }
         if (msg.isCommand()) {
-            StreamEngine.this.processHeartbeatMessage(msg);
+            StreamEngine.this.processCommand(msg);
         }
 
         if (metadata != null) {
@@ -1186,30 +1186,43 @@ public class StreamEngine implements IEngine, IPollEvents
         return msg;
     }
 
-    private boolean processHeartbeatMessage(Msg msg)
+    private boolean processCommand(Msg msg)
     {
         if (Msgs.startsWith(msg, "PING", true)) {
-            // Get the remote heartbeat TTL to setup the timer
-            int remoteHeartbeatTtl = msg.getShort(5);
-
-            // The remote heartbeat is in 10ths of a second
-            // so we multiply it by 100 to get the timer interval in ms.
-            remoteHeartbeatTtl *= 100;
-            if (!hasTtlTimer && remoteHeartbeatTtl > 0) {
-                ioObject.addTimer(remoteHeartbeatTtl, HEARTBEAT_TTL_TIMER_ID);
-                hasTtlTimer = true;
-            }
-            // extract the ping context that will be sent back inside the pong message
-            final int remaining = msg.size() - 7;
-            final byte[] pingContext = new byte[remaining];
-            msg.getBytes(7, pingContext, 0, remaining);
-
-            nextMsg = new ProducePongMessage(pingContext);
-            outEvent();
-
-            return true;
+            return processHeartbeatMessage(msg);
         }
         return false;
+    }
+
+    private boolean processHeartbeatMessage(Msg msg)
+    {
+        // Get the remote heartbeat TTL to setup the timer
+        int remoteHeartbeatTtl = msg.getShort(5);
+
+        // The remote heartbeat is in 10ths of a second
+        // so we multiply it by 100 to get the timer interval in ms.
+        remoteHeartbeatTtl *= 100;
+        if (!hasTtlTimer && remoteHeartbeatTtl > 0) {
+            ioObject.addTimer(remoteHeartbeatTtl, HEARTBEAT_TTL_TIMER_ID);
+            hasTtlTimer = true;
+        }
+        // extract the ping context that will be sent back inside the pong message
+        int remaining = msg.size() - 7;
+        //  As per ZMTP 3.1 the PING command might contain an up to 16 bytes
+        //  context which needs to be PONGed back, so build the pong message
+        //  here and store it. Truncate it if it's too long.
+        //  Given the engine goes straight to outEvent(), sequential PINGs will
+        //  not be a problem.
+        if (remaining > 16) {
+            remaining = 16;
+        }
+        final byte[] pingContext = new byte[remaining];
+        msg.getBytes(7, pingContext, 0, remaining);
+
+        nextMsg = new ProducePongMessage(pingContext);
+        outEvent();
+
+        return true;
     }
 
     //  Writes data to the socket. Returns the number of bytes actually
