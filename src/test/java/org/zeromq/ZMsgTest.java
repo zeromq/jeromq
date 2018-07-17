@@ -49,7 +49,7 @@ public class ZMsgTest
         ZMQ.Context ctx = ZMQ.context(0);
         ZMQ.Socket socket = ctx.socket(SocketType.PULL);
 
-        socket.recv((msg)-> assertThat(msg, nullValue()),ZMQ.NOBLOCK);
+        socket.recv((msg)-> assertThat(msg, nullValue()), ZMQ.NOBLOCK);
 
         socket.close();
         ctx.close();
