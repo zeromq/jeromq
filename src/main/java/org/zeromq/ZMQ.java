@@ -2907,6 +2907,7 @@ public class ZMQ
             for (int i = 0; i < 100; i++) { // hardcoded to 100 tries. should this be parametrised
                 port = rand.nextInt(max - min + 1) + min;
                 if (base.bind(String.format("%s:%s", addr, port))) {
+                    base.errno.set(0);
                     return port;
                 }
                 //                port++;
