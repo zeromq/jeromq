@@ -287,13 +287,7 @@ public class ZMsg implements Iterable<ZFrame>, Deque<ZFrame>
   @Draft
   public static void recvMsg(ZMQ.Socket socket, int flags, Consumer<ZMsg> handler)
   {
-    ZMsg msg = null;
-    try {
-      msg = ZMsg.recvMsg(socket, flags);
-    }
-    catch (ZMQException ignore) {
-    }
-    handler.accept(msg);
+    handler.accept(ZMsg.recvMsg(socket, flags));
   }
 
   /**
