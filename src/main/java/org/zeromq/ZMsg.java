@@ -9,8 +9,10 @@ import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Deque;
 import java.util.Iterator;
+import java.util.function.Consumer;
 
 import org.zeromq.ZMQ.Socket;
+import zmq.util.Draft;
 
 /**
  * The ZMsg class provides methods to send and receive multipart messages
@@ -250,7 +252,21 @@ public class ZMsg implements Iterable<ZFrame>, Deque<ZFrame>
         return msg;
     }
 
-    /**
+  /**
+   * This API is in DRAFT state and is subject to change at ANY time until declared stable
+   * handle incoming message with a handler
+   *
+   * @param socket
+   * @param flags see ZMQ constants
+   * @param handler handler to handle incoming message
+   */
+  @Draft
+  public static void recvMsg(ZMQ.Socket socket, int flags, Consumer<ZMsg> handler)
+  {
+    handler.accept(ZMsg.recvMsg(socket, flags));
+  }
+
+  /**
      * Save message to an open data output stream.
      *
      * Data saved as:

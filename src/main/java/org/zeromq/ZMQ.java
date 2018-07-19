@@ -20,7 +20,6 @@ import java.util.LinkedList;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 /**
@@ -3172,27 +3171,6 @@ public class ZMQ
         public Stream<byte[]> recvStream()
         {
             return Stream.generate(this::recv);
-        }
-
-        /**
-         * This API is in DRAFT state and is subject to change at ANY time until declared stable
-         * handle incoming message with a handler
-         *
-         * @param handler handler to handle incoming message
-         * @param flags   either:
-         *                <ul>
-         *                <li>{@link org.zeromq.ZMQ#DONTWAIT DONTWAIT}:
-         *                Specifies that the operation should be performed in non-blocking mode.
-         *                If there are no messages available on the specified socket,
-         *                the method shall fail with errno set to EAGAIN and return null.</li>
-         *                <li>0 : receive operation blocks until one message is successfully retrieved,
-         *                or stops when timeout set by {@link #setReceiveTimeOut(int)} expires.</li>
-         *                </ul>
-         */
-        @Draft
-        public void recv(Consumer<ZMsg> handler, int flags)
-        {
-            handler.accept(ZMsg.recvMsg(this, flags));
         }
 
         /**
