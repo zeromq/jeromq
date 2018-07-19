@@ -259,11 +259,41 @@ public class ZMsg implements Iterable<ZFrame>, Deque<ZFrame>
    * @param socket
    * @param flags see ZMQ constants
    * @param handler handler to handle incoming message
+   * @param exceptionHandler handler to handle exceptions
+   */
+  @Draft
+  public static void recvMsg(ZMQ.Socket socket, int flags,
+                                                        Consumer<ZMsg> handler,
+                                                        Consumer<ZMQException> exceptionHandler)
+  {
+    ZMsg msg = null;
+    try {
+      msg = ZMsg.recvMsg(socket, flags);
+    }
+    catch (ZMQException e) {
+      exceptionHandler.accept(e);
+    }
+    handler.accept(msg);
+  }
+
+  /**
+   * This API is in DRAFT state and is subject to change at ANY time until declared stable
+   * handle incoming message with a handler
+   *
+   * @param socket
+   * @param flags see ZMQ constants
+   * @param handler handler to handle incoming message
    */
   @Draft
   public static void recvMsg(ZMQ.Socket socket, int flags, Consumer<ZMsg> handler)
   {
-    handler.accept(ZMsg.recvMsg(socket, flags));
+    ZMsg msg = null;
+    try {
+      msg = ZMsg.recvMsg(socket, flags);
+    }
+    catch (ZMQException ignore) {
+    }
+    handler.accept(msg);
   }
 
   /**
