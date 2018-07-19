@@ -266,14 +266,12 @@ public class ZMsg implements Iterable<ZFrame>, Deque<ZFrame>
                                                         Consumer<ZMsg> handler,
                                                         Consumer<ZMQException> exceptionHandler)
   {
-    ZMsg msg = null;
     try {
-      msg = ZMsg.recvMsg(socket, flags);
+      handler.accept(ZMsg.recvMsg(socket, flags));
     }
     catch (ZMQException e) {
       exceptionHandler.accept(e);
     }
-    handler.accept(msg);
   }
 
   /**
