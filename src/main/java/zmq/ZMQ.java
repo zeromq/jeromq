@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.ClosedChannelException;
+import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -674,6 +675,10 @@ public class ZMQ
                 try {
                     ch.register(selector, item.interestOps(), item);
                 }
+                catch (ClosedSelectorException e) {
+                    // context was closed asynchronously, exit gracefully
+                    return -1;
+                }
                 catch (ClosedChannelException e) {
                     throw new ZError.IOException(e);
                 }
@@ -732,6 +737,10 @@ public class ZMQ
                 }
                 selector.selectedKeys().clear();
 
+            }
+            catch (ClosedSelectorException e) {
+                // context was closed asynchronously, exit gracefully
+                return -1;
             }
             catch (IOException e) {
                 throw new ZError.IOException(e);
