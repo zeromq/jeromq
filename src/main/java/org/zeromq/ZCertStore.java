@@ -178,9 +178,9 @@ public class ZCertStore
      */
     public boolean containsPublicKey(byte[] publicKey)
     {
-        if (publicKey.length != 32) {
-            throw new RuntimeException("publickey needs to have a size of 32 bytes. got only " + publicKey.length);
-        }
+        Utils.checkArgument(
+                            publicKey.length == 32,
+                            "publickey needs to have a size of 32 bytes. got only " + publicKey.length);
         return containsPublicKey(ZMQ.Curve.z85Encode(publicKey));
     }
 
@@ -190,10 +190,9 @@ public class ZCertStore
      */
     public boolean containsPublicKey(String publicKey)
     {
-        if (publicKey.length() != 40) {
-            throw new RuntimeException("z85 publickeys should have a length of 40 bytes but got " + publicKey.length());
-        }
-
+        Utils.checkArgument(
+                            publicKey.length() == 40,
+                            "z85 publickeys should have a length of 40 bytes but got " + publicKey.length());
         reloadIfNecessary();
         return publicKeys.containsKey(publicKey);
     }

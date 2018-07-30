@@ -89,7 +89,7 @@ public final class Mailbox implements Closeable
         //  Wait for signal from the command sender.
         boolean rc = signaler.waitEvent(timeout);
         if (!rc) {
-            assert (errno.get() == ZError.EAGAIN || errno.get() == ZError.EINTR);
+            assert (errno.get() == ZError.EAGAIN || errno.get() == ZError.EINTR) : errno.get();
             return null;
         }
 
@@ -101,7 +101,7 @@ public final class Mailbox implements Closeable
 
         //  Get a command.
         cmd = cpipe.read();
-        assert (cmd != null);
+        assert (cmd != null) : "command shall never be null when read";
 
         return cmd;
     }

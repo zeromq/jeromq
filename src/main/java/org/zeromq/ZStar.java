@@ -4,6 +4,7 @@ import java.nio.channels.Selector;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -382,8 +383,8 @@ public class ZStar implements ZAgent
             String motdelafin, final Object... bags)
     {
         super();
-        assert (agent != null);
-        assert (fortune != null);
+        Objects.requireNonNull(agent, "Agent creator has to be supplied");
+        Objects.requireNonNull(fortune, "Fortune has to be supplied");
         // entering platform to load trucks
 
         // initialize the context

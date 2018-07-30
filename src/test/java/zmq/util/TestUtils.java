@@ -4,6 +4,12 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
+
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import org.junit.Test;
 
@@ -65,5 +71,61 @@ public class TestUtils
         assertThat(dest[1], is(9));
         assertThat(dest[2], is(11));
 
+    }
+
+    @Test
+    public void testDeleteFile() throws IOException
+    {
+        Path path = Files.createTempFile("test", "suffix");
+
+        assertThat(Files.exists(path), is(true));
+        Utils.delete(path.toFile());
+        assertThat(Files.exists(path), is(false));
+    }
+
+    @Test
+    public void testDeleteDir() throws IOException
+    {
+        Path dir = Files.createTempDirectory("test");
+        Path path = Files.createTempFile(dir, "test", "suffix");
+
+        Utils.delete(dir.toFile());
+        assertThat(Files.exists(dir), is(false));
+        assertThat(Files.exists(path), is(false));
+    }
+
+    @Test
+    public void testDump() throws IOException
+    {
+        byte[] array = new byte[10];
+        ByteBuffer buffer = ByteBuffer.wrap(array);
+        String dump = Utils.dump(buffer, 0, 10);
+        assertThat(dump, is("[0,0,0,0,0,0,0,0,0,0,]"));
+    }
+
+    @Test
+    public void testBytes() throws IOException
+    {
+        byte[] array = new byte[10];
+        ByteBuffer buffer = ByteBuffer.wrap(array);
+        byte[] bytes = Utils.bytes(buffer);
+        assertThat(bytes, is(array));
+    }
+
+    @Test
+    public void testCheckingCorrectArgument()
+    {
+        try {
+            Utils.checkArgument(true, "Error");
+        }
+        catch (Throwable t) {
+            fail("Checking argument should not fail");
+        }
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testCheckingIncorrectArgument()
+    {
+        Utils.checkArgument(false, "Error");
     }
 }

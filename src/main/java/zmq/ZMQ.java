@@ -16,6 +16,7 @@ import java.util.concurrent.locks.LockSupport;
 import zmq.io.Metadata;
 import zmq.poll.PollItem;
 import zmq.util.Clock;
+import zmq.util.Utils;
 
 public class ZMQ
 {
@@ -314,12 +315,10 @@ public class ZMQ
     //  Stable/legacy context API
     public static Ctx init(int ioThreads)
     {
-        if (ioThreads >= 0) {
-            Ctx ctx = createContext();
-            setContextOption(ctx, ZMQ_IO_THREADS, ioThreads);
-            return ctx;
-        }
-        throw new IllegalArgumentException("io_threads must not be negative");
+        Utils.checkArgument(ioThreads >= 0, "I/O threads must not be negative");
+        Ctx ctx = createContext();
+        setContextOption(ctx, ZMQ_IO_THREADS, ioThreads);
+        return ctx;
     }
 
     public static void term(Ctx ctx)
@@ -636,9 +635,7 @@ public class ZMQ
      */
     public static int poll(Selector selector, PollItem[] items, int count, long timeout)
     {
-        if (items == null) {
-            throw new IllegalArgumentException();
-        }
+        Utils.checkArgument(items != null, "items have to be supplied for polling");
         if (count == 0) {
             if (timeout <= 0) {
                 return 0;
@@ -789,25 +786,22 @@ public class ZMQ
     //  The proxy functionality
     public static boolean proxy(SocketBase frontend, SocketBase backend, SocketBase capture)
     {
-        if (frontend == null || backend == null) {
-            throw new IllegalArgumentException();
-        }
+        Utils.checkArgument(frontend != null, "Frontend socket has to be present for proxy");
+        Utils.checkArgument(backend != null, "Backend socket has to be present for proxy");
         return Proxy.proxy(frontend, backend, capture, null);
     }
 
     public static boolean proxy(SocketBase frontend, SocketBase backend, SocketBase capture, SocketBase control)
     {
-        if (frontend == null || backend == null) {
-            throw new IllegalArgumentException();
-        }
+        Utils.checkArgument(frontend != null, "Frontend socket has to be present for proxy");
+        Utils.checkArgument(backend != null, "Backend socket has to be present for proxy");
         return Proxy.proxy(frontend, backend, capture, control);
     }
 
     public static boolean device(int device, SocketBase frontend, SocketBase backend)
     {
-        if (frontend == null || backend == null) {
-            throw new IllegalArgumentException();
-        }
+        Utils.checkArgument(frontend != null, "Frontend socket has to be present for proxy");
+        Utils.checkArgument(backend != null, "Backend socket has to be present for proxy");
         return Proxy.proxy(frontend, backend, null, null);
     }
 
