@@ -49,7 +49,12 @@ public class ZCert
             publicTxt = ZMQ.Curve.z85Encode(publicKey);
         }
         else {
-            assert (publickey.length() == Options.CURVE_KEYSIZE_Z85);
+            Utils.checkArgument(
+                                publickey.length() == Options.CURVE_KEYSIZE_Z85,
+                                String.format(
+                                              "Public key shall have a size of either %1$d or %2$d",
+                                              Options.CURVE_KEYSIZE,
+                                              Options.CURVE_KEYSIZE_Z85));
             // Z85-Coded
             publicKey = Z85.decode(publickey);
             publicTxt = publickey;

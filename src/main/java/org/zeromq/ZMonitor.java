@@ -4,6 +4,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 import org.zeromq.ZMQ.Socket;
@@ -44,7 +45,7 @@ public class ZMonitor implements Closeable
         private ZEvent(ZMsg msg)
         {
             assert (msg != null);
-            assert (msg.size() == 3 || msg.size() == 4);
+            assert (msg.size() == 3 || msg.size() == 4) : msg.size();
 
             type = Event.valueOf(msg.popString());
             code = Integer.valueOf(msg.popString());
@@ -263,8 +264,8 @@ public class ZMonitor implements Closeable
      */
     public ZMonitor(ZContext ctx, Socket socket)
     {
-        assert (ctx != null);
-        assert (socket != null);
+        Objects.requireNonNull(ctx, "ZMonitor works only with a supplied context");
+        Objects.requireNonNull(socket, "Socket has to be supplied");
         final MonitorActor actor = new MonitorActor(socket);
         final ZActor zactor = new ZActor(ctx, actor, UUID.randomUUID().toString());
 

@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 
 import org.zeromq.ZMQ.Socket;
 import org.zeromq.ZPoller.EventsHandler;
@@ -318,8 +319,8 @@ public class ZActor extends ZStar
         public Duo(final Actor main, final Actor shadow)
         {
             super();
-            assert (main != null);
-            assert (shadow != null);
+            Objects.requireNonNull(main, "Actor shall be set to a non-null value");
+            Objects.requireNonNull(shadow, "Shadow Actor shall be set to a non-null value");
             this.main = main;
             this.shadow = shadow;
         }
@@ -479,7 +480,7 @@ public class ZActor extends ZStar
 
         public ActorFortune(Actor actor)
         {
-            assert (actor != null);
+            Objects.requireNonNull(actor, "Actor shall be set to a non-null value");
             this.actor = actor;
         }
 
