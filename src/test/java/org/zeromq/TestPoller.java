@@ -1,10 +1,13 @@
 package org.zeromq;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertThat;
 
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -81,5 +84,32 @@ public class TestPoller
         System.out.println("Poller test done");
         assertThat(client.received.get(), is(true));
         context.term();
+    }
+
+    @Test
+    public void testExitPollerIssue580() throws InterruptedException, ExecutionException
+    {
+        Future<Integer> future = null;
+
+        ExecutorService service = Executors.newSingleThreadExecutor();
+        try (
+             ZContext context = new ZContext(1);
+             ZMQ.Poller poller = context.createPoller(1)) {
+            ZMQ.Socket socket = context.createSocket(SocketType.PAIR);
+            assertThat(socket, notNullValue());
+
+            int rc = poller.register(socket, ZMQ.Poller.POLLIN);
+            assertThat(rc, is(0));
+
+            future = service.submit(() -> poller.poll(-1));
+            assertThat(future, notNullValue());
+
+            ZMQ.msleep(100);
+        }
+
+        service.shutdown();
+        service.awaitTermination(1, TimeUnit.SECONDS);
+
+        assertThat(future.get(), is(-1));
     }
 }
