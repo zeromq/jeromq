@@ -61,7 +61,7 @@ public class XSub extends SocketBase
     }
 
     @Override
-    protected void xattachPipe(Pipe pipe, boolean subscribe2all)
+    protected void xattachPipe(Pipe pipe, boolean subscribe2all, boolean isLocallyInitiated)
     {
         assert (pipe != null);
         fq.attach(pipe);

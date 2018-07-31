@@ -73,7 +73,7 @@ public class XPub extends SocketBase
     }
 
     @Override
-    protected void xattachPipe(Pipe pipe, boolean subscribeToAll)
+    protected void xattachPipe(Pipe pipe, boolean subscribeToAll, boolean isLocallyInitiated)
     {
         assert (pipe != null);
         dist.attach(pipe);

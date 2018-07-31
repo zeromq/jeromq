@@ -96,7 +96,7 @@ public class Helper
         }
 
         @Override
-        protected void xattachPipe(Pipe pipe, boolean icanhasall)
+        protected void xattachPipe(Pipe pipe, boolean icanhasall, boolean isLocallyInitiated)
         {
         }
 

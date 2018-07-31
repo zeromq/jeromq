@@ -121,7 +121,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
 
     //  Concrete algorithms for the x- methods are to be defined by
     //  individual socket types.
-    protected abstract void xattachPipe(Pipe pipe, boolean subscribe2all);
+    protected abstract void xattachPipe(Pipe pipe, boolean subscribe2all, boolean isLocallyInitiated);
 
     protected abstract void xpipeTerminated(Pipe pipe);
 
@@ -190,12 +190,12 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
     }
 
     //  Register the pipe with this socket.
-    private void attachPipe(Pipe pipe)
+    private void attachPipe(Pipe pipe, boolean isLocallyInitiated)
     {
-        attachPipe(pipe, false);
+        attachPipe(pipe, false, isLocallyInitiated);
     }
 
-    private void attachPipe(Pipe pipe, boolean subscribe2all)
+    private void attachPipe(Pipe pipe, boolean subscribe2all, boolean isLocallyInitiated)
     {
         assert (pipe != null);
 
@@ -204,7 +204,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
         pipes.add(pipe);
 
         //  Let the derived socket type know about new pipe.
-        xattachPipe(pipe, subscribe2all);
+        xattachPipe(pipe, subscribe2all, isLocallyInitiated);
 
         //  If the socket is already being closed, ask any new pipes to terminate
         //  straight away.
@@ -466,7 +466,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
             Pipe[] pipes = Pipe.pair(parents, hwms, conflates);
 
             //  Attach local end of the pipe to this socket object.
-            attachPipe(pipes[0]);
+            attachPipe(pipes[0], true);
 
             if (peer.socket == null) {
                 //  The peer doesn't exist yet so we don't know whether
@@ -570,7 +570,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
             Pipe[] pipes = Pipe.pair(parents, hwms, conflates);
 
             //  Attach local end of the pipe to the socket object.
-            attachPipe(pipes[0], subscribe2all);
+            attachPipe(pipes[0], subscribe2all, true);
             newpipe = pipes[0];
             //  Attach remote end of the pipe to the session object later on.
             session.attachPipe(pipes[1]);
@@ -972,7 +972,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
     @Override
     protected final void processBind(Pipe pipe)
     {
-        attachPipe(pipe);
+        attachPipe(pipe, false);
     }
 
     @Override

@@ -15,7 +15,7 @@ public class Pub extends XPub
     }
 
     @Override
-    protected void xattachPipe(Pipe pipe, boolean subscribeToAll)
+    protected void xattachPipe(Pipe pipe, boolean subscribeToAll, boolean isLocallyInitiated)
     {
         assert (pipe != null);
 
@@ -23,7 +23,7 @@ public class Pub extends XPub
         //  to receive the delimiter.
         pipe.setNoDelay();
 
-        super.xattachPipe(pipe, subscribeToAll);
+        super.xattachPipe(pipe, subscribeToAll, isLocallyInitiated);
     }
 
     @Override

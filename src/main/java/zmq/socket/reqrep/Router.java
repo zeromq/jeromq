@@ -119,7 +119,7 @@ public class Router extends SocketBase
     }
 
     @Override
-    public void xattachPipe(Pipe pipe, boolean subscribe2all)
+    public void xattachPipe(Pipe pipe, boolean subscribe2all, boolean isLocallyInitiated)
     {
         assert (pipe != null);
 
@@ -129,7 +129,7 @@ public class Router extends SocketBase
             // assert (rc) is not applicable here, since it is not a bug.
             pipe.flush();
         }
-        boolean identityOk = identifyPeer(pipe);
+        boolean identityOk = identifyPeer(pipe, isLocallyInitiated);
         if (identityOk) {
             fq.attach(pipe);
         }
@@ -190,7 +190,7 @@ public class Router extends SocketBase
             fq.activated(pipe);
         }
         else {
-            boolean identityOk = identifyPeer(pipe);
+            boolean identityOk = identifyPeer(pipe, false);
             if (identityOk) {
                 anonymousPipes.remove(pipe);
                 fq.attach(pipe);
@@ -410,11 +410,11 @@ public class Router extends SocketBase
         return fq.getCredential();
     }
 
-    private boolean identifyPeer(Pipe pipe)
+    private boolean identifyPeer(Pipe pipe, boolean isLocallyInitiated)
     {
         Blob identity;
 
-        if (connectRid != null && !connectRid.isEmpty()) {
+        if (connectRid != null && !connectRid.isEmpty() && isLocallyInitiated) {
             identity = Blob.createBlob(connectRid.getBytes(ZMQ.CHARSET));
             connectRid = null;
             Outpipe outpipe = outpipes.get(identity);

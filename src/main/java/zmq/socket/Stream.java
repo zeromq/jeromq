@@ -76,11 +76,11 @@ public class Stream extends SocketBase
     }
 
     @Override
-    protected void xattachPipe(Pipe pipe, boolean icanhasall)
+    protected void xattachPipe(Pipe pipe, boolean icanhasall, boolean isLocallyInitiated)
     {
         assert (pipe != null);
 
-        identifyPeer(pipe);
+        identifyPeer(pipe, isLocallyInitiated);
         fq.attach(pipe);
     }
 
@@ -290,12 +290,12 @@ public class Stream extends SocketBase
         return true;
     }
 
-    private void identifyPeer(Pipe pipe)
+    private void identifyPeer(Pipe pipe, boolean isLocallyInitiated)
     {
         //  Always assign identity for raw-socket
 
         Blob identity;
-        if (connectRid != null && !connectRid.isEmpty()) {
+        if (connectRid != null && !connectRid.isEmpty() && isLocallyInitiated) {
             identity = Blob.createBlob(connectRid.getBytes(ZMQ.CHARSET));
             connectRid = null;
 
