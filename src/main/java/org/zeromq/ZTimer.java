@@ -21,7 +21,7 @@ public final class ZTimer
     {
         private final Timers.Timer delegate;
 
-        private Timer(Timers.Timer delegate)
+        Timer(Timers.Timer delegate)
         {
             this.delegate = delegate;
         }
@@ -30,7 +30,7 @@ public final class ZTimer
     /**
      * Called when the timer has been expired.
      */
-    public static interface Handler extends Timers.Handler
+    public interface Handler extends Timers.Handler
     {
     }
 

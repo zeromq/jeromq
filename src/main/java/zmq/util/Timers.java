@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import zmq.ZMQ;
 
@@ -18,6 +19,8 @@ import zmq.ZMQ;
 @Draft
 public final class Timers
 {
+    private static final long ONE_MILLISECOND = 1;
+
     public static final class Timer
     {
         private long           interval;
@@ -69,7 +72,7 @@ public final class Timers
         }
     }
 
-    public static interface Handler
+    public interface Handler
     {
         void time(Object... args);
     }
@@ -79,7 +82,12 @@ public final class Timers
 
     private long now()
     {
-        return Clock.nowMS();
+        return Clock.nowNS();
+    }
+
+    private boolean insert(Timer timer)
+    {
+        return timers.insert(now() + timer.interval, timer);
     }
 
     /**
@@ -94,9 +102,8 @@ public final class Timers
         if (handler == null) {
             return null;
         }
-        final long when = now() + interval;
-        final Timer timer = new Timer(interval, handler, args);
-        final boolean rc = timers.insert(when, timer);
+        final Timer timer = new Timer(TimeUnit.MILLISECONDS.toNanos(interval), handler, args);
+        final boolean rc = insert(timer);
         assert (rc);
         return timer;
     }
@@ -110,8 +117,8 @@ public final class Timers
     public boolean setInterval(Timer timer, long interval)
     {
         if (timers.remove(timer)) {
-            timer.interval = interval;
-            return timers.insert(now() + interval, timer);
+            timer.interval = TimeUnit.MILLISECONDS.toNanos(interval);
+            return insert(timer);
         }
         return false;
     }
@@ -125,7 +132,7 @@ public final class Timers
     public boolean reset(Timer timer)
     {
         if (timers.contains(timer)) {
-            return timers.insert(now() + timer.interval, timer);
+            return insert(timer);
         }
         return false;
     }
@@ -156,8 +163,8 @@ public final class Timers
 
             if (!cancelledTimers.remove(timer)) {
                 //  Live timer, lets return the timeout
-                if (timeout > now) {
-                    return timeout - now;
+                if (timeout - now > 0) {
+                    return ONE_MILLISECOND + TimeUnit.NANOSECONDS.toMillis(timeout - now);
                 }
                 else {
                     return 0;
@@ -190,11 +197,11 @@ public final class Timers
                 continue;
             }
             //  Map is ordered, if we have to wait for current timer we can stop.
-            if (timeout > now) {
+            if (timeout - now > 0) {
                 break;
             }
 
-            timers.insert(now + timer.interval, timer);
+            insert(timer);
 
             timer.handler.time(timer.args);
             ++executed;

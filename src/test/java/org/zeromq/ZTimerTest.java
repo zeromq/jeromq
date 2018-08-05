@@ -12,10 +12,15 @@ import org.junit.Test;
 import org.zeromq.ZTimer.Timer;
 
 import zmq.ZMQ;
+import zmq.util.TimersTest;
 
 public class ZTimerTest
 {
-    private static final ZTimer.Handler HANDLER = new ZTimer.Handler()
+    private static final Timer NON_EXISTENT = new ZTimer.Timer(TimersTest.NON_EXISTENT);
+    private ZTimer             timers;
+    private AtomicBoolean      invoked      = new AtomicBoolean();
+
+    private final ZTimer.Handler handler = new ZTimer.Handler()
     {
         @Override
         public void time(Object... args)
@@ -24,10 +29,6 @@ public class ZTimerTest
             invoked.set(true);
         }
     };
-
-    private static final Timer NON_EXISTENT = new ZTimer().add(0, HANDLER);
-    private ZTimer             timers;
-    private AtomicBoolean      invoked;
 
     @Before
     public void setup()
@@ -67,7 +68,7 @@ public class ZTimerTest
     @Test
     public void testCancelTwice()
     {
-        Timer timer = timers.add(10, HANDLER);
+        Timer timer = timers.add(10, handler);
         assertThat(timer, notNullValue());
 
         boolean rc = timers.cancel(timer);
@@ -88,7 +89,7 @@ public class ZTimerTest
     public void testNotInvokedInitial()
     {
         long fullTimeout = 100;
-        timers.add(fullTimeout, HANDLER, invoked);
+        timers.add(fullTimeout, handler, invoked);
         //  Timer should not have been invoked yet
         int rc = timers.execute();
         assertThat(rc, is(0));
@@ -98,7 +99,7 @@ public class ZTimerTest
     public void testNotInvokedHalfTime()
     {
         long fullTimeout = 100;
-        timers.add(fullTimeout, HANDLER, invoked);
+        timers.add(fullTimeout, handler, invoked);
 
         //  Wait half the time and check again
         long timeout = timers.timeout();
@@ -111,7 +112,7 @@ public class ZTimerTest
     public void testInvoked()
     {
         long fullTimeout = 100;
-        timers.add(fullTimeout, HANDLER, invoked);
+        timers.add(fullTimeout, handler, invoked);
 
         // Wait until the end
         timers.sleepAndExecute();
@@ -122,7 +123,7 @@ public class ZTimerTest
     public void testNotInvokedAfterHalfTimeAgain()
     {
         long fullTimeout = 100;
-        timers.add(fullTimeout, HANDLER, invoked);
+        timers.add(fullTimeout, handler, invoked);
 
         // Wait until the end
         timers.sleepAndExecute();
@@ -139,7 +140,7 @@ public class ZTimerTest
     public void testNotInvokedAfterResetHalfTime()
     {
         long fullTimeout = 100;
-        Timer timer = timers.add(fullTimeout, HANDLER, invoked);
+        Timer timer = timers.add(fullTimeout, handler, invoked);
 
         //  Wait half the time and check again
         long timeout = timers.timeout();
@@ -170,7 +171,7 @@ public class ZTimerTest
     public void testReschedule()
     {
         long fullTimeout = 100;
-        Timer timer = timers.add(fullTimeout, HANDLER, invoked);
+        Timer timer = timers.add(fullTimeout, handler, invoked);
 
         // reschedule
         boolean ret = timers.setInterval(timer, 50);
@@ -184,7 +185,7 @@ public class ZTimerTest
     public void testCancel()
     {
         long fullTimeout = 100;
-        Timer timer = timers.add(fullTimeout, HANDLER, invoked);
+        Timer timer = timers.add(fullTimeout, handler, invoked);
 
         // cancel timer
         long timeout = timers.timeout();

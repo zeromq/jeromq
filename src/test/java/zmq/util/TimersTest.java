@@ -14,9 +14,9 @@ import zmq.ZMQ;
 
 public class TimersTest
 {
-    private static final Timers.Timer NON_EXISTENT = new Timers.Timer(0, null);
-    private Timers                    timers;
-    private AtomicBoolean             invoked;
+    public static final Timers.Timer NON_EXISTENT = new Timers.Timer(0, null);
+    private Timers                   timers;
+    private AtomicBoolean            invoked      = new AtomicBoolean();
 
     private final Timers.Handler handler = new Timers.Handler()
     {
@@ -125,13 +125,14 @@ public class TimersTest
         timers.add(fullTimeout, handler, invoked);
 
         // Wait until the end
-        timers.sleepAndExecute();
+        int rc = timers.sleepAndExecute();
+        assertThat(rc, is(1));
         assertThat(invoked.get(), is(true));
 
         //  Wait half the time and check again
         long timeout = timers.timeout();
         ZMQ.msleep(timeout / 2);
-        int rc = timers.execute();
+        rc = timers.execute();
         assertThat(rc, is(0));
     }
 
@@ -162,7 +163,8 @@ public class TimersTest
         testNotInvokedAfterResetHalfTime();
 
         // Wait until the end
-        timers.sleepAndExecute();
+        int rc = timers.sleepAndExecute();
+        assertThat(rc, is(1));
         assertThat(invoked.get(), is(true));
     }
 
@@ -176,7 +178,8 @@ public class TimersTest
         boolean ret = timers.setInterval(timer, 50);
         assertThat(ret, is(true));
 
-        timers.sleepAndExecute();
+        int rc = timers.sleepAndExecute();
+        assertThat(rc, is(1));
         assertThat(invoked.get(), is(true));
     }
 
