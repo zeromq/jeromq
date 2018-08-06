@@ -10,6 +10,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
 
@@ -17,6 +20,188 @@ import zmq.util.TestUtils;
 
 public class HeartbeatsTest
 {
+    private static final long MAX = 100_000;
+
+    // Tests sequentiality of received messages while heartbeating
+    @Test
+    public void testSequentialityReceivedMessagesMultiThreadedPushBindPullConnect()
+            throws IOException, InterruptedException
+    {
+        final int port = Utils.findOpenPort();
+        final String host = "localhost";
+
+        Ctx ctx = ZMQ.init(1);
+        assertThat(ctx, notNullValue());
+
+        final SocketBase push = ctx.createSocket(ZMQ.ZMQ_PUSH);
+        assertThat(push, notNullValue());
+
+        boolean rc = ZMQ.setSocketOption(push, ZMQ.ZMQ_HEARTBEAT_IVL, 200);
+        assertThat(rc, is(true));
+
+        rc = push.bind(String.format("tcp://%s:%s", host, port));
+        assertThat(rc, is(true));
+
+        final SocketBase pull = ctx.createSocket(ZMQ.ZMQ_PULL);
+        rc = pull.connect(String.format("tcp://%s:%s", host, port));
+        assertThat(rc, is(true));
+
+        ExecutorService service = Executors.newFixedThreadPool(2);
+        service.submit(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                Thread.currentThread().setName("Push");
+                long counter = 0;
+                while (++counter < MAX) {
+                    String data = Long.toString(counter);
+                    int sent = ZMQ.send(push, Long.toString(counter), 0);
+                    assertThat(sent, is(data.length()));
+                }
+                push.close();
+            }
+        });
+        service.submit(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                Thread.currentThread().setName("Pull");
+                long counter = 0;
+                while (++counter < MAX) {
+                    Msg msg = ZMQ.recv(pull, 0);
+                    assertThat(msg, notNullValue());
+
+                    long received = Long.parseLong(new String(msg.data(), ZMQ.CHARSET));
+                    assertThat(received, is(counter));
+
+                    if (counter % (MAX / 10) == 0) {
+                        System.out.print(counter + " ");
+                    }
+                }
+                System.out.println();
+                pull.close();
+            }
+        });
+
+        service.shutdown();
+        service.awaitTermination(100, TimeUnit.SECONDS);
+        ctx.terminate();
+    }
+
+    // Tests sequentiality of received messages while heartbeating
+    @Test
+    public void testSequentialityReceivedMessagesMultiThreadedPushConnectPullBind()
+            throws IOException, InterruptedException
+    {
+        final int port = Utils.findOpenPort();
+        final String host = "localhost";
+
+        Ctx ctx = ZMQ.init(1);
+        assertThat(ctx, notNullValue());
+
+        final SocketBase push = ctx.createSocket(ZMQ.ZMQ_PUSH);
+        assertThat(push, notNullValue());
+
+        boolean rc = ZMQ.setSocketOption(push, ZMQ.ZMQ_HEARTBEAT_IVL, 200);
+        assertThat(rc, is(true));
+
+        rc = push.connect(String.format("tcp://%s:%s", host, port));
+        assertThat(rc, is(true));
+
+        final SocketBase pull = ctx.createSocket(ZMQ.ZMQ_PULL);
+        rc = pull.bind(String.format("tcp://%s:%s", host, port));
+        assertThat(rc, is(true));
+
+        ExecutorService service = Executors.newFixedThreadPool(2);
+        service.submit(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                Thread.currentThread().setName("Push");
+                long counter = 0;
+                while (++counter < MAX) {
+                    String data = Long.toString(counter);
+                    int sent = ZMQ.send(push, Long.toString(counter), 0);
+                    assertThat(sent, is(data.length()));
+                }
+                push.close();
+            }
+        });
+        service.submit(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                Thread.currentThread().setName("Pull");
+                long counter = 0;
+                while (++counter < MAX) {
+                    Msg msg = ZMQ.recv(pull, 0);
+                    assertThat(msg, notNullValue());
+
+                    long received = Long.parseLong(new String(msg.data(), ZMQ.CHARSET));
+                    assertThat(received, is(counter));
+
+                    if (counter % (MAX / 10) == 0) {
+                        System.out.print(counter + " ");
+                    }
+                }
+                System.out.println();
+                pull.close();
+            }
+        });
+
+        service.shutdown();
+        service.awaitTermination(100, TimeUnit.SECONDS);
+        ctx.terminate();
+    }
+
+    // Tests sequentiality of received messages while heartbeating
+    @Test
+    public void testSequentialityReceivedMessagesSingleThread() throws IOException, InterruptedException
+    {
+        final int port = Utils.findOpenPort();
+        final String host = "localhost";
+
+        Ctx ctx = ZMQ.init(1);
+        assertThat(ctx, notNullValue());
+
+        SocketBase push = ctx.createSocket(ZMQ.ZMQ_PUSH);
+        assertThat(push, notNullValue());
+        boolean rc = ZMQ.setSocketOption(push, ZMQ.ZMQ_HEARTBEAT_IVL, 200);
+        assertThat(rc, is(true));
+        rc = push.connect(String.format("tcp://%s:%s", host, port));
+        assertThat(rc, is(true));
+
+        SocketBase pull = ctx.createSocket(ZMQ.ZMQ_PULL);
+        assertThat(pull, notNullValue());
+        rc = pull.bind(String.format("tcp://%s:%s", host, port));
+        assertThat(rc, is(true));
+
+        long counter = 0;
+        while (++counter < MAX / 10) {
+            String data = Long.toString(counter);
+            int sent = ZMQ.send(push, Long.toString(counter), 0);
+            assertThat(sent, is(data.length()));
+
+            Msg msg = ZMQ.recv(pull, 0);
+            assertThat(msg, notNullValue());
+            long received = Long.parseLong(new String(msg.data(), ZMQ.CHARSET));
+            assertThat(received, is(counter));
+
+            if (counter % (MAX / 100) == 0) {
+                System.out.print(counter + " ");
+            }
+        }
+        System.out.println();
+
+        push.close();
+        pull.close();
+        ctx.terminate();
+    }
+
     // this checks for heartbeat in REQ socket.
     @Test
     public void testHeartbeatReq() throws IOException

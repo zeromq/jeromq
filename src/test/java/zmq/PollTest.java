@@ -17,16 +17,12 @@ import java.nio.channels.SocketChannel;
 import org.junit.Test;
 
 import zmq.poll.PollItem;
-import zmq.util.Utils;
 
 public class PollTest
 {
     @Test
     public void testPollTcp() throws Exception
     {
-        int port = Utils.findOpenPort();
-        InetSocketAddress addr = new InetSocketAddress("127.0.0.1", port);
-
         Ctx context = ZMQ.init(1);
         assertThat(context, notNullValue());
 
@@ -38,7 +34,8 @@ public class PollTest
         ServerSocketChannel server = ServerSocketChannel.open();
         assertThat(server, notNullValue());
         server.configureBlocking(false);
-        server.bind(addr);
+        server.bind(null);
+        InetSocketAddress addr = (InetSocketAddress) server.socket().getLocalSocketAddress();
 
         SocketChannel channelIn = SocketChannel.open();
         assertThat(channelIn, notNullValue());
@@ -52,11 +49,12 @@ public class PollTest
         rc = channelIn.finishConnect();
         assertThat(rc, is(true));
 
-        items[0] = new PollItem(channelIn, ZMQ.ZMQ_POLLIN);
-        items[1] = new PollItem(channelOut, ZMQ.ZMQ_POLLOUT);
+        items[0] = new PollItem(channelOut, ZMQ.ZMQ_POLLOUT);
+        items[1] = new PollItem(channelIn, ZMQ.ZMQ_POLLIN);
 
         int counter = 0;
         boolean done = false;
+        boolean sent = false;
         while (true) {
             int events = ZMQ.poll(selector, items, 1000);
             if (events < 0) {
@@ -64,20 +62,21 @@ public class PollTest
             }
             counter++;
 
-            if (items[0].isReadable()) {
+            if (items[0].isWritable() && !sent) {
+                ByteBuffer bb = ByteBuffer.allocate(3);
+                bb.put("tcp".getBytes());
+                bb.flip();
+                int written = channelOut.write(bb);
+                assertThat(written, is(3));
+                sent = true;
+            }
+            if (items[1].isReadable()) {
                 ByteBuffer bb = ByteBuffer.allocate(3);
                 int read = channelIn.read(bb);
                 String r = new String(bb.array(), 0, read);
                 assertThat(r, is("tcp"));
                 done = true;
                 break;
-            }
-            if (items[1].isWritable()) {
-                ByteBuffer bb = ByteBuffer.allocate(3);
-                bb.put("tcp".getBytes());
-                bb.flip();
-                int written = channelOut.write(bb);
-                assertThat(written, is(3));
             }
         }
         assertThat(done, is(true));
@@ -113,11 +112,12 @@ public class PollTest
         assertThat(source, notNullValue());
         source.configureBlocking(false);
 
-        items[0] = new PollItem(source, ZMQ.ZMQ_POLLIN);
-        items[1] = new PollItem(sink, ZMQ.ZMQ_POLLOUT);
+        items[0] = new PollItem(sink, ZMQ.ZMQ_POLLOUT);
+        items[1] = new PollItem(source, ZMQ.ZMQ_POLLIN);
 
         int counter = 0;
         boolean done = false;
+        boolean sent = false;
         while (true) {
             int events = ZMQ.poll(selector, items, 1000);
             if (events < 0) {
@@ -125,20 +125,21 @@ public class PollTest
             }
             counter++;
 
-            if (items[0].isReadable()) {
+            if (items[0].isWritable() && !sent) {
+                ByteBuffer bb = ByteBuffer.allocate(4);
+                bb.put("pipe".getBytes());
+                bb.flip();
+                int written = sink.write(bb);
+                assertThat(written, is(4));
+                sent = true;
+            }
+            if (items[1].isReadable()) {
                 ByteBuffer bb = ByteBuffer.allocate(5);
                 int read = source.read(bb);
                 String r = new String(bb.array(), 0, read);
                 assertThat(r, is("pipe"));
                 done = true;
                 break;
-            }
-            if (items[1].isWritable()) {
-                ByteBuffer bb = ByteBuffer.allocate(4);
-                bb.put("pipe".getBytes());
-                bb.flip();
-                int written = sink.write(bb);
-                assertThat(written, is(4));
             }
         }
         assertThat(done, is(true));
@@ -154,9 +155,6 @@ public class PollTest
     @Test
     public void testPollUdp() throws Exception
     {
-        int port = Utils.findOpenPort();
-        InetSocketAddress addr = new InetSocketAddress("127.0.0.1", port);
-
         Ctx context = ZMQ.init(1);
         assertThat(context, notNullValue());
 
@@ -168,18 +166,20 @@ public class PollTest
         DatagramChannel udpIn = DatagramChannel.open();
         assertThat(udpIn, notNullValue());
         udpIn.configureBlocking(false);
-        udpIn.socket().bind(new InetSocketAddress(port));
+        udpIn.socket().bind(null);
+        InetSocketAddress addr = (InetSocketAddress) udpIn.socket().getLocalSocketAddress();
 
         DatagramChannel udpOut = DatagramChannel.open();
         assertThat(udpOut, notNullValue());
         udpOut.configureBlocking(false);
         udpOut.connect(addr);
 
-        items[0] = new PollItem(udpIn, ZMQ.ZMQ_POLLIN);
-        items[1] = new PollItem(udpOut, ZMQ.ZMQ_POLLOUT);
+        items[0] = new PollItem(udpOut, ZMQ.ZMQ_POLLOUT);
+        items[1] = new PollItem(udpIn, ZMQ.ZMQ_POLLIN);
 
         int counter = 0;
         boolean done = false;
+        boolean sent = false;
         while (true) {
             int events = ZMQ.poll(selector, items, 1000);
             if (events < 0) {
@@ -187,20 +187,21 @@ public class PollTest
             }
             counter++;
 
-            if (items[0].isReadable()) {
+            if (items[0].isWritable() && !sent) {
+                ByteBuffer bb = ByteBuffer.allocate(3);
+                bb.put("udp".getBytes());
+                bb.flip();
+                int written = udpOut.send(bb, addr);
+                assertThat(written, is(3));
+                sent = true;
+            }
+            if (items[1].isReadable()) {
                 ByteBuffer bb = ByteBuffer.allocate(3);
                 udpIn.receive(bb);
                 String read = new String(bb.array(), 0, bb.limit());
                 assertThat(read, is("udp"));
                 done = true;
                 break;
-            }
-            if (items[1].isWritable()) {
-                ByteBuffer bb = ByteBuffer.allocate(3);
-                bb.put("udp".getBytes());
-                bb.flip();
-                int written = udpOut.send(bb, addr);
-                assertThat(written, is(3));
             }
         }
         assertThat(done, is(true));
