@@ -156,14 +156,20 @@ public class TestTermEndpoint
     @Test
     public void testUnbind() throws Exception
     {
-        String ep = endpointNormal();
         Ctx ctx = ZMQ.init(1);
         assertThat(ctx, notNullValue());
 
         SocketBase push = ZMQ.socket(ctx, ZMQ.ZMQ_PUSH);
         assertThat(push, notNullValue());
-        boolean rc = ZMQ.bind(push, ep);
-        assertThat(rc, is(true));
+
+        String ep = null;
+        boolean rc = false;
+
+        do {
+            ep = endpointNormal();
+            // we might have to repeat until we find an open port
+            rc = ZMQ.bind(push, ep);
+        } while (!rc && push.errno() == ZError.EADDRINUSE);
 
         SocketBase pull = ZMQ.socket(ctx, ZMQ.ZMQ_PULL);
         assertThat(pull, notNullValue());
@@ -196,14 +202,20 @@ public class TestTermEndpoint
     @Test
     public void testDisconnect() throws Exception
     {
-        String ep = endpointNormal();
         Ctx ctx = ZMQ.init(1);
         assertThat(ctx, notNullValue());
 
         SocketBase push = ZMQ.socket(ctx, ZMQ.ZMQ_PUSH);
         assertThat(push, notNullValue());
-        boolean rc = ZMQ.bind(push, ep);
-        assertThat(rc, is(true));
+
+        String ep = null;
+        boolean rc = false;
+
+        do {
+            ep = endpointNormal();
+            // we might have to repeat until we find an open port
+            rc = ZMQ.bind(push, ep);
+        } while (!rc && push.errno() == ZError.EADDRINUSE);
 
         SocketBase pull = ZMQ.socket(ctx, ZMQ.ZMQ_PULL);
         assertThat(pull, notNullValue());
