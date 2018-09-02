@@ -23,16 +23,12 @@ Sockets are constructed by calling [ZContext.createSocket][create-socket]. This
 is essential because it registers the poller with the context, so that when the
 context is closed, the poller and selector resources are cleaned up properly.
 
-## org.zeromq.ZPoller
-
-[ZPoller][zpoller] is a work-in-progress rewrite of the polling API.
-
-> If you use ZPoller, please update these docs with more information!
-
 ## See also
 
 * [zguide: Handling Multiple Sockets][zguide-polling]: general
   information about polling in ZeroMQ
 
 
+[create-socket]: http://static.javadoc.io/org.zeromq/jeromq/0.4.3/org/zeromq/ZContext.html#createSocket(int)
+[zmq-socket]: http://static.javadoc.io/org.zeromq/jeromq/0.4.3/org/zeromq/ZMQ.Socket.html
 [socket-base]: http://static.javadoc.io/org.zeromq/jeromq/0.4.3/zmq/SocketBase.html
