@@ -17,7 +17,7 @@ Pure Java implementation of libzmq (http://zeromq.org).
 * Securities
   * [PLAIN](http://rfc.zeromq.org/spec:24).
   * [CURVE](http://rfc.zeromq.org/spec:25).
- 
+
 * Performance that's not too bad, compared to native libzmq.
   * 4.5M messages (100B) per sec.
   * [Performance](https://github.com/zeromq/jeromq/wiki/Performance).
@@ -109,7 +109,7 @@ public class hwserver
 
                 // Print the message
                 System.out.println(
-                    "Received " + ": [" + new String(reply, ZMQ.CHARSET) + "]"
+                    "Received: [" + new String(reply, ZMQ.CHARSET) + "]"
                 );
 
                 // Send a response
