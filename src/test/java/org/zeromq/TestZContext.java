@@ -9,7 +9,6 @@ import org.zeromq.ZMQ.Socket;
 
 public class TestZContext
 {
-    @SuppressWarnings("deprecation")
     @Test
     public void testZContext()
     {
@@ -133,5 +132,23 @@ public class TestZContext
 
         shadowCtx.close();
         ctx.close();
+    }
+
+    @Test
+    public void testSeveralPendingInprocSocketsAreClosedIssue595()
+    {
+        ZContext ctx = new ZContext();
+
+        for (SocketType type : SocketType.values()) {
+            for (int idx = 0; idx < 3; ++idx) {
+                Socket socket = ctx.createSocket(type);
+                assertThat(socket, notNullValue());
+                boolean rc = socket.connect("inproc://" + type.name());
+                assertThat(rc, is(true));
+            }
+        }
+        ctx.close();
+
+        assertThat(ctx.isClosed(), is(true));
     }
 }
