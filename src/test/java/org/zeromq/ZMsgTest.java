@@ -121,7 +121,7 @@ public class ZMsgTest
 
         assertThat(msg.hashCode(), is(other.hashCode()));
 
-        other = new ZMsg().add("2");
+        other = new ZMsg().append("2");
 
         assertThat(msg.hashCode(), is(not(equalTo(other.hashCode()))));
     }
@@ -129,9 +129,7 @@ public class ZMsgTest
     @Test
     public void testDump()
     {
-        ZMsg msg = new ZMsg()
-                .add(new byte[0])
-                .add(new byte[] { (byte) 0xAA });
+        ZMsg msg = new ZMsg().append(new byte[0]).append(new byte[] { (byte) 0xAA });
         msg.dump();
 
         StringBuilder out = new StringBuilder();
@@ -155,7 +153,7 @@ public class ZMsgTest
     @Test
     public void testSaveLoad()
     {
-        ZMsg msg = new ZMsg().add("123");
+        ZMsg msg = new ZMsg().append("123");
 
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         DataOutputStream out = new DataOutputStream(stream);
@@ -172,9 +170,7 @@ public class ZMsgTest
     @Test
     public void testAppend()
     {
-        ZMsg msg = new ZMsg()
-                .append(null)
-                .append(ZMsg.newStringMsg("123"));
+        ZMsg msg = new ZMsg().append((ZMsg) null).append(ZMsg.newStringMsg("123"));
         assertThat(msg.popString(), is("123"));
 
         msg.append(ZMsg.newStringMsg("123")).append(msg);
