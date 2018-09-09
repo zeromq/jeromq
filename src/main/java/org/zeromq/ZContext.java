@@ -11,6 +11,8 @@ import org.zeromq.ZMQ.Context;
 import org.zeromq.ZMQ.Poller;
 import org.zeromq.ZMQ.Socket;
 
+import zmq.util.Draft;
+
 /**
  * ZContext provides a high-level ZeroMQ context management class
  *
@@ -25,12 +27,17 @@ public class ZContext implements Closeable
     /**
      * Reference to underlying Context object
      */
-    private Context context;
+    private final Context context;
 
     /**
      * List of sockets managed by this ZContext
      */
     private final List<Socket> sockets;
+
+    /**
+     * List of selectors managed by this ZContext
+     */
+    private final List<Selector> selectors;
 
     /**
      * Number of io threads allocated to this context, default 1
@@ -84,6 +91,7 @@ public class ZContext implements Closeable
     private ZContext(Context context, boolean main, int ioThreads)
     {
         this.sockets = new CopyOnWriteArrayList<>();
+        this.selectors = new CopyOnWriteArrayList<>();
         this.mutex = new ReentrantLock();
         this.context = context;
         this.ioThreads = ioThreads;
@@ -102,12 +110,16 @@ public class ZContext implements Closeable
         for (Socket socket : sockets) {
             destroySocket(socket);
         }
-
         sockets.clear();
+
+        for (Selector selector : selectors) {
+            context.close(selector);
+        }
+        selectors.clear();
 
         // Only terminate context if we are on the main thread
         if (isMain()) {
-          context.term();
+            context.term();
         }
     }
 
@@ -170,9 +182,44 @@ public class ZContext implements Closeable
         }
     }
 
+    /**
+     * Creates a selector. It needs to be closed by {@link #closeSelector(Selector)}.
+     *
+     * @return a newly created selector.
+     * @deprecated this was exposed by mistake.
+     */
+    @Deprecated
     public Selector createSelector()
     {
-        return context.selector();
+        return selector();
+    }
+
+    /**
+     * Creates a selector. Resource will be released when context will be closed.
+     *
+     * @return a newly created selector.
+     */
+    Selector selector()
+    {
+        Selector selector = context.selector();
+        selectors.add(selector);
+        return selector;
+    }
+
+    /**
+     * Closes a selector.
+     * This is a DRAFT method, and may change without notice.
+     *
+     * @param selector the selector to close. It needs to have been created by {@link #createSelector()}.
+     * @deprecated {@link #createSelector()} was exposed by mistake. while waiting for the API to disappear, this method is provided to allow releasing resources.
+     */
+    @Deprecated
+    @Draft
+    public void closeSelector(Selector selector)
+    {
+        if (selectors.remove(selector)) {
+            context.close(selector);
+        }
     }
 
     public Poller createPoller(int size)
@@ -189,7 +236,7 @@ public class ZContext implements Closeable
      */
     public static ZContext shadow(ZContext ctx)
     {
-        ZContext context = new ZContext(ctx.getContext(), false, ctx.ioThreads);
+        ZContext context = new ZContext(ctx.context, false, ctx.ioThreads);
         context.linger = ctx.linger;
         context.sndhwm = ctx.sndhwm;
         context.rcvhwm = ctx.rcvhwm;

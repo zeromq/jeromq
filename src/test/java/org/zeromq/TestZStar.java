@@ -1,6 +1,5 @@
 package org.zeromq;
 
-import java.nio.channels.Selector;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
@@ -21,7 +20,7 @@ public class TestZStar
         }
 
         @Override
-        public Star create(ZContext ctx, Socket pipe, Selector sel, int count, Star previous, Object... args)
+        public Star create(ZContext ctx, Socket pipe, int count, Star previous, Object... args)
         {
             return new NoNo();
         }

@@ -9,6 +9,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 import org.zeromq.ZMQ.Poller;
@@ -254,7 +256,7 @@ public class ZPoller implements Closeable
      */
     public ZPoller(final ZPoller poller)
     {
-        this(poller.creator, poller.selector);
+        this(poller.creator, null, poller.selector);
     }
 
     /**
@@ -264,7 +266,7 @@ public class ZPoller implements Closeable
      */
     public ZPoller(final Selector selector)
     {
-        this(new SimpleCreator(), selector);
+        this(new SimpleCreator(), null, selector);
     }
 
     /**
@@ -276,7 +278,7 @@ public class ZPoller implements Closeable
      */
     public ZPoller(final ZContext context)
     {
-        this(new SimpleCreator(), context.createSelector());
+        this(new SimpleCreator(), context);
     }
 
     /**
@@ -289,7 +291,7 @@ public class ZPoller implements Closeable
      */
     public ZPoller(final ItemCreator creator, final ZPoller poller)
     {
-        this(creator, poller.selector);
+        this(creator, null, poller.selector);
     }
 
     /**
@@ -303,7 +305,7 @@ public class ZPoller implements Closeable
      */
     public ZPoller(final ItemCreator creator, final ZContext context)
     {
-        this(creator, context.createSelector());
+        this(creator, context, context.selector());
     }
 
     /**
@@ -314,7 +316,23 @@ public class ZPoller implements Closeable
      */
     public ZPoller(final ItemCreator creator, final Selector selector)
     {
+        this(creator, null, selector);
+    }
+
+    /**
+     * Creates a new poller.
+     *
+     * @param creator   the items creator
+     * @param context the optional context where the selector should come from. If non-null, the selector will be destroyed on close.
+     * @param selector  the selector to use for polling.
+     */
+    private ZPoller(final ItemCreator creator, final ZContext context, final Selector selector)
+    {
+        Objects.requireNonNull(creator, "Item creator is mandatory for ZPoller");
+        Objects.requireNonNull(selector, "Selector is mandatory for ZPoller");
+
         this.creator = creator;
+        this.context = Optional.ofNullable(context);
         this.selector = selector;
         items = new HashMap<>();
         all = createContainer(0);
@@ -724,13 +742,17 @@ public class ZPoller implements Closeable
     }
 
     /**
-     * Destroys the poller and the associated selector without exception.
+     * Destroys the poller without exception.
      */
     public void destroy()
     {
-        // we didn't create the selector,
-        // it is not our responsibility to close it.
+        // if we created the selector,
+        // it is our responsibility to close it.
+        context.ifPresent(ctx -> ctx.closeSelector(selector));
     }
+
+    // optional context for the poller.
+    private final Optional<ZContext> context;
 
     // selector used for polling
     private final Selector selector;
