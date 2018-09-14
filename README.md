@@ -6,6 +6,8 @@ Pure Java implementation of libzmq (http://zeromq.org).
 [![Coverage Status](https://coveralls.io/repos/github/zeromq/jeromq/badge.svg?branch=master)](https://coveralls.io/github/zeromq/jeromq?branch=master)
 [![Maven Central](https://img.shields.io/maven-central/v/org.zeromq/jeromq.svg)](https://maven-badges.herokuapp.com/maven-central/org.zeromq/jeromq)
 [![Javadocs](http://www.javadoc.io/badge/org.zeromq/jeromq.svg)](http://www.javadoc.io/doc/org.zeromq/jeromq)
+[![Code Quality: Java](https://img.shields.io/lgtm/grade/java/g/zeromq/jeromq.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/zeromq/jeromq/context:java)
+[![Total Alerts](https://img.shields.io/lgtm/alerts/g/zeromq/jeromq.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/zeromq/jeromq/alerts)
 
 ## Features
 
