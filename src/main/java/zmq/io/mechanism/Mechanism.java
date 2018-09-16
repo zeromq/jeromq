@@ -13,8 +13,8 @@ import zmq.ZError;
 import zmq.ZMQ;
 import zmq.io.Metadata;
 import zmq.io.Metadata.ParseListener;
-import zmq.io.SessionBase;
 import zmq.io.Msgs;
+import zmq.io.SessionBase;
 import zmq.io.net.Address;
 import zmq.socket.Sockets;
 import zmq.util.Blob;
@@ -63,8 +63,15 @@ public abstract class Mechanism
 
     public final Msg peerIdentity()
     {
-        Msg msg = new Msg(identity == null ? 0 : identity.size());
-        msg.put(identity.data(), 0, identity.size());
+        byte[] data = new byte[0];
+        int size = 0;
+        if (identity != null) {
+            data = identity.data();
+            size = identity.size();
+        }
+
+        Msg msg = new Msg(size);
+        msg.put(data, 0, size);
         msg.setFlags(Msg.IDENTITY);
 
         return msg;
