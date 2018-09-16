@@ -797,7 +797,6 @@ public class ZPoller implements Closeable
             }
             else if (socket == null) {
                 // not a socket
-                assert (ch != null);
                 socketOrChannel = ch;
             }
         }
