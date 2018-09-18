@@ -38,9 +38,9 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>org.zeromq</groupId>
+      <groupId>eu.neilalexander</groupId>
       <artifactId>jnacl</artifactId>
-      <version>0.1.0</version>
+      <version>1.0.0</version>
     </dependency>
   </dependencies>
   <distributionManagement>
