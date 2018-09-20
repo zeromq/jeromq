@@ -572,9 +572,6 @@ public class StreamEngine implements IEngine, IPollEvents
             }
             msg = decoder.msg();
             rc = processMsg.apply(msg);
-            if (!rc) {
-                break;
-            }
         }
         if (!rc && errno.is(ZError.EAGAIN)) {
             session.flush();
