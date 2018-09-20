@@ -546,8 +546,7 @@ public class StreamEngine implements IEngine, IPollEvents
         assert (decoder != null);
 
         Msg msg = decoder.msg();
-        boolean rc = processMsg.apply(msg);
-        if (!rc) {
+        if (!processMsg.apply(msg)) {
             if (errno.is(ZError.EAGAIN)) {
                 session.flush();
             }
@@ -556,7 +555,7 @@ public class StreamEngine implements IEngine, IPollEvents
             }
             return;
         }
-        // rc is true at this point
+        boolean rc = true;
         while (insize > 0 && rc) {
             ValueReference<Integer> processed = new ValueReference<>(0);
             Step.Result result = decoder.decode(inpos, insize, processed);
