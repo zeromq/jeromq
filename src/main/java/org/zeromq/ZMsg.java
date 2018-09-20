@@ -485,15 +485,37 @@ public class ZMsg implements Iterable<ZFrame>, Deque<ZFrame>
         return this;
     }
 
-    public ZMsg add(String stringValue)
+    public boolean add(String stringValue)
     {
-        add(new ZFrame(stringValue));
+        return add(new ZFrame(stringValue));
+    }
+
+    public boolean add(byte[] data)
+    {
+        return add(new ZFrame(data));
+    }
+
+    /**
+     * Adds a string as a new frame in the message.
+     *
+     * @param stringValue the value to add
+     * @return this
+     */
+    public ZMsg append(String stringValue)
+    {
+        add(stringValue);
         return this;
     }
 
-    public ZMsg add(byte[] data)
+    /**
+     * Adds bytes as a new frame in the message.
+     *
+     * @param data the value to add
+     * @return this
+     */
+    public ZMsg append(byte[] data)
     {
-        add(new ZFrame(data));
+        add(data);
         return this;
     }
 

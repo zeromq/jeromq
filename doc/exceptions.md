@@ -15,7 +15,7 @@ context, but the context in question has been terminated.
 > If you know what this exception is for, please update this document with an
 > explanation!
 >
-> Anecdotally, I can find anywhere in the source code where this exception is
+> Anecdotally, I can't find anywhere in the source code where this exception is
 > ever thrown, so perhaps it should be removed?
 
 ## ZError.IOException

@@ -1,7 +1,6 @@
 package org.zeromq;
 
 import java.nio.channels.SelectableChannel;
-import java.nio.channels.Selector;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -397,16 +396,18 @@ public class ZActor extends ZStar
     }
 
     /**
-     * Creates a new ZActor.
+     * Creates a new ZActor. A new context will be created and closed at the stop of the operation.
      *
      * @param actor
      *            the actor handling messages from either stage and backstage
+     * @param motdelafin
+     *            the final word used to mark the end of the actor. Null to disable this mechanism.
      * @param args
      *            the optional arguments that will be passed to the distant actor
      */
-    public ZActor(Actor actor, final String motdelafin, Object... args)
+    public ZActor(final Actor actor, final String motdelafin, final Object... args)
     {
-        this(null, null, actor, motdelafin, args);
+        super(new ActorFortune(actor), motdelafin, args);
     }
 
     /**
@@ -416,12 +417,16 @@ public class ZActor extends ZStar
      *            the creator of the selector used on the Plateau.
      * @param actor
      *            the actor handling messages from either stage and backstage
+     * @param motdelafin
+     *            the final word used to mark the end of the actor. Null to disable this mechanism.
      * @param args
      *            the optional arguments that will be passed to the distant actor
+     * @deprecated use {@link ZActor#ZActor(Actor, String, Object...)}
      */
+    @Deprecated
     public ZActor(final SelectorCreator selector, final Actor actor, final String motdelafin, final Object... args)
     {
-        this(null, selector, actor, motdelafin, args);
+        this(actor, motdelafin, args);
     }
 
     /**
@@ -436,13 +441,17 @@ public class ZActor extends ZStar
      *            the creator of the selector used on the Plateau.
      * @param actor
      *            the actor handling messages from either stage and backstage
+     * @param motdelafin
+     *            the final word used to mark the end of the actor. Null to disable this mechanism.
      * @param args
      *            the optional arguments that will be passed to the distant actor
+     * @deprecated use {@link ZActor#ZActor(ZContext, Actor, String, Object...)}
      */
+    @Deprecated
     public ZActor(final ZContext context, final SelectorCreator selector, final Actor actor, final String motdelafin,
             final Object... args)
     {
-        super(context, selector, new ActorFortune(actor), motdelafin, args);
+        this(context, actor, motdelafin, args);
     }
 
     /**
@@ -460,7 +469,7 @@ public class ZActor extends ZStar
      */
     public ZActor(final ZContext context, final Actor actor, final String motdelafin, final Object... args)
     {
-        super(context, null, new ActorFortune(actor), motdelafin, args);
+        super(context, new ActorFortune(actor), motdelafin, args);
     }
 
     // actor creator
@@ -481,9 +490,9 @@ public class ZActor extends ZStar
         }
 
         @Override
-        public Star create(ZContext ctx, Socket pipe, Selector sel, int count, Star previous, Object... args)
+        public Star create(ZContext ctx, Socket pipe, int count, Star previous, Object... args)
         {
-            return new ZActor.Double(ctx, pipe, sel, actor, args);
+            return new ZActor.Double(ctx, pipe, actor, args);
         }
 
         @Override
@@ -517,8 +526,7 @@ public class ZActor extends ZStar
         private final ZContext context;
 
         // creates a new double
-        public Double(final ZContext ctx, final Socket pipe, final Selector selector, final Actor actor,
-                final Object... args)
+        public Double(final ZContext ctx, final Socket pipe, final Actor actor, final Object... args)
         {
             this.context = ctx;
             this.pipe = pipe;
@@ -529,7 +537,7 @@ public class ZActor extends ZStar
 
             sockets = new ArrayList<>(created);
 
-            poller = new ZPoller(selector);
+            poller = new ZPoller(ctx);
             poller.setGlobalHandler(this);
         }
 

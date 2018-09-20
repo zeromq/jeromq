@@ -1,13 +1,13 @@
 package org.zeromq;
 
-import zmq.ZMQ;
-
 /**
  * Socket Type enumeration
  *
  * @author Isa Hekmatizadeh
  */
-public enum SocketType {
+@SuppressWarnings("deprecation")
+public enum SocketType
+{
     /**
      * Flag to specify a exclusive pair of sockets.
      * <p>
@@ -33,7 +33,7 @@ public enum SocketType {
      * and do not implement functionality such as auto-reconnection.
      * PAIR sockets are considered experimental and may have other missing or broken aspects.</strong>
      */
-    PAIR(ZMQ.ZMQ_PAIR),
+    PAIR(ZMQ.PAIR),
 
     /**
      * Flag to specify a PUB socket, receiving side must be a SUB or XSUB.
@@ -59,7 +59,7 @@ public enum SocketType {
      * <tr><td>Action in mute state</td><td>Drop</td></tr>
      * </table>
      */
-    PUB(ZMQ.ZMQ_PUB),
+    PUB(ZMQ.PUB),
 
     /**
      * Flag to specify the receiving part of the PUB or XPUB socket.
@@ -80,7 +80,7 @@ public enum SocketType {
      * <tr><td>Outgoing routing strategy</td><td>N/A</td></tr>
      * </table>
      */
-    SUB(ZMQ.ZMQ_SUB),
+    SUB(ZMQ.SUB),
 
     /**
      * Flag to specify a REQ socket, receiving side must be a REP or ROUTER.
@@ -105,7 +105,7 @@ public enum SocketType {
      * <tr><td>Action in mute state</td><td>Block</td></tr>
      * </table>
      */
-    REQ(ZMQ.ZMQ_REQ),
+    REQ(ZMQ.REQ),
 
     /**
      * Flag to specify the receiving part of a REQ or DEALER socket.
@@ -127,7 +127,7 @@ public enum SocketType {
      * <tr><td>Outgoing routing strategy</td><td>Last peer</td></tr>
      * </table>
      */
-    REP(ZMQ.ZMQ_REP),
+    REP(ZMQ.REP),
 
     /**
      * Flag to specify a DEALER socket (aka XREQ).
@@ -158,7 +158,7 @@ public enum SocketType {
      * <tr><td>Action in mute state</td><td>Block</td></tr>
      * </table>
      */
-    DEALER(ZMQ.ZMQ_DEALER),
+    DEALER(ZMQ.DEALER),
 
     /**
      * Flag to specify ROUTER socket (aka XREP).
@@ -205,7 +205,7 @@ public enum SocketType {
      * <tr><td>Action in mute state</td><td>Drop (See text)</td></tr>
      * </table>
      */
-    ROUTER(ZMQ.ZMQ_ROUTER),
+    ROUTER(ZMQ.ROUTER),
 
     /**
      * Flag to specify the receiving part of a PUSH socket.
@@ -226,7 +226,7 @@ public enum SocketType {
      * <tr><td>Action in mute state</td><td>Block</td></tr>
      * </table>
      */
-    PULL(ZMQ.ZMQ_PULL),
+    PULL(ZMQ.PULL),
 
     /**
      * Flag to specify a PUSH socket, receiving side must be a PULL.
@@ -251,7 +251,7 @@ public enum SocketType {
      * <tr><td>Action in mute state</td><td>Block</td></tr>
      * </table>
      */
-    PUSH(ZMQ.ZMQ_PUSH),
+    PUSH(ZMQ.PUSH),
 
     /**
      * Flag to specify a XPUB socket, receiving side must be a SUB or XSUB.
@@ -275,7 +275,7 @@ public enum SocketType {
      * <tr><td>Action in mute state</td><td>Drop</td></tr>
      * </table>
      */
-    XPUB(ZMQ.ZMQ_XPUB),
+    XPUB(ZMQ.XPUB),
 
     /**
      * Flag to specify the receiving part of the PUB or XPUB socket.
@@ -296,7 +296,7 @@ public enum SocketType {
      * <tr><td>Action in mute state</td><td>Drop</td></tr>
      * </table>
      */
-    XSUB(ZMQ.ZMQ_XSUB),
+    XSUB(ZMQ.XSUB),
 
     /**
      * Flag to specify a STREAM socket.
@@ -330,19 +330,19 @@ public enum SocketType {
      * <tr><td>Action in mute state</td><td>EAGAIN</td></tr>
      * </table>
      */
-    STREAM(ZMQ.ZMQ_STREAM);
+    STREAM(ZMQ.STREAM);
 
-    private final int socketType;
+    public final int type;
 
-    SocketType(int socketType)
+    private SocketType(int socketType)
     {
-        this.socketType = socketType;
+        this.type = socketType;
     }
 
     public static SocketType type(int baseType)
     {
         for (SocketType type : values()) {
-            if (type.type() == baseType) {
+            if (type.type == baseType) {
                 return type;
             }
         }
@@ -351,6 +351,6 @@ public enum SocketType {
 
     public int type()
     {
-        return socketType;
+        return type;
     }
 }

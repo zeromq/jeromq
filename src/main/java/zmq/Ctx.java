@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.channels.Selector;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -19,6 +20,7 @@ import zmq.io.IOThread;
 import zmq.pipe.Pipe;
 import zmq.socket.Sockets;
 import zmq.util.Errno;
+import zmq.util.MultiMap;
 
 //Context object encapsulates all the global state associated with
 //  the library.
@@ -134,7 +136,7 @@ public class Ctx
     static final int         TERM_TID   = 0;
     private static final int REAPER_TID = 1;
 
-    private final Map<String, PendingConnection> pendingConnections = new HashMap<>();
+    private final MultiMap<String, PendingConnection> pendingConnections = new MultiMap<>();
 
     private boolean ipv6;
 
@@ -219,11 +221,11 @@ public class Ctx
         slotSync.lock();
         try {
             // Connect up any pending inproc connections, otherwise we will hang
-            for (Entry<String, PendingConnection> pending : pendingConnections.entrySet()) {
+            for (Entry<PendingConnection, String> pending : pendingConnections.entries()) {
                 SocketBase s = createSocket(ZMQ.ZMQ_PAIR);
                 // create_socket might fail eg: out of memory/sockets limit reached
                 assert (s != null);
-                s.bind(pending.getKey());
+                s.bind(pending.getValue());
                 s.close();
             }
 
@@ -636,7 +638,7 @@ public class Ctx
             if (existing == null) {
                 // Still no bind.
                 endpoint.socket.incSeqnum();
-                pendingConnections.put(addr, pendingConnection);
+                pendingConnections.insert(addr, pendingConnection);
             }
             else {
                 // Bind has happened in the mean time, connect directly
@@ -652,9 +654,11 @@ public class Ctx
     {
         endpointsSync.lock();
         try {
-            PendingConnection pending = pendingConnections.remove(addr);
-            if (pending != null) {
-                connectInprocSockets(bindSocket, endpoints.get(addr).options, pending, Side.BIND);
+            Collection<PendingConnection> pendings = pendingConnections.remove(addr);
+            if (pendings != null) {
+                for (PendingConnection pending : pendings) {
+                    connectInprocSockets(bindSocket, endpoints.get(addr).options, pending, Side.BIND);
+                }
             }
         }
         finally {

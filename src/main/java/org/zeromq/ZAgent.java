@@ -247,9 +247,11 @@ public interface ZAgent
 
     /**
      * Creates a selector and destroys it.
+     * @deprecated
      */
     // Contract for selector creation.
     // will be called in backstage side.
+    @Deprecated
     interface SelectorCreator
     {
         /**
@@ -261,26 +263,9 @@ public interface ZAgent
 
         /**
          * Destroys the previously opened selector.
+         *
          * @param selector the selector to close
          */
         void destroy(Selector selector) throws IOException;
-    }
-
-    // very simple selector creator
-    class VerySimpleSelectorCreator implements SelectorCreator
-    {
-        @Override
-        public Selector create() throws IOException
-        {
-            return Selector.open();
-        }
-
-        @Override
-        public void destroy(Selector selector) throws IOException
-        {
-            if (selector != null) {
-                selector.close();
-            }
-        }
     }
 }

@@ -11,7 +11,6 @@ import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.nio.channels.SelectableChannel;
-import java.nio.channels.Selector;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.Test;
@@ -87,7 +86,7 @@ public class TestZPoller
         final int port = Utils.findOpenPort();
 
         final ZContext context = new ZContext();
-        final ZPoller poller = new ZPoller(context.createSelector());
+        final ZPoller poller = new ZPoller(context);
         final ZMQ.Socket receiver = context.createSocket(SocketType.PULL);
 
         final Server client = new Server(context, port);
@@ -132,8 +131,9 @@ public class TestZPoller
     @Test
     public void testUseNull() throws IOException
     {
-        Selector selector = new ZStar.VerySimpleSelectorCreator().create();
-        ZPoller poller = new ZPoller(selector);
+        final ZContext context = new ZContext();
+
+        ZPoller poller = new ZPoller(context);
 
         SelectableChannel channel = null;
         Socket socket = null; // ctx.createSocket(ZMQ.SUB);
@@ -171,7 +171,7 @@ public class TestZPoller
         assertThat("reading event with events handlers without sockets", events, is(0));
 
         poller.close();
-        selector.close();
+        context.close();
     }
 
     @Test
@@ -210,7 +210,6 @@ public class TestZPoller
         }
     }
 
-    @SuppressWarnings("unlikely-arg-type")
     @Test
     public void testItemEqualsBasic() throws IOException
     {

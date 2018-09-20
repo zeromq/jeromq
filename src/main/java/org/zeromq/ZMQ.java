@@ -1,16 +1,5 @@
 package org.zeromq;
 
-import zmq.Ctx;
-import zmq.SocketBase;
-import zmq.ZError;
-import zmq.ZError.CtxTerminatedException;
-import zmq.io.coder.IDecoder;
-import zmq.io.coder.IEncoder;
-import zmq.io.mechanism.Mechanisms;
-import zmq.msg.MsgAllocator;
-import zmq.util.Draft;
-import zmq.util.Z85;
-
 import java.io.Closeable;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectableChannel;
@@ -21,6 +10,17 @@ import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
+
+import zmq.Ctx;
+import zmq.SocketBase;
+import zmq.ZError;
+import zmq.ZError.CtxTerminatedException;
+import zmq.io.coder.IDecoder;
+import zmq.io.coder.IEncoder;
+import zmq.io.mechanism.Mechanisms;
+import zmq.msg.MsgAllocator;
+import zmq.util.Draft;
+import zmq.util.Z85;
 
 /**
  * The ØMQ lightweight messaging kernel is a library which extends the standard socket interfaces
@@ -99,7 +99,7 @@ public class ZMQ
      * Socket flag to indicate a nonblocking send or recv mode.
      */
     public static final int DONTWAIT = zmq.ZMQ.ZMQ_DONTWAIT;
-    public static final int NOBLOCK = zmq.ZMQ.ZMQ_DONTWAIT;
+    public static final int NOBLOCK  = zmq.ZMQ.ZMQ_DONTWAIT;
 
     // Socket types, used when creating a Socket. Note that all of the int types here is
     // deprecated, use SocketType instead
@@ -127,7 +127,7 @@ public class ZMQ
      * @deprecated As of release 3.0 of zeromq, replaced by {@link #DEALER}
      */
     @Deprecated
-    public static final int XREQ = DEALER;
+    public static final int XREQ   = DEALER;
 
     @Deprecated
     public static final int ROUTER = zmq.ZMQ.ZMQ_ROUTER;
@@ -138,7 +138,7 @@ public class ZMQ
      * @deprecated As of release 3.0 of zeromq, replaced by {@link #ROUTER}
      */
     @Deprecated
-    public static final int XREP = ROUTER;
+    public static final int XREP   = ROUTER;
 
     @Deprecated
     public static final int PULL = zmq.ZMQ.ZMQ_PULL;
@@ -153,27 +153,27 @@ public class ZMQ
     public static final int XSUB = zmq.ZMQ.ZMQ_XSUB;
 
     @Deprecated
-    public static final int STREAM = zmq.ZMQ.ZMQ_STREAM;
+    public static final int STREAM     = zmq.ZMQ.ZMQ_STREAM;
     /**
      * Flag to specify a STREAMER device.
      */
     @Deprecated
-    public static final int STREAMER = zmq.ZMQ.ZMQ_STREAMER;
+    public static final int STREAMER   = zmq.ZMQ.ZMQ_STREAMER;
     /**
      * Flag to specify a FORWARDER device.
      */
     @Deprecated
-    public static final int FORWARDER = zmq.ZMQ.ZMQ_FORWARDER;
+    public static final int FORWARDER  = zmq.ZMQ.ZMQ_FORWARDER;
     /**
      * Flag to specify a QUEUE device.
      */
     @Deprecated
-    public static final int QUEUE = zmq.ZMQ.ZMQ_QUEUE;
+    public static final int QUEUE      = zmq.ZMQ.ZMQ_QUEUE;
     /**
      * @see org.zeromq.ZMQ#PULL
      */
     @Deprecated
-    public static final int UPSTREAM = PULL;
+    public static final int UPSTREAM   = PULL;
     /**
      * @see org.zeromq.ZMQ#PUSH
      */
@@ -186,83 +186,83 @@ public class ZMQ
      * established to a remote peer. This can happen either synchronous
      * or asynchronous. Value is the FD of the newly connected socket.
      */
-    public static final int EVENT_CONNECTED = zmq.ZMQ.ZMQ_EVENT_CONNECTED;
+    public static final int EVENT_CONNECTED          = zmq.ZMQ.ZMQ_EVENT_CONNECTED;
     /**
      * EVENT_CONNECT_DELAYED: synchronous connect failed, it's being polled.
      * The EVENT_CONNECT_DELAYED event triggers when an immediate connection
      * attempt is delayed and its completion is being polled for. Value has
      * no meaning.
      */
-    public static final int EVENT_CONNECT_DELAYED = zmq.ZMQ.ZMQ_EVENT_CONNECT_DELAYED;
+    public static final int EVENT_CONNECT_DELAYED    = zmq.ZMQ.ZMQ_EVENT_CONNECT_DELAYED;
     /**
      * @see org.zeromq.ZMQ#EVENT_CONNECT_DELAYED
      */
     @Deprecated
-    public static final int EVENT_DELAYED = EVENT_CONNECT_DELAYED;
+    public static final int EVENT_DELAYED            = EVENT_CONNECT_DELAYED;
     /**
      * EVENT_CONNECT_RETRIED: asynchronous connect / reconnection attempt.
      * The EVENT_CONNECT_RETRIED event triggers when a connection attempt is
      * being handled by reconnect timer. The reconnect interval's recomputed
      * for each attempt. Value is the reconnect interval.
      */
-    public static final int EVENT_CONNECT_RETRIED = zmq.ZMQ.ZMQ_EVENT_CONNECT_RETRIED;
+    public static final int EVENT_CONNECT_RETRIED    = zmq.ZMQ.ZMQ_EVENT_CONNECT_RETRIED;
     /**
      * @see org.zeromq.ZMQ#EVENT_CONNECT_RETRIED
      */
     @Deprecated
-    public static final int EVENT_RETRIED = EVENT_CONNECT_RETRIED;
+    public static final int EVENT_RETRIED            = EVENT_CONNECT_RETRIED;
     /**
      * EVENT_LISTENING: socket bound to an address, ready to accept connections.
      * The EVENT_LISTENING event triggers when a socket's successfully bound to
      * a an interface. Value is the FD of the newly bound socket.
      */
-    public static final int EVENT_LISTENING = zmq.ZMQ.ZMQ_EVENT_LISTENING;
+    public static final int EVENT_LISTENING          = zmq.ZMQ.ZMQ_EVENT_LISTENING;
     /**
      * EVENT_BIND_FAILED: socket could not bind to an address.
      * The EVENT_BIND_FAILED event triggers when a socket could not bind to a
      * given interface. Value is the errno generated by the bind call.
      */
-    public static final int EVENT_BIND_FAILED = zmq.ZMQ.ZMQ_EVENT_BIND_FAILED;
+    public static final int EVENT_BIND_FAILED        = zmq.ZMQ.ZMQ_EVENT_BIND_FAILED;
     /**
      * EVENT_ACCEPTED: connection accepted to bound interface.
      * The EVENT_ACCEPTED event triggers when a connection from a remote peer
      * has been established with a socket's listen address. Value is the FD of
      * the accepted socket.
      */
-    public static final int EVENT_ACCEPTED = zmq.ZMQ.ZMQ_EVENT_ACCEPTED;
+    public static final int EVENT_ACCEPTED           = zmq.ZMQ.ZMQ_EVENT_ACCEPTED;
     /**
      * EVENT_ACCEPT_FAILED: could not accept client connection.
      * The EVENT_ACCEPT_FAILED event triggers when a connection attempt to a
      * socket's bound address fails. Value is the errno generated by accept.
      */
-    public static final int EVENT_ACCEPT_FAILED = zmq.ZMQ.ZMQ_EVENT_ACCEPT_FAILED;
+    public static final int EVENT_ACCEPT_FAILED      = zmq.ZMQ.ZMQ_EVENT_ACCEPT_FAILED;
     /**
      * EVENT_CLOSED: connection closed.
      * The EVENT_CLOSED event triggers when a connection's underlying
      * descriptor has been closed. Value is the former FD of the for the
      * closed socket. FD has been closed already!
      */
-    public static final int EVENT_CLOSED = zmq.ZMQ.ZMQ_EVENT_CLOSED;
+    public static final int EVENT_CLOSED             = zmq.ZMQ.ZMQ_EVENT_CLOSED;
     /**
      * EVENT_CLOSE_FAILED: connection couldn't be closed.
      * The EVENT_CLOSE_FAILED event triggers when a descriptor could not be
      * released back to the OS. Implementation note: ONLY FOR IPC SOCKETS.
      * Value is the errno generated by unlink.
      */
-    public static final int EVENT_CLOSE_FAILED = zmq.ZMQ.ZMQ_EVENT_CLOSE_FAILED;
+    public static final int EVENT_CLOSE_FAILED       = zmq.ZMQ.ZMQ_EVENT_CLOSE_FAILED;
     /**
      * EVENT_DISCONNECTED: broken session.
      * The EVENT_DISCONNECTED event triggers when the stream engine (tcp and
      * ipc specific) detects a corrupted / broken session. Value is the FD of
      * the socket.
      */
-    public static final int EVENT_DISCONNECTED = zmq.ZMQ.ZMQ_EVENT_DISCONNECTED;
+    public static final int EVENT_DISCONNECTED       = zmq.ZMQ.ZMQ_EVENT_DISCONNECTED;
     /**
      * EVENT_MONITOR_STOPPED: monitor has been stopped.
      * The EVENT_MONITOR_STOPPED event triggers when the monitor for a socket is
      * stopped.
      */
-    public static final int EVENT_MONITOR_STOPPED = zmq.ZMQ.ZMQ_EVENT_MONITOR_STOPPED;
+    public static final int EVENT_MONITOR_STOPPED    = zmq.ZMQ.ZMQ_EVENT_MONITOR_STOPPED;
     /**
      * EVENT_HANDSHAKE_PROTOCOL: protocol has been successfully negotiated.
      * The EVENT_HANDSHAKE_PROTOCOL event triggers when the stream engine (tcp and ipc)
@@ -274,14 +274,14 @@ public class ZMQ
      * EVENT_ALL: all events known.
      * The EVENT_ALL constant can be used to set up a monitor for all known events.
      */
-    public static final int EVENT_ALL = zmq.ZMQ.ZMQ_EVENT_ALL;
+    public static final int EVENT_ALL                = zmq.ZMQ.ZMQ_EVENT_ALL;
 
     public static final byte[] MESSAGE_SEPARATOR = zmq.ZMQ.MESSAGE_SEPARATOR;
 
     public static final byte[] SUBSCRIPTION_ALL = zmq.ZMQ.SUBSCRIPTION_ALL;
 
-    public static final byte[] PROXY_PAUSE = zmq.ZMQ.PROXY_PAUSE;
-    public static final byte[] PROXY_RESUME = zmq.ZMQ.PROXY_RESUME;
+    public static final byte[] PROXY_PAUSE     = zmq.ZMQ.PROXY_PAUSE;
+    public static final byte[] PROXY_RESUME    = zmq.ZMQ.PROXY_RESUME;
     public static final byte[] PROXY_TERMINATE = zmq.ZMQ.PROXY_TERMINATE;
 
     public static final Charset CHARSET = zmq.ZMQ.CHARSET;
@@ -332,10 +332,10 @@ public class ZMQ
     public static boolean proxy(Socket frontend, Socket backend, Socket capture, Socket control)
     {
         return zmq.ZMQ.proxy(
-                frontend.base,
-                backend.base,
-                capture == null ? null : capture.base,
-                control == null ? null : control.base);
+                             frontend.base,
+                             backend.base,
+                             capture == null ? null : capture.base,
+                             control == null ? null : control.base);
     }
 
     public static int poll(Selector selector, PollItem[] items, long timeout)
@@ -468,7 +468,7 @@ public class ZMQ
     public static class Context implements Closeable
     {
         private final AtomicBoolean closed = new AtomicBoolean(false);
-        private final Ctx ctx;
+        private final Ctx           ctx;
 
         /**
          * Class constructor.
@@ -744,10 +744,10 @@ public class ZMQ
         //  This port range is defined by IANA for dynamic or private ports
         //  We use this when choosing a port for dynamic binding.
         private static final int DYNFROM = 0xc000;
-        private static final int DYNTO = 0xffff;
+        private static final int DYNTO   = 0xffff;
 
-        private final Ctx ctx;
-        private final SocketBase base;
+        private final Ctx           ctx;
+        private final SocketBase    base;
         private final AtomicBoolean isClosed = new AtomicBoolean(false);
 
         /**
@@ -758,8 +758,21 @@ public class ZMQ
          */
         protected Socket(Context context, SocketType type)
         {
+            this(context, type.type);
+        }
+
+        /**
+         * Class constructor.
+         *
+         * @param context a 0MQ context previously created.
+         * @param type    the socket type.
+         * @deprecated use {@link Socket#Socket(Context, SocketType)}
+         */
+        @Deprecated
+        protected Socket(Context context, int type)
+        {
             ctx = context.ctx;
-            base = ctx.createSocket(type.type());
+            base = ctx.createSocket(type);
         }
 
         protected Socket(SocketBase base)
@@ -797,9 +810,21 @@ public class ZMQ
          *
          * @return the socket type.
          */
-        public SocketType getType()
+        public int getType()
         {
-            return SocketType.type(base.getSocketOpt(zmq.ZMQ.ZMQ_TYPE));
+            return base.getSocketOpt(zmq.ZMQ.ZMQ_TYPE);
+        }
+
+        /**
+         * The 'ZMQ_TYPE option shall retrieve the socket type for the specified
+         * 'socket'.  The socket type is specified at socket creation time and
+         * cannot be modified afterwards.
+         *
+         * @return the socket type as an enum.
+         */
+        public SocketType getSocketType()
+        {
+            return SocketType.type(getType());
         }
 
         /**
@@ -3377,7 +3402,7 @@ public class ZMQ
          * For standard sockets this is equivalent to the POLLIN flag of the poll() system call
          * and generally means that at least one byte of data may be read from fd without blocking.
          */
-        public static final int POLLIN = zmq.ZMQ.ZMQ_POLLIN;
+        public static final int POLLIN  = zmq.ZMQ.ZMQ_POLLIN;
         /**
          * For ØMQ sockets, at least one message may be sent to the socket without blocking.
          * <br/>
@@ -3393,15 +3418,15 @@ public class ZMQ
          */
         public static final int POLLERR = zmq.ZMQ.ZMQ_POLLERR;
 
-        private static final int SIZE_DEFAULT = 32;
+        private static final int SIZE_DEFAULT   = 32;
         private static final int SIZE_INCREMENT = 16;
 
         private final Selector selector;
-        private final Context context;
+        private final Context  context;
 
         private PollItem[] items;
-        private int next;
-        private int used;
+        private int        next;
+        private int        used;
 
         private long timeout;
 
@@ -3763,7 +3788,7 @@ public class ZMQ
     public static class PollItem
     {
         private final zmq.poll.PollItem base;
-        private final Socket socket;
+        private final Socket            socket;
 
         public PollItem(Socket socket, int ops)
         {
@@ -3844,7 +3869,7 @@ public class ZMQ
      */
     public static class Event
     {
-        private final int event;
+        private final int    event;
         private final Object value;
         private final String address;
 
