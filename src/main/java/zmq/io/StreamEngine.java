@@ -583,12 +583,10 @@ public class StreamEngine implements IEngine, IPollEvents
             assert (processed.get() <= insize);
             insize -= processed.get();
             if (result == Step.Result.MORE_DATA) {
-                rc = true;
-                break;
+                return true;
             }
             if (result == Step.Result.ERROR) {
-                rc = false;
-                break;
+                return false;
             }
             rc = processMsg.apply(decoder.msg());
         }
