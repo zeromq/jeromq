@@ -575,7 +575,8 @@ public class StreamEngine implements IEngine, IPollEvents
         }
     }
 
-    private boolean decodeInputsGetRC() {
+    private boolean decodeInputsGetRC()
+    {
         boolean rc = true;
         while (insize > 0 && rc) {
             ValueReference<Integer> processed = new ValueReference<>(0);
