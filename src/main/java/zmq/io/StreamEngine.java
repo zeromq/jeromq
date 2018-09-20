@@ -577,8 +577,7 @@ public class StreamEngine implements IEngine, IPollEvents
 
     private boolean decodeInputsGetRC()
     {
-        boolean rc = true;
-        while (insize > 0 && rc) {
+        while (insize > 0) {
             ValueReference<Integer> processed = new ValueReference<>(0);
             Step.Result result = decoder.decode(inpos, insize, processed);
             assert (processed.get() <= insize);
@@ -589,9 +588,11 @@ public class StreamEngine implements IEngine, IPollEvents
             if (result == Step.Result.ERROR) {
                 return false;
             }
-            rc = processMsg.apply(decoder.msg());
+            if (!processMsg.apply(decoder.msg())) {
+                return false;
+            }
         }
-        return rc;
+        return true;
     }
 
     //  Detects the protocol used by the peer.
