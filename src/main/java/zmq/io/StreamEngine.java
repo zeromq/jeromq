@@ -576,7 +576,6 @@ public class StreamEngine implements IEngine, IPollEvents
     }
 
     private boolean decodeInputsGetRC() {
-        Msg msg;
         boolean rc = true;
         while (insize > 0 && rc) {
             ValueReference<Integer> processed = new ValueReference<>(0);
@@ -591,8 +590,7 @@ public class StreamEngine implements IEngine, IPollEvents
                 rc = false;
                 break;
             }
-            msg = decoder.msg();
-            rc = processMsg.apply(msg);
+            rc = processMsg.apply(decoder.msg());
         }
         return rc;
     }
