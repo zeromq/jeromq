@@ -555,23 +555,7 @@ public class StreamEngine implements IEngine, IPollEvents
             }
             return;
         }
-        boolean rc = true;
-        while (insize > 0 && rc) {
-            ValueReference<Integer> processed = new ValueReference<>(0);
-            Step.Result result = decoder.decode(inpos, insize, processed);
-            assert (processed.get() <= insize);
-            insize -= processed.get();
-            if (result == Step.Result.MORE_DATA) {
-                rc = true;
-                break;
-            }
-            if (result == Step.Result.ERROR) {
-                rc = false;
-                break;
-            }
-            msg = decoder.msg();
-            rc = processMsg.apply(msg);
-        }
+        boolean rc = decodeInputsGetRC();
         if (!rc && errno.is(ZError.EAGAIN)) {
             session.flush();
         }
@@ -589,6 +573,28 @@ public class StreamEngine implements IEngine, IPollEvents
             //  Speculative read.
             inEvent();
         }
+    }
+
+    private boolean decodeInputsGetRC() {
+        Msg msg;
+        boolean rc = true;
+        while (insize > 0 && rc) {
+            ValueReference<Integer> processed = new ValueReference<>(0);
+            Step.Result result = decoder.decode(inpos, insize, processed);
+            assert (processed.get() <= insize);
+            insize -= processed.get();
+            if (result == Step.Result.MORE_DATA) {
+                rc = true;
+                break;
+            }
+            if (result == Step.Result.ERROR) {
+                rc = false;
+                break;
+            }
+            msg = decoder.msg();
+            rc = processMsg.apply(msg);
+        }
+        return rc;
     }
 
     //  Detects the protocol used by the peer.
