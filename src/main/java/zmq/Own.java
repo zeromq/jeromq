@@ -82,7 +82,7 @@ public abstract class Own extends ZObject
 
     private void setOwner(Own owner)
     {
-        assert (this.owner == null);
+        assert (this.owner == null) : this.owner;
         this.owner = owner;
     }
 
@@ -242,7 +242,7 @@ public abstract class Own extends ZObject
     {
         if (terminating && processedSeqnum == sendSeqnum.get() && termAcks == 0) {
             //  Sanity check. There should be no active children at this point.
-            assert (owned.isEmpty());
+            assert (owned.isEmpty()) : owned;
 
             //  The root object has nobody to confirm the termination to.
             //  Other nodes will confirm the termination to the owner.

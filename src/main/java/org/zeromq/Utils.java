@@ -12,4 +12,9 @@ public class Utils
     {
         return zmq.util.Utils.findOpenPort();
     }
+
+    public static void checkArgument(boolean expression, String errorMessage)
+    {
+        zmq.util.Utils.checkArgument(expression, errorMessage);
+    }
 }

@@ -41,6 +41,7 @@ class Trie
             return refcnt == 1;
         }
 
+        assert (msg != null);
         byte c = msg.get(start);
         if (c < min || c >= min + count) {
             //  The character is out of range of currently handled
@@ -112,6 +113,7 @@ class Trie
             return refcnt == 0;
         }
 
+        assert (msg != null);
         byte c = msg.get(start);
         if (count == 0 || c < min || c >= min + count) {
             return false;
@@ -214,6 +216,7 @@ class Trie
     //  Check whether particular key is in the trie.
     public boolean check(ByteBuffer data)
     {
+        assert (data != null);
         int size = data.limit();
         //  This function is on critical path. It deliberately doesn't use
         //  recursion to get a bit better performance.
@@ -260,6 +263,8 @@ class Trie
 
     private void applyHelper(byte[] buff, int buffsize, int maxBuffsize, ITrieHandler func, Pipe pipe)
     {
+        assert (func != null);
+        assert (pipe != null);
         //  If this node is a subscription, apply the function.
         if (refcnt > 0) {
             func.added(buff, buffsize, pipe);
@@ -272,6 +277,7 @@ class Trie
             assert (buff != null);
         }
 
+        assert (buff != null);
         //  If there are no subnodes in the trie, return.
         if (count == 0) {
             return;

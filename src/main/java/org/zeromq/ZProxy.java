@@ -352,8 +352,12 @@ public class ZProxy
      */
     public String command(String command, boolean sync)
     {
-        assert (!CONFIG.equals(command));
-        assert (!RESTART.equals(command));
+        Utils.checkArgument(
+                            !CONFIG.equals(command),
+                            "CONFIG is not useable with that API. Please use configure(ZMsg) method");
+        Utils.checkArgument(
+                            !RESTART.equals(command),
+                            "RESTART is not useable with that API. Please use restart(ZMsg) method");
         if (STATUS.equals(command)) {
             return status(sync);
         }

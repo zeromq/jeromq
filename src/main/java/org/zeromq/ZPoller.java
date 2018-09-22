@@ -341,14 +341,14 @@ public class ZPoller implements Closeable
     // creates a new poll item
     protected ItemHolder create(final Socket socket, final EventsHandler handler, final int events)
     {
-        assert (socket != null);
+        Objects.requireNonNull(socket, "Socket has to be non-null");
         return creator.create(socket, handler, events);
     }
 
     // creates a new poll item
     protected ItemHolder create(final SelectableChannel channel, final EventsHandler handler, final int events)
     {
-        assert (channel != null);
+        Objects.requireNonNull(channel, "Channel has to be non-null");
         return creator.create(channel, handler, events);
     }
 
@@ -797,7 +797,6 @@ public class ZPoller implements Closeable
             }
             else if (socket == null) {
                 // not a socket
-                assert (ch != null);
                 socketOrChannel = ch;
             }
         }

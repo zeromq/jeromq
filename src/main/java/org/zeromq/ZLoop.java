@@ -3,6 +3,7 @@ package org.zeromq;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 
 import org.zeromq.ZMQ.Context;
 import org.zeromq.ZMQ.PollItem;
@@ -71,7 +72,7 @@ public class ZLoop
 
     public ZLoop(Context context)
     {
-        assert (context != null);
+        Objects.requireNonNull(context, "Context has to be supplied for ZLoop");
         this.context = context;
 
         pollers = new ArrayList<>();
@@ -219,7 +220,7 @@ public class ZLoop
 
     public int removeTimer(Object arg)
     {
-        assert (arg != null);
+        Objects.requireNonNull(arg, "Argument has to be supplied");
 
         //  We cannot touch self->timers because we may be executing that
         //  from inside the poll loop. So, we hold the arg on the zombie
