@@ -35,6 +35,7 @@ class Mtrie
 
     final boolean addOnTop(Pipe pipe)
     {
+        assert (pipe != null);
         return addHelper(null, 0, 0, pipe);
     }
 
@@ -42,6 +43,8 @@ class Mtrie
     //  rather than a duplicate.
     public boolean add(Msg msg, Pipe pipe)
     {
+        assert (msg != null);
+        assert (pipe != null);
         return addHelper(msg, 1, msg.size() - 1, pipe);
     }
 
@@ -57,6 +60,7 @@ class Mtrie
             return result;
         }
 
+        assert (msg != null);
         byte c = msg.get(start);
         if (c < min || c >= min + count) {
             //  The character is out of range of currently handled
@@ -117,6 +121,8 @@ class Mtrie
     //  supplied callback function.
     public boolean rm(Pipe pipe, IMtrieHandler func, XPub pub)
     {
+        assert (pipe != null);
+        assert (func != null);
         return rmHelper(pipe, new byte[0], 0, 0, func, pub);
     }
 
@@ -236,6 +242,8 @@ class Mtrie
     //  actually removed rather than de-duplicated.
     public boolean rm(Msg msg, Pipe pipe)
     {
+        assert (msg != null);
+        assert (pipe != null);
         return rmHelper(msg, 1, msg.size() - 1, pipe);
     }
 
@@ -331,6 +339,9 @@ class Mtrie
     //  Signal all the matching pipes.
     public void match(ByteBuffer data, int size, IMtrieHandler func, XPub pub)
     {
+        assert (data != null);
+        assert (func != null);
+        assert (pub != null);
         Mtrie current = this;
         int idx = 0;
 

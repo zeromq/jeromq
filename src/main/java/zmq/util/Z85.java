@@ -39,18 +39,12 @@ public class Z85
         while (byteNbr < size) {
             //  Accumulate value in base 256 (binary)
             int d = data[byteNbr++] & 0xff;
-            if (d < 0) {
-                System.out.print("");
-            }
             value = value * 256 + d;
             if (byteNbr % 4 == 0) {
                 //  Output value in base 85
                 int divisor = 85 * 85 * 85 * 85;
                 while (divisor != 0) {
                     int index = (int) (value / divisor % 85);
-                    if (index < 0) {
-                        System.out.print("");
-                    }
                     builder.append(encoder.charAt(index));
                     divisor /= 85;
                 }
