@@ -941,7 +941,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
             return false;
         }
 
-        assert (errno.get() == ZError.EAGAIN);
+        assert (errno.get() == ZError.EAGAIN) : errno;
 
         if (ctxTerminated) {
             errno.set(ZError.ETERM); // Do not raise exception at the blocked operation

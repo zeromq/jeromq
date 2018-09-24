@@ -259,7 +259,7 @@ public class Ctx
             if (cmd == null) {
                 throw new IllegalStateException();
             }
-            assert (cmd.type == Command.Type.DONE);
+            assert (cmd.type == Command.Type.DONE) : cmd;
 
             slotSync.lock();
             try {

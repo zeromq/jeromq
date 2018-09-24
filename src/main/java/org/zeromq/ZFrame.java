@@ -131,10 +131,7 @@ public class ZFrame
      */
     public boolean send(Socket socket, int flags)
     {
-        if (socket == null) {
-            throw new IllegalArgumentException("socket parameter must be set");
-        }
-
+        Utils.checkArgument(socket != null, "socket parameter must be set");
         return socket.send(data, flags);
     }
 
@@ -294,6 +291,7 @@ public class ZFrame
      * @return
      *          A text string or hex-encoded string if data contains any non-printable ASCII characters
      */
+    @Override
     public String toString()
     {
         return ZData.toString(data);
@@ -309,10 +307,7 @@ public class ZFrame
      */
     private byte[] recv(Socket socket, int flags)
     {
-        if (socket == null) {
-            throw new IllegalArgumentException("socket parameter must not be null");
-        }
-
+        Utils.checkArgument(socket != null, "socket parameter must not be null");
         data = socket.recv(flags);
         more = socket.hasReceiveMore();
         return data;

@@ -10,6 +10,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.UUID;
 
@@ -459,9 +460,9 @@ public class ZAuth implements Closeable
 
     public ZAuth(final ZContext ctx, String actorName, Map<String, Auth> auths)
     {
-        assert (ctx != null); // works only for connections within the same context
-        assert (actorName != null);
-        assert (auths != null);
+        Objects.requireNonNull(ctx, "ZAuth works only with a provided ZContext");
+        Objects.requireNonNull(actorName, "Actor name shall be defined");
+        Objects.requireNonNull(auths, "Authenticators shall be supplied as non-null map");
         final AuthActor actor = new AuthActor(actorName, auths);
         final ZActor zactor = new ZActor(ctx, actor, UUID.randomUUID().toString());
         agent = zactor.agent();
@@ -494,7 +495,7 @@ public class ZAuth implements Closeable
      */
     public ZAuth allow(String address)
     {
-        assert (address != null);
+        Objects.requireNonNull(address, "Address has to be supplied for allowance");
         return send(ALLOW, address);
     }
 
@@ -506,7 +507,7 @@ public class ZAuth implements Closeable
      */
     public ZAuth deny(String address)
     {
-        assert (address != null);
+        Objects.requireNonNull(address, "Address has to be supplied for denial");
         return send(DENY, address);
     }
 
@@ -517,8 +518,8 @@ public class ZAuth implements Closeable
      */
     public ZAuth configurePlain(String domain, String filename)
     {
-        assert (domain != null);
-        assert (filename != null);
+        Objects.requireNonNull(domain, "Domain has to be supplied");
+        Objects.requireNonNull(filename, "File name has to be supplied");
         return send(Mechanism.PLAIN.name(), domain, filename);
     }
 
@@ -529,7 +530,7 @@ public class ZAuth implements Closeable
      */
     public ZAuth configureCurve(String location)
     {
-        assert (location != null);
+        Objects.requireNonNull(location, "Location has to be supplied");
         return send(Mechanism.CURVE.name(), location);
     }
 
