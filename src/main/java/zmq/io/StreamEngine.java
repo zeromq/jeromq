@@ -555,14 +555,14 @@ public class StreamEngine implements IEngine, IPollEvents
             }
             return;
         }
-        boolean rc = decodeInputsGetRC();
-        if (!rc && errno.is(ZError.EAGAIN)) {
+        boolean decodingSuccess = decodeCurrentInputs();
+        if (!decodingSuccess && errno.is(ZError.EAGAIN)) {
             session.flush();
         }
         else if (ioError) {
             error(ErrorReason.CONNECTION);
         }
-        else if (!rc) {
+        else if (!decodingSuccess) {
             error(ErrorReason.PROTOCOL);
         }
         else {
@@ -575,7 +575,7 @@ public class StreamEngine implements IEngine, IPollEvents
         }
     }
 
-    private boolean decodeInputsGetRC()
+    private boolean decodeCurrentInputs()
     {
         while (insize > 0) {
             ValueReference<Integer> processed = new ValueReference<>(0);
