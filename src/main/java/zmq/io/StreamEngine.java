@@ -545,10 +545,8 @@ public class StreamEngine implements IEngine, IPollEvents
         assert (session != null);
         assert (decoder != null);
 
-        boolean rc;
         Msg msg = decoder.msg();
-        rc = processMsg.apply(msg);
-        if (!rc) {
+        if (!processMsg.apply(msg)) {
             if (errno.is(ZError.EAGAIN)) {
                 session.flush();
             }
@@ -557,33 +555,14 @@ public class StreamEngine implements IEngine, IPollEvents
             }
             return;
         }
-
-        while (insize > 0) {
-            ValueReference<Integer> processed = new ValueReference<>(0);
-            Step.Result result = decoder.decode(inpos, insize, processed);
-            assert (processed.get() <= insize);
-            insize -= processed.get();
-            if (result == Step.Result.MORE_DATA) {
-                rc = true;
-                break;
-            }
-            if (result == Step.Result.ERROR) {
-                rc = false;
-                break;
-            }
-            msg = decoder.msg();
-            rc = processMsg.apply(msg);
-            if (!rc) {
-                break;
-            }
-        }
-        if (!rc && errno.is(ZError.EAGAIN)) {
+        boolean decodingSuccess = decodeCurrentInputs();
+        if (!decodingSuccess && errno.is(ZError.EAGAIN)) {
             session.flush();
         }
         else if (ioError) {
             error(ErrorReason.CONNECTION);
         }
-        else if (!rc) {
+        else if (!decodingSuccess) {
             error(ErrorReason.PROTOCOL);
         }
         else {
@@ -594,6 +573,26 @@ public class StreamEngine implements IEngine, IPollEvents
             //  Speculative read.
             inEvent();
         }
+    }
+
+    private boolean decodeCurrentInputs()
+    {
+        while (insize > 0) {
+            ValueReference<Integer> processed = new ValueReference<>(0);
+            Step.Result result = decoder.decode(inpos, insize, processed);
+            assert (processed.get() <= insize);
+            insize -= processed.get();
+            if (result == Step.Result.MORE_DATA) {
+                return true;
+            }
+            if (result == Step.Result.ERROR) {
+                return false;
+            }
+            if (!processMsg.apply(decoder.msg())) {
+                return false;
+            }
+        }
+        return true;
     }
 
     //  Detects the protocol used by the peer.
