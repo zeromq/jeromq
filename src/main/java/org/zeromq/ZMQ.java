@@ -18,6 +18,7 @@ import zmq.ZError.CtxTerminatedException;
 import zmq.io.coder.IDecoder;
 import zmq.io.coder.IEncoder;
 import zmq.io.mechanism.Mechanisms;
+import zmq.io.net.SelectorProviderChooser;
 import zmq.msg.MsgAllocator;
 import zmq.util.Draft;
 import zmq.util.Z85;
@@ -2141,6 +2142,27 @@ public class ZMQ
         public boolean setMsgAllocator(MsgAllocator allocator)
         {
             return setSocketOpt(zmq.ZMQ.ZMQ_MSG_ALLOCATOR, allocator);
+        }
+
+        /**
+         * Set a custom {@link java.nio.channels.spi.SelectorProvider} chooser.
+         *
+         * @param chooser, the custom chooser.
+         * @return true if the option was set, otherwise false.
+         */
+        public boolean setSelectorChooser(SelectorProviderChooser chooser)
+        {
+            return base.setSocketOpt(zmq.ZMQ.ZMQ_SELECTOR_PROVIDERCHOOSER, chooser);
+        }
+
+        /**
+         * Return the custom {@link java.nio.channels.spi.SelectorProvider} chooser.
+         *
+         * @return the {@link java.nio.channels.spi.SelectorProvider} chooser.
+         */
+        public SelectorProviderChooser getSelectorProviderChooser()
+        {
+            return (SelectorProviderChooser) base.getSocketOptx(zmq.ZMQ.ZMQ_SELECTOR_PROVIDERCHOOSER);
         }
 
         /**

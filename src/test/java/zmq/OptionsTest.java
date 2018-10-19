@@ -8,10 +8,16 @@ import static org.junit.Assert.assertThat;
 
 import java.util.Arrays;
 
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.zeromq.SocketType;
+import org.zeromq.ZContext;
+import org.zeromq.SelectorProviderTest.DefaultSelectorProviderChooser;
+import org.zeromq.ZMQ.Socket;
 
 import zmq.io.mechanism.Mechanisms;
+import zmq.io.net.SelectorProviderChooser;
 import zmq.msg.MsgAllocatorDirect;
 import zmq.msg.MsgAllocatorThreshold;
 
@@ -237,6 +243,50 @@ public class OptionsTest
     }
 
     @Test
+    public void testSelectorObject()
+    {
+        try (ZContext ctx = new ZContext();
+             Socket socket = ctx.createSocket(SocketType.PUB);
+            ) {
+            SelectorProviderChooser chooser = new DefaultSelectorProviderChooser();
+            socket.setSelectorChooser(chooser);
+            Assert.assertEquals(chooser, socket.getSelectorProviderChooser());
+        }
+    }
+
+    @Test
+    public void testSelectorClass()
+    {
+        Options opt = new Options();
+        Class<DefaultSelectorProviderChooser> chooser = DefaultSelectorProviderChooser.class;
+        opt.setSocketOpt(ZMQ.ZMQ_SELECTOR_PROVIDERCHOOSER, chooser);
+        Assert.assertTrue(opt.getSocketOpt(ZMQ.ZMQ_SELECTOR_PROVIDERCHOOSER) instanceof SelectorProviderChooser);
+    }
+
+    @Test
+    public void testSelectorClassName()
+    {
+        Options opt = new Options();
+        Class<DefaultSelectorProviderChooser> chooser = DefaultSelectorProviderChooser.class;
+        opt.setSocketOpt(ZMQ.ZMQ_SELECTOR_PROVIDERCHOOSER, chooser.getName());
+        Assert.assertTrue(opt.getSocketOpt(ZMQ.ZMQ_SELECTOR_PROVIDERCHOOSER) instanceof SelectorProviderChooser);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testSelectorClassNameFailed()
+    {
+        Options opt = new Options();
+        opt.setSocketOpt(ZMQ.ZMQ_SELECTOR_PROVIDERCHOOSER, String.class.getName());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testSelectorFailed()
+    {
+        Options opt = new Options();
+        Assert.assertFalse(opt.setSocketOpt(ZMQ.ZMQ_SELECTOR_PROVIDERCHOOSER, ""));
+    }
+
+    @Test
     public void testDefaultValue()
     {
         //        assertThat(options.getSocketOpt(ZMQ.ZMQ_DECODER), is((Object)options.decoder));
@@ -278,5 +328,6 @@ public class OptionsTest
         assertThat(options.getSocketOpt(ZMQ.ZMQ_HEARTBEAT_IVL), is((Object) options.heartbeatInterval));
         assertThat(options.getSocketOpt(ZMQ.ZMQ_HEARTBEAT_TIMEOUT), is((Object) options.heartbeatTimeout));
         assertThat(options.getSocketOpt(ZMQ.ZMQ_HEARTBEAT_TTL), is((Object) options.heartbeatTtl));
+        assertThat(options.getSocketOpt(ZMQ.ZMQ_SELECTOR_PROVIDERCHOOSER), nullValue());
     }
 }

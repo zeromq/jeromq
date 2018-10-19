@@ -7,6 +7,7 @@ import java.util.List;
 import zmq.io.coder.IDecoder;
 import zmq.io.coder.IEncoder;
 import zmq.io.mechanism.Mechanisms;
+import zmq.io.net.SelectorProviderChooser;
 import zmq.io.net.ipc.IpcAddress;
 import zmq.io.net.tcp.TcpAddress;
 import zmq.io.net.tcp.TcpAddress.TcpAddressMask;
@@ -163,6 +164,8 @@ public class Options
     // Set to <= 0 to disable this system.
     public MsgAllocator allocator;
 
+    public SelectorProviderChooser selectorChooser;
+
     public final Errno errno = new Errno();
 
     public Options()
@@ -214,6 +217,8 @@ public class Options
         curveServerKey = new byte[CURVE_KEYSIZE];
 
         allocator = new MsgAllocatorThreshold(Config.MSG_ALLOCATION_HEAP_THRESHOLD.getValue());
+
+        selectorChooser = null;
     }
 
     @SuppressWarnings("deprecation")
@@ -519,6 +524,26 @@ public class Options
             allocator = new MsgAllocatorThreshold(allocationHeapThreshold);
             return true;
 
+        case ZMQ.ZMQ_SELECTOR_PROVIDERCHOOSER:
+            if (optval instanceof String) {
+                try {
+                    selectorChooser = chooser(Class.forName((String) optval));
+                    return true;
+                }
+                catch (ClassNotFoundException e) {
+                    throw new IllegalArgumentException(e);
+                }
+            }
+            else if (optval instanceof Class) {
+                selectorChooser = chooser((Class<?>) optval);
+                return true;
+            }
+            else if (optval instanceof SelectorProviderChooser) {
+                selectorChooser = (SelectorProviderChooser) optval;
+                return true;
+            }
+            return false;
+
         default:
             throw new IllegalArgumentException("Unknown Option " + option);
         }
@@ -534,6 +559,23 @@ public class Options
             throw new IllegalArgumentException(e);
         }
         catch (IllegalAccessException e) {
+            throw new IllegalArgumentException(e);
+        }
+    }
+
+    private SelectorProviderChooser chooser(Class<?> clazz)
+    {
+        try {
+            Class<? extends SelectorProviderChooser> selectorClazz = clazz.asSubclass(SelectorProviderChooser.class);
+            return selectorClazz.newInstance();
+        }
+        catch (InstantiationException e) {
+            throw new IllegalArgumentException(e);
+        }
+        catch (IllegalAccessException e) {
+            throw new IllegalArgumentException(e);
+        }
+        catch (ClassCastException e) {
             throw new IllegalArgumentException(e);
         }
     }
@@ -748,6 +790,9 @@ public class Options
                 return all.threshold;
             }
             return -1;
+
+        case ZMQ.ZMQ_SELECTOR_PROVIDERCHOOSER:
+            return selectorChooser;
 
         default:
             throw new IllegalArgumentException("option=" + option);
