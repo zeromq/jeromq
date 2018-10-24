@@ -265,6 +265,12 @@ public class TcpConnecter extends Own implements IPollEvents
 
         //  Create the socket.
         fd = SocketChannel.open();
+        if (options.selectorChooser == null) {
+            fd = SocketChannel.open();
+        }
+        else {
+            fd = options.selectorChooser.choose(resolved, options).openSocketChannel();
+        }
 
         //  IPv6 address family not supported, try automatic downgrade to IPv4.
         if (fd == null && resolved.family() == StandardProtocolFamily.INET6 && options.ipv6) {

@@ -167,7 +167,12 @@ public class TcpListener extends Own implements IPollEvents
 
         //  Create a listening socket.
         try {
-            fd = ServerSocketChannel.open();
+            if (options.selectorChooser == null) {
+                fd = ServerSocketChannel.open();
+            }
+            else {
+                fd = options.selectorChooser.choose(address, options).openServerSocketChannel();
+            }
 
             //  IPv6 address family not supported, try automatic downgrade to IPv4.
             if (fd == null && address.family() == StandardProtocolFamily.INET6 && options.ipv6) {
