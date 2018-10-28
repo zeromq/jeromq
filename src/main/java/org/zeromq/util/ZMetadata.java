@@ -9,6 +9,7 @@ import java.util.Set;
 import org.zeromq.ZConfig;
 import org.zeromq.ZMQ;
 
+import zmq.ZError;
 import zmq.io.Metadata;
 
 public class ZMetadata
@@ -57,8 +58,7 @@ public class ZMetadata
             return new ZMetadata(data);
         }
         catch (CharacterCodingException e) {
-            e.printStackTrace();
-            return null;
+            throw new ZError.InstantiationException(e);
         }
     }
 
@@ -75,16 +75,19 @@ public class ZMetadata
         return metadata;
     }
 
+    @Override
     public String toString()
     {
         return metadata.toString();
     }
 
+    @Override
     public int hashCode()
     {
         return metadata.hashCode();
     }
 
+    @Override
     public boolean equals(Object obj)
     {
         return metadata.equals(obj);

@@ -15,6 +15,8 @@ import java.util.Map;
 import org.zeromq.util.ZDigest;
 import org.zeromq.util.ZMetadata;
 
+import zmq.ZError;
+
 /**
  *
     To authenticate new clients using the ZeroMQ CURVE security mechanism,
@@ -76,7 +78,7 @@ public class ZCertStore
                         input.close();
                     }
                     catch (IOException e) {
-                        e.printStackTrace();
+                        throw new ZError.IOException(e);
                     }
                 }
             }
@@ -233,7 +235,7 @@ public class ZCertStore
                     collected.put(file, finger.print(file));
                 }
                 catch (IOException e) {
-                    e.printStackTrace();
+                    throw new ZError.IOException(e);
                 }
                 return false;
             }

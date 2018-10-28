@@ -1,9 +1,14 @@
 package org.zeromq;
 
-import java.util.Arrays;
-import java.util.concurrent.TimeUnit;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.junit.Assert.assertThat;
 
-import org.junit.Assert;
+import java.util.Arrays;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import org.junit.Test;
 import org.zeromq.ZMQ.Socket;
 import org.zeromq.ZStar.Fortune;
@@ -79,6 +84,7 @@ public class TestZStar
     {
         System.out.print("No star: ");
         ZStar.Fortune fortune = new BlackHole();
+        final AtomicBoolean ended = new AtomicBoolean();
         ZStar.Entourage entourage = new ZStar.Entourage()
         {
             @Override
@@ -90,6 +96,7 @@ public class TestZStar
             @Override
             public void party(ZContext ctx)
             {
+                ended.set(true);
                 // right now there are some random closing issues
                 ZStar.party(30, TimeUnit.MILLISECONDS);
                 // waited a bit here seems to arrange that.
@@ -99,14 +106,52 @@ public class TestZStar
         };
         ZStar star = new ZStar(fortune, "motdelafin", Arrays.asList("TEST", entourage).toArray());
         ZMsg msg = star.recv();
-        Assert.assertNull("Able to receive a message from a black hole", msg);
+        assertThat("Able to receive a message from a black hole", msg, nullValue());
         boolean rc = star.sign();
-        Assert.assertFalse("Able to detect the presence of a black hole", rc);
+        assertThat("Able to detect the presence of a black hole", rc, is(false));
         rc = star.send("whatever");
-        Assert.assertFalse("Able to send a command to a black hole", rc);
+        assertThat("Able to send a command to a black hole", rc, is(false));
 
+        star.exit().awaitSilent();
+        assertThat(ended.get(), is(true));
         // don't try it
         // rc = star.pipe().send("boom ?!");
+        System.out.println(".");
+    }
+
+    @Test
+    public void testNoStarExternalContext()
+    {
+        System.out.print("No star: ");
+        ZStar.Fortune fortune = new BlackHole();
+        final AtomicBoolean ended = new AtomicBoolean();
+        final CountDownLatch latch = new CountDownLatch(1);
+        ZStar.Entourage entourage = new ZStar.Entourage()
+        {
+            @Override
+            public void breakaleg(ZContext ctx, Fortune fortune, Socket phone, Object... bags)
+            {
+                try {
+                    latch.await(200, TimeUnit.MILLISECONDS);
+                }
+                catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            @Override
+            public void party(ZContext ctx)
+            {
+                ended.set(true);
+            }
+        };
+        ZContext ctx = new ZContext();
+        ZStar star = new ZStar(ctx, fortune, "motdelafin", Arrays.asList("TEST", entourage).toArray());
+        ctx.close();
+        latch.countDown();
+
+        star.exit().awaitSilent();
+        assertThat(ended.get(), is(true));
         System.out.println(".");
     }
 }

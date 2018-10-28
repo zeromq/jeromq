@@ -314,8 +314,7 @@ public class StreamEngine implements IEngine, IPollEvents
             return decoder.getConstructor(int.class, long.class).newInstance(size, max);
         }
         catch (Exception e) {
-            e.printStackTrace();
-            return null;
+            throw new ZError.InstantiationException(e);
         }
     }
 

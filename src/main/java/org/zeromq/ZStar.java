@@ -10,6 +10,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 
+import org.zeromq.ZMQ.Error;
 import org.zeromq.ZMQ.Socket;
 import org.zeromq.ZThread.IAttachedRunnable;
 
@@ -518,9 +519,8 @@ public class ZStar implements ZAgent
                         try {
                             mic.send(gossip);
                         }
-                        catch (Exception e) {
-                            // really ?
-                            e.printStackTrace();
+                        catch (ZMQException e) {
+                            assert (e.getErrorCode() == Error.ETERM.getCode());
                         }
                     }
 

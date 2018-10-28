@@ -100,7 +100,6 @@ public final class Poller extends PollerBase implements Runnable
             stopped.await();
         }
         catch (InterruptedException e) {
-            e.printStackTrace();
             // Re-interrupt the thread so the caller can handle it.
             Thread.currentThread().interrupt();
         }
@@ -275,11 +274,9 @@ public final class Poller extends PollerBase implements Runnable
                 }
                 catch (CancelledKeyException e) {
                     // key may have been cancelled (?)
-                    e.printStackTrace();
                 }
                 catch (RuntimeException e) {
                     // avoid the thread death by continuing to iterate
-                    e.printStackTrace();
                 }
             }
         }

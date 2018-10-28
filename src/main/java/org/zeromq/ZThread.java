@@ -60,7 +60,9 @@ public class ZThread
                         throw e;
                     }
                 }
-                ctx.destroy();
+                finally {
+                    ctx.destroy();
+                }
             }
             else {
                 detachedRunnable.run(args);

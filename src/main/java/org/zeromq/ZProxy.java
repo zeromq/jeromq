@@ -949,7 +949,6 @@ public class ZProxy
                     state.started = true;
                 }
                 catch (RuntimeException | IOException e) {
-                    e.printStackTrace();
                     // unable to configure proxy, exit
                     state.restart = false;
                     state.started = false;
@@ -1056,7 +1055,6 @@ public class ZProxy
                         cfg.destroy();
                     }
                     catch (RuntimeException | IOException e) {
-                        e.printStackTrace();
                         state.restart = false;
                         return false;
                     }
