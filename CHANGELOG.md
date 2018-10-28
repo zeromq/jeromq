@@ -1,6 +1,125 @@
 # Changelog
 
-## v0.4.4 (unreleased)
+## v0.5.0 (2018-10-27)
+
+### Added
+
+* [#539](https://github.com/zeromq/jeromq/pull/539),
+  [#552](https://github.com/zeromq/jeromq/pull/552),
+  [#573](https://github.com/zeromq/jeromq/pull/573): Implemented heartbeating
+  between sockets as specified in
+  [https://rfc.zeromq.org/spec:37/ZMTP](https://rfc.zeromq.org/spec:37/ZMTP).
+
+* [#556](https://github.com/zeromq/jeromq/pull/556): There is now a `SocketType`
+  enum that can be used when creating sockets. This is recommended over the old
+  way of using integer values, which is error-prone. The overload of
+  `ZContext.createSocket` that takes an integer is still supported, but is now
+  marked deprecated.
+
+* [#559](https://github.com/zeromq/jeromq/pull/559): Added `recvStream` and
+  `recvStrStream` instance methods to the `ZMQ.Socket` class. These expose a
+  Stream of incoming messages, each of which is a `byte[]` or `String`,
+  respectively.
+
+* [#560](https://github.com/zeromq/jeromq/pull/560): ZMsg instance methods can
+  now be chained.
+
+* [#576](https://github.com/zeromq/jeromq/pull/576): Added an overload of
+  `ZMsg.recvMsg` that takes a `Consumer<ZMsg> handler` and a
+  `Consumer<ZMQException> exceptionHandler` for handling the result of
+  attempting to receive a message on a socket.
+
+* [#586](https://github.com/zeromq/jeromq/pull/586): Implemented a Timer API
+  based on the one added to libzmq in version 4.2.
+
+* [#590](https://github.com/zeromq/jeromq/pull/590): Added a `closeSelector`
+  method to the ZContext class, to expose a way for selectors created by
+  `createSelector` to be closed. Note that both of these methods are also
+  deprecated; it is not recommended to manage selectors directly, as these are
+  managed for you by pollers.
+
+* [#614](https://github.com/zeromq/jeromq/pull/614): Added a
+  `ZMQ_SELECTOR_PROVIDERCHOOSER` socket option that allows you to define a
+  custom
+  [SelectorProvider](https://docs.oracle.com/javase/8/docs/api/java/nio/channels/spi/SelectorProvider.html).
+
+### Changed
+
+* [**JeroMQ no longer supports Java
+  7.**](https://github.com/zeromq/jeromq/pull/557) Dropping support for Java 7
+  allows us to leverage the new features of Java 8, including the use of lambda
+  syntax to create IAttachedRunnable and IDetachedRunnable.
+
+* Refactored code to use Java 8 features like lambdas and streams in various
+  places. See [#570](https://github.com/zeromq/jeromq/pull/571), for example.
+
+* [#510](https://github.com/zeromq/jeromq/pull/510): Polling now measures time
+  in nanoseconds instead of microseconds, ensuring a higher degree of precision.
+
+* [#523](https://github.com/zeromq/jeromq/pull/523): Fixed a bug where ZLoop was
+  closing the context.
+
+* [#525](https://github.com/zeromq/jeromq/pull/525): Fixed a bug in
+  `zmq.io.StreamEngine` that was causing an infinite loop in the IO thread,
+  blocking the application with 100% CPU usage.
+
+* [#527](https://github.com/zeromq/jeromq/pull/527): Fixed a bug in
+  `zmq.io.StreamEngine` where data could still be present inside the handshake
+  buffer that was not decoded.
+
+* [#535](https://github.com/zeromq/jeromq/pull/535): Fixed an edge case where,
+  once in a blue moon, after a socket fails to connect, and is subsequently
+  closed, it would still try to reconnect as if it weren't closed.
+
+* [#546](https://github.com/zeromq/jeromq/pull/546): Prior to this release, when
+  a ZContext was initialized, its internal `ZMQ.Context` would be null
+  initially, and the ZContext `isClosed` instance method would misleadingly
+  return `true`; the `ZMQ.Context` was being created lazily when `getContext`
+  was called on the ZContext. Worse, the internal context would be reset to
+  `null` after closing a ZContext, which could lead to problems if another
+  thread happened to try to use the ZContext after it was closed, resulting in a
+  new `ZMQ.Context` secretly being created. Now, the internal `ZMQ.Context` is
+  created upon initialization of the ZContext, and you can rely on it never
+  being null.
+
+* [#548](https://github.com/zeromq/jeromq/pull/550): Various javadoc updates and
+  improvements. There is now a `@Draft` annotation to identify work-in-progress
+  APIs that are unstable or experimental.
+
+* [#552](https://github.com/zeromq/jeromq/pull/552): Fixed a bug where internal
+  command messages (e.g. HEARTBEAT commands) were disrupting the REQ state
+  machine.
+
+* [#564](https://github.com/zeromq/jeromq/pull/564): Implemented the ability to
+  bind a socket via IPC or TCP with a dynamic ("wildcard") port and retrieve it
+  via `ZMQ.ZMQ_LAST_ENDPOINT`. Leveraged this to make our test suite more
+  reliable.
+
+* [#569](https://github.com/zeromq/jeromq/pull/569): Fixed an issue where an
+  overridable method was being used in the ZStar constructor.
+
+* [#578](https://github.com/zeromq/jeromq/pull/578): Fixed an issue where an
+  errno of 48 ("address already in use") would persist longer than intended
+  in the process of binding to a random port. Now, errno is reset to 0 after a
+  port is found.
+
+* [#581](https://github.com/zeromq/jeromq/pull/581): Fixed a bug where, if
+  you're polling in one thread and you close the context in another thread, it
+  would result in an uncaught ClosedSelectorException.
+
+* [#583](https://github.com/zeromq/jeromq/pull/583): Fixed a race condition
+  causing `ZMQ_CONNECT_RID` to sometimes be assigned to the wrong peer socket.
+
+* [#597](https://github.com/zeromq/jeromq/pull/597): Fixed a bug causing the
+  context to hang indefinitely after calling `destroy()`, if multiple sockets
+  had connected to the same socket.
+
+* [#609](https://github.com/zeromq/jeromq/pull/609): For numerous methods, when
+  invalid arguments are passed to the method, an InvalidArgumentException with a
+  friendly error message will now be thrown, instead of an assertion error.
+
+* [#610](https://github.com/zeromq/jeromq/pull/610): Added some asserts in
+  places where there could potentially be NullPointerExceptions.
 
 ## v0.4.3 (2017-11-17)
 
