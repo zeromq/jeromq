@@ -254,14 +254,18 @@ public class StreamEngine implements IEngine, IPollEvents
         handle = ioObject.addFd(fd);
         ioError = false;
 
+        //  Make sure batch sizes match large buffer sizes
+        final int inBatchSize = options.rcvbuf > Config.IN_BATCH_SIZE.getValue() ? options.rcvbuf : Config.IN_BATCH_SIZE.getValue();
+        final int outBatchSize = options.sndbuf > Config.OUT_BATCH_SIZE.getValue() ? options.sndbuf : Config.OUT_BATCH_SIZE.getValue();
+
         if (options.rawSocket) {
-            decoder = (IDecoder) instantiate(options.decoder, Config.IN_BATCH_SIZE.getValue(), options.maxMsgSize);
+            decoder = (IDecoder) instantiate(options.decoder, inBatchSize, options.maxMsgSize);
             if (decoder == null) {
-                decoder = new RawDecoder(Config.IN_BATCH_SIZE.getValue());
+                decoder = new RawDecoder(inBatchSize);
             }
-            encoder = (IEncoder) instantiate(options.encoder, Config.OUT_BATCH_SIZE.getValue(), options.maxMsgSize);
+            encoder = (IEncoder) instantiate(options.encoder, outBatchSize, options.maxMsgSize);
             if (encoder == null) {
-                encoder = new RawEncoder(errno, Config.OUT_BATCH_SIZE.getValue());
+                encoder = new RawEncoder(errno, outBatchSize);
             }
 
             // disable handshaking for raw socket
@@ -469,13 +473,16 @@ public class StreamEngine implements IEngine, IPollEvents
             outpos.set(null);
             outsize = encoder.encode(outpos, 0);
 
-            while (outsize < Config.OUT_BATCH_SIZE.getValue()) {
+            //  Make sure batch sizes match large buffer sizes
+            final int outBatchSize = options.sndbuf > Config.OUT_BATCH_SIZE.getValue() ? options.sndbuf : Config.OUT_BATCH_SIZE.getValue();
+
+            while (outsize < outBatchSize) {
                 Msg msg = nextMsg.get();
                 if (msg == null) {
                     break;
                 }
                 encoder.loadMsg(msg);
-                int n = encoder.encode(outpos, Config.OUT_BATCH_SIZE.getValue() - outsize);
+                int n = encoder.encode(outpos, outBatchSize - outsize);
                 assert (n > 0);
                 outsize += n;
             }
@@ -607,6 +614,10 @@ public class StreamEngine implements IEngine, IPollEvents
         //  Position of the version field in the greeting.
         final int revisionPos = SIGNATURE_SIZE;
 
+        //  Make sure batch sizes match large buffer sizes
+        final int inBatchSize = options.rcvbuf > Config.IN_BATCH_SIZE.getValue() ? options.rcvbuf : Config.IN_BATCH_SIZE.getValue();
+        final int outBatchSize = options.sndbuf > Config.OUT_BATCH_SIZE.getValue() ? options.sndbuf : Config.OUT_BATCH_SIZE.getValue();
+
         //  Receive the greeting.
         while (greetingRecv.position() < greetingSize) {
             final int n = read(greetingRecv);
@@ -712,8 +723,8 @@ public class StreamEngine implements IEngine, IPollEvents
 
             zmtpVersion = Protocol.V0;
 
-            encoder = new V1Encoder(errno, Config.OUT_BATCH_SIZE.getValue());
-            decoder = new V1Decoder(errno, Config.IN_BATCH_SIZE.getValue(), options.maxMsgSize, options.allocator);
+            encoder = new V1Encoder(errno, outBatchSize);
+            decoder = new V1Decoder(errno, inBatchSize, options.maxMsgSize, options.allocator);
 
             //  We have already sent the message header.
             //  Since there is no way to tell the encoder to
@@ -759,8 +770,8 @@ public class StreamEngine implements IEngine, IPollEvents
                 error(ErrorReason.PROTOCOL);
                 return false;
             }
-            encoder = new V1Encoder(errno, Config.OUT_BATCH_SIZE.getValue());
-            decoder = new V1Decoder(errno, Config.IN_BATCH_SIZE.getValue(), options.maxMsgSize, options.allocator);
+            encoder = new V1Encoder(errno, outBatchSize);
+            decoder = new V1Decoder(errno, inBatchSize, options.maxMsgSize, options.allocator);
 
             decodeDataAfterHandshake(V2_GREETING_SIZE);
         }
@@ -774,16 +785,16 @@ public class StreamEngine implements IEngine, IPollEvents
                 error(ErrorReason.PROTOCOL);
                 return false;
             }
-            encoder = new V2Encoder(errno, Config.OUT_BATCH_SIZE.getValue());
-            decoder = new V2Decoder(errno, Config.IN_BATCH_SIZE.getValue(), options.maxMsgSize, options.allocator);
+            encoder = new V2Encoder(errno, outBatchSize);
+            decoder = new V2Decoder(errno, inBatchSize, options.maxMsgSize, options.allocator);
 
             decodeDataAfterHandshake(V2_GREETING_SIZE);
         }
         else {
             zmtpVersion = Protocol.V3;
 
-            encoder = new V2Encoder(errno, Config.OUT_BATCH_SIZE.getValue());
-            decoder = new V2Decoder(errno, Config.IN_BATCH_SIZE.getValue(), options.maxMsgSize, options.allocator);
+            encoder = new V2Encoder(errno, outBatchSize);
+            decoder = new V2Decoder(errno, inBatchSize, options.maxMsgSize, options.allocator);
 
             greetingRecv.position(V2_GREETING_SIZE);
             if (mechanism.isMechanism(greetingRecv)) {
