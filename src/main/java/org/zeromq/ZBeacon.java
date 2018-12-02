@@ -21,7 +21,7 @@ public class ZBeacon
     private InetAddress           broadcastInetAddress;
     private final BroadcastClient broadcastClient;
     private final BroadcastServer broadcastServer;
-    private final byte[]          beacon;
+    private byte[]                beacon;
     private byte[]                prefix            = {};
     private long                  broadcastInterval = DEFAULT_BROADCAST_INTERVAL;
     private Listener              listener          = null;
@@ -83,6 +83,16 @@ public class ZBeacon
             broadcastServer.interrupt();
             broadcastServer.join();
         }
+    }
+    
+    public void setBeacon(byte[] beacon)
+    {
+        this.beacon = beacon;
+    }
+    
+    public byte[] getBeacon()
+    {
+        return beacon;
     }
 
     public void setPrefix(byte[] prefix)
