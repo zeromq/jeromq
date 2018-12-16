@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.5.0 (2018-10-27)
+## v0.5.0 (unreleased)
 
 ### Added
 
