@@ -1,11 +1,15 @@
 package zmq.faultinjection;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.InetSocketAddress;
-import java.net.Socket;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
 import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -13,20 +17,19 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
-import java.nio.charset.CharsetEncoder;
-import java.util.*;
+import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 
-public class ZMTP3Server {
-
-    private static Charset ASCII = Charset.forName("ascii");
+public class ZMTP3Server
+{
+    private static Charset sASCII = Charset.forName("ascii");
     private AcceptThread worker;
     private ISocketEvents delegate;
 
-
-    public interface ISocketEvents {
+    public interface ISocketEvents
+    {
         public void onConnectionReceived(SocketChannel channel);
 
         public void onGreetingReceived(SocketChannel channel);
@@ -38,37 +41,44 @@ public class ZMTP3Server {
         public void onMessageReceived(SocketChannel channel, String message);
     }
 
-    public void setDelegate(ISocketEvents delegate) {
+    public void setDelegate(ISocketEvents delegate)
+    {
         this.delegate = delegate;
     }
 
-    public void initialize(SocketAddress localAddress) throws IOException {
+    public void initialize(SocketAddress localAddress) throws IOException
+    {
         LOG.debug("initialize()");
         worker = new AcceptThread();
         worker.initialize(localAddress);
 
     }
 
-    public void initialize() throws IOException {
+    public void initialize() throws IOException
+    {
         initialize(null);
     }
 
-    public void stop() throws IOException {
+    public void stop() throws IOException
+    {
         this.worker.stop();
     }
 
-    class AcceptThread implements Runnable {
+    class AcceptThread implements Runnable
+    {
         private ServerSocketChannel channel;
         private Thread thread;
         SocketAddress localAddress;
         Selector selector = null;
         private ExecutorService executorService;
 
-        public AcceptThread() {
+        public AcceptThread()
+        {
         }
 
         @Override
-        public void run() {
+        public void run()
+        {
             try {
                 this.selector = Selector.open();
                 channel.register(selector, SelectionKey.OP_ACCEPT);
@@ -92,7 +102,7 @@ public class ZMTP3Server {
                             // Get channel with connection request
                             ServerSocketChannel ssChannel = (ServerSocketChannel) selKey.channel();
 
-                            CharsetDecoder decoder = ASCII.newDecoder();
+                            CharsetDecoder decoder = sASCII.newDecoder();
 
                             // See Accepting a Connection on a ServerSocketChannel
                             // for an example of accepting a connection request
@@ -110,12 +120,14 @@ public class ZMTP3Server {
                         }
                     }
                 }
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 e.printStackTrace();
             }
         }
 
-        public void initialize(SocketAddress localAddress) throws IOException {
+        public void initialize(SocketAddress localAddress) throws IOException
+        {
             LOG.debug("initialize()");
 
             this.localAddress = localAddress;
@@ -127,9 +139,11 @@ public class ZMTP3Server {
             this.channel.accept();
 
             final AcceptThread acceptThread = this;
-            executorService = Executors.newCachedThreadPool(new ThreadFactory() {
+            executorService = Executors.newCachedThreadPool(new ThreadFactory()
+            {
                 @Override
-                public Thread newThread(Runnable r) {
+                public Thread newThread(Runnable r)
+                {
                     Thread t = new Thread(r, "AcceptorThread");
                     return t;
                 }
@@ -140,11 +154,11 @@ public class ZMTP3Server {
             this.thread.start();
         }
 
-        public void stop() throws IOException {
+        public void stop() throws IOException
+        {
             LOG.debug("stop()");
 
             if (this.channel != null) {
-
                 this.channel.close();
                 this.channel.socket().close();
 
@@ -152,18 +166,17 @@ public class ZMTP3Server {
             }
 
             if (this.thread != null) {
-
                 try {
                     this.thread.interrupt();
                     this.thread.join(5000);
                     this.thread = null;
-                } catch (InterruptedException e) {
+                }
+                catch (InterruptedException e) {
                     LOG.warn(e.toString());
                 }
             }
         }
     }
-
 
     class RequestHandler implements Runnable
     {
@@ -174,7 +187,8 @@ public class ZMTP3Server {
 
         private Object notifier = new Object();
 
-        public RequestHandler(SocketChannel client, ISocketEvents delegate) {
+        public RequestHandler(SocketChannel client, ISocketEvents delegate)
+        {
             this.client = client;
             this.delegate = delegate;
         }
@@ -185,32 +199,30 @@ public class ZMTP3Server {
 
             try {
                 // there might not be a current connection
-                if (this.client != null)
-                {
+                if (this.client != null) {
                     this.client.close();
                     this.client = null;
                 }
-            } catch (IOException e) {
+            }
+            catch (IOException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             }
             this.stopped = true;
         }
 
-
         public void run()
         {
-            try
-            {
-                byte [] CLIENT_SIG = { (byte)0xff, (byte)0x0, (byte)0x0, (byte)0x0, (byte)0x0, (byte)0x0, (byte)0x0, (byte)0x0, (byte)0x0, (byte)0x7f  };
-                byte [] VERSION = { (byte)0x03, (byte)0x00 };
-                byte [] MECHANISM = { 'N', 'U', 'L', 'L', (byte)0x00 };
+            try {
+                byte[] sCLIENTSIG = {(byte) 0xff, (byte) 0x0, (byte) 0x0, (byte) 0x0, (byte) 0x0, (byte) 0x0, (byte) 0x0, (byte) 0x0, (byte) 0x0, (byte) 0x7f};
+                byte[] sVERSION = {(byte) 0x03, (byte) 0x00};
+                byte[] sMECHANISM = {'N', 'U', 'L', 'L', (byte) 0x00};
 
                 ByteBuffer greeting = ByteBuffer.allocate(64);
-                greeting.put(CLIENT_SIG);
-                greeting.put(VERSION);
-                greeting.put(MECHANISM);
-                greeting.put((byte)0); // as server
+                greeting.put(sCLIENTSIG);
+                greeting.put(sVERSION);
+                greeting.put(sMECHANISM);
+                greeting.put((byte) 0); // as server
                 greeting.rewind();
 
                 //PushbackInputStream readStream = new PushbackInputStream(client.socket().getInputStream());
@@ -225,14 +237,14 @@ public class ZMTP3Server {
                 outputStream.write(greeting.array());
 
                 int offset = 0;
-                byte [] requestBytes = new byte[1024];
-                byte [] greetings = new byte[64];
+                byte[] requestBytes = new byte[1024];
+                byte[] greetings = new byte[64];
 
                 LOG.info("Reading greetings");
                 int read = readStream.read(greetings, 0, greetings.length);
                 LOG.info(String.format("Read: %d Total: %d", read, offset));
 
-                LOG.info("\n" + print_hex(greetings, 0, greetings.length));
+                LOG.info("\n" + printHex(greetings, 0, greetings.length));
 
                 assert (read == 64);
 
@@ -257,25 +269,26 @@ public class ZMTP3Server {
                         command-data = *OCTET
 
                          */
-                long command_size = 0;
+                long commandSize = 0;
                 read = readStream.read(requestBytes, 0, 1);
                 assert (read == 1);
                 if (requestBytes[0] == 0x04) {
-                    command_size = readStream.readByte();
-                } else if (requestBytes[0] == 0x06) {
+                    commandSize = readStream.readByte();
+                }
+                else if (requestBytes[0] == 0x06) {
                     // long size. 8 bytes.
 
                     read = readStream.read(requestBytes, 0, 8);
                     assert (read == 8);
-                    command_size = readStream.readLong();
+                    commandSize = readStream.readLong();
                 }
 
-                byte [] command_bytes = new byte[(int)command_size];
-                read = readStream.read(command_bytes, 0, command_bytes.length);
-                assert (read == command_bytes.length);
+                byte[] commandBytes = new byte[(int) commandSize];
+                read = readStream.read(commandBytes, 0, commandBytes.length);
+                assert (read == commandBytes.length);
 
                 LOG.info("ComamndBytes: ");
-                LOG.info("\n" + print_hex(command_bytes, 0, command_bytes.length));
+                LOG.info("\n" + printHex(commandBytes, 0, commandBytes.length));
 
                 /*
                 null = ready *message | error
@@ -289,14 +302,14 @@ public class ZMTP3Server {
                 error-reason = OCTET 0*255VCHAR
                  */
 
-                ByteArrayInputStream bis = new ByteArrayInputStream(command_bytes);
+                ByteArrayInputStream bis = new ByteArrayInputStream(commandBytes);
                 DataInputStream dis = new DataInputStream(bis);
-                int command_name_len = dis.readByte();
-                byte [] command_name_bytes = new byte[command_name_len];
-                dis.read(command_name_bytes);
-                String commandName = new String(command_name_bytes,"utf-8");
+                int commandNameLen = dis.readByte();
+                byte[] commandNameBytes = new byte[commandNameLen];
+                dis.read(commandNameBytes);
+                String commandName = new String(commandNameBytes, "utf-8");
 
-                assert(Objects.equals(commandName, "READY"));
+                assert (Objects.equals(commandName, "READY"));
 
                 if (delegate != null) {
                     delegate.onHandshakeReceived(client);
@@ -312,15 +325,15 @@ public class ZMTP3Server {
                 dos.write("READY".getBytes("utf-8"));
 
                 // metdata for NULL handshake
-                String [][] NULL_HANDSHAKE_METADATA = {
-                        { "Socket-Type", "ROUTER" },
-                        { "Identity", "+tcp://localhost:4300"}
+                String[][] nullHandshakeMetadata = {
+                        {"Socket-Type", "ROUTER"},
+                        {"Identity", "+tcp://localhost:4300"}
 
                 };
 
-                for(int i = 0; i < NULL_HANDSHAKE_METADATA.length; i++) {
-                    String key= NULL_HANDSHAKE_METADATA[i][0];
-                    String value = NULL_HANDSHAKE_METADATA[i][1];
+                for (int i = 0; i < nullHandshakeMetadata.length; i++) {
+                    String key = nullHandshakeMetadata[i][0];
+                    String value = nullHandshakeMetadata[i][1];
 
                     dos.writeByte(key.length());
                     dos.write(key.getBytes("utf-8"));
@@ -328,48 +341,45 @@ public class ZMTP3Server {
                     dos.write(value.getBytes("utf-8"));
                 }
 
-                byte [] null_response = bos.toByteArray();
-                if (null_response.length <= 255) {
+                byte[] nullResponse = bos.toByteArray();
+                if (nullResponse.length <= 255) {
                     outputStream.writeByte(0x04);
-                    outputStream.writeByte(null_response.length);
-                } else {
+                    outputStream.writeByte(nullResponse.length);
+                }
+                else {
                     outputStream.writeByte(0x06);
-                    outputStream.writeLong(null_response.length);
+                    outputStream.writeLong(nullResponse.length);
                 }
 
-                outputStream.write(null_response);
-
+                outputStream.write(nullResponse);
 
                 int max = 10;
 
-
-                while(max > 0)
-                {
+                while (max > 0) {
                     // now we are getting traffic
                             /*
                             traffic = *command
                              */
-                    read_frame(readStream);
+                    readFrame(readStream);
 
                     // delegate to the caller.
-                    if (delegate != null)
-                    {
+                    if (delegate != null) {
                         delegate.onConnectionReceived(client);
                     }
                     //--max;
                 }
             }
-            catch(IOException e)
-            {
+            catch (IOException e) {
                 e.printStackTrace();
             }
-            catch(ClosedSelectorException e)
-            {
+            catch (ClosedSelectorException e) {
                 e.printStackTrace();
-            } finally {
+            }
+            finally {
                 try {
                     client.close();
-                } catch (IOException e) {
+                }
+                catch (IOException e) {
                     e.printStackTrace();
                 }
             }
@@ -377,7 +387,8 @@ public class ZMTP3Server {
             LOG.debug("**** ZMTP3 TEST SERVER EXITING *****");
         }
 
-        String print_hex(byte [] buffer, int offset, int length) {
+        String printHex(byte[] buffer, int offset, int length)
+        {
             StringBuilder sb = new StringBuilder(128);
             StringBuilder hex = new StringBuilder(128);
             StringBuilder ascii = new StringBuilder(128);
@@ -387,12 +398,13 @@ public class ZMTP3Server {
 
                 if (buffer[i] >= 32 && buffer[i] < 128) {
                     ascii.append(String.format("%c", buffer[i]));
-                } else {
+                }
+                else {
                     ascii.append("-");
                 }
                 ascii.append(" ");
 
-                if ((i +1) % 8 == 0) {
+                if ((i + 1) % 8 == 0) {
                     sb.append(hex.toString()).append(" ").append(ascii.toString()).append("\n");
                     hex.setLength(0);
                     ascii.setLength(0);
@@ -402,7 +414,8 @@ public class ZMTP3Server {
             return sb.toString();
         }
 
-        void read_command(DataInputStream readStream, byte command_size_type) throws IOException {
+        void readCommand(DataInputStream readStream, byte commandSizeType) throws IOException
+        {
             /*
             ;   A command is a single long or short frame
             command = command-size command-body
@@ -415,20 +428,21 @@ public class ZMTP3Server {
             command-data = *OCTET
             */
 
-            long command_size = 0;
+            long commandSize = 0;
 
-            if (command_size_type == 0x04) {
-                command_size = readStream.readByte();
-            } else if (command_size_type == 0x06) {
+            if (commandSizeType == 0x04) {
+                commandSize = readStream.readByte();
+            }
+            else if (commandSizeType == 0x06) {
                 // long size. 8 bytes.
-                command_size = readStream.readLong();
+                commandSize = readStream.readLong();
             }
 
-            byte [] command_body_bytes = new byte[(int)command_size];
-            int read = readStream.read(command_body_bytes, 0, command_body_bytes.length);
-            assert (read == command_body_bytes.length);
+            byte[] commandBodyBytes = new byte[(int) commandSize];
+            int read = readStream.read(commandBodyBytes, 0, commandBodyBytes.length);
+            assert (read == commandBodyBytes.length);
 
-            LOG.info("COMMAND-BODY: \n" + print_hex(command_body_bytes, 0, command_body_bytes.length));
+            LOG.info("COMMAND-BODY: \n" + printHex(commandBodyBytes, 0, commandBodyBytes.length));
 
             // get command name
             String commandName = readString(readStream);
@@ -436,11 +450,10 @@ public class ZMTP3Server {
             if (delegate != null) {
                 delegate.onCommandReceived(client, commandName);
             }
-
-
         }
 
-        boolean read_frame(DataInputStream inputStream) throws IOException {
+        boolean readFrame(DataInputStream inputStream) throws IOException
+        {
             /*
             Following the greeting, which has a fixed size of 64 octets, all further data is sent as frames, which carry commands or messages. Frames consist of a size field, a flags fields, and a body. The frame design is meant to be efficient for small frames but capable of handling extremely large data as well.
 
@@ -463,21 +476,23 @@ public class ZMTP3Server {
 
             boolean more = (flag & 0x01) == 0x01;
 
-            boolean long_frame = (flag & 0x02) == 0x02;
+            boolean longFrame = (flag & 0x02) == 0x02;
 
-            boolean command_frame = (flag & 0x04) == 0x04;
+            boolean commandFrame = (flag & 0x04) == 0x04;
 
-            if (command_frame) {
-                read_command(inputStream, flag);
+            if (commandFrame) {
+                readCommand(inputStream, flag);
 
-            } else {
-                read_message(inputStream, long_frame);
+            }
+            else {
+                readMessage(inputStream, longFrame);
             }
 
             return more;
         }
 
-        void read_message(DataInputStream readStream, boolean long_frame) throws IOException {
+        void readMessage(DataInputStream readStream, boolean longFrame) throws IOException
+        {
             /*
                 ;   A message is one or more frames
                 message = *message-more message-last
@@ -486,22 +501,23 @@ public class ZMTP3Server {
                 message-body = *OCTET
             */
 
-            long message_size = 0;
+            long messageSize = 0;
 
-            if (long_frame) {
+            if (longFrame) {
                 // long size. 8 bytes.
-                message_size = readStream.readLong();
-            } else {
-                message_size = readStream.readByte();
+                messageSize = readStream.readLong();
+            }
+            else {
+                messageSize = readStream.readByte();
             }
 
-            byte [] message_body_bytes = new byte[(int)message_size];
-            int read = readStream.read(message_body_bytes, 0, message_body_bytes.length);
-            assert (read == message_body_bytes.length);
+            byte[] messageBodyBytes = new byte[(int) messageSize];
+            int read = readStream.read(messageBodyBytes, 0, messageBodyBytes.length);
+            assert (read == messageBodyBytes.length);
 
             LOG.info(String.format("Read %d message bytes", read));
             //message body is string from logging system.
-            LOG.info("COMMAND-BODY: \n" + print_hex(message_body_bytes, 0, message_body_bytes.length));
+            LOG.info("COMMAND-BODY: \n" + printHex(messageBodyBytes, 0, messageBodyBytes.length));
 
             if (delegate != null) {
                 delegate.onMessageReceived(client, null);
@@ -509,10 +525,11 @@ public class ZMTP3Server {
 
         }
 
-        String readString(DataInputStream inputStream) throws IOException {
+        String readString(DataInputStream inputStream) throws IOException
+        {
             // read a size prepended string value
             byte size = inputStream.readByte();
-            byte [] buffer = new byte[size];
+            byte[] buffer = new byte[size];
             int read = inputStream.read(buffer);
             assert (read == size);
             String s = new String(buffer, "utf-8");
@@ -521,24 +538,30 @@ public class ZMTP3Server {
         }
     }
 
-    static class LOG {
-        public static void debug(String format, String... args) {
+    static class LOG
+    {
+        public static void debug(String format, String... args)
+        {
             print("DEBUG", format, args);
         }
 
-        public static void info(String format, String... args) {
+        public static void info(String format, String... args)
+        {
             print("INFO", format, args);
         }
 
-        public static void warn(String format, String... args) {
+        public static void warn(String format, String... args)
+        {
             print("WARN", format, args);
         }
 
-        static void print(String level, String format, String... args) {
+        static void print(String level, String format, String... args)
+        {
             if (args.length == 0) {
                 System.out.printf("%s %s\n", level, format);
-            } else {
-                System.out.printf(level + " " + format +"\n", args);
+            }
+            else {
+                System.out.printf(level + " " + format + "\n", args);
             }
 
         }
