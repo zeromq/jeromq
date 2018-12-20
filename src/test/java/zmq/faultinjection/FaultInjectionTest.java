@@ -10,8 +10,8 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.SocketChannel;
 
-public class FaultInjectionTest {
-
+public class FaultInjectionTest
+{
     ZMTP3Server testServer;
     ZmqServerEvents events;
     ZContext ctx = new ZContext();
@@ -36,10 +36,12 @@ public class FaultInjectionTest {
     }
 
     @After
-    public void cleanup() {
+    public void cleanup()
+    {
         try {
             testServer.stop();
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             e.printStackTrace();
         }
     }
@@ -47,88 +49,90 @@ public class FaultInjectionTest {
     @Test
     public void testStart()
     {
-        boolean debugger_attached = false;
+        boolean debuggerAttached = false;
 
         StringBuilder sb = new StringBuilder(5);
-        for (int i =0; i < 5; i++ ) {
-            sb.append(i%10);
+        for (int i = 0; i < 5; i++) {
+            sb.append(i % 10);
         }
 
         boolean cont = true;
 
-        for (int i = 0; i < 10; i ++ ) {
+        for (int i = 0; i < 10; i++) {
             brokerSocket.send(sb.toString());
             sleep(100);
         }
 
-        if (debugger_attached) {
+        if (debuggerAttached) {
             sleep(-1);
-        } else {
+        }
+        else {
             sleep(5000);
         }
     }
 
-    private void sleep(int ms) {
+    private void sleep(int ms)
+    {
         try {
             Thread.sleep(ms);
-        } catch (InterruptedException e) {
+        }
+        catch (InterruptedException e) {
             e.printStackTrace();
         }
     }
 
-    static class ZmqServerEvents implements ZMTP3Server.ISocketEvents {
-
+    static class ZmqServerEvents implements ZMTP3Server.ISocketEvents
+    {
         ZMTP3Server testServer;
 
-        public ZmqServerEvents(ZMTP3Server server) {
+        public ZmqServerEvents(ZMTP3Server server)
+        {
             testServer = server;
         }
 
         long start = System.currentTimeMillis();
 
         @Override
-        public void onConnectionReceived(SocketChannel channel) {
-
+        public void onConnectionReceived(SocketChannel channel)
+        {
         }
 
         @Override
-        public void onGreetingReceived(SocketChannel channel) {
+        public void onGreetingReceived(SocketChannel channel)
+        {
             try {
                 channel.close();
                 testServer.stop();
-            } catch (IOException e) {
-
             }
-
-
+            catch (IOException e) {
+            }
         }
 
         @Override
-        public void onHandshakeReceived(SocketChannel channel) {
-
+        public void onHandshakeReceived(SocketChannel channel)
+        {
         }
 
         @Override
-        public void onCommandReceived(SocketChannel channel, String command) {
-
+        public void onCommandReceived(SocketChannel channel, String command)
+        {
         }
 
         @Override
-        public void onMessageReceived(SocketChannel channel, String message) {
-
+        public void onMessageReceived(SocketChannel channel, String message)
+        {
             if (System.currentTimeMillis() - start < 30000) {
                 return;
             }
 
             try {
                 channel.socket().shutdownInput();
-            } catch (IOException e) {
-
+            }
+            catch (IOException e) {
             }
 
             // reset start.
             start = System.currentTimeMillis();
-
         }
     }
 }
