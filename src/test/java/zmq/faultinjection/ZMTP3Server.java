@@ -369,10 +369,7 @@ public class ZMTP3Server
                     //--max;
                 }
             }
-            catch (IOException e) {
-                e.printStackTrace();
-            }
-            catch (ClosedSelectorException e) {
+            catch (Exception e) {
                 e.printStackTrace();
             }
             finally {
