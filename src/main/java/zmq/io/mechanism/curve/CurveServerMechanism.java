@@ -115,8 +115,6 @@ public class CurveServerMechanism extends Mechanism
             rc = processInitiate(msg);
             break;
         default:
-            //  Temporary support for security debugging
-            puts("CURVE I: invalid handshake command");
             rc = ZError.EPROTO;
             break;
 
@@ -165,15 +163,11 @@ public class CurveServerMechanism extends Mechanism
         assert (state == State.CONNECTED);
 
         if (msg.size() < 33) {
-            //  Temporary support for security debugging
-            puts("CURVE I: invalid CURVE client, sent malformed command");
             errno.set(ZError.EPROTO);
             return null;
         }
 
         if (!compare(msg, "MESSAGE", true)) {
-            //  Temporary support for security debugging
-            puts("CURVE I: invalid CURVE client, did not send MESSAGE");
             errno.set(ZError.EPROTO);
             return null;
         }
@@ -212,8 +206,6 @@ public class CurveServerMechanism extends Mechanism
             return decoded;
         }
         else {
-            //  Temporary support for security debugging
-            puts("CURVE I: connection key used for MESSAGE is wrong");
             errno.set(ZError.EPROTO);
             return null;
         }
@@ -250,14 +242,10 @@ public class CurveServerMechanism extends Mechanism
     private int processHello(Msg msg)
     {
         if (msg.size() != 200) {
-            //  Temporary support for security debugging
-            puts("CURVE I: client HELLO is not correct size");
             return ZError.EPROTO;
         }
 
         if (!compare(msg, "HELLO", true)) {
-            //  Temporary support for security debugging
-            puts("CURVE I: client HELLO has invalid command name");
             return ZError.EPROTO;
         }
 
@@ -265,8 +253,6 @@ public class CurveServerMechanism extends Mechanism
         byte minor = msg.get(7);
 
         if (major != 1 || minor != 0) {
-            //  Temporary support for security debugging
-            puts("CURVE I: client HELLO has unknown version number");
             return ZError.EPROTO;
         }
 
@@ -287,8 +273,6 @@ public class CurveServerMechanism extends Mechanism
         //  Open Box [64 * %x0](C'->S)
         int rc = cryptoBox.open(helloPlaintext, helloBox, helloBox.capacity(), helloNonce, cnClient, secretKey);
         if (rc != 0) {
-            //  Temporary support for security debugging
-            puts("CURVE I: cannot open client HELLO -- wrong server key?");
             return ZError.EPROTO;
         }
 
@@ -358,14 +342,10 @@ public class CurveServerMechanism extends Mechanism
     private int processInitiate(Msg msg)
     {
         if (msg.size() < 257) {
-            //  Temporary support for security debugging
-            puts("CURVE I: client INITIATE is not correct size");
             return ZError.EPROTO;
         }
 
         if (!compare(msg, "INITIATE", true)) {
-            //  Temporary support for security debugging
-            puts("CURVE I: client INITIATE has invalid command name");
             return ZError.EPROTO;
         }
         ByteBuffer cookieNonce = ByteBuffer.allocate(Curve.Size.NONCE.bytes());
@@ -381,16 +361,12 @@ public class CurveServerMechanism extends Mechanism
 
         int rc = cryptoBox.secretboxOpen(cookiePlaintext, cookieBox, cookieBox.capacity(), cookieNonce, cookieKey);
         if (rc != 0) {
-            //  Temporary support for security debugging
-            puts("CURVE I: cannot open client INITIATE cookie");
             return ZError.EPROTO;
         }
 
         //  Check cookie plain text is as expected [C' + s']
         if (!compare(cookiePlaintext, cnClient, Curve.Size.ZERO.bytes(), 32)
                 || !compare(cookiePlaintext, cnSecret, Curve.Size.ZERO.bytes() + 32, 32)) {
-            //  Temporary support for security debugging
-            puts("CURVE I: client INITIATE cookie is not valid");
             return ZError.EPROTO;
         }
 
@@ -411,8 +387,6 @@ public class CurveServerMechanism extends Mechanism
 
         rc = cryptoBox.open(initiatePlaintext, initiateBox, clen, initiateNonce, cnClient, cnSecret);
         if (rc != 0) {
-            //  Temporary support for security debugging
-            puts("CURVE I: cannot open client INITIATE");
             return ZError.EPROTO;
         }
 
@@ -435,15 +409,11 @@ public class CurveServerMechanism extends Mechanism
 
         rc = cryptoBox.open(vouchPlaintext, vouchBox, vouchBox.capacity(), vouchNonce, clientKey, cnSecret);
         if (rc != 0) {
-            //  Temporary support for security debugging
-            puts("CURVE I: cannot open client INITIATE vouch");
             return ZError.EPROTO;
         }
 
         //  What we decrypted must be the client's short-term public key
         if (!compare(vouchPlaintext, cnClient, Curve.Size.ZERO.bytes(), 32)) {
-            //  Temporary support for security debugging
-            puts("CURVE I: invalid handshake from client (public key)");
             return ZError.EPROTO;
         }
 

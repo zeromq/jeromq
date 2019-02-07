@@ -163,15 +163,11 @@ public class CurveClientMechanism extends Mechanism
         assert (state == State.CONNECTED);
 
         if (msg.size() < 33) {
-            //  Temporary support for security debugging
-            puts("CURVE I: invalid CURVE server, sent malformed command");
             errno.set(ZError.EPROTO);
             return null;
         }
 
         if (!compare(msg, "MESSAGE", true)) {
-            //  Temporary support for security debugging
-            puts("CURVE I: invalid CURVE server, did not send MESSAGE");
             errno.set(ZError.EPROTO);
             return null;
         }
@@ -210,8 +206,6 @@ public class CurveClientMechanism extends Mechanism
             return decoded;
         }
         else {
-            //  Temporary support for security debugging
-            puts("CURVE I: connection key used for MESSAGE is wrong");
             errno.set(ZError.EPROTO);
             return null;
         }
@@ -274,8 +268,6 @@ public class CurveClientMechanism extends Mechanism
     private int processWelcome(Msg msg)
     {
         if (msg.size() != 168) {
-            //  Temporary support for security debugging
-            puts("CURVE I: server HELLO is not correct size");
             return ZError.EPROTO;
         }
 
