@@ -87,7 +87,6 @@ class NullMechanism extends Mechanism
     public int processHandshakeCommand(Msg msg)
     {
         if (readyCommandReceived || errorCommandReceived) {
-            puts("NULL I: client sent invalid NULL handshake (duplicate READY)");
             return ZError.EPROTO;
         }
         int dataSize = msg.size();
@@ -100,7 +99,6 @@ class NullMechanism extends Mechanism
             rc = processErrorCommand(msg);
         }
         else {
-            puts("NULL I: client sent invalid NULL handshake (not READY) ");
             return ZError.EPROTO;
         }
         return rc;
