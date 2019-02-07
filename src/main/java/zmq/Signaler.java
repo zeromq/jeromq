@@ -9,7 +9,7 @@ import java.nio.channels.Pipe;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import zmq.util.Errno;
 import zmq.util.Utils;
@@ -28,8 +28,8 @@ final class Signaler implements Closeable
     private final ByteBuffer         rdummy = ByteBuffer.allocate(1);
 
     // Selector.selectNow at every sending message doesn't show enough performance
-    private final AtomicInteger wcursor = new AtomicInteger(0);
-    private int                 rcursor = 0;
+    private final AtomicLong wcursor = new AtomicLong(0);
+    private long             rcursor = 0;
 
     private final Errno errno;
     private final int   pid;
