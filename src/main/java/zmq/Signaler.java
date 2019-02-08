@@ -98,7 +98,6 @@ final class Signaler implements Closeable
                 nbytes = w.write(wdummy);
             }
             catch (IOException e) {
-                e.printStackTrace();
                 throw new ZError.IOException(e);
             }
             if (nbytes == 0) {
