@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.zeromq.ZMQ.Poller;
 import org.zeromq.ZMQ.Socket;
@@ -489,11 +490,7 @@ public class ZPoller implements Closeable
     protected int poll(final long timeout, final boolean dispatchEvents)
     {
         // get all the raw items
-        final Collection<ItemHolder> all = items();
-        final Set<zmq.poll.PollItem> pollItems = new HashSet<>(all.size());
-        for (ItemHolder holder : all) {
-            pollItems.add(holder.item());
-        }
+        final Set<zmq.poll.PollItem> pollItems = all.stream().map(ItemHolder::item).collect(Collectors.toSet());
         // polling time
         final int rc = poll(selector, timeout, pollItems);
 
@@ -802,11 +799,7 @@ public class ZPoller implements Closeable
         }
         assert (socketOrChannel != null);
 
-        Set<ItemHolder> holders = items.get(socketOrChannel);
-        if (holders == null) {
-            holders = createContainer(1);
-            items.put(socketOrChannel, holders);
-        }
+        Set<ItemHolder> holders = items.computeIfAbsent(socketOrChannel, i -> createContainer(1));
         final boolean rc = holders.add(holder);
         if (rc) {
             all.add(holder);
