@@ -16,6 +16,7 @@ import org.junit.Test;
 import zmq.Ctx;
 import zmq.Helper;
 import zmq.Msg;
+import zmq.Options;
 import zmq.SocketBase;
 import zmq.ZError;
 import zmq.ZMQ;
@@ -333,5 +334,70 @@ public class SecurityCurveTest
         ZMQ.term(ctx);
         //  Wait until ZAP handler terminates
         thread.join();
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void inconsistent1()
+    {
+        Options opt = new Options();
+        opt.setSocketOpt(ZMQ.ZMQ_CURVE_PUBLICKEY, new byte[32]);
+        opt.setSocketOpt(ZMQ.ZMQ_CURVE_SECRETKEY, null);
+        Mechanisms.CURVE.check(opt);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void inconsistent2()
+    {
+        Options opt = new Options();
+        opt.setSocketOpt(ZMQ.ZMQ_CURVE_PUBLICKEY, null);
+        opt.setSocketOpt(ZMQ.ZMQ_CURVE_SECRETKEY, new byte[32]);
+        Mechanisms.CURVE.check(opt);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void inconsistent3()
+    {
+        Options opt = new Options();
+        opt.setSocketOpt(ZMQ.ZMQ_CURVE_PUBLICKEY, new byte[32]);
+        opt.setSocketOpt(ZMQ.ZMQ_CURVE_SECRETKEY, new byte[31]);
+        Mechanisms.CURVE.check(opt);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void inconsistent4()
+    {
+        Options opt = new Options();
+        opt.setSocketOpt(ZMQ.ZMQ_CURVE_PUBLICKEY, new byte[31]);
+        opt.setSocketOpt(ZMQ.ZMQ_CURVE_SECRETKEY, new byte[32]);
+        Mechanisms.CURVE.check(opt);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void inconsistent5()
+    {
+        Options opt = new Options();
+        opt.setSocketOpt(ZMQ.ZMQ_CURVE_PUBLICKEY, new byte[32]);
+        opt.setSocketOpt(ZMQ.ZMQ_CURVE_SECRETKEY, new byte[32]);
+        opt.setSocketOpt(ZMQ.ZMQ_CURVE_SERVERKEY, new byte[31]);
+        Mechanisms.CURVE.check(opt);
+    }
+
+    @Test
+    public void consistent1()
+    {
+        Options opt = new Options();
+        opt.setSocketOpt(ZMQ.ZMQ_CURVE_PUBLICKEY, new byte[32]);
+        opt.setSocketOpt(ZMQ.ZMQ_CURVE_SECRETKEY, new byte[32]);
+        Mechanisms.CURVE.check(opt);
+    }
+
+    @Test
+    public void consistent2()
+    {
+        Options opt = new Options();
+        opt.setSocketOpt(ZMQ.ZMQ_CURVE_PUBLICKEY, new byte[32]);
+        opt.setSocketOpt(ZMQ.ZMQ_CURVE_SECRETKEY, new byte[32]);
+        opt.setSocketOpt(ZMQ.ZMQ_CURVE_SERVERKEY, new byte[32]);
+        Mechanisms.CURVE.check(opt);
     }
 }

@@ -314,6 +314,8 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
             return false;
         }
 
+        options.mechanism.check(options);
+
         //  Process pending commands, if any.
         boolean brc = processCommands(0, false);
         if (!brc) {
@@ -415,6 +417,8 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
             errno.set(ZError.ETERM);
             return false;
         }
+
+        options.mechanism.check(options);
 
         //  Process pending commands, if any.
         boolean brc = processCommands(0, false);

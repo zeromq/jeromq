@@ -14,6 +14,7 @@ import org.junit.Test;
 import zmq.Ctx;
 import zmq.Helper;
 import zmq.Msg;
+import zmq.Options;
 import zmq.SocketBase;
 import zmq.ZMQ;
 import zmq.util.Utils;
@@ -179,5 +180,50 @@ public class SecurityPlainTest
         ZMQ.term(ctx);
         //  Wait until ZAP handler terminates
         thread.join();
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void inconsistent1()
+    {
+        Options opt = new Options();
+        opt.setSocketOpt(ZMQ.ZMQ_PLAIN_USERNAME, null);
+        opt.setSocketOpt(ZMQ.ZMQ_PLAIN_PASSWORD, "plainPassword");
+        Mechanisms.PLAIN.check(opt);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void inconsistent2()
+    {
+        Options opt = new Options();
+        opt.setSocketOpt(ZMQ.ZMQ_PLAIN_PASSWORD, null);
+        opt.setSocketOpt(ZMQ.ZMQ_PLAIN_USERNAME, "plainUsername");
+        Mechanisms.PLAIN.check(opt);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void inconsistent3()
+    {
+        Options opt = new Options();
+        opt.setSocketOpt(ZMQ.ZMQ_PLAIN_USERNAME, String.format("%256d", 1));
+        opt.setSocketOpt(ZMQ.ZMQ_PLAIN_PASSWORD, "plainPassword");
+        Mechanisms.PLAIN.check(opt);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void inconsistent4()
+    {
+        Options opt = new Options();
+        opt.setSocketOpt(ZMQ.ZMQ_PLAIN_USERNAME, "plainUsername");
+        opt.setSocketOpt(ZMQ.ZMQ_PLAIN_PASSWORD, String.format("%256d", 1));
+        Mechanisms.PLAIN.check(opt);
+    }
+
+    @Test
+    public void consistent()
+    {
+        Options opt = new Options();
+        opt.setSocketOpt(ZMQ.ZMQ_PLAIN_USERNAME, "plainUsername");
+        opt.setSocketOpt(ZMQ.ZMQ_PLAIN_PASSWORD, "plainPassword");
+        Mechanisms.PLAIN.check(opt);
     }
 }
