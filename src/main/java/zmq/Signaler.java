@@ -141,7 +141,11 @@ final class Signaler implements Closeable
             return false;
         }
 
-        if (rc == 0) {
+        if (rc == 0 && timeout < 0 && ! selector.keys().isEmpty()) {
+            errno.set(ZError.EINTR);
+            return false;
+        }
+        else if (rc == 0) {
             errno.set(ZError.EAGAIN);
             return false;
         }
