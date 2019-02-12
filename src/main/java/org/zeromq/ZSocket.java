@@ -1,6 +1,5 @@
 package org.zeromq;
 
-import java.nio.charset.Charset;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import zmq.Msg;
@@ -20,7 +19,6 @@ import zmq.ZMQ;
  */
 public class ZSocket implements AutoCloseable
 {
-    public static final Charset UTF8 = Charset.forName("UTF-8");
     private final SocketBase    socketBase;
 
     private final AtomicBoolean isClosed = new AtomicBoolean(false);
@@ -131,7 +129,7 @@ public class ZSocket implements AutoCloseable
 
     public void subscribe(String topic)
     {
-        setOption(ZMQ.ZMQ_SUBSCRIBE, topic.getBytes(UTF8));
+        setOption(ZMQ.ZMQ_SUBSCRIBE, topic.getBytes(ZMQ.CHARSET));
     }
 
     public void unsubscribe(byte[] topic)
@@ -141,7 +139,7 @@ public class ZSocket implements AutoCloseable
 
     public void unsubscribe(String topic)
     {
-        setOption(ZMQ.ZMQ_UNSUBSCRIBE, topic.getBytes(UTF8));
+        setOption(ZMQ.ZMQ_UNSUBSCRIBE, topic.getBytes(ZMQ.CHARSET));
     }
 
     public int send(byte[] b)
@@ -198,7 +196,7 @@ public class ZSocket implements AutoCloseable
 
     public int sendStringUtf8(String str, int flags)
     {
-        final byte[] b = str.getBytes(UTF8);
+        final byte[] b = str.getBytes(ZMQ.CHARSET);
         return send(b, flags);
     }
 
@@ -224,7 +222,7 @@ public class ZSocket implements AutoCloseable
     public String receiveStringUtf8(int flags)
     {
         final byte[] b = receive(flags);
-        return new String(b, UTF8);
+        return new String(b, ZMQ.CHARSET);
     }
 
     private void mayRaise()
