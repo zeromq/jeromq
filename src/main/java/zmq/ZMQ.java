@@ -296,12 +296,6 @@ public class ZMQ
         ctx.terminate();
     }
 
-    private static void shutdownContext(Ctx ctx)
-    {
-        checkContext(ctx);
-        ctx.shutdown();
-    }
-
     public static void setContextOption(Ctx ctx, int option, int optval)
     {
         checkContext(ctx);

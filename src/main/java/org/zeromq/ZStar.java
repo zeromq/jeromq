@@ -453,14 +453,6 @@ public class ZStar implements ZAgent
         return ZAgent.Creator.create(phone, secret);
     }
 
-    /**
-     * @return the context. Never null. If provided context in constructor was null, returns the auto-generated context for that star.
-     */
-    private ZContext context()
-    {
-        return context;
-    }
-
     // the plateau where the acting will take place (stage and backstage), or
     // the forked runnable containing the loop processing all messages in the background
     private static final class Plateau implements IAttachedRunnable, Exit
