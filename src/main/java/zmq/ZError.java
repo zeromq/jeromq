@@ -106,7 +106,8 @@ public class ZError
             return "Context was terminated";
         case EMTHREAD:
             return "No thread available";
+        default:
+            return "errno " + Integer.toString(code);
         }
-        return "";
     }
 }
