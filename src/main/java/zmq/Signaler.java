@@ -132,9 +132,12 @@ final class Signaler implements Closeable
                 rc = selector.select(timeout);
             }
         }
-        catch (ClosedSelectorException | IOException e) {
-            e.printStackTrace();
+        catch (ClosedSelectorException e) {
             errno.set(ZError.EINTR);
+            return false;
+        }
+        catch (IOException e) {
+            errno.set(ZError.exccode(e));
             return false;
         }
 
@@ -158,7 +161,6 @@ final class Signaler implements Closeable
                 nbytes = r.read(rdummy);
             }
             catch (ClosedChannelException e) {
-                e.printStackTrace();
                 errno.set(ZError.EINTR);
                 return;
             }
