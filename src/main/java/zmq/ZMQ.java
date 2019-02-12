@@ -9,6 +9,7 @@ import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
@@ -193,7 +194,7 @@ public class ZMQ
 
     public static final byte[] SUBSCRIPTION_ALL = new byte[0];
 
-    public static final Charset CHARSET = Charset.forName("UTF-8");
+    public static final Charset CHARSET = StandardCharsets.UTF_8;
 
     public static final byte[] PROXY_PAUSE     = "PAUSE".getBytes(ZMQ.CHARSET);
     public static final byte[] PROXY_RESUME    = "RESUME".getBytes(ZMQ.CHARSET);
