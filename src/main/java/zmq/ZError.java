@@ -3,6 +3,8 @@ package zmq;
 import java.net.SocketException;
 import java.nio.channels.ClosedChannelException;
 
+import org.zeromq.ZMQ.Error;
+
 public class ZError
 {
     private ZError()
@@ -95,19 +97,6 @@ public class ZError
 
     public static String toString(int code)
     {
-        switch (code) {
-        case EADDRINUSE:
-            return "Address already in use";
-        case EFSM:
-            return "Operation cannot be accomplished in current state";
-        case ENOCOMPATPROTO:
-            return "The protocol is not compatible with the socket type";
-        case ETERM:
-            return "Context was terminated";
-        case EMTHREAD:
-            return "No thread available";
-        default:
-            return "errno " + Integer.toString(code);
-        }
+        return Error.findByCode(code).getMessage();
     }
 }

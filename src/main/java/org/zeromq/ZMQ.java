@@ -5,7 +5,9 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.Selector;
 import java.nio.charset.Charset;
+import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -426,18 +428,78 @@ public class ZMQ
         EPROTONOSUPPORT(ZError.EPROTONOSUPPORT),
         ENOBUFS(ZError.ENOBUFS),
         ENETDOWN(ZError.ENETDOWN),
-        EADDRINUSE(ZError.EADDRINUSE),
+        EADDRINUSE(ZError.EADDRINUSE)
+        {
+            @Override
+            public String getMessage()
+            {
+                return "Address already in use";
+            }
+        },
         EADDRNOTAVAIL(ZError.EADDRNOTAVAIL),
         ECONNREFUSED(ZError.ECONNREFUSED),
         EINPROGRESS(ZError.EINPROGRESS),
         EHOSTUNREACH(ZError.EHOSTUNREACH),
-        EMTHREAD(ZError.EMTHREAD),
-        EFSM(ZError.EFSM),
-        ENOCOMPATPROTO(ZError.ENOCOMPATPROTO),
-        ETERM(ZError.ETERM),
+        EMTHREAD(ZError.EMTHREAD)
+        {
+            @Override
+            public String getMessage()
+            {
+                return "No thread available";
+            }
+        },
+        EFSM(ZError.EFSM)
+        {
+            @Override
+            public String getMessage()
+            {
+                return "Operation cannot be accomplished in current state";
+            }
+        },
+        ENOCOMPATPROTO(ZError.ENOCOMPATPROTO)
+        {
+            @Override
+            public String getMessage()
+            {
+                return "The protocol is not compatible with the socket type";
+            }
+        },
+        ETERM(ZError.ETERM)
+        {
+            @Override
+            public String getMessage()
+            {
+                return "Context was terminated";
+            }
+        },
         ENOTSOCK(ZError.ENOTSOCK),
-        EAGAIN(ZError.EAGAIN);
+        EAGAIN(ZError.EAGAIN),
+        ENOENT(ZError.ENOENT),
+        EINTR(ZError.EINTR),
+        EACCESS(ZError.EACCESS),
+        EFAULT(ZError.EFAULT),
+        EINVAL(ZError.EINVAL),
+        EISCONN(ZError.EISCONN),
+        ENOTCONN(ZError.ENOTCONN),
+        EMSGSIZE(ZError.EMSGSIZE),
+        EAFNOSUPPORT(ZError.EAFNOSUPPORT),
+        ENETUNREACH(ZError.ENETUNREACH),
+        ECONNABORTED(ZError.ECONNABORTED),
+        ECONNRESET(ZError.ECONNRESET),
+        ETIMEDOUT(ZError.ETIMEDOUT),
+        ENETRESET(ZError.ENETRESET),
+        EIOEXC(ZError.EIOEXC),
+        ESOCKET(ZError.ESOCKET),
+        EMFILE(ZError.EMFILE),
+        EPROTO(ZError.EPROTO);
 
+        private static final Map<Integer, Error> map = new HashMap<>(Error.values().length);
+        static
+        {
+            for (Error e : Error.values()) {
+                map.put(e.code, e);
+            }
+        }
         private final int code;
 
         Error(int code)
@@ -447,17 +509,22 @@ public class ZMQ
 
         public static Error findByCode(int code)
         {
-            for (Error e : Error.values()) {
-                if (e.getCode() == code) {
-                    return e;
-                }
+            if (map.containsKey(code)) {
+                return map.get(code);
             }
-            throw new IllegalArgumentException("Unknown " + Error.class.getName() + " enum code:" + code);
+            else {
+                throw new IllegalArgumentException("Unknown " + Error.class.getName() + " enum code: " + code);
+            }
         }
 
         public int getCode()
         {
             return code;
+        }
+
+        public String getMessage()
+        {
+            return "errno " + Integer.toString(code);
         }
     }
 
