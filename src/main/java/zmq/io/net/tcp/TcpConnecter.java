@@ -46,9 +46,6 @@ public class TcpConnecter extends Own implements IPollEvents
     //  Current reconnect ivl, updated for backoff strategy
     private int currentReconnectIvl;
 
-    // String representation of endpoint to connect to
-    private final String endpoint;
-
     // Socket
     private final SocketBase socket;
 
@@ -67,7 +64,6 @@ public class TcpConnecter extends Own implements IPollEvents
         assert (this.addr != null);
         //        assert (NetProtocol.tcp.equals(this.addr.protocol())); // not always true, as ipc is emulated by tcp
 
-        endpoint = this.addr.toString();
         socket = session.getSocket();
     }
 

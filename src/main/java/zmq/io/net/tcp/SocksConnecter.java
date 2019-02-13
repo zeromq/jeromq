@@ -9,9 +9,6 @@ import zmq.io.net.NetProtocol;
 // TODO continue socks connecter
 public class SocksConnecter extends TcpConnecter
 {
-    //  Method ID
-    private static final int SOCKS_NO_AUTH_REQUIRED = 0;
-
     private Address proxyAddress;
 
     private enum Status

@@ -10,7 +10,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -333,7 +332,6 @@ public class ZPoller implements Closeable
         Objects.requireNonNull(selector, "Selector is mandatory for ZPoller");
 
         this.creator = creator;
-        this.context = Optional.ofNullable(context);
         this.selector = selector;
         items = new HashMap<>();
         all = createContainer(0);
@@ -743,13 +741,8 @@ public class ZPoller implements Closeable
      */
     public void destroy()
     {
-        // if we created the selector,
-        // it is our responsibility to close it.
-        context.ifPresent(ctx -> ctx.closeSelector(selector));
+        // Nothing to do
     }
-
-    // optional context for the poller.
-    private final Optional<ZContext> context;
 
     // selector used for polling
     private final Selector selector;
