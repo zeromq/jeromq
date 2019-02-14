@@ -255,8 +255,8 @@ public class StreamEngine implements IEngine, IPollEvents
         ioError = false;
 
         //  Make sure batch sizes match large buffer sizes
-        final int inBatchSize = options.rcvbuf > Config.IN_BATCH_SIZE.getValue() ? options.rcvbuf : Config.IN_BATCH_SIZE.getValue();
-        final int outBatchSize = options.sndbuf > Config.OUT_BATCH_SIZE.getValue() ? options.sndbuf : Config.OUT_BATCH_SIZE.getValue();
+        final int inBatchSize = Math.max(options.rcvbuf, Config.IN_BATCH_SIZE.getValue());
+        final int outBatchSize = Math.max(options.sndbuf, Config.OUT_BATCH_SIZE.getValue());
 
         if (options.rawSocket) {
             decoder = (IDecoder) instantiate(options.decoder, inBatchSize, options.maxMsgSize);
@@ -474,7 +474,7 @@ public class StreamEngine implements IEngine, IPollEvents
             outsize = encoder.encode(outpos, 0);
 
             //  Make sure batch sizes match large buffer sizes
-            final int outBatchSize = options.sndbuf > Config.OUT_BATCH_SIZE.getValue() ? options.sndbuf : Config.OUT_BATCH_SIZE.getValue();
+            final int outBatchSize = Math.max(options.sndbuf, Config.OUT_BATCH_SIZE.getValue());
 
             while (outsize < outBatchSize) {
                 Msg msg = nextMsg.get();
@@ -615,8 +615,8 @@ public class StreamEngine implements IEngine, IPollEvents
         final int revisionPos = SIGNATURE_SIZE;
 
         //  Make sure batch sizes match large buffer sizes
-        final int inBatchSize = options.rcvbuf > Config.IN_BATCH_SIZE.getValue() ? options.rcvbuf : Config.IN_BATCH_SIZE.getValue();
-        final int outBatchSize = options.sndbuf > Config.OUT_BATCH_SIZE.getValue() ? options.sndbuf : Config.OUT_BATCH_SIZE.getValue();
+        final int inBatchSize = Math.max(options.rcvbuf, Config.IN_BATCH_SIZE.getValue());
+        final int outBatchSize = Math.max(options.sndbuf, Config.OUT_BATCH_SIZE.getValue());
 
         //  Receive the greeting.
         while (greetingRecv.position() < greetingSize) {
