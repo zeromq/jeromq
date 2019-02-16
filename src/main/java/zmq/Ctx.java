@@ -16,6 +16,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import org.zeromq.ZMQException;
+
 import zmq.io.IOThread;
 import zmq.pipe.Pipe;
 import zmq.socket.Sockets;
@@ -383,7 +385,7 @@ public class Ctx
 
             //  If maxSockets limit was reached, return error.
             if (emptySlots.isEmpty()) {
-                throw new IllegalStateException("EMFILE");
+                throw new ZMQException(ZError.EMFILE);
             }
 
             //  Choose a slot for the socket.
