@@ -285,7 +285,7 @@ public class ZMQ
 
     private static void checkContext(Ctx ctx)
     {
-        if (ctx == null || !ctx.checkTag()) {
+        if (ctx == null || !ctx.isActive()) {
             throw new IllegalStateException();
         }
     }
@@ -331,7 +331,7 @@ public class ZMQ
 
     private static void checkSocket(SocketBase s)
     {
-        if (s == null || !s.checkTag()) {
+        if (s == null || !s.isActive()) {
             throw new IllegalStateException();
         }
     }

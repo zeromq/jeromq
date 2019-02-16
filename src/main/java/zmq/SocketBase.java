@@ -53,7 +53,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
     private final MultiMap<String, Pipe> inprocs;
 
     //  Used to check whether the object is a socket.
-    private int tag;
+    private boolean active;
 
     //  If true, associated context was already terminated.
     private boolean ctxTerminated;
@@ -99,7 +99,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
     protected SocketBase(Ctx parent, int tid, int sid)
     {
         super(parent, tid);
-        tag = 0xbaddecaf;
+        active = true;
         ctxTerminated = false;
         destroyed = false;
         lastTsc = 0;
@@ -125,10 +125,12 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
 
     protected abstract void xpipeTerminated(Pipe pipe);
 
-    //  Returns false if object is not a socket.
-    final boolean checkTag()
+    /**
+     * @return false if object is not a socket.
+     */
+    boolean isActive()
     {
-        return tag == 0xbaddecaf;
+        return active;
     }
 
     @Override
@@ -861,7 +863,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
     public final void close()
     {
         //  Mark the socket as dead
-        tag = 0xdeadbeef;
+        active = false;
 
         //  Transfer the ownership of the socket from this application thread
         //  to the reaper thread which will take care of the rest of shutdown
