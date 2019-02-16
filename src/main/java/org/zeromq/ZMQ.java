@@ -553,7 +553,7 @@ public class ZMQ
          */
         public boolean isTerminated()
         {
-            return !ctx.checkTag();
+            return !ctx.isActive();
         }
 
         /**

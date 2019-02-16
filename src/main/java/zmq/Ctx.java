@@ -70,7 +70,7 @@ public class Ctx
     }
 
     //  Used to check whether the object is a context.
-    private int tag;
+    private boolean active;
 
     //  Sockets belonging to this context. We need the list so that
     //  we can notify the sockets when zmq_term() is called. The sockets
@@ -146,7 +146,7 @@ public class Ctx
 
     public Ctx()
     {
-        tag = 0xabadcafe;
+        active = true;
         terminating = false;
         reaper = null;
         slotCount = 0;
@@ -202,15 +202,25 @@ public class Ctx
         //  corresponding io_thread/socket objects.
         termMailbox.close();
 
-        tag = 0xdeadbeef;
+        active = false;
     }
 
-    //  Returns false if object is not a context.
-    //
-    //  This will also return false if terminate() has been called.
+    /**
+     * @return false if {@link #terminate()}terminate() has been called.
+     */
+    public boolean isActive()
+    {
+        return active;
+    }
+
+    /**
+     * @return false if {@link #terminate()}terminate() has been called.
+     * @deprecated use {@link #isActive()} instead
+     */
+    @Deprecated
     public boolean checkTag()
     {
-        return tag == 0xabadcafe;
+        return active;
     }
 
     //  This function is called when user invokes zmq_term. If there are
@@ -711,7 +721,7 @@ public class Ctx
         // in waiting_for_delimiter state, which means no more writes can be done
         // and the identity write fails and causes an assert. Check if the socket
         // is open before sending.
-        if (pendingConnection.endpoint.options.recvIdentity && pendingConnection.endpoint.socket.checkTag()) {
+        if (pendingConnection.endpoint.options.recvIdentity && pendingConnection.endpoint.socket.isActive()) {
             Msg id = new Msg(bindOptions.identitySize);
             id.put(bindOptions.identity, 0, bindOptions.identitySize);
             id.setFlags(Msg.IDENTITY);
