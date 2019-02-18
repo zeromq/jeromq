@@ -1,84 +1,8 @@
-# How to Release JeroMQ on Central
+# Public keys
 
-## Prerequisites
+The following are keys that have been used to sign tagged JeroMQ releases.
 
-The minimum supported version of Java JeroMQ uses is Version 8. So
-when publishing builds to the Maven Central be sure to use the latest
-stable release of (open)JDK 8.
-
-
-## OSS Sonatype
-
-In order to publish builds on [OSS
-Sonatype](https://oss.sonatype.org), you must first have permission to
-upload on behave of the `org.zeromq` groupId.
-
-You will need to create a JIRA issue on Open Source Project Repository
-Hosting (OSSRH) project requesting access. Here is an example of such
-a request:
-[https://issues.sonatype.org/projects/OSSRH/issues](https://issues.sonatype.org/projects/OSSRH/issues).
-
-A current maintainer must approve the request before you gain
-permission.
-
-## Sonatype Configuration
-
-You will need to add the following configuration into the
-`~/.m2/settings.xml` file.
-
-```
-<servers>
-  <server>
-    <id>ossrh</id>
-    <username>...</username>
-    <password>...</password>
-  </server>
-</servers>
-```
-
-The username and password are the same as your OSS Sonatype
-credentials.
-
-## Release a Snapshot to Central
-
-You are not required to sign SNAPSHOT builds. Issue the following
-command to deploy a SNAPSHOT.
-
-```
-$ mvn deploy
-```
-
-## Release Commands
-
-```
-$ mvn release:prepare
-```
-
-You will be asked a series of questions regarding version numbers. It
-is safe to hit <enter> 3 times.
-
-Example output:
-
-```
-[INFO] Checking dependencies and plugins for snapshots ...
-What is the release version for "JeroMQ"? (org.zeromq:jeromq) 0.5.0: :
-What is SCM release tag or label for "JeroMQ"? (org.zeromq:jeromq) v0.5.0: :
-What is the new development version for "JeroMQ"? (org.zeromq:jeromq) 0.5.1-SNAPSHOT: :
-```
-
-The Maven Release Plugin will take care of bumping version numbers and
-tagging the release build. It will also push those changes to your
-chosen SCM.
-
-To perform a release, issue the following command.
-
-```
-$ mvn release:perform
-```
-
-This will upload the artifacts to OSS Sonatype and will require you to
-sign the build. The following key has historically been used to signed
-tagged JeroMQ. It belongs to `Trevor Bernard <trevor.bernard@gmail.com>`
+# Trevor Bernard `<trevor.bernard@gmail.com>`
 
 ```
 -----BEGIN PGP PUBLIC KEY BLOCK-----
@@ -173,26 +97,38 @@ ynuBiOnfflvTom3VGzCZ20B8nmmRVaXZAj4GBMe6ne4EZoKTkwMXpy7IZtGgFK/dToBR3J8F
 -----END PGP PUBLIC KEY BLOCK-----
 ```
 
-## Build Publishing
 
-Log into the OSS Nexus Repository located at: [OSS
-NEXUS](https://oss.sonatype.org/).
+# Dave Yarwood `<dave.yarwood@gmail.com>`
 
+```
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+Version: GnuPG v1
 
-Click `Staging Repositories` link located on the left
-navigation.
-
- (show picture)
-
-Locate the latest entry with the profile `org.zeromq`. Ensure it's
-from JeroMQ. In order to release the project to the Maven Central, you
-first must close the staging repository.
-
-(show picture)
-
-It will take a minute to reflect that it has been closed. Once you can
-see the status change, you may now queue the build to be mirrored to
-the Maven Central.
-
-Making an Announcement on the ZeroMQ Mailing list when it has been
-successfully synced.
+mQENBFSbkukBCADjJ9bL6Dv7Fbw5eLkwbZNGBH9pE5OKnGzGVI6yKgZ5iZqbMLe2
+HRxkbOYFrAHWJm6yC033HtIQYn8w4IpC4tRBtxMkif7GSH81oJ3BCYHrA6Jy9DSN
+1knOrcEC/aWvgVsJHt6iNuRgSHOnZwUNdjTU9FBNIQxksWwNPlBUqufvF5Aqo7gL
+RZEdnwNvzibsZGH0Bg2y1wSdEBdg3swvF7hUjuMreqbv+f2wThtbThz/qDO8ONpJ
+aIiVTPiL7qas/4H/eofzaa0UzlNdl/1S36DXPkHdFZLa/gzGXTpHscCiwLICAxZT
+4Wm+LbPK/cjEX+yyKNpRkjdcFc+uW2ci3oFZABEBAAG0JURhdmUgWWFyd29vZCA8
+ZGF2ZS55YXJ3b29kQGdtYWlsLmNvbT6JATgEEwECACIFAlSbkukCGwMGCwkIBwMC
+BhUIAgkKCwQWAgMBAh4BAheAAAoJEBdPiDGLZMsCF7IH/RSFm9TEcLdCtbNCPmIB
+BCmg7ThRv6oJdbmUaFrmvXcFEKzgo8cs19WObAjglF/BXaIMEsZOybVWiqdaMfip
+k9xbdBCrcAck3MJb26ffRT7nfsPcVHJPPYJ4ix7rgBvLZ6yvHguZN5MCBAlPeigG
+dXMPVTHZDDVlA1Fd2zZ0Y/SLXHfWt6/qKFizkLdao6GpCebWDfDXj3AaIAi6sOAN
+RTebX5TbL/QPdCGralSL2Qar0dlbodQs9vw3+3fUjYosTfxTvvBn3C0hezwVu7o1
+sKAGazgY+NNyN0SMRYDZfE6j0G4q7N1a3bIELVYNwAA3axlVnsQDEpY3aV9ShDbh
+KNm5AQ0EVJuS6QEIAOaF3sc091G9isyF+5dm2vjMy84wsEiGbDZ0GjKbYieyX9mt
+ZlwNLy8IV8cyxBpJrjhzKAp6RhVyMakRjKfcOYbVLzGrnKJbV5jq6ymwXNumgiLg
+kL2liYMkgVtKAuEKhvdGWToqXwuVSeF9WD9qAZ30bOg/HMKfbmYbgrA6lSp+u7J7
+Ca+AaCHk2gXqVbM/H6M1hOhLF4pml/peWh7Kndt//QZOOU8WD9l25jKklluGA0pI
+TGl56mVjHbrNJ+MRKsGBBQIgBjD+Fh3BcJvZeawNd4eacs2ZCamamMtNyxXJh8X9
+LQTBQpuwhBB9b0ZiSFeoWGkTJss+y9CpkPJmsC0AEQEAAYkBHwQYAQIACQUCVJuS
+6QIbDAAKCRAXT4gxi2TLAkBpB/0YMnFcX9fJ2aP5ZuP0P84dL92yo+tFylHHYpwv
+ZFIq2TdTOYDNhxD/yuvEM7HMp86dV8DiqpZ+6QRP2Ooy5KDEv8YZV+mWhndNZauX
+ecfngcoM448XF8Bgdft7mBNBuOJteiTQ0bsLuVqPyXbZFXgoiUf0+iJ7eCNl8rKe
+TwOBZR4IpHkW2p9ptF8764L4eNStWyYWVrq7eu3SIKWt/pHUlZoK+hMxyZe01QSi
+3SB3mw1jM3W0pqVKIHX+DCp45L4VPZ9fplyTsExkPS548bnVIC7+QxIYQco+36kK
+PuMjF5XJV9daCDaTXlkDTDoGFcLwi7gFWx9+H5HMxCtQq+bX
+=evFC
+-----END PGP PUBLIC KEY BLOCK-----
+```
