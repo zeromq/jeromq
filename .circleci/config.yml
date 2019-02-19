@@ -1,0 +1,20 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/openjdk:8
+    steps:
+      - checkout
+      - restore_cache:
+          key: jeromq-{{ checksum "pom.xml" }}
+      - run: mvn dependency:go-offline dependency:resolve-plugins
+      - save_cache:
+          paths:
+            - ~/.m2
+          key: jeromq-{{ checksum "pom.xml" }}
+      - run: mvn package
+      - store_test_results:
+          path: target/surefire-reports
+      - store_artifacts:
+          path: target/jeromq-*.jar
+
