@@ -484,19 +484,17 @@ public class Options
             return true;
 
         case ZMQ.ZMQ_DECODER:
-            decoder = checkCustomClass(optval, IDecoder.class);
-            if (decoder == null) {
-                return false;
-            }
+            decoder = checkCustomCodec(optval, IDecoder.class);
             rawSocket = true;
+            // failure throws ZError.InstantiationException
+            // if that line is reached, everything is fine
             return true;
 
         case ZMQ.ZMQ_ENCODER:
-            encoder = checkCustomClass(optval, IEncoder.class);
-            if (encoder == null) {
-                return false;
-            }
+            encoder = checkCustomCodec(optval, IEncoder.class);
             rawSocket = true;
+            // failure throws ZError.InstantiationException
+            // if that line is reached, everything is fine
             return true;
 
         case ZMQ.ZMQ_MSG_ALLOCATOR:
@@ -569,31 +567,29 @@ public class Options
             Class<? extends SelectorProviderChooser> selectorClazz = clazz.asSubclass(SelectorProviderChooser.class);
             return selectorClazz.newInstance();
         }
-        catch (InstantiationException e) {
-            throw new IllegalArgumentException(e);
-        }
-        catch (IllegalAccessException e) {
-            throw new IllegalArgumentException(e);
-        }
         catch (ClassCastException e) {
             throw new IllegalArgumentException(e);
         }
+        catch (InstantiationException | IllegalAccessException e) {
+            throw new ZError.InstantiationException(e);
+        }
     }
 
-    private <T> Class<? extends T> checkCustomClass(Object optval, Class<T> type)
+    private <T> Class<? extends T> checkCustomCodec(Object optval, Class<T> type)
     {
         Class<?> clazz = (Class<?>) optval;
-        assert (type.isAssignableFrom(clazz));
+        if (! type.isAssignableFrom(clazz)) {
+            throw new ZError.InstantiationException("Custom " + clazz.getCanonicalName() + " is not assignable from " + type.getCanonicalName());
+        }
         Class<? extends T> custom = clazz.asSubclass(type);
         try {
-            assert (custom.getConstructor(int.class, long.class) != null);
+            custom.getConstructor(int.class, long.class);
             return custom;
         }
         catch (NoSuchMethodException | SecurityException e) {
-            System.out.println(
-                               "Custom " + clazz
-                                       + " has no required constructor <init>(int bufferSize, long maxMsgSize)");
-            return null;
+            String message = "Custom " + clazz.getCanonicalName()
+                            + " has no required constructor <init>(int bufferSize, long maxMsgSize)";
+            throw new ZError.InstantiationException(message, e);
         }
     }
 

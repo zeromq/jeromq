@@ -29,6 +29,16 @@ public class ZError
         {
             super(cause);
         }
+
+        public InstantiationException(String message, Throwable cause)
+        {
+            super(message, cause);
+        }
+
+        public InstantiationException(String message)
+        {
+            super(message);
+        }
     }
 
     public static class IOException extends RuntimeException
