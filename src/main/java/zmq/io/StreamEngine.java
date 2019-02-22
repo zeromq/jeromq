@@ -1,6 +1,7 @@
 package zmq.io;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.util.Arrays;
@@ -259,11 +260,11 @@ public class StreamEngine implements IEngine, IPollEvents
         final int outBatchSize = Math.max(options.sndbuf, Config.OUT_BATCH_SIZE.getValue());
 
         if (options.rawSocket) {
-            decoder = (IDecoder) instantiate(options.decoder, inBatchSize, options.maxMsgSize);
+            decoder = instantiate(options.decoder, inBatchSize, options.maxMsgSize);
             if (decoder == null) {
                 decoder = new RawDecoder(inBatchSize);
             }
-            encoder = (IEncoder) instantiate(options.encoder, outBatchSize, options.maxMsgSize);
+            encoder = instantiate(options.encoder, outBatchSize, options.maxMsgSize);
             if (encoder == null) {
                 encoder = new RawEncoder(errno, outBatchSize);
             }
@@ -309,17 +310,18 @@ public class StreamEngine implements IEngine, IPollEvents
         inEvent();
     }
 
-    private Object instantiate(Class<?> decoder, int size, long max)
+    private <T> T instantiate(Class<T> clazz, int size, long max)
     {
-        if (decoder == null) {
+        if (clazz == null) {
             return null;
         }
         try {
-            return decoder.getConstructor(int.class, long.class).newInstance(size, max);
+            return clazz.getConstructor(int.class, long.class).newInstance(size, max);
         }
-        catch (Exception e) {
-            e.printStackTrace();
-            return null;
+        catch (InstantiationException | IllegalAccessException
+                        | IllegalArgumentException | InvocationTargetException
+                        | NoSuchMethodException | SecurityException e) {
+            throw new ZError.InstantiationException(e);
         }
     }
 
