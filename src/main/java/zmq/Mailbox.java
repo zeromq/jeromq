@@ -95,6 +95,9 @@ public final class Mailbox implements Closeable
 
         //  Receive the signal.
         signaler.recv();
+        if (errno.get() == ZError.EINTR) {
+            return null;
+        }
 
         //  Switch into active state.
         active = true;
