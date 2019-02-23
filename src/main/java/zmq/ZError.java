@@ -4,6 +4,7 @@ import java.net.SocketException;
 import java.nio.channels.ClosedChannelException;
 
 import org.zeromq.ZMQ.Error;
+import org.zeromq.UncheckedZMQException;
 
 public class ZError
 {
@@ -11,7 +12,7 @@ public class ZError
     {
     }
 
-    public static class CtxTerminatedException extends RuntimeException
+    public static class CtxTerminatedException extends UncheckedZMQException
     {
         private static final long serialVersionUID = -4404921838608052956L;
 
@@ -21,7 +22,7 @@ public class ZError
         }
     }
 
-    public static class InstantiationException extends RuntimeException
+    public static class InstantiationException extends UncheckedZMQException
     {
         private static final long serialVersionUID = -4404921838608052955L;
 
@@ -41,7 +42,7 @@ public class ZError
         }
     }
 
-    public static class IOException extends RuntimeException
+    public static class IOException extends UncheckedZMQException
     {
         private static final long serialVersionUID = 9202470691157986262L;
 
