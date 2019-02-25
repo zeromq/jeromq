@@ -10,7 +10,11 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.channels.Pipe;
 import java.nio.channels.SelectableChannel;
+import java.nio.channels.Selector;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.Test;
@@ -21,6 +25,60 @@ import org.zeromq.ZPoller.ItemHolder;
 
 public class TestZPoller
 {
+    private final class EventsHandlerCounter implements EventsHandler
+    {
+        private final AtomicInteger count;
+
+        private EventsHandlerCounter(AtomicInteger count)
+        {
+            this.count = count;
+        }
+
+        @Override
+        public boolean events(Socket socket, int events)
+        {
+            throw new UnsupportedOperationException("Not registred for Socket");
+        }
+
+        @Override
+        public boolean events(SelectableChannel channel, int events)
+        {
+            assertThat((events & ZPoller.IN) > 0, is(true));
+            try {
+                Pipe.SourceChannel sc = (Pipe.SourceChannel) channel;
+                sc.read(ByteBuffer.allocate(5));
+                count.incrementAndGet();
+                return true;
+            }
+            catch (IOException e) {
+                return false;
+            }
+        }
+    }
+
+    private final class EventsHandlerErrorCounter implements EventsHandler
+    {
+        private final AtomicInteger error;
+
+        private EventsHandlerErrorCounter(AtomicInteger error)
+        {
+            this.error = error;
+        }
+
+        @Override
+        public boolean events(Socket socket, int events)
+        {
+            throw new UnsupportedOperationException("Not registred for Socket");
+        }
+
+        @Override
+        public boolean events(SelectableChannel channel, int events)
+        {
+            error.incrementAndGet();
+            return false;
+        }
+    }
+
     private static class EventsHandlerAdapter implements EventsHandler
     {
         @Override
@@ -375,5 +433,55 @@ public class TestZPoller
             poller.close();
             ctx.close();
         }
+    }
+
+    @Test
+    public void testMultipleRegistrations() throws IOException
+    {
+        Selector selector = Selector.open();
+        AtomicInteger count = new AtomicInteger();
+        AtomicInteger error = new AtomicInteger();
+
+        EventsHandler cb1 = new EventsHandlerCounter(count);
+        EventsHandler cb2 = new EventsHandlerCounter(count);
+        EventsHandler cberr = new EventsHandlerErrorCounter(error);
+        Pipe[] pipes = new Pipe[2];
+        try (
+             ZPoller poller = new ZPoller(selector)) {
+            pipes[0] = pipe(poller, cberr, cb1, cb2);
+            pipes[1] = pipe(poller, cberr, cb1, cb2);
+            int max = 10;
+            do {
+                poller.poll(100);
+                --max;
+            } while (count.get() != 4 && max > 0);
+
+            assertThat("Not all events handlers checked", error.get(), is(equalTo(0)));
+            if (max == 0 && count.get() != 4) {
+                fail("Unable to poll after 10 attempts");
+            }
+        }
+        finally {
+            selector.close();
+            for (Pipe pipe : pipes) {
+                pipe.sink().close();
+                pipe.source().close();
+            }
+        }
+    }
+
+    private Pipe pipe(ZPoller poller, EventsHandler errors, EventsHandler... ins) throws IOException
+    {
+        Pipe pipe = Pipe.open();
+        Pipe.SourceChannel source = pipe.source();
+        source.configureBlocking(false);
+        for (EventsHandler handler : ins) {
+            poller.register(source, handler, ZPoller.IN);
+        }
+        poller.register(source, errors, ZPoller.ERR);
+
+        pipe.sink().write(ByteBuffer.wrap(new byte[] { 1, 2, 3 }));
+
+        return pipe;
     }
 }

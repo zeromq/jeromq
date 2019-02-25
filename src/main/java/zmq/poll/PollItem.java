@@ -94,7 +94,6 @@ public class PollItem
         return interest;
     }
 
-    @Deprecated
     public int zinterestOps()
     {
         return zinterest;
