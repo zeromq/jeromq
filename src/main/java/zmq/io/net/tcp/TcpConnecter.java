@@ -260,7 +260,6 @@ public class TcpConnecter extends Own implements IPollEvents
         }
 
         //  Create the socket.
-        fd = SocketChannel.open();
         if (options.selectorChooser == null) {
             fd = SocketChannel.open();
         }
@@ -277,7 +276,6 @@ public class TcpConnecter extends Own implements IPollEvents
             // TODO V4 automatic downgrade to IPV4
             sa = resolved.address();
             fd = SocketChannel.open();
-
         }
         assert (fd != null);
 
