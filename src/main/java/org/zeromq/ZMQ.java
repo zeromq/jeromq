@@ -2416,11 +2416,16 @@ public class ZMQ
         }
 
         /**
-         * Set the IPv6 option for the socket.
-         * A value of true means IPv6 is enabled on the socket, while false means the socket will use only IPv4.
-         * When IPv6 is enabled the socket will connect to, or accept connections from, both IPv4 and IPv6 hosts.
+         * <p>Set the IPv6 option for the socket.</p>
+         * <p>A value of true means IPv6 is enabled on the socket, while false means the socket will use only IPv4.
+         * When IPv6 is enabled the socket will connect to, or accept connections from, both IPv4 and IPv6 hosts.</p>
+         * <p>The default value is false, unless the following system properties are set:</p>
+         * <ul>
+         * <li>java.net.preferIPv4Stack=false</li>
+         * <li>java.net.preferIPv6Addresses=true</li>
+         * </ul>
          *
-         * @param v6 A value of true will use IPv6 sockets, while the value of false will use IPv4 sockets
+         * @param v6 A value of true will use IPv6 sockets, while the value of false will use IPv4 sockets only
          * @return true if the option was set, otherwise false
          * @see #isIPv6()
          */

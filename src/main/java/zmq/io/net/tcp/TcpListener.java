@@ -174,14 +174,9 @@ public class TcpListener extends Own implements IPollEvents
                 fd = options.selectorChooser.choose(address, options).openServerSocketChannel();
             }
 
-            //  IPv6 address family not supported, try automatic downgrade to IPv4.
-            if (fd == null && address.family() == StandardProtocolFamily.INET6 && options.ipv6) {
-                // TODO V4 automatic downgrade to IPV4
-            }
-            assert (fd != null);
-
-            //  On some systems, IPv4 mapping in IPv6 sockets is disabled by default.
-            //  Switch it on in such cases.
+            // On some systems, IPv4 mapping in IPv6 sockets is disabled by default.
+            // Switch it on in such cases.
+            // The method enableIpv4Mapping is empty. Still to be written
             if (address.family() == StandardProtocolFamily.INET6) {
                 TcpUtils.enableIpv4Mapping(fd);
             }

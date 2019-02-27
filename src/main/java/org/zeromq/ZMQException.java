@@ -20,6 +20,12 @@ public class ZMQException extends UncheckedZMQException
         code = errno;
     }
 
+    public ZMQException(String message, int errno, Throwable cause)
+    {
+        super(message, cause);
+        code = errno;
+    }
+
     public int getErrorCode()
     {
         return code;

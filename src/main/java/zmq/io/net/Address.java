@@ -23,7 +23,6 @@ public class Address
 
     private final NetProtocol protocol;
     private final String      address;
-    //    private final boolean ipv4only;
 
     private IZAddress resolved;
 
@@ -40,7 +39,6 @@ public class Address
         this.address = sockAddr.getAddress().getHostAddress() + ":" + sockAddr.getPort();
         protocol = NetProtocol.tcp;
         resolved = null;
-        //        ipv4only = !(sockAddr.getAddress() instanceof Inet6Address);
     }
 
     @Override
