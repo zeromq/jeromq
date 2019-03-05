@@ -88,7 +88,7 @@ public class Msg
     // the file descriptor where this message originated, needs to be 64bit due to alignment
     private SocketChannel fileDesc;
 
-    private int              size;
+    private final int        size;
     private byte[]           data;
     private final ByteBuffer buf;
     // keep track of relative write position
@@ -330,7 +330,7 @@ public class Msg
         if (data == null) {
             ByteBuffer dup = buf.duplicate();
             dup.position(index);
-            dup.put(dst, off, count);
+            dup.get(dst, off, count);
         }
         else {
             System.arraycopy(data, index, dst, off, count);
