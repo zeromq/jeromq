@@ -179,6 +179,56 @@ public class TestZMQ
         rc = pull.connect("tcp://127.0.0.1:" + port);
         assertThat(rc, is(true));
 
+        String picture = "1248sbfzm";
+
+        ZMsg msg = new ZMsg();
+        msg.add("Hello");
+        msg.add("World");
+        rc = push.sendPicture(
+                picture,
+                255,
+                65535,
+                4294967295L,
+                Long.MAX_VALUE,
+                "Hello World",
+                "ABC".getBytes(ZMQ.CHARSET),
+                new ZFrame("My frame"),
+                msg);
+        assertThat(rc, is(true));
+
+        Object[] objects = pull.recvPicture(picture);
+        assertThat(objects[0], is(equalTo(255)));
+        assertThat(objects[1], is(equalTo(65535)));
+        assertThat(objects[2], is(equalTo(4294967295L)));
+        assertThat(objects[3], is(equalTo(Long.MAX_VALUE)));
+        assertThat(objects[4], is(equalTo("Hello World")));
+        assertThat(objects[5], is(equalTo("ABC".getBytes(zmq.ZMQ.CHARSET))));
+        assertThat(objects[6], is(equalTo(new ZFrame("My frame"))));
+        assertThat(objects[7], is(equalTo(new ZFrame())));
+        ZMsg expectedMsg = new ZMsg();
+        expectedMsg.add("Hello");
+        expectedMsg.add("World");
+        assertThat(objects[8], is(equalTo(expectedMsg)));
+
+        push.close();
+        pull.close();
+        context.term();
+    }
+
+    @Test
+    public void testSocketSendRecvBinaryPicture()
+    {
+        Context context = ZMQ.context(1);
+
+        Socket push = context.socket(SocketType.PUSH);
+        Socket pull = context.socket(SocketType.PULL);
+
+        boolean rc = pull.setReceiveTimeOut(50);
+        assertThat(rc, is(true));
+        int port = push.bindToRandomPort("tcp://127.0.0.1");
+        rc = pull.connect("tcp://127.0.0.1:" + port);
+        assertThat(rc, is(true));
+
         String picture = "1248sScfm";
 
         ZMsg msg = new ZMsg();
