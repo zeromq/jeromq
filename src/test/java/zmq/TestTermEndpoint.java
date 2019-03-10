@@ -23,7 +23,7 @@ public class TestTermEndpoint
         return "tcp://127.0.0.1:" + port;
     }
 
-    @Test
+    @Test(timeout = 5000)
     public void testUnbindWildcard()
     {
         String ep = endpointWildcard();
@@ -52,12 +52,11 @@ public class TestTermEndpoint
         rc = ZMQ.unbind(push, ep);
         assertThat(rc, is(true));
 
-        // Let events some time
-        ZMQ.sleep(1);
-
         //  Check that sending would block (there's no outbound connection).
-        r = ZMQ.send(push, "ABC", ZMQ.ZMQ_DONTWAIT);
-        assertThat(r, is(-1));
+        //  There's no way to do this except with a sleep and a loop
+        while (ZMQ.send(push, "ABC", ZMQ.ZMQ_DONTWAIT) != -1) {
+            ZMQ.sleep(2);
+        }
 
         //  Clean up.
         ZMQ.close(pull);
@@ -65,7 +64,7 @@ public class TestTermEndpoint
         ZMQ.term(ctx);
     }
 
-    @Test
+    @Test(timeout = 5000)
     public void testDisconnectWildcard()
     {
         String ep = endpointWildcard();
@@ -95,12 +94,11 @@ public class TestTermEndpoint
         rc = ZMQ.disconnect(push, ep);
         assertThat(rc, is(true));
 
-        // Let events some time
-        ZMQ.sleep(1);
-
         //  Check that sending would block (there's no outbound connection).
-        r = ZMQ.send(push, "ABC", ZMQ.ZMQ_DONTWAIT);
-        assertThat(r, is(-1));
+        //  There's no way to do this except with a sleep and a loop
+        while (ZMQ.send(push, "ABC", ZMQ.ZMQ_DONTWAIT) != -1) {
+            ZMQ.sleep(2);
+        }
 
         //  Clean up.
         ZMQ.close(pull);
@@ -153,7 +151,7 @@ public class TestTermEndpoint
         ZMQ.term(ctx);
     }
 
-    @Test
+    @Test(timeout = 5000)
     public void testUnbind() throws Exception
     {
         Ctx ctx = ZMQ.init(1);
@@ -186,12 +184,11 @@ public class TestTermEndpoint
         rc = ZMQ.unbind(push, ep);
         assertThat(rc, is(true));
 
-        // Let events some time
-        ZMQ.sleep(1);
-
         //  Check that sending would block (there's no outbound connection).
-        r = ZMQ.send(push, "ABC", ZMQ.ZMQ_DONTWAIT);
-        assertThat(r, is(-1));
+        //  There's no way to do this except with a sleep and a loop
+        while (ZMQ.send(push, "ABC", ZMQ.ZMQ_DONTWAIT) != -1) {
+            ZMQ.sleep(2);
+        }
 
         //  Clean up.
         ZMQ.close(pull);
@@ -199,7 +196,7 @@ public class TestTermEndpoint
         ZMQ.term(ctx);
     }
 
-    @Test
+    @Test(timeout = 5000)
     public void testDisconnect() throws Exception
     {
         Ctx ctx = ZMQ.init(1);
@@ -232,12 +229,11 @@ public class TestTermEndpoint
         rc = ZMQ.disconnect(push, ep);
         assertThat(rc, is(true));
 
-        // Let events some time
-        ZMQ.sleep(1);
-
         //  Check that sending would block (there's no outbound connection).
-        r = ZMQ.send(push, "ABC", ZMQ.ZMQ_DONTWAIT);
-        assertThat(r, is(-1));
+        //  There's no way to do this except with a sleep and a loop
+        while (ZMQ.send(push, "ABC", ZMQ.ZMQ_DONTWAIT) != -1) {
+            ZMQ.sleep(2);
+        }
 
         //  Clean up.
         ZMQ.close(pull);
