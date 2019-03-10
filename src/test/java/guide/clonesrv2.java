@@ -18,7 +18,7 @@ import org.zeromq.ZThread.IAttachedRunnable;
 /**
  * Clone server Model Two
  *
- * @author Danish Shrestha <dshrestha06@gmail.com>
+ * @author Danish Shrestha &lt;dshrestha06@gmail.com&gt;
  *
  */
 public class clonesrv2

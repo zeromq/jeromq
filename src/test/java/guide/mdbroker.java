@@ -323,7 +323,7 @@ public class mdbroker
     }
 
     /**
-     * Look for & kill expired workers. Workers are oldest to most recent, so we
+     * Look for &amp; kill expired workers. Workers are oldest to most recent, so we
      * stop at the first alive worker.
      */
     public synchronized void purgeWorkers()

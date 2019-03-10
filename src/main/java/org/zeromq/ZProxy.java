@@ -15,13 +15,13 @@ import zmq.SocketBase;
 
 /**
  * Implementation of a remotely controlled  proxy for 0MQ, using {@link ZActor}.
- * <br/>
+ * <br>
  * The goals of this implementation are to delegate the creation of sockets
  * in a background thread via a callback interface to ensure their correct use
  * and to provide ultimately to end-users the following features.
- * <p>
- * Basic features:
- * <p><ul>
+ *
+ * <p>Basic features:</p>
+ * <ul>
  *  <li>Remote Control
  *   <ul>
  *   <li>Start:                                 <i>if was paused, flushes the pending messages</i>
@@ -31,12 +31,11 @@ import zmq.SocketBase;
  *   <li>Cold Restart:                          <i>Closes and recreates the connections</i>
  *   <li>{@link #restart(ZMsg) Hot Restart}:    <i>User-defined behavior with custom messages</i>
  *   <li>{@link #configure(ZMsg) Configure}:    <i>User-defined behavior with custom messages</i>
- *   <li>{@link #command(String, boolean) ...}: <i>Custom commands of your own</i>
+ *   <li>{@link #command(String, boolean)} ...: <i>Custom commands of your own</i>
  *   <li>Exit:                                  <i>Definitive shutdown of the proxy and its control</i>
  *  </ul>
  *  All the non-custom commands can be performed in asynchronous or synchronous mode.
- *  <br/>
- *  <br/>
+ *  <br>
  * <li>Proxy mechanism ensured by pluggable pumps
  *    <ul>
  *      <li>with built-in low-level {@link org.zeromq.ZProxy.ZmqPump} (zmq.ZMQ): useful for performances
@@ -44,9 +43,8 @@ import zmq.SocketBase;
  *      <li>with your own-custom proxy pump implementing a {@link Pump 1-method interface}
  *    </ul>
  * </ul><p>
- * <p>
+ * <br>
  * You can have all the above non-customizable features in about these lines of code:
- * <p>
  * <pre>
  * {@code
         final ZProxy.Proxy provider = new ZProxy.SimpleProxy()
@@ -82,14 +80,13 @@ import zmq.SocketBase;
 
         ZProxy proxy = ZProxy.newProxy("ProxyOne", provider, "ABRACADABRA", Arrays.asList("TEST"));
 }
- * <p></pre>
+ * </pre>
  * Once created, the proxy is not started. You have to perform first a start command on it.
  * This choice was made because it is easier for a user to start it with one line of code than for the code to internally handle
  * different possible starting states (after all, someone may want the proxy started but paused at first or configured in a specific way?)
  * and because the a/sync stuff was funnier. Life is unfair ...
  * Or maybe an idea is floating in the air?
- * <br/>
- *
+ * <br>
  * You can then use it like this:
  * <pre>
  * {@code
@@ -109,7 +106,7 @@ import zmq.SocketBase;
         status = proxy.status(sync);
         assert (!proxy.started());
    }
- * <p></pre>
+ * </pre>
  *
  * A {@link #command(Command, boolean) programmatic interface} with enums is also available.
  *

@@ -42,6 +42,8 @@ public class ZAuth implements Closeable
 
         /**
          * Callback for authorizing a connection.
+         * @param request
+         * @param verbose
          * @return true if the connection is authorized, false otherwise.
          */
         boolean authorize(ZapRequest request, boolean verbose);
@@ -424,6 +426,7 @@ public class ZAuth implements Closeable
      * Install authentication for the specified context. Note that until you add
      * policies, all incoming NULL connections are allowed (classic ZeroMQ
      * behavior), and all PLAIN and CURVE connections are denied.
+     * @param ctx
      */
     public ZAuth(ZContext ctx)
     {
@@ -475,6 +478,7 @@ public class ZAuth implements Closeable
 
     /**
      * Enable verbose tracing of commands and activity
+     * @param verbose
      */
     public ZAuth setVerbose(boolean verbose)
     {
@@ -492,6 +496,7 @@ public class ZAuth implements Closeable
      * continue with authentication. You can call this method multiple times to
      * whitelist multiple IP addresses. If you whitelist a single address, any
      * non-whitelisted addresses are treated as blacklisted.
+     * @param address
      */
     public ZAuth allow(String address)
     {
@@ -504,6 +509,7 @@ public class ZAuth implements Closeable
      * rejects the connection without any further authentication. Use either a
      * whitelist, or a blacklist, not not both. If you define both a whitelist
      * and a blacklist, only the whitelist takes effect.
+     * @param address
      */
     public ZAuth deny(String address)
     {
@@ -515,6 +521,8 @@ public class ZAuth implements Closeable
      * Configure PLAIN authentication for a given domain. PLAIN authentication
      * uses a plain-text password file. To cover all domains, use "*". You can
      * modify the password file at any time; it is reloaded automatically.
+     * @param domain
+     * @param filename
      */
     public ZAuth configurePlain(String domain, String filename)
     {

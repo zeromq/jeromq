@@ -9,7 +9,7 @@ import org.zeromq.ZMQ.Socket;
 /**
  * 
  * A simple getKey value message class
- * @author Danish Shrestha <dshrestha06@gmail.com>
+ * @author Danish Shrestha &lt;dshrestha06@gmail.com&gt;
  *
  */
 public class kvsimple

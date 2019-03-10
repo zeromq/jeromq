@@ -18,12 +18,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Lets applications load, work with, and save configuration files.
+ * <p>Lets applications load, work with, and save configuration files.
  * This is a minimal implementation of the <a href="https://rfc.zeromq.org/spec:4/ZPL/">ZeroMQ Property Language</a>,
- * which is a simple structured text format for configuration files.
- * <p>
- * Here is an example ZPL stream and corresponding config structure:
- * <p>
+ * which is a simple structured text format for configuration files.</p>
+ *
+ * <p>Here is an example ZPL stream and corresponding config structure:</p>
+ *
  * <pre>
  * {@code
         context
@@ -40,7 +40,7 @@ import java.util.regex.Pattern;
             backend
                 bind = inproc://addr3
    }
-   <p>
+
    {@code
     root                    Down = child
     |                     Across = next
@@ -62,8 +62,8 @@ import java.util.regex.Pattern;
  }
  </pre>
  *
- * It can put and get values and save and load them to disk:
- * <p>
+ * <p>It can put and get values and save and load them to disk:</p>
+ *
  * <pre>
  * {@code
  * ZConfig conf = new ZConfig("root", null);
@@ -71,7 +71,7 @@ import java.util.regex.Pattern;
  * String val = conf.get("/curve/public-key","fallback-defaultkey");
  * conf.save("test.cert");
  * ZConfig loaded = ZConfig.load("test.cert");
- }
+ }</pre>
  */
 public class ZConfig
 {
@@ -151,6 +151,8 @@ public class ZConfig
 
     /**
      * check if a value-path exists
+     * @param path
+     * @return true if value-path exists
      */
     public boolean pathExists(String path)
     {
@@ -170,6 +172,7 @@ public class ZConfig
 
     /**
      * add comment
+     * @param comment
      */
     public void addComment(String comment)
     {
@@ -177,6 +180,7 @@ public class ZConfig
     }
 
     /**
+     * @param path
      * @param value set value of config item
      */
     public ZConfig putValue(String path, String value)

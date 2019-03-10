@@ -1,8 +1,8 @@
 /**
- * Provides high-level bindings for 0MQ.
- * <br/>
+ * Provides high-level bindings for ØMQ.
+ * <br>
  * This is the java equivalent of <a href="https://github.com/zeromq/czmq">CZMQ project</a>.
- * <p/>
+ * <br>
  * Classes of this package tend to achieve these goals:
  * <ul>
  * <li>To wrap the ØMQ core API in semantics that lead to shorter, more readable applications.</li>

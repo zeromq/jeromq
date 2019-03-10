@@ -11,7 +11,7 @@ import org.zeromq.ZContext;
 /**
  * Clone client Model Two
  * 
- * @author Danish Shrestha <dshrestha06@gmail.com>
+ * @author Danish Shrestha &lt;dshrestha06@gmail.com&gt;
  * 
  */
 public class clonecli2

@@ -20,14 +20,14 @@ import org.zeromq.ZMQ.Socket;
 import zmq.poll.PollItem;
 
 /**
- * Rewritten poller for 0MQ.
+ * Rewritten poller for ØMQ.
  *
  * Polls selectable channels and sockets for specified events.
  *
- * This poller can be used in two ways:
+ * <p>This poller can be used in two ways:</p>
  *
- * <p>
- * - the traditional one, where you make something like
+ * <ul>
+ * <li> the traditional one, where you make something like
  * <pre>
  * {@code
             ZPoller poller = ...
@@ -43,9 +43,8 @@ import zmq.poll.PollItem;
                 ...
             }
 }
-</p></pre>
-<p>
- * - the event-driven way
+</pre>
+ * <li> the event-driven way
  * <pre>
  * {@code
  *
@@ -63,16 +62,15 @@ import zmq.poll.PollItem;
             poller.poll(-1L);
             // handlers have been called
 }
-</p></pre>
-<p>
+</pre>
+</ul>
  * The motivations of this rewriting are:
- * <br/>
- * - the bare poller used zmq.ZMQ#poll(zmq.poll.PollItem[], int, long). This method did not allow
+ * <ul>
+ * <li> the bare poller used {@link zmq.ZMQ#poll(Selector, PollItem[], int, long)}. This method did not allow
  * to choose the selector used for polling, relying on a ThreadLocal, which is dangerous.
- * <br/>
- * - the bare poller use algorithms tailored for languages with manual allocation.
+ * <li> the bare poller use algorithms tailored for languages with manual allocation.
  * No need here as Java allows more flexibility. TODO There still may be a small penalty cost.
- *
+ * </ul>
  */
 // Poller for 0MQ.
 public class ZPoller implements Closeable
@@ -548,7 +546,7 @@ public class ZPoller implements Closeable
     /**
      * Issue a poll call, using the specified timeout value.
      * <p>
-     * Since ZeroMQ 3.0, the timeout parameter is in <i>milliseconds<i>,
+     * Since ZeroMQ 3.0, the timeout parameter is in <i>milliseconds</i>,
      * but prior to this the unit was <i>microseconds</i>.
      *
      * @param timeout
