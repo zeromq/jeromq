@@ -53,6 +53,7 @@ public class ZFrame
      * Class Constructor
      * Copies String into frame data
      * @param data
+     *          String to copy into ZFrame object as bytes, decoded using {@link ZMQ#CHARSET}
      */
     public ZFrame(String data)
     {

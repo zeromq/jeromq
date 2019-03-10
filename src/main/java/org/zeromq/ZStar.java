@@ -16,50 +16,45 @@ import org.zeromq.ZThread.IAttachedRunnable;
 /**
  * First implementation for the base of a remotely controlled background service for 0MQ.
  *
- * <p>
- * A side or endpoint designates the same thing: the thread where lives one of the two parts of the system.
- * <br/>
- * A {@link ZStar Star} has 2 sides (with a trial to use theater terms for fun (: and hopefully clarity :)
- * <br/>
- * - the Corbeille side, or control side
- * <br/>
+ * <p>A side or endpoint designates the same thing: the thread where lives one of the two parts of the system.</p>
+ * <p>A {@link ZStar Star} has 2 sides (with a trial to use theater terms for fun (: and hopefully clarity :)</p>
+ * <ul>
+ * <li>the Corbeille side, or control side
+ * <br>
  * This is where one can {@link ZAgent#send(ZMsg) send} and {@link ZAgent#recv() receive} control messages to the underneath star via the ZStar agent.
- * <br/>
+ * <br>
  * The ZStar lives on this side and is a way to safely communicate with the distant provided star.
- * <br/>
+ * <br>
  * Note: Corbeille is a french word designing the most privileged places in the theater where the King was standing,
- * 1st floor, just above the orchestra (Wikipedia...).
- *
- * <p>
- * - the Plateau side, or background side where all the performances are made by the provided star.
- * <br/>
+ * 1st floor, just above the orchestra (Wikipedia...).</li>
+ * <li>the Plateau side, or background side where all the performances are made by the provided star.
+ * <br>
  * The provided star is living on the Plateau.
- * <br/>
+ * <br>
  * The Plateau is made of the Stage where effective acting takes place and of the Wings
  * where the provided star can perform control decisions to stop or continue the acting.
- * <br/>
- * From this side, the work is done via callbacks using the template-method pattern, applied with interfaces (?)
- * <p>
- * Communication between the 2 sides is ensured by {@link #pipe() pipes} that <b>SHALL NEVER</b> be mixed between background and control sides.
- * <br/>
- * Instead, each side use its own pipe to communicate with the other one, transmitting only 0MQ messages.
- * The main purpose of this class is to ease this separation and to provide contracts, responsibilities and action levers for each side.
- * <br/>
+ * <br>
+ * From this side, the work is done via callbacks using the template-method pattern, applied with interfaces (?)</li>
+ * </ul>
+ * <p>Communication between the 2 sides is ensured by {@link #pipe() pipes} that <b>SHALL NEVER</b> be mixed between background and control sides.
+ * <br>Instead, each side use its own pipe to communicate with the other one, transmitting only ØMQ messages.</p>
+ * <p>The main purpose of this class is to ease this separation and to provide contracts, responsibilities and action levers for each side.
+ * <br>
  * For example, instead of using pipe() which is useful to have more control, fast users would want to call {@link #agent()} to get the agent
- * or directly call {@link #send(ZMsg)} or {@link #recv()} from the ZStar as the ZStar is itself an agent!
- * <p>
- * The ZStar takes care of the establishment of the background processing, calling the provided star
+ * or directly call {@link #send(ZMsg)} or {@link #recv()} from the ZStar as the ZStar is itself an agent!</p>
+ *
+ * <p>The ZStar takes care of the establishment of the background processing, calling the provided star
  * at appropriate times. It can also manage the {@link ZAgent#sign() exited} state on the control side,
  * if providing a non-null "Mot de la Fin".
- * <br/>
- * It also takes care of the closing of sockets and context if it had to create one.
- * <p>
- * A {@link Star star} is basically a contract interface that anyone who uses this ZStar to create a background service SHALL comply to.<br/>
- * <p>
- * PS: Je sais qu'il y a une différence entre acteur et comédien :)
- * PPS: I know nothing about theater!
- * <p>
- * For an example of code, please refer to the {@link ZActor} source code.
+ * <br>
+ * It also takes care of the closing of sockets and context if it had to create one.</p>
+ *
+ * <p>A {@link Star star} is basically a contract interface that anyone who uses this ZStar to create a background service SHALL comply to.</p>
+
+ * <p>PS: Je sais qu'il y a une différence entre acteur et comédien :)</p>
+ * <p>PPS: I know nothing about theater!</p>
+ *
+ * <p>For an example of code, please refer to the {@link ZActor} source code.</p>
  *
  */
 // remote controlled background message processing API for 0MQ.
@@ -72,15 +67,15 @@ public class ZStar implements ZAgent
     public interface Star
     {
         /**
-         * Called when the star is in the wings.<br/>
-         * Hint:       Can be used to initialize the service, or ...<br/>
+         * Called when the star is in the wings.<br>
+         * Hint:       Can be used to initialize the service, or ...<br>
          * Key point:  no loop has started already.
          */
         void prepare();
 
         /**
-         * Called when the star in on stage, just before acting.<br/>
-         * Hint:       Can be used to poll events or get input/events from other sources, or ...<br/>
+         * Called when the star in on stage, just before acting.<br>
+         * Hint:       Can be used to poll events or get input/events from other sources, or ...<br>
          * Key point:  a loop just started.
          *
          * @return the number of events to process
@@ -88,9 +83,9 @@ public class ZStar implements ZAgent
         int breathe();
 
         /**
-         * Where acting takes place ...<br/>
-         * Hint:       Can be used to process the events or input acquired from the previous step, or ...<br/>
-         * Key point:  in the middle of a loop.<br/>
+         * Where acting takes place ...<br>
+         * Hint:       Can be used to process the events or input acquired from the previous step, or ...<br>
+         * Key point:  in the middle of a loop.<br>
          * Decision:   to act on the next loop or not
          *
          * @param events the number of events to process
@@ -99,9 +94,9 @@ public class ZStar implements ZAgent
         boolean act(int events);
 
         /**
-         * Called as an interval between each act.<br/>
-         * Hint:       Can be used to perform decisions to continue next loop or not, or to send computed data to outputs, or ...<br/>
-         * Key point:  at the end of a loop.<br/>
+         * Called as an interval between each act.<br>
+         * Hint:       Can be used to perform decisions to continue next loop or not, or to send computed data to outputs, or ...<br>
+         * Key point:  at the end of a loop.<br>
          * Decision:   to act on the next loop or not
          *
          * @return true to continue acting, false to stop loopS here.
@@ -110,8 +105,8 @@ public class ZStar implements ZAgent
 
         /**
          * Does the star want to renew for a new performance ?
-         * Hint:       Can be used to perform decisions to continue looping or not, or to send computed data to outputs, or ...<br/>
-         * Key point:  the inner looping mechanism just ended<br/>
+         * Hint:       Can be used to perform decisions to continue looping or not, or to send computed data to outputs, or ...<br>
+         * Key point:  the inner looping mechanism just ended<br>
          * Decision:   to exit or not
          *
          * @return true to restart acting, false to leave here

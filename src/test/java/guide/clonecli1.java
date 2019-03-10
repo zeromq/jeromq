@@ -11,7 +11,7 @@ import org.zeromq.ZMQ.Socket;
 
 /**
  * Clone client model 1
- * @author Danish Shrestha <dshrestha06@gmail.com>
+ * @author Danish Shrestha &lt;dshrestha06@gmail.com&gt;
  *
  */
 public class clonecli1

@@ -69,7 +69,7 @@ public class TestReqCorrelateRelaxed
      * @param dealer
      * @param reqClient
      * @throws Exception
-     * @returns the request ID that was received
+     * @return the request ID that was received
      */
     public byte[] testReqSentFrames(SocketBase dealer, SocketBase reqClient) throws Exception
     {

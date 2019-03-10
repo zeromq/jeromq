@@ -26,7 +26,7 @@ import zmq.util.Draft;
  *
  * // Add several frames into one message
  * ZMsg msg = new ZMsg();
- * for (int i = 0;i< 10;i++) {
+ * for (int i = 0 ; i &lt; 10 ; i++) {
  *     msg.addString("Frame" + i);
  * }
  * msg.send(output);
