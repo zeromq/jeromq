@@ -151,7 +151,7 @@ public class ImmediateTest
         ZMQ.term(context);
     }
 
-    @Test
+    @Test(timeout = 5000)
     public void testImmediateFalseWithBrokenConnection() throws Exception
     {
         System.out.print("Immediate = false with broken connection");
@@ -199,14 +199,12 @@ public class ImmediateTest
         ZMQ.close(backend);
         System.out.print(".");
 
-        //  Give time to process disconnect
-        //  There's no way to do this except with a sleep
-        ZMQ.sleep(2);
-
         System.out.print("Message send fail");
-        // Send a message, should fail
-        sent = ZMQ.send(frontend, "Hello", ZMQ.ZMQ_DONTWAIT);
-        assertThat(sent, is(-1));
+        //  Send a message, should fail
+        //  There's no way to do this except with a sleep and a loop
+        while (ZMQ.send(frontend, "Hello", ZMQ.ZMQ_DONTWAIT) != -1) {
+            ZMQ.sleep(2);
+        }
 
         //  Recreate backend socket
         backend = ZMQ.socket(context, ZMQ.ZMQ_DEALER);
