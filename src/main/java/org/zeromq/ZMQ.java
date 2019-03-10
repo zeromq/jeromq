@@ -3323,12 +3323,166 @@ public class ZMQ
             return false;
         }
 
+        /**
+         * Queues a message created from data, so it can be sent.
+         *
+         * @param data   the data to send.
+         * @param off    the index of the first byte to be sent.
+         * @param length the number of bytes to be sent.
+         * @param flags  a combination (with + or |) of the flags defined below:
+         *               <ul>
+         *               <li>{@link org.zeromq.ZMQ#DONTWAIT DONTWAIT}:
+         *               For socket types ({@link org.zeromq.ZMQ#DEALER DEALER}, {@link org.zeromq.ZMQ#PUSH PUSH})
+         *               that block when there are no available peers (or all peers have full high-water mark),
+         *               specifies that the operation should be performed in non-blocking mode.
+         *               If the message cannot be queued on the socket, the method shall fail with errno set to EAGAIN.</li>
+         *               <li>{@link org.zeromq.ZMQ#SNDMORE SNDMORE}:
+         *               Specifies that the message being sent is a multi-part message,
+         *               and that further message parts are to follow.</li>
+         *               <li>0 : blocking send of a single-part message or the last of a multi-part message</li>
+         *               </ul>
+         * @return true when it has been queued on the socket and ØMQ has assumed responsibility for the message.
+         * This does not indicate that the message has been transmitted to the network.
+         */
+        public boolean send(byte[] data, int off, int length, int flags)
+        {
+            byte[] copy = new byte[length];
+            System.arraycopy(data, off, copy, 0, length);
+            zmq.Msg msg = new zmq.Msg(copy);
+            if (base.send(msg, flags)) {
+                return true;
+            }
+
+            mayRaise();
+            return false;
+        }
+
+        /**
+         * Queues a message created from data, so it can be sent.
+         *
+         * @param data  ByteBuffer payload
+         * @param flags a combination (with + or |) of the flags defined below:
+         *              <ul>
+         *              <li>{@link org.zeromq.ZMQ#DONTWAIT DONTWAIT}:
+         *              For socket types ({@link org.zeromq.ZMQ#DEALER DEALER}, {@link org.zeromq.ZMQ#PUSH PUSH})
+         *              that block when there are no available peers (or all peers have full high-water mark),
+         *              specifies that the operation should be performed in non-blocking mode.
+         *              If the message cannot be queued on the socket, the method shall fail with errno set to EAGAIN.</li>
+         *              <li>{@link org.zeromq.ZMQ#SNDMORE SNDMORE}:
+         *              Specifies that the message being sent is a multi-part message,
+         *              and that further message parts are to follow.</li>
+         *              <li>0 : blocking send of a single-part message or the last of a multi-part message</li>
+         *              </ul>
+         * @return the number of bytes queued, -1 on error
+         */
+        public int sendByteBuffer(ByteBuffer data, int flags)
+        {
+            zmq.Msg msg = new zmq.Msg(data);
+            if (base.send(msg, flags)) {
+                return msg.size();
+            }
+
+            mayRaise();
+            return -1;
+        }
+
+        /**
+         * Queues a 'picture' message to the socket (or actor), so it can be sent.
+         *
+         * @param picture The picture is a string that defines the type of each frame.
+         *                This makes it easy to send a complex multiframe message in
+         *                one call. The picture can contain any of these characters,
+         *                each corresponding to zero or one arguments:
+         *
+         *                <table>
+         *                <tr><td>i = int  (stores signed integer)</td></tr>
+         *                <tr><td>1 = byte (stores 8-bit unsigned integer)</td></tr>
+         *                <tr><td>2 = int  (stores 16-bit unsigned integer)</td></tr>
+         *                <tr><td>4 = long (stores 32-bit unsigned integer)</td></tr>
+         *                <tr><td>8 = long (stores 64-bit unsigned integer)</td></tr>
+         *                <tr><td>s = String</td></tr>
+         *                <tr><td>b = byte[]</td></tr>
+         *                <tr><td>f = ZFrame</td></tr>
+         *                <tr><td>m = ZMsg (sends all frames in the ZMsg)</td></tr>
+         *                <tr><td>z = sends zero-sized frame (0 arguments)</td></tr>
+         *
+         *                Note that s, b, f and m are encoded the same way and the choice is
+         *                offered as a convenience to the sender, which may or may not already
+         *                have data in a ZFrame or ZMsg. Does not change or take ownership of
+         *                any arguments.
+         *
+         *                Also see {@link #recvPicture(String)}} how to recv a
+         *                multiframe picture.
+         * @param args    Arguments according to the picture
+         * @return true if successful, false if sending failed for any reason
+         */
+        @Draft
+        public boolean sendPicture(String picture, Object... args)
+        {
+            ZMsg msg = new ZMsg();
+            for (int pictureIndex = 0, argIndex = 0; pictureIndex < picture.length(); pictureIndex++, argIndex++) {
+                char pattern = picture.charAt(pictureIndex);
+                switch (pattern) {
+                case 'i': {
+                    msg.add(String.format("%d", (int) args[argIndex]));
+                    break;
+                }
+                case '1': {
+                    msg.add(String.format("%d", (0xff) & (int) args[argIndex]));
+                    break;
+                }
+                case '2': {
+                    msg.add(String.format("%d", (0xffff) & (int) args[argIndex]));
+                    break;
+                }
+                case '4': {
+                    msg.add(String.format("%d", (0xffffffff) & (long) args[argIndex]));
+                    break;
+                }
+                case '8': {
+                    msg.add(String.format("%d", (long) args[argIndex]));
+                    break;
+                }
+                case 's': {
+                    msg.add((String) args[argIndex]);
+                    break;
+                }
+                case 'b': {
+                    msg.add((byte[]) args[argIndex]);
+                    break;
+                }
+                case 'f': {
+                    msg.add((ZFrame) args[argIndex]);
+                    break;
+                }
+                case 'm': {
+                    if (pictureIndex != picture.length() - 1) {
+                        throw new ZMQException("'m' (ZMsg) only valid at end of picture", ZError.EPROTO);
+                    }
+                    ZMsg msgParm = (ZMsg) args[argIndex];
+                    while (msgParm.size() > 0) {
+                        msg.add(msgParm.pop());
+                    }
+                    break;
+                }
+                case 'z': {
+                    msg.add((byte[]) null);
+                    argIndex--;
+                    break;
+                }
+                default:
+                    throw new ZMQException("invalid picture element '" + pattern + "'", ZError.EPROTO);
+                }
+            }
+            return msg.send(this, false);
+        }
+
         private static final int BINARY_PICTURE_SEND_MAX_FRAMES = 32;  // Arbitrary limit, for now
 
         /**
-         * Send a binary encoded 'picture' message to the socket (or actor). This
-         * method is similar to {@link #send(byte[])}, except the arguments are encoded in a
-         * binary format that is compatible with zproto, and is designed to reduce
+         * Queues a binary encoded 'picture' message to the socket (or actor), so it can be sent.
+         * This method is similar to {@link #sendPicture(String, Object...)}, except the arguments
+         * are encoded in a binary format that is compatible with zproto, and is designed to reduce
          * memory allocations.
          *
          * @param picture The picture argument is a string that defines the
@@ -3350,6 +3504,7 @@ public class ZMQ
          * This does not indicate that the message has been transmitted to the network.
          * @apiNote Does not change or take ownership of any arguments.
          */
+        @Draft
         public boolean sendBinaryPicture(String picture, Object... args)
         {
             //  Pass 1: calculate total size of data frame
@@ -3486,69 +3641,6 @@ public class ZMQ
         }
 
         /**
-         * Queues a message created from data, so it can be sent.
-         *
-         * @param data   the data to send.
-         * @param off    the index of the first byte to be sent.
-         * @param length the number of bytes to be sent.
-         * @param flags  a combination (with + or |) of the flags defined below:
-         *               <ul>
-         *               <li>{@link org.zeromq.ZMQ#DONTWAIT DONTWAIT}:
-         *               For socket types ({@link org.zeromq.ZMQ#DEALER DEALER}, {@link org.zeromq.ZMQ#PUSH PUSH})
-         *               that block when there are no available peers (or all peers have full high-water mark),
-         *               specifies that the operation should be performed in non-blocking mode.
-         *               If the message cannot be queued on the socket, the method shall fail with errno set to EAGAIN.</li>
-         *               <li>{@link org.zeromq.ZMQ#SNDMORE SNDMORE}:
-         *               Specifies that the message being sent is a multi-part message,
-         *               and that further message parts are to follow.</li>
-         *               <li>0 : blocking send of a single-part message or the last of a multi-part message</li>
-         *               </ul>
-         * @return true when it has been queued on the socket and ØMQ has assumed responsibility for the message.
-         * This does not indicate that the message has been transmitted to the network.
-         */
-        public boolean send(byte[] data, int off, int length, int flags)
-        {
-            byte[] copy = new byte[length];
-            System.arraycopy(data, off, copy, 0, length);
-            zmq.Msg msg = new zmq.Msg(copy);
-            if (base.send(msg, flags)) {
-                return true;
-            }
-
-            mayRaise();
-            return false;
-        }
-
-        /**
-         * Queues a message created from data, so it can be sent.
-         *
-         * @param data  ByteBuffer payload
-         * @param flags a combination (with + or |) of the flags defined below:
-         *              <ul>
-         *              <li>{@link org.zeromq.ZMQ#DONTWAIT DONTWAIT}:
-         *              For socket types ({@link org.zeromq.ZMQ#DEALER DEALER}, {@link org.zeromq.ZMQ#PUSH PUSH})
-         *              that block when there are no available peers (or all peers have full high-water mark),
-         *              specifies that the operation should be performed in non-blocking mode.
-         *              If the message cannot be queued on the socket, the method shall fail with errno set to EAGAIN.</li>
-         *              <li>{@link org.zeromq.ZMQ#SNDMORE SNDMORE}:
-         *              Specifies that the message being sent is a multi-part message,
-         *              and that further message parts are to follow.</li>
-         *              <li>0 : blocking send of a single-part message or the last of a multi-part message</li>
-         *              </ul>
-         * @return the number of bytes queued, -1 on error
-         */
-        public int sendByteBuffer(ByteBuffer data, int flags)
-        {
-            zmq.Msg msg = new zmq.Msg(data);
-            if (base.send(msg, flags)) {
-                return msg.size();
-            }
-
-            mayRaise();
-            return -1;
-        }
-
-        /**
          * Receives a message.
          *
          * @return the message received, as an array of bytes; null on error.
@@ -3627,86 +3719,6 @@ public class ZMQ
             return -1;
         }
 
-        //  This is the largest size we allow for an incoming longstr or chunk (1M)
-        private static final int BINARY_PICTURE_RECV_MAX_ALLOC_SIZE = 1024 * 1024;
-
-        /**
-         * Receive a binary encoded 'picture' message from the socket (or actor).
-         * This method is similar to {@link #recv()}, except the arguments are encoded
-         * in a binary format that is compatible with zproto, and is designed to
-         * reduce memory allocations.
-         *
-         * @param picture The picture argument is a string that defines
-         *                the type of each argument. See {@link #sendBinaryPicture(String, Object...)}
-         *                for the supported argument types.
-         * @return Object array that contains the decoded objects according to the picture
-         **/
-        public Object[] recvBinaryPicture(final String picture)
-        {
-            //  Get the data frame
-            final ByteBuffer needle = ByteBuffer.wrap(recv());
-            if (needle == null) {
-                return null;
-            }
-
-            Object[] results = new Object[picture.length()];
-            for (int index = 0; index < picture.length(); index++) {
-                char pattern = picture.charAt(index);
-                switch (pattern) {
-                case '1': {
-                    results[index] = getNumber1(needle);
-                    break;
-                }
-                case '2': {
-                    results[index] = getNumber2(needle);
-                    break;
-                }
-                case '4': {
-                    results[index] = getNumber4(needle);
-                    break;
-                }
-                case '8': {
-                    results[index] = getNumber8(needle);
-                    break;
-                }
-                case 's': {
-                    results[index] = getString(needle);
-                    break;
-                }
-                case 'S': {
-                    results[index] = getLongString(needle);
-                    break;
-                }
-                case 'c': {
-                    int blockSize = (int) getNumber4(needle);
-                    if (blockSize > BINARY_PICTURE_RECV_MAX_ALLOC_SIZE) {
-                        throw new ZMQException("block size " + blockSize + "larger than the maximum " + BINARY_PICTURE_RECV_MAX_ALLOC_SIZE,
-                                               ZError.EMSGSIZE);
-                    }
-                    results[index] = getBlock(needle, blockSize);
-                    break;
-                }
-                case 'f': {
-                    // Get next frame off socket
-                    results[index] = ZFrame.recvFrame(this);
-                    break;
-                }
-                case 'm': {
-                    if (index != picture.length() - 1) {
-                        throw new ZMQException("'m' (ZMsg) only valid at end of picture", ZError.EPROTO);
-                    }
-
-                    // Get zero or more remaining frames
-                    results[index] = ZMsg.recvMsg(this);
-                    break;
-                }
-                default:
-                    throw new ZMQException("invalid picture element '" + pattern + "'", ZError.EPROTO);
-                }
-            }
-            return results;
-        }
-
         /**
          * Receives a message into the specified ByteBuffer.
          *
@@ -3777,6 +3789,176 @@ public class ZMQ
             }
 
             return null;
+        }
+
+        /**
+         * Receive a 'picture' message to the socket (or actor).
+         *
+         *
+         * @param picture The picture is a string that defines the type of each frame.
+         *                This makes it easy to recv a complex multiframe message in
+         *                one call. The picture can contain any of these characters,
+         *                each corresponding to zero or one elements in the result:
+         *
+         *                <table>
+         *                <tr><td>i = int (stores signed integer)</td></tr>
+         *                <tr><td>1 = int (stores 8-bit unsigned integer)</td></tr>
+         *                <tr><td>2 = int (stores 16-bit unsigned integer)</td></tr>
+         *                <tr><td>4 = long (stores 32-bit unsigned integer)</td></tr>
+         *                <tr><td>8 = long (stores 64-bit unsigned integer)</td></tr>
+         *                <tr><td>s = String</td></tr>
+         *                <tr><td>b = byte[]</td></tr>
+         *                <tr><td>f = ZFrame (creates zframe)</td></tr>
+         *                <tr><td>m = ZMsg (creates a zmsg with the remaing frames)</td></tr>
+         *                <tr><td>z = null, asserts empty frame (0 arguments)</td></tr>
+         *                </table>
+         *
+         *                Also see {@link #sendPicture(String, Object...)} how to send a
+         *                multiframe picture.
+         *
+         * @return the picture elements as object array
+         */
+        @Draft
+        public Object[] recvPicture(String picture)
+        {
+            Object[] elements = new Object[picture.length()];
+            for (int index = 0; index < picture.length(); index++) {
+                char pattern = picture.charAt(index);
+                switch (pattern) {
+                case 'i': {
+                    elements[index] = Integer.valueOf(recvStr());
+                    break;
+                }
+                case '1': {
+                    elements[index] = (0xff) & Integer.valueOf(recvStr());
+                    break;
+                }
+                case '2': {
+                    elements[index] = (0xffff) & Integer.valueOf(recvStr());
+                    break;
+                }
+                case '4': {
+                    elements[index] = (0xffffffff) & Long.valueOf(recvStr());
+                    break;
+                }
+                case '8': {
+                    elements[index] = Long.valueOf(recvStr());
+                    break;
+                }
+                case 's': {
+                    elements[index] = recvStr();
+                    break;
+                }
+                case 'b': {
+                    elements[index] = recv();
+                    break;
+                }
+                case 'f': {
+                    elements[index] = ZFrame.recvFrame(this);
+
+                    break;
+                }
+                case 'm': {
+                    if (index != picture.length() - 1) {
+                        throw new ZMQException("'m' (ZMsg) only valid at end of picture", ZError.EPROTO);
+                    }
+                    elements[index] = ZMsg.recvMsg(this);
+                    break;
+                }
+                case 'z': {
+                    ZFrame zeroFrame = ZFrame.recvFrame(this);
+                    if (zeroFrame == null || zeroFrame.size() > 0) {
+                        throw new ZMQException("zero frame is not empty", ZError.EPROTO);
+                    }
+                    elements[index] = new ZFrame();
+                    break;
+                }
+                default:
+                    throw new ZMQException("invalid picture element '" + pattern + "'", ZError.EPROTO);
+                }
+            }
+            return elements;
+        }
+
+        //  This is the largest size we allow for an incoming longstr or chunk (1M)
+        private static final int BINARY_PICTURE_RECV_MAX_ALLOC_SIZE = 1024 * 1024;
+
+        /**
+         * Receive a binary encoded 'picture' message from the socket (or actor).
+         * This method is similar to {@link #recv()}, except the arguments are encoded
+         * in a binary format that is compatible with zproto, and is designed to
+         * reduce memory allocations.
+         *
+         * @param picture The picture argument is a string that defines
+         *                the type of each argument. See {@link #sendBinaryPicture(String, Object...)}
+         *                for the supported argument types.
+         * @return the picture elements as object array
+         **/
+        @Draft
+        public Object[] recvBinaryPicture(final String picture)
+        {
+            //  Get the data frame
+            final ByteBuffer needle = ByteBuffer.wrap(recv());
+            if (needle == null) {
+                return null;
+            }
+
+            Object[] results = new Object[picture.length()];
+            for (int index = 0; index < picture.length(); index++) {
+                char pattern = picture.charAt(index);
+                switch (pattern) {
+                case '1': {
+                    results[index] = getNumber1(needle);
+                    break;
+                }
+                case '2': {
+                    results[index] = getNumber2(needle);
+                    break;
+                }
+                case '4': {
+                    results[index] = getNumber4(needle);
+                    break;
+                }
+                case '8': {
+                    results[index] = getNumber8(needle);
+                    break;
+                }
+                case 's': {
+                    results[index] = getString(needle);
+                    break;
+                }
+                case 'S': {
+                    results[index] = getLongString(needle);
+                    break;
+                }
+                case 'c': {
+                    int blockSize = (int) getNumber4(needle);
+                    if (blockSize > BINARY_PICTURE_RECV_MAX_ALLOC_SIZE) {
+                        throw new ZMQException("block size " + blockSize + "larger than the maximum " + BINARY_PICTURE_RECV_MAX_ALLOC_SIZE,
+                                               ZError.EMSGSIZE);
+                    }
+                    results[index] = getBlock(needle, blockSize);
+                    break;
+                }
+                case 'f': {
+                    // Get next frame off socket
+                    results[index] = ZFrame.recvFrame(this);
+                    break;
+                }
+                case 'm': {
+                    if (index != picture.length() - 1) {
+                        throw new ZMQException("'m' (ZMsg) only valid at end of picture", ZError.EPROTO);
+                    }
+
+                    // Get zero or more remaining frames
+                    results[index] = ZMsg.recvMsg(this);
+                    break;
+                }
+                default:
+                    throw new ZMQException("invalid picture element '" + pattern + "'", ZError.EPROTO);
+                }
+            }
+            return results;
         }
 
         /**
