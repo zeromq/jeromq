@@ -298,7 +298,8 @@ public class ZBeacon
             if (size < prefix.length) {
                 return;
             }
-            ByteBuffer buf = buffer.duplicate().position(0);
+            ByteBuffer buf = buffer.duplicate();
+            buf.position(0);
             for (int i = 0; i < prefix.length; i++) {
                 if (buf.get() != prefix[i]) {
                     return;
