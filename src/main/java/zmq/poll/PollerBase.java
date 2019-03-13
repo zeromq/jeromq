@@ -179,7 +179,7 @@ abstract class PollerBase implements Runnable
         for (Entry<TimerInfo, Long> entry : timers.entries()) {
             final Long key = entry.getValue();
 
-            if (timers.getValues(key).isEmpty()) {
+            if (!timers.hasValues(key)) {
                 timers.remove(key);
             }
         }
