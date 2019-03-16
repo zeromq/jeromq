@@ -4,6 +4,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 import org.junit.Test;
 
@@ -86,5 +87,62 @@ public class WireTest
         Wire.putUInt64(buf, expected);
         long actual = Wire.getUInt64(buf, 0);
         assertThat(actual, is(expected));
+    }
+
+    @Test
+    public void testShortString()
+    {
+        testShortString("abcdef", 0);
+        testShortString("ghijklm", 3);
+    }
+
+    @Test
+    public void testShortStringOutOfByteRange()
+    {
+        testShortString(string(Byte.MAX_VALUE + 1, 'C'), 0);
+    }
+
+    @Test
+    public void testShortStringMax()
+    {
+        testShortString(string(255, 'C'), 0);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testShortStringTooLong()
+    {
+        testShortString(string(256, 'B'), 0);
+    }
+
+    @Test
+    public void testLongString()
+    {
+        testLongString("abcdef", 1);
+        testLongString(string(256, 'D'), 0);
+    }
+
+    private void testShortString(String expected, int offset)
+    {
+        ByteBuffer buf = ByteBuffer.allocate(expected.length() + 1 + offset);
+        buf.position(offset);
+        Wire.putShortString(buf, expected);
+        String actual = Wire.getShortString(buf, offset);
+        assertThat(actual, is(expected));
+    }
+
+    private void testLongString(String expected, int offset)
+    {
+        ByteBuffer buf = ByteBuffer.allocate(expected.length() + 4 + offset);
+        buf.position(offset);
+        Wire.putLongString(buf, expected);
+        String actual = Wire.getLongString(buf, offset);
+        assertThat(actual, is(expected));
+    }
+
+    private String string(int length, char letter)
+    {
+        byte[] content = new byte[length];
+        Arrays.fill(content, (byte) letter);
+        return new String(content);
     }
 }

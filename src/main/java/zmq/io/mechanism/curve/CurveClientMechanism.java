@@ -176,7 +176,7 @@ public class CurveClientMechanism extends Mechanism
         messageNonce.put("CurveZMQMESSAGES".getBytes(ZMQ.CHARSET));
         msg.transfer(messageNonce, 8, 8);
 
-        long nonce = Wire.getUInt64(msg, 8);
+        long nonce = msg.getLong(8);
 
         if (nonce <= cnPeerNonce) {
             errno.set(ZError.EPROTO);
@@ -383,7 +383,7 @@ public class CurveClientMechanism extends Mechanism
 
         readyNonce.put("CurveZMQREADY---".getBytes(ZMQ.CHARSET));
         msg.transfer(readyNonce, 6, 8);
-        cnPeerNonce = Wire.getUInt64(msg, 6);
+        cnPeerNonce = msg.getLong(6);
 
         int rc = cryptoBox.openAfternm(readyPlaintext, readyBox, clen, readyNonce, cnPrecom);
         if (rc != 0) {

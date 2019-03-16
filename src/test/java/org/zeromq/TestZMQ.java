@@ -1,19 +1,5 @@
 package org.zeromq;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.zeromq.ZMQ.Context;
-import org.zeromq.ZMQ.Socket;
-import org.zeromq.ZMQ.Socket.Mechanism;
-import zmq.ZError;
-import zmq.msg.MsgAllocator;
-import zmq.msg.MsgAllocatorDirect;
-import zmq.util.Errno;
-
-import java.io.IOException;
-import java.util.Arrays;
-
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
@@ -23,6 +9,21 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
+
+import java.io.IOException;
+import java.util.Arrays;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.zeromq.ZMQ.Context;
+import org.zeromq.ZMQ.Socket;
+import org.zeromq.ZMQ.Socket.Mechanism;
+
+import zmq.ZError;
+import zmq.msg.MsgAllocator;
+import zmq.msg.MsgAllocatorDirect;
+import zmq.util.Errno;
 
 public class TestZMQ
 {
@@ -185,21 +186,21 @@ public class TestZMQ
         msg.add("Hello");
         msg.add("World");
         rc = push.sendPicture(
-                picture,
-                255,
-                65535,
-                4294967295L,
-                Long.MAX_VALUE,
-                "Hello World",
-                "ABC".getBytes(ZMQ.CHARSET),
-                new ZFrame("My frame"),
-                msg);
+                              picture,
+                              255,
+                              65535,
+                              429496729,
+                              Long.MAX_VALUE,
+                              "Hello World",
+                              "ABC".getBytes(ZMQ.CHARSET),
+                              new ZFrame("My frame"),
+                              msg);
         assertThat(rc, is(true));
 
         Object[] objects = pull.recvPicture(picture);
         assertThat(objects[0], is(equalTo(255)));
         assertThat(objects[1], is(equalTo(65535)));
-        assertThat(objects[2], is(equalTo(4294967295L)));
+        assertThat(objects[2], is(equalTo(429496729)));
         assertThat(objects[3], is(equalTo(Long.MAX_VALUE)));
         assertThat(objects[4], is(equalTo("Hello World")));
         assertThat(objects[5], is(equalTo("ABC".getBytes(zmq.ZMQ.CHARSET))));
@@ -235,22 +236,22 @@ public class TestZMQ
         msg.add("Hello");
         msg.add("World");
         rc = push.sendBinaryPicture(
-                picture,
-                255,
-                65535,
-                429496729L,
-                Long.MAX_VALUE,
-                "Hello World",
-                "Hello cruel World!",
-                "ABC".getBytes(ZMQ.CHARSET),
-                new ZFrame("My frame"),
-                msg);
+                                    picture,
+                                    255,
+                                    65535,
+                                    429496729,
+                                    Long.MAX_VALUE,
+                                    "Hello World",
+                                    "Hello cruel World!",
+                                    "ABC".getBytes(ZMQ.CHARSET),
+                                    new ZFrame("My frame"),
+                                    msg);
         assertThat(rc, is(true));
 
         Object[] objects = pull.recvBinaryPicture(picture);
-        assertThat(objects[0], is(equalTo((byte) 255)));
+        assertThat(objects[0], is(equalTo(255)));
         assertThat(objects[1], is(equalTo(65535)));
-        assertThat(objects[2], is(equalTo(429496729L)));
+        assertThat(objects[2], is(equalTo(429496729)));
         assertThat(objects[3], is(equalTo(Long.MAX_VALUE)));
         assertThat(objects[4], is(equalTo("Hello World")));
         assertThat(objects[5], is(equalTo("Hello cruel World!")));

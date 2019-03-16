@@ -9,6 +9,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SocketChannel;
 import java.security.SecureRandom;
+import java.util.function.Supplier;
 
 import zmq.io.net.Address;
 import zmq.io.net.tcp.TcpUtils;
@@ -165,8 +166,13 @@ public class Utils
 
     public static void checkArgument(boolean expression, String errorMessage)
     {
+        checkArgument(expression, () -> errorMessage);
+    }
+
+    public static void checkArgument(boolean expression, Supplier<String> errorMessage)
+    {
         if (!expression) {
-            throw new IllegalArgumentException(errorMessage);
+            throw new IllegalArgumentException(errorMessage.get());
         }
     }
 }
