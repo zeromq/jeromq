@@ -130,7 +130,7 @@ public class CurveClientMechanism extends Mechanism
         if (msg.hasMore()) {
             flags |= 0x01;
         }
-        if (msg.isCommand() ) {
+        if (msg.isCommand()) {
             flags |= 0x02;
         }
 

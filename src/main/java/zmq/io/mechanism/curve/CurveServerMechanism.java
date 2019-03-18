@@ -131,8 +131,7 @@ public class CurveServerMechanism extends Mechanism
         if (msg.hasMore()) {
             flags |= 0x01;
         }
-        
-        if (msg.isCommand() ) {
+        if (msg.isCommand()) {
             flags |= 0x02;
         }
 
@@ -204,7 +203,6 @@ public class CurveServerMechanism extends Mechanism
             if ((flags & 0x01) != 0) {
                 decoded.setFlags(Msg.MORE);
             }
-            
             if ((flags & 0x02) != 0) {
                 decoded.setFlags(Msg.COMMAND);
             }
