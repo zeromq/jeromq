@@ -11,8 +11,9 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
+
+import org.zeromq.proto.ZPicture;
 
 import zmq.Ctx;
 import zmq.SocketBase;
@@ -429,8 +430,7 @@ public class ZMQ
         EPROTONOSUPPORT(ZError.EPROTONOSUPPORT),
         ENOBUFS(ZError.ENOBUFS),
         ENETDOWN(ZError.ENETDOWN),
-        EADDRINUSE(ZError.EADDRINUSE)
-        {
+        EADDRINUSE(ZError.EADDRINUSE) {
             @Override
             public String getMessage()
             {
@@ -441,32 +441,28 @@ public class ZMQ
         ECONNREFUSED(ZError.ECONNREFUSED),
         EINPROGRESS(ZError.EINPROGRESS),
         EHOSTUNREACH(ZError.EHOSTUNREACH),
-        EMTHREAD(ZError.EMTHREAD)
-        {
+        EMTHREAD(ZError.EMTHREAD) {
             @Override
             public String getMessage()
             {
                 return "No thread available";
             }
         },
-        EFSM(ZError.EFSM)
-        {
+        EFSM(ZError.EFSM) {
             @Override
             public String getMessage()
             {
                 return "Operation cannot be accomplished in current state";
             }
         },
-        ENOCOMPATPROTO(ZError.ENOCOMPATPROTO)
-        {
+        ENOCOMPATPROTO(ZError.ENOCOMPATPROTO) {
             @Override
             public String getMessage()
             {
                 return "The protocol is not compatible with the socket type";
             }
         },
-        ETERM(ZError.ETERM)
-        {
+        ETERM(ZError.ETERM) {
             @Override
             public String getMessage()
             {
@@ -495,8 +491,7 @@ public class ZMQ
         EPROTO(ZError.EPROTO);
 
         private static final Map<Integer, Error> map = new HashMap<>(Error.values().length);
-        static
-        {
+        static {
             for (Error e : Error.values()) {
                 map.put(e.code, e);
             }
@@ -813,121 +808,6 @@ public class ZMQ
         private final Ctx           ctx;
         private final SocketBase    base;
         private final AtomicBoolean isClosed = new AtomicBoolean(false);
-
-        //  Network data encoding macros
-
-        //  Put a 1-byte number to the frame
-        private static void putNumber1(ByteBuffer needle, int value)
-        {
-            needle.put((byte) value);
-        }
-
-        //  Get a 1-byte number to the frame
-        //  then make it unsigned
-        private static byte getNumber1(ByteBuffer needle)
-        {
-            int value = needle.get();
-            if (value < 0) {
-                value = (0xff) & value;
-            }
-            return (byte) value;
-        }
-
-        //  Put a 2-byte number to the frame
-        private static void putNumber2(ByteBuffer needle, int value)
-        {
-            needle.putShort((short) value);
-        }
-
-        //  Get a 2-byte number to the frame
-        private static int getNumber2(ByteBuffer needle)
-        {
-            int value = needle.getShort();
-            if (value < 0) {
-                value = (0xffff) & value;
-            }
-            return value;
-        }
-
-        //  Put a 4-byte number to the frame
-        private static void putNumber4(ByteBuffer needle, long value)
-        {
-            needle.putInt((int) value);
-        }
-
-        //  Get a 4-byte number to the frame
-        //  then make it unsigned
-        private static long getNumber4(ByteBuffer needle)
-        {
-            long value = needle.getInt();
-            if (value < 0) {
-                value = (0xffffffff) & value;
-            }
-            return value;
-        }
-
-        //  Put a 8-byte number to the frame
-        private static void putNumber8(ByteBuffer needle, long value)
-        {
-            needle.putLong(value);
-        }
-
-        //  Get a 8-byte number to the frame
-        private static long getNumber8(ByteBuffer needle)
-        {
-            return needle.getLong();
-        }
-
-        //  Put a block to the frame
-        private static void putBlock(ByteBuffer needle, byte[] value, int size)
-        {
-            needle.put(value, 0, size);
-        }
-
-        //  Get a block from the frame
-        private static byte[] getBlock(ByteBuffer needle, int size)
-        {
-            byte[] value = new byte[size];
-            needle.get(value);
-
-            return value;
-        }
-
-        //  Put a string to the frame
-        private static void putString(ByteBuffer needle, String value)
-        {
-            byte[] bytes = value.getBytes(ZMQ.CHARSET);
-            needle.put((byte) bytes.length);
-            needle.put(bytes);
-        }
-
-        //  Get a string from the frame
-        private static String getString(ByteBuffer needle)
-        {
-            int size = getNumber1(needle);
-            byte[] value = new byte[size];
-            needle.get(value);
-
-            return new String(value, ZMQ.CHARSET);
-        }
-
-        //  Put a string to the frame
-        private static void putLongString(ByteBuffer needle, String value)
-        {
-            byte[] bytes = value.getBytes(ZMQ.CHARSET);
-            needle.putInt(bytes.length);
-            needle.put(bytes);
-        }
-
-        //  Get a string from the frame
-        private static String getLongString(ByteBuffer needle)
-        {
-            long size = getNumber4(needle);
-            byte[] value = new byte[(int) size];
-            needle.get(value);
-
-            return new String(value, ZMQ.CHARSET);
-        }
 
         /**
          * Class constructor.
@@ -3415,65 +3295,8 @@ public class ZMQ
         @Draft
         public boolean sendPicture(String picture, Object... args)
         {
-            ZMsg msg = new ZMsg();
-            for (int pictureIndex = 0, argIndex = 0; pictureIndex < picture.length(); pictureIndex++, argIndex++) {
-                char pattern = picture.charAt(pictureIndex);
-                switch (pattern) {
-                case 'i': {
-                    msg.add(String.format("%d", (int) args[argIndex]));
-                    break;
-                }
-                case '1': {
-                    msg.add(String.format("%d", (0xff) & (int) args[argIndex]));
-                    break;
-                }
-                case '2': {
-                    msg.add(String.format("%d", (0xffff) & (int) args[argIndex]));
-                    break;
-                }
-                case '4': {
-                    msg.add(String.format("%d", (0xffffffff) & (long) args[argIndex]));
-                    break;
-                }
-                case '8': {
-                    msg.add(String.format("%d", (long) args[argIndex]));
-                    break;
-                }
-                case 's': {
-                    msg.add((String) args[argIndex]);
-                    break;
-                }
-                case 'b': {
-                    msg.add((byte[]) args[argIndex]);
-                    break;
-                }
-                case 'f': {
-                    msg.add((ZFrame) args[argIndex]);
-                    break;
-                }
-                case 'm': {
-                    if (pictureIndex != picture.length() - 1) {
-                        throw new ZMQException("'m' (ZMsg) only valid at end of picture", ZError.EPROTO);
-                    }
-                    ZMsg msgParm = (ZMsg) args[argIndex];
-                    while (msgParm.size() > 0) {
-                        msg.add(msgParm.pop());
-                    }
-                    break;
-                }
-                case 'z': {
-                    msg.add((byte[]) null);
-                    argIndex--;
-                    break;
-                }
-                default:
-                    throw new ZMQException("invalid picture element '" + pattern + "'", ZError.EPROTO);
-                }
-            }
-            return msg.send(this, false);
+            return new ZPicture().sendPicture(this, picture, args);
         }
-
-        private static final int BINARY_PICTURE_SEND_MAX_FRAMES = 32;  // Arbitrary limit, for now
 
         /**
          * Queues a binary encoded 'picture' message to the socket (or actor), so it can be sent.
@@ -3504,137 +3327,7 @@ public class ZMQ
         @Draft
         public boolean sendBinaryPicture(String picture, Object... args)
         {
-            //  Pass 1: calculate total size of data frame
-            int frameSize = 0;
-            ZFrame[] frames = new ZFrame[BINARY_PICTURE_SEND_MAX_FRAMES];
-            final AtomicInteger nbrFrames = new AtomicInteger(0);  //  Size of this table
-
-            for (int index = 0; index < picture.length(); index++) {
-                char pattern = picture.charAt(index);
-                switch (pattern) {
-                case '1': {
-                    frameSize += 1;
-                    break;
-                }
-                case '2': {
-                    frameSize += 2;
-                    break;
-                }
-                case '4': {
-                    frameSize += 4;
-                    break;
-                }
-                case '8': {
-                    frameSize += 8;
-                    break;
-                }
-                case 's': {
-                    String string = (String) args[index];
-                    frameSize += 1 + (string != null ? string.getBytes(ZMQ.CHARSET).length : 0);
-                    break;
-                }
-                case 'S': {
-                    String string = (String) args[index];
-                    frameSize += 4 + (string != null ? string.getBytes(ZMQ.CHARSET).length : 0);
-                    break;
-                }
-                case 'c': {
-                    byte[] block = (byte[]) args[index];
-                    frameSize += 4 + block.length;
-                    break;
-                }
-                case 'f': {
-                    ZFrame frame = (ZFrame) args[index];
-                    if (nbrFrames.get() > BINARY_PICTURE_SEND_MAX_FRAMES) {
-                        throw new ZMQException("Max no of frames exceeded", ZError.EPROTO);
-                    }
-
-                    frames[nbrFrames.getAndIncrement()] = frame;
-                    break;
-                }
-                case 'm': {
-                    if (index != picture.length() - 1) {
-                        throw new ZMQException("'m' (ZMsg) only valid at end of picture", ZError.EPROTO);
-                    }
-
-                    ZMsg msg = (ZMsg) args[index];
-                    if (msg != null) {
-                        msg.forEach(frame -> {
-                            if (nbrFrames.get() > BINARY_PICTURE_SEND_MAX_FRAMES) {
-                                throw new ZMQException("Max no of frames exceeded", ZError.EPROTO);
-                            }
-
-                            frames[nbrFrames.getAndIncrement()] = frame;
-                        });
-                    }
-                    else {
-                        frames[nbrFrames.getAndIncrement()] = new ZFrame();
-                    }
-
-                    break;
-                }
-                default:
-                    throw new ZMQException("invalid picture element '" + pattern + "'", ZError.EPROTO);
-                }
-            }
-
-            //  Pass 2: encode data into data frame
-            ByteBuffer needle = ByteBuffer.allocate(frameSize);
-            for (int index = 0; index < picture.length(); index++) {
-                char pattern = picture.charAt(index);
-                switch (pattern) {
-                case '1': {
-                    putNumber1(needle, (int) args[index]);
-                    break;
-                }
-                case '2': {
-                    putNumber2(needle, (int) args[index]);
-                    break;
-                }
-                case '4': {
-                    putNumber4(needle, (long) args[index]);
-                    break;
-                }
-                case '8': {
-                    putNumber8(needle, (long) args[index]);
-                    break;
-                }
-                case 's': {
-                    putString(needle, (String) args[index]);
-                    break;
-                }
-                case 'S': {
-                    putLongString(needle, (String) args[index]);
-                    break;
-                }
-                case 'c': {
-                    byte[] block = (byte[]) args[index];
-                    putNumber4(needle, block.length);
-                    putBlock(needle, block, block.length);
-                    break;
-                }
-                case 'f':
-                case 'm':
-                    break;
-                default:
-                    throw new ZMQException("invalid picture element '" + pattern + "'", ZError.EPROTO);
-                }
-            }
-
-            //  Now send the data frame
-            needle.flip();
-            boolean rc = sendByteBuffer(needle, nbrFrames.get() > 0 ? zmq.ZMQ.ZMQ_SNDMORE : 0) > 0;
-            if (rc) {
-                //  Now send any additional frames
-                for (int frameNbr = 0; frameNbr < nbrFrames.get(); frameNbr++) {
-                    boolean more = frameNbr < nbrFrames.get() - 1;
-                    boolean success = frames[frameNbr].sendAndDestroy(this, more ? zmq.ZMQ.ZMQ_SNDMORE : 0);
-                    if (!rc) {
-                        break;
-                    }
-                }
-            }
-            return rc;
+            return new ZPicture().sendBinaryPicture(this, picture, args);
         }
 
         /**
@@ -3819,67 +3512,8 @@ public class ZMQ
         @Draft
         public Object[] recvPicture(String picture)
         {
-            Object[] elements = new Object[picture.length()];
-            for (int index = 0; index < picture.length(); index++) {
-                char pattern = picture.charAt(index);
-                switch (pattern) {
-                case 'i': {
-                    elements[index] = Integer.valueOf(recvStr());
-                    break;
-                }
-                case '1': {
-                    elements[index] = (0xff) & Integer.valueOf(recvStr());
-                    break;
-                }
-                case '2': {
-                    elements[index] = (0xffff) & Integer.valueOf(recvStr());
-                    break;
-                }
-                case '4': {
-                    elements[index] = (0xffffffff) & Long.valueOf(recvStr());
-                    break;
-                }
-                case '8': {
-                    elements[index] = Long.valueOf(recvStr());
-                    break;
-                }
-                case 's': {
-                    elements[index] = recvStr();
-                    break;
-                }
-                case 'b': {
-                    elements[index] = recv();
-                    break;
-                }
-                case 'f': {
-                    elements[index] = ZFrame.recvFrame(this);
-
-                    break;
-                }
-                case 'm': {
-                    if (index != picture.length() - 1) {
-                        throw new ZMQException("'m' (ZMsg) only valid at end of picture", ZError.EPROTO);
-                    }
-                    elements[index] = ZMsg.recvMsg(this);
-                    break;
-                }
-                case 'z': {
-                    ZFrame zeroFrame = ZFrame.recvFrame(this);
-                    if (zeroFrame == null || zeroFrame.size() > 0) {
-                        throw new ZMQException("zero frame is not empty", ZError.EPROTO);
-                    }
-                    elements[index] = new ZFrame();
-                    break;
-                }
-                default:
-                    throw new ZMQException("invalid picture element '" + pattern + "'", ZError.EPROTO);
-                }
-            }
-            return elements;
+            return new ZPicture().recvPicture(this, picture);
         }
-
-        //  This is the largest size we allow for an incoming longstr or chunk (1M)
-        private static final int BINARY_PICTURE_RECV_MAX_ALLOC_SIZE = 1024 * 1024;
 
         /**
          * Receive a binary encoded 'picture' message from the socket (or actor).
@@ -3895,68 +3529,7 @@ public class ZMQ
         @Draft
         public Object[] recvBinaryPicture(final String picture)
         {
-            //  Get the data frame
-            final ByteBuffer needle = ByteBuffer.wrap(recv());
-            if (needle == null) {
-                return null;
-            }
-
-            Object[] results = new Object[picture.length()];
-            for (int index = 0; index < picture.length(); index++) {
-                char pattern = picture.charAt(index);
-                switch (pattern) {
-                case '1': {
-                    results[index] = getNumber1(needle);
-                    break;
-                }
-                case '2': {
-                    results[index] = getNumber2(needle);
-                    break;
-                }
-                case '4': {
-                    results[index] = getNumber4(needle);
-                    break;
-                }
-                case '8': {
-                    results[index] = getNumber8(needle);
-                    break;
-                }
-                case 's': {
-                    results[index] = getString(needle);
-                    break;
-                }
-                case 'S': {
-                    results[index] = getLongString(needle);
-                    break;
-                }
-                case 'c': {
-                    int blockSize = (int) getNumber4(needle);
-                    if (blockSize > BINARY_PICTURE_RECV_MAX_ALLOC_SIZE) {
-                        throw new ZMQException("block size " + blockSize + "larger than the maximum " + BINARY_PICTURE_RECV_MAX_ALLOC_SIZE,
-                                               ZError.EMSGSIZE);
-                    }
-                    results[index] = getBlock(needle, blockSize);
-                    break;
-                }
-                case 'f': {
-                    // Get next frame off socket
-                    results[index] = ZFrame.recvFrame(this);
-                    break;
-                }
-                case 'm': {
-                    if (index != picture.length() - 1) {
-                        throw new ZMQException("'m' (ZMsg) only valid at end of picture", ZError.EPROTO);
-                    }
-
-                    // Get zero or more remaining frames
-                    results[index] = ZMsg.recvMsg(this);
-                    break;
-                }
-                default:
-                    throw new ZMQException("invalid picture element '" + pattern + "'", ZError.EPROTO);
-                }
-            }
-            return results;
+            return new ZPicture().recvBinaryPicture(this, picture);
         }
 
         /**
