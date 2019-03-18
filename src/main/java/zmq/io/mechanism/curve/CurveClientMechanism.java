@@ -130,6 +130,9 @@ public class CurveClientMechanism extends Mechanism
         if (msg.hasMore()) {
             flags |= 0x01;
         }
+        if (msg.isCommand()) {
+            flags |= 0x02;
+        }
 
         ByteBuffer messageNonce = ByteBuffer.allocate(Curve.Size.NONCE.bytes());
 
@@ -199,6 +202,9 @@ public class CurveClientMechanism extends Mechanism
             byte flags = messagePlaintext.get(Curve.Size.ZERO.bytes());
             if ((flags & 0x01) != 0) {
                 decoded.setFlags(Msg.MORE);
+            }
+            if ((flags & 0x02) != 0) {
+                decoded.setFlags(Msg.COMMAND);
             }
 
             messagePlaintext.position(Curve.Size.ZERO.bytes() + 1);
