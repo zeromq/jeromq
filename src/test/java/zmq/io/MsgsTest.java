@@ -43,7 +43,7 @@ public class MsgsTest
 
         Msg msg = new Msg(test.length() + 1);
 
-        Msgs.put(msg, test);
+        msg.putShortString(test);
 
         String read = new String(msg.data(), ZMQ.CHARSET);
         assertThat(read, is("\5test1"));
@@ -57,7 +57,7 @@ public class MsgsTest
         Arrays.fill(bytes, (byte) 'a');
         String string = new String(bytes);
 
-        Msgs.put(msg, string);
+        msg.putShortString(string);
         boolean rc = Msgs.startsWith(msg, string, true);
 
         assertThat(rc, is(true));

@@ -149,9 +149,9 @@ public class Wire
     }
 
     // strings
-    public static void putShortString(ByteBuffer buf, String value)
+    public static int putShortString(ByteBuffer buf, String value)
     {
-        putShortString(ZMQ.CHARSET, buf, value);
+        return putShortString(ZMQ.CHARSET, buf, value);
     }
 
     public static String getShortString(ByteBuffer buf, int offset)
@@ -159,12 +159,13 @@ public class Wire
         return getShortString(ZMQ.CHARSET, buf, offset);
     }
 
-    public static void putShortString(Charset charset, ByteBuffer buf, String value)
+    public static int putShortString(Charset charset, ByteBuffer buf, String value)
     {
         int length = value.length();
         Utils.checkArgument(length < 256, "String must be strictly smaller than 256 characters");
         putUInt8(buf, length);
         buf.put(value.getBytes(charset));
+        return length + 1;
     }
 
     public static String getShortString(Charset charset, ByteBuffer buf, int offset)
@@ -173,9 +174,9 @@ public class Wire
         return extractString(charset, buf, offset, length, 1);
     }
 
-    public static void putLongString(ByteBuffer buf, String value)
+    public static int putLongString(ByteBuffer buf, String value)
     {
-        putLongString(ZMQ.CHARSET, buf, value);
+        return putLongString(ZMQ.CHARSET, buf, value);
     }
 
     public static String getLongString(ByteBuffer buf, int offset)
@@ -183,12 +184,13 @@ public class Wire
         return getLongString(ZMQ.CHARSET, buf, offset);
     }
 
-    public static void putLongString(Charset charset, ByteBuffer buf, String value)
+    public static int putLongString(Charset charset, ByteBuffer buf, String value)
     {
         int length = value.length();
         Utils.checkArgument(length < 0x7fffffff, "String must be smaller than 2^31-1 characters");
         Wire.putUInt32(buf, length);
         buf.put(value.getBytes(charset));
+        return length + 4;
     }
 
     public static String getLongString(Charset charset, ByteBuffer buf, int offset)

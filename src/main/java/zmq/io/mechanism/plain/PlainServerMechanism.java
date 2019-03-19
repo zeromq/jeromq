@@ -176,7 +176,7 @@ public class PlainServerMechanism extends Mechanism
 
     private int produceWelcome(Msg msg)
     {
-        appendData(msg, "WELCOME");
+        msg.putShortString("WELCOME");
         return 0;
     }
 
@@ -197,7 +197,7 @@ public class PlainServerMechanism extends Mechanism
     private int produceReady(Msg msg)
     {
         //  Add command name
-        appendData(msg, "READY");
+        msg.putShortString("READY");
 
         //  Add socket type property
         String socketType = socketType(options.type);
@@ -215,8 +215,8 @@ public class PlainServerMechanism extends Mechanism
     {
         assert (statusCode != null && statusCode.length() == 3);
 
-        appendData(msg, "ERROR");
-        appendData(msg, statusCode);
+        msg.putShortString("ERROR");
+        msg.putShortString(statusCode);
 
         return 0;
     }

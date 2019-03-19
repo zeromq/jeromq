@@ -136,8 +136,8 @@ public class ZNeedleTest
         ZFrame frame = new ZFrame(new byte[26]);
         ZNeedle needle = new ZNeedle(frame);
 
-        needle.put(Arrays.asList("1", "2", "34", "567"));
-        needle.put(Arrays.asList("864", "43", "9", "0"));
+        needle.putList(Arrays.asList("1", "2", "34", "567"));
+        needle.putList(Arrays.asList("864", "43", "9", "0"));
 
         needle = new ZNeedle(frame);
         assertThat(needle.getList(), is(Arrays.asList("1", "2", "34", "567")));
@@ -150,7 +150,7 @@ public class ZNeedleTest
         ZFrame frame = new ZFrame(new byte[1]);
         ZNeedle needle = new ZNeedle(frame);
 
-        needle.put((List<String>) null);
+        needle.putList((List<String>) null);
 
         needle = new ZNeedle(frame);
         assertThat(needle.getList(), is(Collections.emptyList()));
@@ -162,7 +162,7 @@ public class ZNeedleTest
         ZFrame frame = new ZFrame(new byte[1]);
         ZNeedle needle = new ZNeedle(frame);
 
-        needle.put(Collections.emptyList());
+        needle.putList(Collections.emptyList());
 
         needle = new ZNeedle(frame);
         assertThat(needle.getList(), is(Collections.emptyList()));
@@ -178,8 +178,8 @@ public class ZNeedleTest
         map.put("key", "value");
         map.put("1", "2");
         map.put("34", "567");
-        needle.put(map);
-        needle.put(map);
+        needle.putMap(map);
+        needle.putMap(map);
 
         needle = new ZNeedle(frame);
         assertThat(needle.getMap(), is(map));
@@ -192,7 +192,7 @@ public class ZNeedleTest
         ZFrame frame = new ZFrame(new byte[1]);
         ZNeedle needle = new ZNeedle(frame);
 
-        needle.put((Map<String, String>) null);
+        needle.putMap((Map<String, String>) null);
 
         needle = new ZNeedle(frame);
         assertThat(needle.getMap(), is(Collections.emptyMap()));
@@ -204,7 +204,7 @@ public class ZNeedleTest
         ZFrame frame = new ZFrame(new byte[1]);
         ZNeedle needle = new ZNeedle(frame);
 
-        needle.put(Collections.emptyMap());
+        needle.putMap(Collections.emptyMap());
 
         needle = new ZNeedle(frame);
         assertThat(needle.getMap(), is(Collections.emptyMap()));
@@ -218,7 +218,7 @@ public class ZNeedleTest
 
         Map<String, String> map = new HashMap<>();
         map.put("ke=", "value");
-        needle.put(map);
+        needle.putMap(map);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -229,6 +229,6 @@ public class ZNeedleTest
 
         Map<String, String> map = new HashMap<>();
         map.put("key", "=alue");
-        needle.put(map);
+        needle.putMap(map);
     }
 }

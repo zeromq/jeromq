@@ -173,7 +173,7 @@ public final class ZNeedle
     }
 
     //  Put a collection of strings to the frame
-    public void put(Collection<String> elements)
+    public void putList(Collection<String> elements)
     {
         if (elements == null) {
             putNumber1(0);
@@ -192,7 +192,7 @@ public final class ZNeedle
     }
 
     //  Put a map of strings to the frame
-    public void put(Map<String, String> map)
+    public void putMap(Map<String, String> map)
     {
         if (map == null) {
             putNumber1(0);
