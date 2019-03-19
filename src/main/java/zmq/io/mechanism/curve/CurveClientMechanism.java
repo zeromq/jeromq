@@ -152,7 +152,7 @@ public class CurveClientMechanism extends Mechanism
         assert (rc == 0);
 
         Msg encoded = new Msg(16 + mlen - Curve.Size.BOXZERO.bytes());
-        appendData(encoded, "MESSAGE");
+        encoded.putShortString("MESSAGE");
         encoded.put(messageNonce, 16, 8);
         encoded.put(messageBox, Curve.Size.BOXZERO.bytes(), mlen - Curve.Size.BOXZERO.bytes());
 
@@ -252,7 +252,7 @@ public class CurveClientMechanism extends Mechanism
         if (rc != 0) {
             return -1;
         }
-        appendData(msg, "HELLO");
+        msg.putShortString("HELLO");
         //  CurveZMQ major and minor version numbers
         msg.put(1);
         msg.put(0);
@@ -359,7 +359,7 @@ public class CurveClientMechanism extends Mechanism
             return -1;
         }
 
-        appendData(msg, "INITIATE");
+        msg.putShortString("INITIATE");
         //  Cookie provided by the server in the WELCOME command
         msg.put(cnCookie);
         //  Short nonce, prefixed by "CurveZMQINITIATE"

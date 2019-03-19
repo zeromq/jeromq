@@ -321,11 +321,6 @@ public abstract class Mechanism
         return parseMetadata(msgs.get(6), 0, true);
     }
 
-    protected final void appendData(Msg msg, String data)
-    {
-        Msgs.put(msg, data);
-    }
-
     public void destroy()
     {
     }

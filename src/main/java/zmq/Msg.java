@@ -6,6 +6,7 @@ import java.nio.ByteOrder;
 import java.nio.channels.SocketChannel;
 
 import zmq.io.Metadata;
+import zmq.util.Utils;
 import zmq.util.Wire;
 
 public class Msg
@@ -54,6 +55,20 @@ public class Msg
                 out.write(src.get(idx));
             }
             setWriteIndex(getWriteIndex() + len);
+            return this;
+        }
+
+        @Override
+        public Msg putShortString(String data)
+        {
+            if (data == null) {
+                return this;
+            }
+            int length = data.length();
+            Utils.checkArgument(length < 256, "String must be strictly smaller than 256 characters");
+            out.write((byte) length);
+            out.write(data.getBytes(ZMQ.CHARSET), 0, length);
+            setWriteIndex(getWriteIndex() + length + 1);
             return this;
         }
 
@@ -388,5 +403,24 @@ public class Msg
         buf.limit(srcOffset + srcLength).position(srcOffset);
         destination.put(buf);
         buf.limit(limit).position(position);
+    }
+
+    /**
+     * Puts a string into the message, prefixed with its length.
+     * Users shall size the message by adding 1 to the length of the string:
+     * It needs to be able to accommodate (data.length+1) more bytes.
+     *
+     * @param data a string shorter than 256 characters. If null, defaults to a no-op.
+     * @return the same message.
+     */
+    public Msg putShortString(String data)
+    {
+        if (data == null) {
+            return this;
+        }
+        ByteBuffer dup = buf.duplicate();
+        dup.position(writeIndex);
+        writeIndex += Wire.putShortString(dup, data);
+        return this;
     }
 }

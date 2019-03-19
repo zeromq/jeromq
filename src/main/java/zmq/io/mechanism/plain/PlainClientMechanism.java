@@ -105,9 +105,9 @@ public class PlainClientMechanism extends Mechanism
         String plainPassword = options.plainPassword;
         assert (plainPassword.length() < 256);
 
-        appendData(msg, "HELLO");
-        appendData(msg, plainUsername);
-        appendData(msg, plainPassword);
+        msg.putShortString("HELLO");
+        msg.putShortString(plainUsername);
+        msg.putShortString(plainPassword);
 
         return 0;
     }
@@ -127,7 +127,7 @@ public class PlainClientMechanism extends Mechanism
     private int produceInitiate(Msg msg)
     {
         //  Add mechanism string
-        appendData(msg, "INITIATE");
+        msg.putShortString("INITIATE");
 
         //  Add socket type property
         String socketType = socketType(options.type);

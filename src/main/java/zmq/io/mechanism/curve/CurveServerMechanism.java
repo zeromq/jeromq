@@ -152,7 +152,7 @@ public class CurveServerMechanism extends Mechanism
         assert (rc == 0);
 
         Msg encoded = new Msg(16 + mlen - Curve.Size.BOXZERO.bytes());
-        appendData(encoded, "MESSAGE");
+        encoded.putShortString("MESSAGE");
         encoded.put(messageNonce, 16, 8);
         encoded.put(messageBox, Curve.Size.BOXZERO.bytes(), mlen - Curve.Size.BOXZERO.bytes());
 
@@ -337,7 +337,7 @@ public class CurveServerMechanism extends Mechanism
         if (rc == -1) {
             return -1;
         }
-        appendData(msg, "WELCOME");
+        msg.putShortString("WELCOME");
         msg.put(welcomeNonce, 8, 16);
         msg.put(welcomeCiphertext, Curve.Size.BOXZERO.bytes(), 144);
 
@@ -474,7 +474,7 @@ public class CurveServerMechanism extends Mechanism
         int rc = cryptoBox.afternm(readyBox, readyPlaintext, mlen, readyNonce, cnPrecom);
         assert (rc == 0);
 
-        appendData(msg, "READY");
+        msg.putShortString("READY");
         //  Short nonce, prefixed by "CurveZMQREADY---"
         msg.put(readyNonce, 16, 8);
         //  Box [metadata](S'->C')
@@ -490,8 +490,8 @@ public class CurveServerMechanism extends Mechanism
     {
         assert (statusCode != null && statusCode.length() == 3);
 
-        appendData(msg, "ERROR");
-        appendData(msg, statusCode);
+        msg.putShortString("ERROR");
+        msg.putShortString(statusCode);
 
         return 0;
     }

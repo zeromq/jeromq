@@ -1162,7 +1162,7 @@ public class StreamEngine implements IEngine, IPollEvents
 
         Msg msg = new Msg(7 + heartbeatContext.length);
         msg.setFlags(Msg.COMMAND);
-        Msgs.put(msg, "PING");
+        msg.putShortString("PING");
         Wire.putUInt16(msg, options.heartbeatTtl);
         msg.put(heartbeatContext);
 
@@ -1185,7 +1185,7 @@ public class StreamEngine implements IEngine, IPollEvents
 
         Msg msg = new Msg(5 + pingContext.length);
         msg.setFlags(Msg.COMMAND);
-        Msgs.put(msg, "PONG");
+        msg.putShortString("PONG");
         msg.put(pingContext);
 
         msg = mechanism.encode(msg);
