@@ -2,6 +2,8 @@ package org.zeromq;
 
 public abstract class UncheckedZMQException extends RuntimeException
 {
+    private static final long serialVersionUID = 1L;
+
     public UncheckedZMQException()
     {
         super();

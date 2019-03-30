@@ -11,9 +11,10 @@ import java.nio.channels.ClosedByInterruptException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.DatagramChannel;
 import java.util.Arrays;
-import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+
+import zmq.util.Objects;
 
 public class ZBeacon
 {
@@ -25,7 +26,7 @@ public class ZBeacon
     private final BroadcastServer           broadcastServer;
     private final AtomicReference<byte[]>   prefix            = new AtomicReference<>(new byte[0]);
     private final AtomicLong                broadcastInterval = new AtomicLong(DEFAULT_BROADCAST_INTERVAL);
-    private final AtomicReference<Listener> listener          = new AtomicReference<Listener>();
+    private final AtomicReference<Listener> listener          = new AtomicReference<>();
 
     public ZBeacon(int port, byte[] beacon)
     {
@@ -48,7 +49,7 @@ public class ZBeacon
     }
 
     private ZBeacon(String host, byte[] serverAddress, int port, byte[] beacon, long broadcastInterval,
-            boolean ignoreLocalAddress, boolean blocking)
+                    boolean ignoreLocalAddress, boolean blocking)
     {
         Objects.requireNonNull(host, "Host cannot be null");
         Objects.requireNonNull(serverAddress, "Server address cannot be null");

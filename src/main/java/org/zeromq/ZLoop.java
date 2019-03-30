@@ -3,11 +3,12 @@ package org.zeromq;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Objects;
 
 import org.zeromq.ZMQ.Context;
 import org.zeromq.ZMQ.PollItem;
 import org.zeromq.ZMQ.Poller;
+
+import zmq.util.Objects;
 
 /**
  * The ZLoop class provides an event-driven reactor pattern. The reactor
@@ -162,8 +163,8 @@ public class ZLoop
             System.out.printf(
                               "I: zloop: register %s poller (%s, %s)\n",
                               pollItem.getSocket() != null ? pollItem.getSocket().getType() : "RAW",
-                              pollItem.getSocket(),
-                              pollItem.getRawSocket());
+                                      pollItem.getSocket(),
+                                      pollItem.getRawSocket());
         }
         return 0;
     }
@@ -187,8 +188,8 @@ public class ZLoop
             System.out.printf(
                               "I: zloop: cancel %s poller (%s, %s)",
                               pollItem.getSocket() != null ? pollItem.getSocket().getType() : "RAW",
-                              pollItem.getSocket(),
-                              pollItem.getRawSocket());
+                                      pollItem.getSocket(),
+                                      pollItem.getRawSocket());
         }
 
     }
@@ -309,8 +310,8 @@ public class ZLoop
                         System.out.printf(
                                           "I: zloop: can't poll %s socket (%s, %s)\n",
                                           poller.item.getSocket() != null ? poller.item.getSocket().getType() : "RAW",
-                                          poller.item.getSocket(),
-                                          poller.item.getRawSocket());
+                                                  poller.item.getSocket(),
+                                                  poller.item.getRawSocket());
                     }
                     //  Give handler one chance to handle error, then kill
                     //  poller because it'll disrupt the reactor otherwise.
@@ -327,8 +328,8 @@ public class ZLoop
                         System.out.printf(
                                           "I: zloop: call %s socket handler (%s, %s)\n",
                                           poller.item.getSocket() != null ? poller.item.getSocket().getType() : "RAW",
-                                          poller.item.getSocket(),
-                                          poller.item.getRawSocket());
+                                                  poller.item.getSocket(),
+                                                  poller.item.getRawSocket());
                     }
                     rc = poller.handler.handle(this, poller.item, poller.arg);
                     if (rc == -1) {

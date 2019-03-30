@@ -23,9 +23,11 @@ import org.zeromq.ZPoller.EventsHandler;
 import org.zeromq.ZPoller.ItemCreator;
 import org.zeromq.ZPoller.ItemHolder;
 
+import zmq.util.function.BiFunction;
+
 public class TestZPoller
 {
-    private final class EventsHandlerCounter implements EventsHandler
+    private final class EventsHandlerCounter implements BiFunction<SelectableChannel, Integer, Boolean>
     {
         private final AtomicInteger count;
 
@@ -35,13 +37,7 @@ public class TestZPoller
         }
 
         @Override
-        public boolean events(Socket socket, int events)
-        {
-            throw new UnsupportedOperationException("Not registred for Socket");
-        }
-
-        @Override
-        public boolean events(SelectableChannel channel, int events)
+        public Boolean apply(SelectableChannel channel, Integer events)
         {
             assertThat((events & ZPoller.IN) > 0, is(true));
             try {
@@ -56,7 +52,7 @@ public class TestZPoller
         }
     }
 
-    private final class EventsHandlerErrorCounter implements EventsHandler
+    private final class EventsHandlerErrorCounter implements BiFunction<SelectableChannel, Integer, Boolean>
     {
         private final AtomicInteger error;
 
@@ -66,13 +62,7 @@ public class TestZPoller
         }
 
         @Override
-        public boolean events(Socket socket, int events)
-        {
-            throw new UnsupportedOperationException("Not registred for Socket");
-        }
-
-        @Override
-        public boolean events(SelectableChannel channel, int events)
+        public Boolean apply(SelectableChannel channel, Integer events)
         {
             error.incrementAndGet();
             return false;
@@ -442,12 +432,12 @@ public class TestZPoller
         AtomicInteger count = new AtomicInteger();
         AtomicInteger error = new AtomicInteger();
 
-        EventsHandler cb1 = new EventsHandlerCounter(count);
-        EventsHandler cb2 = new EventsHandlerCounter(count);
-        EventsHandler cberr = new EventsHandlerErrorCounter(error);
+        BiFunction<SelectableChannel, Integer, Boolean> cb1 = new EventsHandlerCounter(count);
+        BiFunction<SelectableChannel, Integer, Boolean> cb2 = new EventsHandlerCounter(count);
+        BiFunction<SelectableChannel, Integer, Boolean> cberr = new EventsHandlerErrorCounter(error);
         Pipe[] pipes = new Pipe[2];
         try (
-             ZPoller poller = new ZPoller(selector)) {
+                ZPoller poller = new ZPoller(selector)) {
             pipes[0] = pipe(poller, cberr, cb1, cb2);
             pipes[1] = pipe(poller, cberr, cb1, cb2);
             int max = 10;
@@ -470,12 +460,15 @@ public class TestZPoller
         }
     }
 
-    private Pipe pipe(ZPoller poller, EventsHandler errors, EventsHandler... ins) throws IOException
+    @SafeVarargs
+    private final Pipe pipe(ZPoller poller, BiFunction<SelectableChannel, Integer, Boolean> errors,
+                            BiFunction<SelectableChannel, Integer, Boolean>... ins)
+                                    throws IOException
     {
         Pipe pipe = Pipe.open();
         Pipe.SourceChannel source = pipe.source();
         source.configureBlocking(false);
-        for (EventsHandler handler : ins) {
+        for (BiFunction<SelectableChannel, Integer, Boolean> handler : ins) {
             poller.register(source, handler, ZPoller.IN);
         }
         poller.register(source, errors, ZPoller.ERR);

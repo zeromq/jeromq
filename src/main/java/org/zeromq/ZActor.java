@@ -5,10 +5,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Objects;
 
 import org.zeromq.ZMQ.Socket;
 import org.zeromq.ZPoller.EventsHandler;
+
+import zmq.util.Objects;
 
 /**
  * <p>First implementation of a background actor remotely controlled for ØMQ.</p>
@@ -451,7 +452,7 @@ public class ZActor extends ZStar
      */
     @Deprecated
     public ZActor(final ZContext context, final SelectorCreator selector, final Actor actor, final String motdelafin,
-            final Object... args)
+                  final Object... args)
     {
         this(context, actor, motdelafin, args);
     }

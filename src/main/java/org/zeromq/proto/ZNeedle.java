@@ -1,18 +1,19 @@
 package org.zeromq.proto;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.BiFunction;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
+import java.util.Map.Entry;
 
 import org.zeromq.ZFrame;
 
 import zmq.util.Draft;
 import zmq.util.Utils;
 import zmq.util.Wire;
+import zmq.util.function.BiFunction;
 
 /**
  * Needle for de/serialization of data within a frame.
@@ -181,14 +182,20 @@ public final class ZNeedle
         else {
             Utils.checkArgument(elements.size() < 256, "Collection has to be smaller than 256 elements");
             putNumber1(elements.size());
-            elements.stream().forEach(this::putString);
+            for (String string : elements) {
+                putString(string);
+            }
         }
     }
 
     public List<String> getList()
     {
         int size = getNumber1();
-        return IntStream.range(0, size).mapToObj(idx -> getString()).collect(Collectors.toList());
+        List<String> list = new ArrayList<>(size);
+        for (int idx = 0; idx < size; ++ idx) {
+            list.add(getString());
+        }
+        return list;
     }
 
     //  Put a map of strings to the frame
@@ -200,20 +207,29 @@ public final class ZNeedle
         else {
             Utils.checkArgument(map.size() < 256, "Map has to be smaller than 256 elements");
             putNumber1(map.size());
-            Utils.checkArgument(map.keySet().stream().noneMatch(s -> s.contains("=")), "Keys cannot contain '=' sign");
-            Utils.checkArgument(map.values().stream().noneMatch(s -> s.contains("=")), "Keys cannot contain '=' sign");
-            map.entrySet().stream().map(entry -> entry.getKey() + "=" + entry.getValue()).forEach(this::putString);
+            for (Entry<String, String> entry : map.entrySet()) {
+                if (entry.getKey().contains("=")) {
+                    throw new IllegalArgumentException("Keys cannot contain '=' sign. " + entry);
+                }
+                if (entry.getValue().contains("=")) {
+                    throw new IllegalArgumentException("Values cannot contain '=' sign. " + entry);
+                }
+                String val = entry.getKey() + "=" + entry.getValue();
+                putString(val);
+            }
         }
     }
 
     public Map<String, String> getMap()
     {
         int size = getNumber1();
-        return IntStream.range(0, size).mapToObj(idx -> {
+        Map<String, String> map = new HashMap<>(size);
+        for (int idx = 0; idx < size; ++idx) {
             String[] kv = getString().split("=");
             assert (kv.length == 2);
-            return kv;
-        }).collect(Collectors.toMap(kv -> kv[0], kv -> kv[1]));
+            map.put(kv[0], kv[1]);
+        }
+        return map;
     }
 
     @Override
