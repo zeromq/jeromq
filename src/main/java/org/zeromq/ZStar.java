@@ -4,14 +4,15 @@ import java.nio.channels.Selector;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.BiFunction;
 
 import org.zeromq.ZMQ.Socket;
 import org.zeromq.ZThread.IAttachedRunnable;
+
+import zmq.util.Objects;
+import zmq.util.function.BiFunction;
 
 /**
  * First implementation for the base of a remotely controlled background service for 0MQ.
@@ -117,7 +118,6 @@ public class ZStar implements ZAgent
     /**
      * Utility class with callback for when the Star has finished its performances.
      */
-    @FunctionalInterface
     public interface TimeTaker
     {
         /**
@@ -317,7 +317,7 @@ public class ZStar implements ZAgent
      */
     @Deprecated
     public ZStar(final ZContext context, final SelectorCreator selector, final Fortune fortune, String motdelafin,
-            final Object... bags)
+                 final Object... bags)
     {
         this(context, fortune, ZAgent.Creator::create, motdelafin, bags);
     }
@@ -356,7 +356,7 @@ public class ZStar implements ZAgent
      */
     @Deprecated
     public ZStar(final ZContext context, final SelectorCreator selector, final Fortune fortune,
-            BiFunction<Socket, String, ZAgent> agent, String motdelafin, final Object... bags)
+                 BiFunction<Socket, String, ZAgent> agent, String motdelafin, final Object... bags)
     {
         this(context, fortune, agent, motdelafin, bags);
     }
@@ -375,7 +375,7 @@ public class ZStar implements ZAgent
      * @param bags       the optional arguments that will be passed to the distant star
      */
     public ZStar(final ZContext context, final Fortune fortune, BiFunction<Socket, String, ZAgent> agent,
-            String motdelafin, final Object... bags)
+                 String motdelafin, final Object... bags)
     {
         super();
         Objects.requireNonNull(agent, "Agent creator has to be supplied");

@@ -9,16 +9,14 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
-import java.util.function.BiFunction;
-import java.util.stream.Collectors;
 
 import org.zeromq.ZMQ.Poller;
 import org.zeromq.ZMQ.Socket;
 
 import zmq.poll.PollItem;
+import zmq.util.Objects;
+import zmq.util.function.BiFunction;
 
 /**
  * Rewritten poller for ØMQ.
@@ -104,7 +102,7 @@ public class ZPoller implements Closeable
         private final BiFunction<SelectableChannel, Integer, Boolean> channels;
 
         public ComposeEventsHandler(BiFunction<Socket, Integer, Boolean> sockets,
-                BiFunction<SelectableChannel, Integer, Boolean> channels)
+                                    BiFunction<SelectableChannel, Integer, Boolean> channels)
         {
             super();
             this.sockets = sockets;
@@ -295,7 +293,12 @@ public class ZPoller implements Closeable
 
         private int ops()
         {
-            return holders.stream().map(holder -> holder.item().zinterestOps()).reduce(this::or).orElse(0);
+            int ops = 0;
+            for (ItemHolder holder : holders) {
+                int interest = holder.item().zinterestOps();
+                ops |= interest;
+            }
+            return ops;
         }
 
         @Override
@@ -313,27 +316,47 @@ public class ZPoller implements Closeable
         @Override
         public boolean events(Socket socket, int events)
         {
-            return holders.stream().filter(holder -> holder.item().hasEvent(events))
-                    .map(holder -> holder.handler() == null ? globalHandler : holder.handler()).filter(Objects::nonNull)
-                    .map(handler -> handler.events(socket, events)).reduce(this::and).orElse(false);
+            boolean has = false;
+            boolean first = true;
+            for (ItemHolder holder : holders) {
+                if (holder.item().hasEvent(events)) {
+                    EventsHandler handler = holder.handler() == null ? globalHandler : holder.handler();
+                    if (handler != null) {
+                        boolean evts = handler.events(socket, events);
+                        if (first) {
+                            first = false;
+                            has = evts;
+                        }
+                        else {
+                            has &= evts;
+                        }
+                    }
+                }
+            }
+            return has;
         }
 
         @Override
         public boolean events(SelectableChannel channel, int events)
         {
-            return holders.stream().filter(holder -> holder.item().hasEvent(events))
-                    .map(holder -> holder.handler() == null ? globalHandler : holder.handler()).filter(Objects::nonNull)
-                    .map(handler -> handler.events(channel, events)).reduce(this::and).orElse(false);
-        }
-
-        private Boolean and(Boolean b0, Boolean b1)
-        {
-            return b0 & b1;
-        }
-
-        private Integer or(Integer ops1, Integer ops2)
-        {
-            return ops1 | ops2;
+            boolean has = false;
+            boolean first = true;
+            for (ItemHolder holder : holders) {
+                if (holder.item().hasEvent(events)) {
+                    EventsHandler handler = holder.handler() == null ? globalHandler : holder.handler();
+                    if (handler != null) {
+                        boolean evts = handler.events(channel, events);
+                        if (first) {
+                            first = false;
+                            has = evts;
+                        }
+                        else {
+                            has &= evts;
+                        }
+                    }
+                }
+            }
+            return has;
         }
 
         private ItemHolder handler(EventsHandler handler)
@@ -645,7 +668,10 @@ public class ZPoller implements Closeable
     protected int poll(final long timeout, final boolean dispatchEvents)
     {
         // get all the raw items
-        final Set<PollItem> pollItems = all.stream().map(ItemHolder::item).collect(Collectors.toSet());
+        final Set<PollItem> pollItems = new HashSet<>();
+        for (CompositePollItem it : all) {
+            pollItems.add(it.item());
+        }
         // polling time
         final int rc = poll(selector, timeout, pollItems);
 
@@ -664,7 +690,10 @@ public class ZPoller implements Closeable
 
     private boolean dispatch(Set<CompositePollItem> all, int size)
     {
-        return dispatch(all.stream().map(aggr -> aggr.handler(globalHandler)).collect(Collectors.toList()), size);
+        for (CompositePollItem item : all) {
+            item.handler(globalHandler);
+        }
+        return dispatch((Collection<? extends ItemHolder>) all, size);
     }
 
     // does the effective polling
@@ -681,7 +710,7 @@ public class ZPoller implements Closeable
      * @param size  the number of items to dispatch
      * @return true if correctly dispatched, false in case of error
      */
-    protected boolean dispatch(final Collection<ItemHolder> all, int size)
+    protected boolean dispatch(final Collection<? extends ItemHolder> all, int size)
     {
         ItemHolder[] array = all.toArray(new ItemHolder[all.size()]);
         // protected against handlers unregistering during this loop
@@ -969,9 +998,12 @@ public class ZPoller implements Closeable
     }
 
     // gets all the items of this poller
-    protected Collection<ItemHolder> items()
+    protected Collection<? extends ItemHolder> items()
     {
-        return all.stream().map(holder -> holder.handler(globalHandler)).collect(Collectors.toSet());
+        for (CompositePollItem item : all) {
+            item.handler(globalHandler);
+        }
+        return all;
     }
 
     // gets all the items of this poller regarding the given input
@@ -987,7 +1019,20 @@ public class ZPoller implements Closeable
     // filters items to get the first one matching the criteria, or null if none found
     protected PollItem filter(final Object socketOrChannel, int events)
     {
-        return Optional.ofNullable(socketOrChannel).map(items::get).map(CompositePollItem::item)
-                .filter(item -> item.hasEvent(events)).orElse(null);
+        if (socketOrChannel == null) {
+            return null;
+        }
+        CompositePollItem item = items.get(socketOrChannel);
+        if (item == null) {
+            return null;
+        }
+        PollItem pollItem = item.item();
+        if (pollItem == null) {
+            return null;
+        }
+        if (pollItem.hasEvent(events)) {
+            return pollItem;
+        }
+        return null;
     }
 }

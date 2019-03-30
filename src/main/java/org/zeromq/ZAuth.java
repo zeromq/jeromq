@@ -10,13 +10,14 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Properties;
 import java.util.UUID;
 
 import org.zeromq.ZMQ.Socket;
 import org.zeromq.ZMQ.Socket.Mechanism;
 import org.zeromq.util.ZMetadata;
+
+import zmq.util.Objects;
 
 /**
  * A ZAuth actor takes over authentication for all incoming connections in
@@ -240,13 +241,13 @@ public class ZAuth implements Closeable
         public final String    identity;   // not part of the ZAP protocol, but handy information for user
 
         private ZapReply(String version, String sequence, int statusCode, String statusText, String userId,
-                ZMetadata metadata)
+                         ZMetadata metadata)
         {
             this(version, sequence, statusCode, statusText, userId, metadata, null, null);
         }
 
         private ZapReply(String version, String sequence, int statusCode, String statusText, String userId,
-                ZMetadata metadata, String address, String identity)
+                         ZMetadata metadata, String address, String identity)
         {
             assert (ZAP_VERSION.equals(version));
             this.version = version;

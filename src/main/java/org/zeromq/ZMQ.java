@@ -11,7 +11,6 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Stream;
 
 import org.zeromq.proto.ZPicture;
 
@@ -3341,19 +3340,6 @@ public class ZMQ
         }
 
         /**
-         * Stream of incoming messages
-         * <p>
-         * This API is in DRAFT state and is subject to change at ANY time until declared stable
-         *
-         * @return infinite stream of the incoming messages
-         */
-        @Draft
-        public Stream<byte[]> recvStream()
-        {
-            return Stream.generate(this::recv);
-        }
-
-        /**
          * Receives a message.
          *
          * @param flags either:
@@ -3443,17 +3429,6 @@ public class ZMQ
         public String recvStr()
         {
             return recvStr(0);
-        }
-
-        /**
-         * This API is in DRAFT state and is subject to change at ANY time until declared stable
-         *
-         * @return infinite stream of the incoming messages as a String object
-         */
-        @Draft
-        public Stream<String> recvStrStream()
-        {
-            return Stream.generate(this::recvStr);
         }
 
         /**
@@ -3636,7 +3611,7 @@ public class ZMQ
         private long timeout;
 
         // When socket is removed from polling, store free slots here
-        private LinkedList<Integer> freeSlots;
+        private final LinkedList<Integer> freeSlots;
 
         /**
          * Class constructor.

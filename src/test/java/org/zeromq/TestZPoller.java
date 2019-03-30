@@ -16,13 +16,14 @@ import java.nio.channels.SelectableChannel;
 import java.nio.channels.Selector;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.BiFunction;
 
 import org.junit.Test;
 import org.zeromq.ZMQ.Socket;
 import org.zeromq.ZPoller.EventsHandler;
 import org.zeromq.ZPoller.ItemCreator;
 import org.zeromq.ZPoller.ItemHolder;
+
+import zmq.util.function.BiFunction;
 
 public class TestZPoller
 {
@@ -436,7 +437,7 @@ public class TestZPoller
         BiFunction<SelectableChannel, Integer, Boolean> cberr = new EventsHandlerErrorCounter(error);
         Pipe[] pipes = new Pipe[2];
         try (
-             ZPoller poller = new ZPoller(selector)) {
+                ZPoller poller = new ZPoller(selector)) {
             pipes[0] = pipe(poller, cberr, cb1, cb2);
             pipes[1] = pipe(poller, cberr, cb1, cb2);
             int max = 10;
@@ -461,8 +462,8 @@ public class TestZPoller
 
     @SafeVarargs
     private final Pipe pipe(ZPoller poller, BiFunction<SelectableChannel, Integer, Boolean> errors,
-                      BiFunction<SelectableChannel, Integer, Boolean>... ins)
-            throws IOException
+                            BiFunction<SelectableChannel, Integer, Boolean>... ins)
+                                    throws IOException
     {
         Pipe pipe = Pipe.open();
         Pipe.SourceChannel source = pipe.source();
