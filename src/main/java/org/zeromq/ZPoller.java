@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 import org.zeromq.ZMQ.Poller;
@@ -95,6 +96,34 @@ public class ZPoller implements Closeable
          * @return <b>true to continue the polling</b>, false to stop it
          */
         boolean events(SelectableChannel channel, int events);
+    }
+
+    public static class ComposeEventsHandler implements EventsHandler
+    {
+        private final BiFunction<Socket, Integer, Boolean>            sockets;
+        private final BiFunction<SelectableChannel, Integer, Boolean> channels;
+
+        public ComposeEventsHandler(BiFunction<Socket, Integer, Boolean> sockets,
+                BiFunction<SelectableChannel, Integer, Boolean> channels)
+        {
+            super();
+            this.sockets = sockets;
+            this.channels = channels;
+        }
+
+        @Override
+        public boolean events(Socket socket, int events)
+        {
+            assert (sockets != null) : "A Socket Handler needs to be set";
+            return sockets.apply(socket, events);
+        }
+
+        @Override
+        public boolean events(SelectableChannel channel, int events)
+        {
+            assert (channels != null) : "A SelectableChannel Handler needs to be set";
+            return channels.apply(channel, events);
+        }
     }
 
     // contract for items. Useful for providing own implementation.
@@ -465,6 +494,20 @@ public class ZPoller implements Closeable
      * @param events   the events to listen to, as a mask composed by ORing POLLIN, POLLOUT and POLLERR.
      * @return true if registered, otherwise false
      */
+    public final boolean register(final Socket socket, final BiFunction<Socket, Integer, Boolean> handler,
+                                  final int events)
+    {
+        return register(socket, new ComposeEventsHandler(handler, null), events);
+    }
+
+    /**
+     * Register a Socket for polling on specified events.
+     *
+     * @param socket   the registering socket.
+     * @param handler  the events handler for this socket
+     * @param events   the events to listen to, as a mask composed by ORing POLLIN, POLLOUT and POLLERR.
+     * @return true if registered, otherwise false
+     */
     public final boolean register(final Socket socket, final EventsHandler handler, final int events)
     {
         if (socket == null) {
@@ -484,11 +527,25 @@ public class ZPoller implements Closeable
     }
 
     /**
-     * Register a SelectableChannel for polling on specified events.
+     * Registers a SelectableChannel for polling on specified events.
      *
      * @param channel   the registering channel.
-     * @param handler   the events handler for this socket
-     * @param events    the events to listen to, as a mask composed by XORing POLLIN, POLLOUT and POLLERR.
+     * @param handler   the events handler for this channel
+     * @param events    the events to listen to, as a mask composed by ORing POLLIN, POLLOUT and POLLERR.
+     * @return true if registered, otherwise false
+     */
+    public final boolean register(final SelectableChannel channel,
+                                  final BiFunction<SelectableChannel, Integer, Boolean> handler, final int events)
+    {
+        return register(channel, new ComposeEventsHandler(null, handler), events);
+    }
+
+    /**
+     * Registers a SelectableChannel for polling on specified events.
+     *
+     * @param channel   the registering channel.
+     * @param handler   the events handler for this channel
+     * @param events    the events to listen to, as a mask composed by ORing POLLIN, POLLOUT and POLLERR.
      * @return true if registered, otherwise false
      */
     public final boolean register(final SelectableChannel channel, final EventsHandler handler, final int events)
@@ -499,11 +556,25 @@ public class ZPoller implements Closeable
         return add(channel, create(channel, handler, events));
     }
 
+    /**
+     * Registers a SelectableChannel for polling on all events.
+     *
+     * @param channel   the registering channel.
+     * @param handler   the events handler for this channel
+     * @return true if registered, otherwise false
+     */
     public final boolean register(final SelectableChannel channel, final EventsHandler handler)
     {
         return register(channel, handler, IN | OUT | ERR);
     }
 
+    /**
+     * Registers a SelectableChannel for polling on specified events.
+     *
+     * @param channel   the registering channel.
+     * @param events    the events to listen to, as a mask composed by ORing POLLIN, POLLOUT and POLLERR.
+     * @return true if registered, otherwise false
+     */
     public final boolean register(final SelectableChannel channel, final int events)
     {
         return register(channel, globalHandler, events);
