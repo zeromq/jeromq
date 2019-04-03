@@ -100,7 +100,7 @@ public class TcpAddressTest
     public void testBad()
     {
         try {
-            Address addr = new Address(NetProtocol.tcp.name(), "lclhost.:80");
+            Address addr = new Address(NetProtocol.tcp.name(), "ggglocalhostxxx.google.com:80");
             addr.resolve(true);
             addr.resolved();
             Assert.fail();

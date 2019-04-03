@@ -29,6 +29,6 @@ public class TestAddress
     @Test(expected = ZMQException.class)
     public void testInvalid()
     {
-        new Address("tcp", "ggglocalhostxxx:90").resolve(false);
+        new Address("tcp", "ggglocalhostxxx.google.com:80").resolve(false);
     }
 }
