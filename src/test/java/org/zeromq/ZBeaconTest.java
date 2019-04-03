@@ -21,7 +21,7 @@ public class ZBeaconTest
         final CountDownLatch latch = new CountDownLatch(1);
         int port = Utils.findOpenPort();
         ZBeacon.Builder builder = new ZBeacon.Builder().beacon(new byte[] { 'H', 'Y', 'D', 'R', 'A', 0x01, 0x12, 0x34 })
-                .ignoreLocalAddress(false).blocking(false).broadcastInterval(2000L).client("255.255.255.255").port(port)
+                .ignoreLocalAddress(false).blocking(false).broadcastInterval(2000L).client("127.0.0.1").port(port)
                 .server(new byte[] { 0, 0, 0, 0 });
         byte[] prefix = new byte[] { 'H', 'Y', 'D', 'R', 'A', 0x01 };
         ZBeacon beacon = builder.build();
@@ -48,7 +48,7 @@ public class ZBeaconTest
         byte[] beacon = new byte[] { 'H', 'Y', 'D', 'R', 'A', 0x01, 0x12, 0x34 };
         byte[] prefix = new byte[] { 'H', 'Y', 'D', 'R', 'A', 0x01 };
         int port = Utils.findOpenPort();
-        ZBeacon zbeacon = new ZBeacon("255.255.255.255", port, beacon, false);
+        ZBeacon zbeacon = new ZBeacon("127.0.0.1", port, beacon, false);
         zbeacon.setPrefix(prefix);
         zbeacon.setListener(new Listener()
         {
@@ -107,7 +107,7 @@ public class ZBeaconTest
         byte[] beacon = new byte[] { 'H', 'Y', 'D', 'R', 'A', 0x01, 0x12, 0x34 };
         byte[] prefix = new byte[] { 'H', 'Y', 'D', 'R', 'A', 0x01 };
         int port = Utils.findOpenPort();
-        ZBeacon zbeacon = new ZBeacon("255.255.255.255", port, beacon, false, true);
+        ZBeacon zbeacon = new ZBeacon("127.0.0.1", port, beacon, false, true);
         zbeacon.setPrefix(prefix);
         zbeacon.setListener(new Listener()
         {
