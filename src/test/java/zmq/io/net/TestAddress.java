@@ -5,6 +5,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
+import org.zeromq.ZMQException;
 
 public class TestAddress
 {
@@ -23,5 +24,11 @@ public class TestAddress
         addr.resolve(false);
         String resolved = addr.toString();
         assertTrue(resolved.matches("tcp://\\d+\\.\\d+\\.\\d+\\.\\d+:90"));
+    }
+
+    @Test(expected = ZMQException.class)
+    public void testInvalid()
+    {
+        new Address("tcp", "ggglocalhostxxx.google.com:80").resolve(false);
     }
 }
