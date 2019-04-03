@@ -97,6 +97,21 @@ public class TcpAddressTest
     }
 
     @Test
+    public void testBad()
+    {
+        try {
+            Address addr = new Address(NetProtocol.tcp.name(), "lclhost.:80");
+            addr.resolve(true);
+            addr.resolved();
+            Assert.fail();
+        }
+        catch (ZMQException e) {
+            Assert.assertEquals(ZError.EADDRNOTAVAIL, e.getErrorCode());
+            Assert.assertEquals(e.getCause().getMessage(), e.getMessage());
+        }
+    }
+
+    @Test
     public void testUnspecifiedIPv6DoubleColon() throws IOException
     {
         int port = Utils.findOpenPort();
