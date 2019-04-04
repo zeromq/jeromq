@@ -43,13 +43,13 @@ You are not required to sign SNAPSHOT builds. Issue the following
 command to deploy a SNAPSHOT.
 
 ```
-$ mvn deploy
+$ mvn clean deploy
 ```
 
 ## Release Commands
 
 ```
-$ mvn release:prepare
+$ mvn release:clean release:prepare
 ```
 
 You will be asked a series of questions regarding version numbers. It
@@ -74,29 +74,10 @@ To perform a release, issue the following command.
 $ mvn release:perform
 ```
 
-This will upload the artifacts to OSS Sonatype and will require you to sign the
-build. There is a list of known keys that have been used to sign tagged JeroMQ
-releases [here](public-keys.md).
+This will upload the artifacts to OSS Sonatype and release to Maven Central in
+one go, and will require you to sign the build. There is a list of known keys
+that have been used to sign tagged JeroMQ releases [here](public-keys.md).
 
-## Build Publishing
+# Making an Announcement on the ZeroMQ Mailing list when it has been successfully synced.
 
-Log into the OSS Nexus Repository located at: [OSS
-NEXUS](https://oss.sonatype.org/).
-
-Click `Staging Repositories` link located on the left
-navigation.
-
- (show picture)
-
-Locate the latest entry with the profile `org.zeromq`. Ensure it's
-from JeroMQ. In order to release the project to the Maven Central, you
-first must close the staging repository.
-
-(show picture)
-
-It will take a minute to reflect that it has been closed. Once you can
-see the status change, you may now queue the build to be mirrored to
-the Maven Central.
-
-Making an Announcement on the ZeroMQ Mailing list when it has been
-successfully synced.
+TODO: more info?
