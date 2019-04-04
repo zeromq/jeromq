@@ -155,6 +155,10 @@
         <version>2.5.3</version>
         <configuration>
           <tagNameFormat>v@{project.version}</tagNameFormat>
+          <autoVersionSubmodules>true</autoVersionSubmodules>
+          <useReleaseProfile>false</useReleaseProfile>
+          <releaseProfiles>release</releaseProfiles>
+          <goals>deploy</goals>
         </configuration>
       </plugin>
       <plugin>
@@ -282,7 +286,7 @@
       </build>
     </profile>
     <profile>
-      <id>release-sign-artifacts</id>
+      <id>release</id>
       <activation>
         <property>
           <name>performRelease</name>
