@@ -1,5 +1,71 @@
 # Changelog
 
+## v0.5.1 (2019-04-03)
+
+### Added
+
+* [#677](https://github.com/zeromq/jeromq/pull/677): ZPoller now supports
+  registering multiple event handlers on a single socket or channel.
+
+* [#685](https://github.com/zeromq/jeromq/pull/685),
+  [#687](https://github.com/zeromq/jeromq/pull/687): ZMQ.Socket has new methods
+  that encode and decode messages based on a picture pattern which is compatible
+  to ZProto: `sendPicture`, `recvPicture`, `sendBinaryPicture` and
+  `recvBinaryPicture`.
+
+* [#692](https://github.com/zeromq/jeromq/pull/692): Added an overload of the
+  ZBeacon that has an additional `serverAddress` option so that the broadcast
+  address can be specified. The default value is still `255.255.255.255`.
+
+* [#694](https://github.com/zeromq/jeromq/pull/694): Added a draft ZNeedle
+  helper class for serialization and deserialization within a frame.
+
+* [#697](https://github.com/zeromq/jeromq/pull/697): Added encoding/decoding of
+  the `COMMAND` flag when using CURVE encryption.
+
+* [#698](https://github.com/zeromq/jeromq/pull/698): Added a
+  `Msg.putShortString` method.
+
+### Changed
+
+* [#671](https://github.com/zeromq/jeromq/pull/671),
+  [#672](https://github.com/zeromq/jeromq/pull/672): In the internal
+  `zmq.io.StreamEngine` class, a `ZError.InstantiationException` is now thrown
+  when a decoder or encoder cannot be instantiated.  Previously, a stacktrace
+  would be printed and `null` would be returned instead of a decoder/encoder
+  instance.
+
+* [#673](https://github.com/zeromq/jeromq/pull/673): `zmq.Mailbox.recv` now
+  handles `EINTR` by returning `null`. This can happen, for example, if the
+  channel is closed.
+
+* [#679](https://github.com/zeromq/jeromq/pull/679): Fixed a file descriptor
+  leak when opening a TCP connection.
+
+* [#680](https://github.com/zeromq/jeromq/pull/680): Various improvements to
+  support for IPv6 and name resolution.
+
+  IPv6 is now enabled if the properties `java.net.preferIPv4Stack=false` or
+  `java.net.preferIPv6Addresses=true` are set.
+
+* [#684](https://github.com/zeromq/jeromq/pull/684): Fixed a bug where
+  `zmq.Msg.getBytes` was writing to an internal buffer instead of the given
+  buffer.
+
+* [#688](https://github.com/zeromq/jeromq/pull/688): Javadoc fixes.
+
+* [#691](https://github.com/zeromq/jeromq/pull/691): Fixed a bug where timers
+  would accumulate in the PollerBase when failed connections were retried,
+  causing a memory leak.
+
+* [#693](https://github.com/zeromq/jeromq/pull/693): Fixed a Java 8-related
+  compilation error.
+
+* [#702](https://github.com/zeromq/jeromq/pull/702): Removed all usage of
+  `java.util.function`, `java.util.stream`, `java.util.Objects` and
+  `java.util.Optional`, which are known to cause problems for some versions of
+  Android. Replaced their usage with internal implementations.
+
 ## v0.5.0 (2019-02-18)
 
 ### Added
