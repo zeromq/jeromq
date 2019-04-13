@@ -10,6 +10,8 @@ matrix:
       jdk: openjdk8
       android:
         components:
+          - build-tools-19.0.3
+          - android-16
           - tools
           - platform-tools
 
