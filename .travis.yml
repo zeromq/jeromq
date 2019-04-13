@@ -1,16 +1,21 @@
 matrix:
   include:
     - language: java
+      jdk: openjdk8
+
+    - language: java
+      jdk: oraclejdk8
 
     - language: android
-      android:
-        components:
-          - tools
-          - platform-tools
+      jdk: openjdk8
 
-jdk:
-  - openjdk8
-  - oraclejdk8
+    - language: android
+      jdk: oraclejdk8
+
+android:
+  components:
+    - tools
+    - platform-tools
 
 install: mvn install --quiet -DskipTests=true -Dgpg.skip=true
 
