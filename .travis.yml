@@ -8,14 +8,17 @@ matrix:
 
     - language: android
       jdk: openjdk8
+      android:
+        components:
+          - tools
+          - platform-tools
 
     - language: android
       jdk: oraclejdk8
-
-android:
-  components:
-    - tools
-    - platform-tools
+      android:
+        components:
+          - tools
+          - platform-tools
 
 install: mvn install --quiet -DskipTests=true -Dgpg.skip=true
 
