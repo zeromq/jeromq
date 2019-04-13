@@ -20,6 +20,10 @@ matrix:
           - tools
           - platform-tools
 
+cache:
+  directories:
+    - $HOME/.m2
+
 install: mvn install --quiet -DskipTests=true -Dgpg.skip=true
 
 after_success:
