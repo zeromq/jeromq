@@ -1,14 +1,20 @@
 matrix:
   include:
     - language: java
-      jdk:
-        - openjdk8
-        - oraclejdk8
+      jdk: openjdk8
+
+    - language: java
+      jdk: oraclejdk8
 
     - language: android
-      jdk:
-        - openjdk8
-        - oraclejdk8
+      jdk: openjdk8
+      android:
+        components:
+          - tools
+          - platform-tools
+
+    - language: android
+      jdk: oraclejdk8
       android:
         components:
           - tools
