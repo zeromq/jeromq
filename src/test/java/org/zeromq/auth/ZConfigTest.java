@@ -6,9 +6,11 @@ import static org.junit.Assert.assertThat;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.Map;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.zeromq.ZConfig;
 
@@ -58,6 +60,43 @@ public class ZConfigTest
         write.write("    backend\n");
         write.write("        bind = inproc://addr3\n");
         write.close();
+    }
+
+    @Test
+    public void testPutKeyDoubleSlash() throws IOException
+    {
+        ZConfig config = new ZConfig("root", null);
+        config.putValue("inproc://test", "one");
+        assertThat(config.pathExists("inproc://test"), is(true));
+    }
+
+    @Test
+    public void testPutKeySingleSlash()
+    {
+        ZConfig config = new ZConfig("root", null);
+        config.putValue("server/timeout", "1000");
+        assertThat(config.pathExists("server/timeout"), is(true));
+    }
+
+    @Test
+    public void testGetKeySingleSlash()
+    {
+        ZConfig config = new ZConfig("root", null);
+        config.putValue("server/timeout", "1000");
+        Map<String, String> values = config.getValues();
+        assertThat(values.toString(), values.size(), is(1));
+        assertThat(values.toString(), values.containsKey("server/timeout"), is(true));
+    }
+
+    @Test
+    @Ignore
+    public void testGetKeyDoubleSlash()
+    {
+        ZConfig config = new ZConfig("root", null);
+        config.putValue("inproc://test", "one");
+        Map<String, String> values = config.getValues();
+        assertThat(values.toString(), values.size(), is(1));
+        assertThat(values.toString(), values.containsKey("inproc://test"), is(true));
     }
 
     @Test

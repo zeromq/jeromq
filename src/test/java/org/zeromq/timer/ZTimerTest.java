@@ -1,26 +1,27 @@
-package org.zeromq;
+package org.zeromq.timer;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.zeromq.ZTimer.Timer;
-
-import zmq.ZMQ;
-import zmq.util.TimersTest;
+import org.zeromq.timer.ZTimer.Timer;
 
 public class ZTimerTest
 {
-    private static final Timer NON_EXISTENT = new ZTimer.Timer(TimersTest.NON_EXISTENT);
-    private ZTimer             timers;
-    private AtomicBoolean      invoked      = new AtomicBoolean();
+    private AtomicLong    time = new AtomicLong();
+    private ZTimer        timers = new ZTimer(() -> time.get());
+    private AtomicBoolean invoked = new AtomicBoolean();
 
-    private final ZTimer.Handler handler = new ZTimer.Handler()
+    private final TimerHandler handler = new TimerHandler()
     {
         @Override
         public void time(Object... args)
@@ -30,32 +31,20 @@ public class ZTimerTest
         }
     };
 
+    private static final TimerHandler NOOP = new TimerHandler()
+    {
+        @Override
+        public void time(Object... args)
+        {
+            // do nothing
+        }
+    };
+
     @Before
     public void setup()
     {
-        timers = new ZTimer();
+        time.set(0);
         invoked = new AtomicBoolean();
-    }
-
-    @Test
-    public void testCancelNonExistentTimer()
-    {
-        boolean rc = timers.cancel(NON_EXISTENT);
-        assertThat(rc, is(false));
-    }
-
-    @Test
-    public void testSetIntervalNonExistentTimer()
-    {
-        boolean rc = timers.setInterval(NON_EXISTENT, 10);
-        assertThat(rc, is(false));
-    }
-
-    @Test
-    public void testResetNonExistentTimer()
-    {
-        boolean rc = timers.reset(NON_EXISTENT);
-        assertThat(rc, is(false));
     }
 
     @Test
@@ -71,10 +60,10 @@ public class ZTimerTest
         Timer timer = timers.add(10, handler);
         assertThat(timer, notNullValue());
 
-        boolean rc = timers.cancel(timer);
+        boolean rc = timer.cancel();
         assertThat(rc, is(true));
 
-        rc = timers.cancel(timer);
+        rc = timer.cancel();
         assertThat(rc, is(false));
     }
 
@@ -103,7 +92,7 @@ public class ZTimerTest
 
         //  Wait half the time and check again
         long timeout = timers.timeout();
-        ZMQ.msleep(timeout / 2);
+        time.set(time.get() + timeout / 2);
         int rc = timers.execute();
         assertThat(rc, is(0));
     }
@@ -114,6 +103,7 @@ public class ZTimerTest
         long fullTimeout = 100;
         timers.add(fullTimeout, handler, invoked);
 
+        time.set(time.get() + fullTimeout);
         // Wait until the end
         timers.sleepAndExecute();
         assertThat(invoked.get(), is(true));
@@ -125,13 +115,14 @@ public class ZTimerTest
         long fullTimeout = 100;
         timers.add(fullTimeout, handler, invoked);
 
+        time.set(time.get() + fullTimeout);
         // Wait until the end
         timers.sleepAndExecute();
         assertThat(invoked.get(), is(true));
 
         //  Wait half the time and check again
         long timeout = timers.timeout();
-        ZMQ.msleep(timeout / 2);
+        time.set(time.get() + timeout / 2);
         int rc = timers.execute();
         assertThat(rc, is(0));
     }
@@ -139,31 +130,38 @@ public class ZTimerTest
     @Test
     public void testNotInvokedAfterResetHalfTime()
     {
+        assertNotInvokedAfterResetHalfTime();
+    }
+
+    private AtomicLong assertNotInvokedAfterResetHalfTime()
+    {
         long fullTimeout = 100;
         Timer timer = timers.add(fullTimeout, handler, invoked);
 
         //  Wait half the time and check again
         long timeout = timers.timeout();
-        ZMQ.msleep(timeout / 2);
+        time.set(time.get() + timeout / 2);
         int rc = timers.execute();
         assertThat(rc, is(0));
 
         // Reset timer and wait half of the time left
-        boolean ret = timers.reset(timer);
+        boolean ret = timer.reset();
         assertThat(ret, is(true));
 
-        ZMQ.msleep(timeout / 2);
+        time.set(time.get() + timeout / 2);
         rc = timers.execute();
         assertThat(rc, is(0));
+
+        return time;
     }
 
     @Test
     public void testInvokedAfterReset()
     {
-        testNotInvokedAfterResetHalfTime();
+        assertNotInvokedAfterResetHalfTime();
+        time.set(time.get() + 100 / 2);
 
-        // Wait until the end
-        timers.sleepAndExecute();
+        timers.execute();
         assertThat(invoked.get(), is(true));
     }
 
@@ -174,10 +172,11 @@ public class ZTimerTest
         Timer timer = timers.add(fullTimeout, handler, invoked);
 
         // reschedule
-        boolean ret = timers.setInterval(timer, 50);
+        boolean ret = timer.setInterval(50);
         assertThat(ret, is(true));
 
-        timers.sleepAndExecute();
+        time.set(time.get() + fullTimeout / 2);
+        timers.execute();
         assertThat(invoked.get(), is(true));
     }
 
@@ -189,12 +188,62 @@ public class ZTimerTest
 
         // cancel timer
         long timeout = timers.timeout();
-        boolean ret = timers.cancel(timer);
+        boolean ret = timer.cancel();
         assertThat(ret, is(true));
 
-        ZMQ.msleep(timeout * 2);
+        time.set(time.get() + timeout * 2);
         int rc = timers.execute();
         assertThat(rc, is(0));
         assertThat(invoked.get(), is(false));
+    }
+
+    @Test
+    public void testExtraLongInsertions()
+    {
+        int max = 100_000;
+        Random random = new Random();
+
+        List<Integer> delays = new ArrayList<>();
+        List<Timer> timers = new ArrayList<>();
+        for (int idx = 0; idx < max; ++idx) {
+            delays.add(random.nextInt(1_000_000) + 1);
+        }
+        long start = System.currentTimeMillis();
+        for (int idx = 0; idx < max; ++idx) {
+            timers.add(this.timers.add(delays.get(idx), NOOP));
+        }
+        long end = System.currentTimeMillis();
+        long elapsed = end - start;
+        System.out.println(String.format("ZTimer Add: %s millisec spent on %s iterations: %s microsecs", elapsed, max, 1000 * elapsed / ((double) max)));
+
+        start = System.currentTimeMillis();
+        long timeout = this.timers.timeout();
+        end = System.currentTimeMillis();
+        elapsed = end - start;
+        System.out.println(String.format("ZTimer Timeout: %s millisec ", elapsed));
+
+        this.time.set(this.time.get() + timeout);
+        start = System.currentTimeMillis();
+        int rc = this.timers.execute();
+        end = System.currentTimeMillis();
+        elapsed = end - start;
+        assertThat(rc > 0, is(true));
+        System.out.println(String.format("ZTimer Execute: %s millisec ", elapsed));
+
+        start = System.currentTimeMillis();
+        for (Timer t : timers) {
+            t.reset();
+        }
+        end = System.currentTimeMillis();
+        elapsed = end - start;
+        System.out.println(String.format("ZTimer Reset: %s millisec spent on %s iterations: %s microsecs", elapsed, max, 1000 * elapsed / ((double) max)));
+
+        start = System.currentTimeMillis();
+        for (Timer t : timers) {
+            t.cancel();
+        }
+        end = System.currentTimeMillis();
+        elapsed = end - start;
+        System.out.println(String.format("ZTimer Cancel: %s millisec spent on %s iterations: %s microsecs", elapsed, max, 1000 * elapsed / ((double) max)));
     }
 }

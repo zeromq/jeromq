@@ -14,7 +14,6 @@ import zmq.ZMQ;
 
 public class TimersTest
 {
-    public static final Timers.Timer NON_EXISTENT = new Timers.Timer(0, null);
     private Timers                   timers;
     private AtomicBoolean            invoked      = new AtomicBoolean();
 
@@ -37,27 +36,6 @@ public class TimersTest
     }
 
     @Test
-    public void testCancelNonExistentTimer()
-    {
-        boolean rc = timers.cancel(NON_EXISTENT);
-        assertThat(rc, is(false));
-    }
-
-    @Test
-    public void testSetIntervalNonExistentTimer()
-    {
-        boolean rc = timers.setInterval(NON_EXISTENT, 10);
-        assertThat(rc, is(false));
-    }
-
-    @Test
-    public void testResetNonExistentTimer()
-    {
-        boolean rc = timers.reset(NON_EXISTENT);
-        assertThat(rc, is(false));
-    }
-
-    @Test
     public void testAddFaultyHandler()
     {
         Timers.Timer timer = timers.add(10, null);
@@ -70,10 +48,10 @@ public class TimersTest
         Timers.Timer timer = timers.add(10, handler);
         assertThat(timer, notNullValue());
 
-        boolean rc = timers.cancel(timer);
+        boolean rc = timer.cancel();
         assertThat(rc, is(true));
 
-        rc = timers.cancel(timer);
+        rc = timer.cancel();
         assertThat(rc, is(false));
     }
 
@@ -149,7 +127,7 @@ public class TimersTest
         assertThat(rc, is(0));
 
         // Reset timer and wait half of the time left
-        boolean ret = timers.reset(timer);
+        boolean ret = timer.reset();
         assertThat(ret, is(true));
 
         ZMQ.msleep(timeout / 2);
@@ -175,7 +153,7 @@ public class TimersTest
         Timers.Timer timer = timers.add(fullTimeout, handler, invoked);
 
         // reschedule
-        boolean ret = timers.setInterval(timer, 50);
+        boolean ret = timer.setInterval(50);
         assertThat(ret, is(true));
 
         int rc = timers.sleepAndExecute();
@@ -191,7 +169,7 @@ public class TimersTest
 
         // cancel timer
         long timeout = timers.timeout();
-        boolean ret = timers.cancel(timer);
+        boolean ret = timer.cancel();
         assertThat(ret, is(true));
 
         ZMQ.msleep(timeout * 2);

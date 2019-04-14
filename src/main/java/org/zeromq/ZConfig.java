@@ -202,6 +202,13 @@ public class ZConfig
         return current;
     }
 
+    public void putValues(ZConfig src)
+    {
+        for (Entry<String, String> entry : src.getValues().entrySet()) {
+            putValue(entry .getKey(), entry.getValue());
+        }
+    }
+
     private void visit(ZConfig startNode, IVisitor handler, int level) throws IOException
     {
         handler.handleNode(startNode, level);

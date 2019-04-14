@@ -14,7 +14,7 @@ import java.util.Map.Entry;
 // aka if the same value is correlated to a new key, the old mapping is removed.
 public final class MultiMap<K extends Comparable<? super K>, V>
 {
-    // sorts entries according to the natural order of the keys
+    // sorts entries according to the natural order of the values
     private final class EntryComparator implements Comparator<Entry<V, K>>
     {
         @Override
