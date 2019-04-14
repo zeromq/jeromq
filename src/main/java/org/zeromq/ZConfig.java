@@ -217,16 +217,20 @@ public class ZConfig
         }
     }
 
+    /**
+     * Saves the configuration to a file.
+     * <p>
+     * <strong>This method will overwrite contents of existing file</strong>
+     * @param filename the path of the file to save the configuration into, or "-" to dump it to standard output
+     * @return the saved file or null if dumped to the standard output
+     * @throws IOException if unable to save the file.
+     */
     public File save(String filename) throws IOException
     {
-        if (filename.equals("-")) {
+        if ("-".equals(filename)) {
             // print to console
-            Writer writer = new PrintWriter(System.out);
-            try {
+            try (Writer writer = new PrintWriter(System.out)) {
                 save(writer);
-            }
-            finally {
-                writer.close();
             }
             return null;
         }
