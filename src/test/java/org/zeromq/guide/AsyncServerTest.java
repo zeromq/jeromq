@@ -24,7 +24,8 @@ import org.zeromq.ZMsg;
 import org.zeromq.ZPoller;
 import org.zeromq.ZProxy;
 import org.zeromq.ZProxy.Plug;
-import org.zeromq.ZTimer;
+import org.zeromq.timer.TimerHandler;
+import org.zeromq.timer.ZTimer;
 
 public class AsyncServerTest
 {
@@ -36,7 +37,7 @@ public class AsyncServerTest
     //It connects to the server, and then sends a request once per second
     //It collects responses as they arrive, and it prints them out. We will
     //run several client tasks in parallel, each with a different random ID.
-    private static class Client extends ZActor.SimpleActor implements ZTimer.Handler
+    private static class Client extends ZActor.SimpleActor implements TimerHandler
     {
         private int          requestNbr = 0;
         private final String identity   = String.format("%04X-%04X", counter.incrementAndGet(), rand.nextInt());
@@ -107,7 +108,7 @@ public class AsyncServerTest
         @Override
         public boolean destroyed(ZContext ctx, Socket pipe, ZPoller poller)
         {
-            boolean rc = timer.cancel(handle);
+            boolean rc = handle.cancel();
             assertThat(rc, is(true));
             return super.destroyed(ctx, pipe, poller);
         }
