@@ -982,7 +982,11 @@ public class ZPoller implements Closeable
         }
         assert (socketOrChannel != null);
 
-        CompositePollItem aggregate = items.computeIfAbsent(socketOrChannel, CompositePollItem::new);
+        CompositePollItem aggregate = items.get(socketOrChannel);
+        if (aggregate == null) {
+            aggregate = new CompositePollItem(socketOrChannel);
+            items.put(socketOrChannel, aggregate);
+        }
         final boolean rc = aggregate.holders.add(holder);
         if (rc) {
             all.add(aggregate);
