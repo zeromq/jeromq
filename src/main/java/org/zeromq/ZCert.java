@@ -2,6 +2,7 @@ package org.zeromq;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.Writer;
 
 import org.zeromq.ZMQ.Curve.KeyPair;
 import org.zeromq.util.ZMetadata;
@@ -116,11 +117,29 @@ public class ZCert
     }
 
     /**
-     * Saves the public  key to a file.
+     * Saves the public key to a file.
+     * <p>
+     * <strong>This method will overwrite contents of existing file</strong>
      * @param filename the path of the file to save the certificate into.
+     * @return the saved file or null if dumped to the standard output
      * @throws IOException if unable to save the file.
      */
     public File savePublic(String filename) throws IOException
+    {
+        return publicConfig().save(filename);
+    }
+
+    /**
+     * Saves the public key to a writer.
+     * @param writer the writer to save the certificate into.
+     * @throws IOException if unable to dump the public configuration.
+     */
+    public void savePublic(Writer writer) throws IOException
+    {
+        publicConfig().save(writer);
+    }
+
+    private ZConfig publicConfig()
     {
         ZConfig conf = new ZConfig("root", null);
         add(metadata, conf);
@@ -129,15 +148,33 @@ public class ZCert
         conf.addComment("   of this file after exchange. Store public certificates in your home");
         conf.addComment("   directory, in the .curve subdirectory.");
         conf.putValue("/curve/public-key", publicTxt);
-        return conf.save(filename);
+        return conf;
     }
 
     /**
      * Saves the public and secret keys to a file.
+     * <p>
+     * <strong>This method will overwrite contents of existing file</strong>
      * @param filename the path of the file to save the certificate into.
+     * @return the saved file or null if dumped to the standard output
      * @throws IOException if unable to save the file.
      */
     public File saveSecret(String filename) throws IOException
+    {
+        return secretConfig().save(filename);
+    }
+
+    /**
+     * Saves the public and secret keys to a writer.
+     * @param writer the writer to save the certificate into.
+     * @throws IOException if unable to dump the configuration.
+     */
+    public void saveSecret(Writer writer) throws IOException
+    {
+        secretConfig().save(writer);
+    }
+
+    private ZConfig secretConfig()
     {
         ZConfig conf = new ZConfig("root", null);
         add(metadata, conf);
@@ -145,6 +182,6 @@ public class ZCert
         conf.addComment("   DO NOT PROVIDE THIS FILE TO OTHER USERS nor change its permissions.");
         conf.putValue("/curve/public-key", publicTxt);
         conf.putValue("/curve/secret-key", secretTxt);
-        return conf.save(filename);
+        return conf;
     }
 }
