@@ -97,11 +97,17 @@ public final class ZTicket
         @Override
         public int compareTo(Ticket other)
         {
-           return Long.valueOf(start - other.start).compareTo(other.delay - delay);
+            if (alive) {
+                if (other.alive) {
+                    return Long.valueOf(start - other.start).compareTo(other.delay - delay);
+                }
+                return -1;
+            }
+            return other.alive ? 1 : 0;
         }
     }
 
-    private final List<Ticket> tickets = new ArrayList<>();
+    private final List<Ticket> tickets;
 
     private final Supplier<Long> clock;
 
@@ -114,7 +120,13 @@ public final class ZTicket
 
     ZTicket(Supplier<Long> clock)
     {
+        this(clock, new ArrayList<>());
+    }
+
+    ZTicket(Supplier<Long> clock, List<Ticket> tickets)
+    {
         this.clock = clock;
+        this.tickets = tickets;
     }
 
     private long now()
@@ -184,6 +196,13 @@ public final class ZTicket
             cancelled.add(ticket);
             ticket.handler.time(ticket.args);
             ++executed;
+        }
+        for (int idx = tickets.size(); idx-- > 0; ) {
+            Ticket ticket = tickets.get(idx);
+            if (ticket.alive) {
+                break;
+            }
+            cancelled.add(ticket);
         }
         this.tickets.removeAll(cancelled);
         cancelled.clear();
