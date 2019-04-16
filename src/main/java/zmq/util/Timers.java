@@ -177,7 +177,7 @@ public final class Timers
     public long timeout()
     {
         final long now = now();
-        for (Entry<Timer, Long> entry : timers.entries()) {
+        for (Entry<Timer, Long> entry : entries()) {
             final Timer timer = entry.getKey();
             final Long expiration = entry.getValue();
 
@@ -192,7 +192,6 @@ public final class Timers
             }
 
             //  Remove it from the list of active timers.
-            timer.alive = false;
             timers.remove(expiration, timer);
         }
         //  Wait forever as no timers are alive
@@ -207,7 +206,7 @@ public final class Timers
     {
         int executed = 0;
         final long now = now();
-        for (Entry<Timer, Long> entry : timers.entries()) {
+        for (Entry<Timer, Long> entry : entries()) {
             final Timer timer = entry.getKey();
             final Long expiration = entry.getValue();
 
@@ -228,6 +227,11 @@ public final class Timers
             ++executed;
         }
         return executed;
+    }
+
+    Iterable<Entry<Timer, Long>> entries()
+    {
+        return timers.entries();
     }
 
     public int sleepAndExecute()

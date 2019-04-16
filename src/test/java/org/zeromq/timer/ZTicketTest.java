@@ -17,8 +17,8 @@ import org.zeromq.timer.ZTicket.Ticket;
 
 public class ZTicketTest
 {
-    final AtomicLong time = new AtomicLong();
-    private ZTicket tickets = new ZTicket(() -> time.get());
+    final AtomicLong      time    = new AtomicLong();
+    private ZTicket       tickets = new ZTicket(() -> time.get());
     private AtomicInteger invoked = new AtomicInteger();
 
     private final TimerHandler handler = new TimerHandler()
@@ -225,6 +225,57 @@ public class ZTicketTest
     }
 
     @Test
+    public void testCancelledTimerIsRemoved()
+    {
+        ArrayList<Ticket> list = new ArrayList<>();
+        tickets = new ZTicket(() -> time.get(), list);
+
+        ZTicket.Ticket ticket100 = tickets.add(100, handler, invoked);
+        ZTicket.Ticket ticket1000 = tickets.add(1000, handler, invoked);
+        ZTicket.Ticket ticket10 = tickets.add(10, handler, invoked);
+
+        long timeout = tickets.timeout();
+        // timeout sorted the tickets, by order of execution
+        assertThat(timeout, is(10L));
+        assertThat(list.get(0), is(ticket10));
+        assertThat(list.get(1), is(ticket100));
+        assertThat(list.get(2), is(ticket1000));
+
+        ticket10.cancel();
+        // cancel did not touch the order
+        assertThat(list.get(0), is(ticket10));
+        assertThat(list.get(1), is(ticket100));
+        assertThat(list.get(2), is(ticket1000));
+
+        timeout = tickets.timeout();
+        // timeout resorted the tickets by order of execution
+        assertThat(timeout, is(100L));
+        assertThat(list.get(0), is(ticket100));
+        assertThat(list.get(1), is(ticket1000));
+        assertThat(list.get(2), is(ticket10));
+
+        int rc = tickets.execute();
+        // execute deleted the cancelled tickets
+        assertThat(rc, is(0));
+        assertThat(list.size(), is(2));
+        assertThat(list.get(0), is(ticket100));
+        assertThat(list.get(1), is(ticket1000));
+
+        ticket10 = tickets.add(10, handler, invoked);
+        assertThat(list.get(0), is(ticket100));
+        assertThat(list.get(1), is(ticket1000));
+        assertThat(list.get(2), is(ticket10));
+        ticket10.cancel();
+
+        rc = tickets.execute();
+        // execute deleted the cancelled tickets
+        assertThat(rc, is(0));
+        assertThat(list.size(), is(2));
+        assertThat(list.get(0), is(ticket100));
+        assertThat(list.get(1), is(ticket1000));
+    }
+
+    @Test
     public void testCancel()
     {
         long fullTimeout = 50;
@@ -257,7 +308,12 @@ public class ZTicketTest
         }
         long end = System.currentTimeMillis();
         long elapsed = end - start;
-        System.out.println(String.format("ZTicket Add: %s millisec spent on %s iterations: %s microsecs", elapsed, max, 1000 * elapsed / ((double) max)));
+        System.out.println(
+                           String.format(
+                                         "ZTicket Add: %s millisec spent on %s iterations: %s microsecs",
+                                         elapsed,
+                                         max,
+                                         1000 * elapsed / ((double) max)));
 
         start = System.currentTimeMillis();
         long timeout = this.tickets.timeout();
@@ -279,7 +335,12 @@ public class ZTicketTest
         }
         end = System.currentTimeMillis();
         elapsed = end - start;
-        System.out.println(String.format("ZTicket Reset: %s millisec spent on %s iterations: %s microsecs", elapsed, max, 1000 * elapsed / ((double) max)));
+        System.out.println(
+                           String.format(
+                                         "ZTicket Reset: %s millisec spent on %s iterations: %s microsecs",
+                                         elapsed,
+                                         max,
+                                         1000 * elapsed / ((double) max)));
 
         start = System.currentTimeMillis();
         for (Ticket t : tickets) {
@@ -287,6 +348,11 @@ public class ZTicketTest
         }
         end = System.currentTimeMillis();
         elapsed = end - start;
-        System.out.println(String.format("ZTicket Cancel: %s millisec spent on %s iterations: %s microsecs", elapsed, max, 1000 * elapsed / ((double) max)));
+        System.out.println(
+                           String.format(
+                                         "ZTicket Cancel: %s millisec spent on %s iterations: %s microsecs",
+                                         elapsed,
+                                         max,
+                                         1000 * elapsed / ((double) max)));
     }
 }
