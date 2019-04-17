@@ -305,9 +305,8 @@ public final class Poller extends PollerBase implements Runnable
 
     private void rebuildSelector()
     {
-        System.out.println(this + " rebuilding selector");
-        Selector newSelector = ctx.createSelector();
         Selector oldSelector = selector;
+        Selector newSelector = ctx.createSelector();
 
         selector = newSelector;
         retired = true;
