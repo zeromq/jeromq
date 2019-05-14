@@ -36,6 +36,9 @@ public class XPub extends SocketBase
     //  List of all subscriptions mapped to corresponding pipes.
     private final Mtrie subscriptions;
 
+    //  List of manual subscriptions mapped to corresponding pipes.
+    private final Mtrie manual_subscriptions;
+
     //  Distributor of messages holding the list of outbound pipes.
     private final Dist dist;
 
@@ -48,6 +51,15 @@ public class XPub extends SocketBase
 
     //  Drop messages if HWM reached, otherwise return with false
     private boolean lossy;
+
+    //  Subscriptions will not bed added automatically, only after calling set option with ZMQ_SUBSCRIBE or ZMQ_UNSUBSCRIBE
+    private boolean manual;
+
+    //  Last pipe that sent subscription message, only used if xpub is on manual
+    private Pipe lastPipe;
+
+    // Pipes that sent subscriptions messages that have not yet been processed, only used if xpub is on manual
+    private final Deque<Pipe> pendingPipes;
 
     //  List of pending (un)subscriptions, ie. those that were already
     //  applied to the trie, but not yet received by the user.
@@ -65,9 +77,13 @@ public class XPub extends SocketBase
         verbose = false;
         more = false;
         lossy = true;
+        manual = false;
 
         subscriptions = new Mtrie();
+        manual_subscriptions = new Mtrie();
         dist = new Dist();
+        lastPipe = null;
+        pendingPipes = new ArrayDeque<>();
         pendingData = new ArrayDeque<>();
         pendingFlags = new ArrayDeque<>();
     }
@@ -135,6 +151,9 @@ public class XPub extends SocketBase
         }
         else if (option == ZMQ.ZMQ_XPUB_NODROP) {
             lossy = !Options.parseBoolean(option, optval);
+        }
+        else if (option == ZMQ.ZMQ_XPUB_MANUAL) {
+            manual = Options.parseBoolean(option, optval);
         }
         else {
             errno.set(ZError.EINVAL);

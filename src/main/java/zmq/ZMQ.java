@@ -122,7 +122,7 @@ public class ZMQ
     public static final int ZMQ_SOCKS_PROXY              = 67;
     public static final int ZMQ_XPUB_NODROP              = 69;
     public static final int ZMQ_BLOCKY                   = 70;
-
+    public static final int ZMQ_XPUB_MANUAL              = 71;
     public static final int ZMQ_HEARTBEAT_IVL            = 75;
     public static final int ZMQ_HEARTBEAT_TTL            = 76;
     public static final int ZMQ_HEARTBEAT_TIMEOUT        = 77;
