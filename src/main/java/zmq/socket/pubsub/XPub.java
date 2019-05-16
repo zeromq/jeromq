@@ -133,7 +133,8 @@ public class XPub extends SocketBase
                 // Store manual subscription to use on termination
                 if (!subscribe) {
                     manualSubscriptions.rm(sub, pipe);
-                } else {
+                }
+                else {
                     manualSubscriptions.add(sub, pipe);
                 }
 
@@ -145,11 +146,13 @@ public class XPub extends SocketBase
                 //  different. Manually craft an old-style message instead.
                 pendingData.add(Blob.createBlob(sub));
                 pendingFlags.add(0);
-            } else {
+            }
+            else {
                 boolean notify;
                 if (!subscribe) {
                     notify = subscriptions.rm(sub, pipe) || verboseUnsubs;
-                } else {
+                }
+                else {
                     notify = subscriptions.add(sub, pipe) || verboseSubs;
                 }
 
@@ -189,12 +192,14 @@ public class XPub extends SocketBase
             else if (option == ZMQ.ZMQ_XPUB_MANUAL) {
                 manual = Options.parseBoolean(option, optval);
             }
-        } else if (option == ZMQ.ZMQ_SUBSCRIBE && manual) {
+        }
+        else if (option == ZMQ.ZMQ_SUBSCRIBE && manual) {
             if (null != lastPipe) {
                 String val = Options.parseString(option, optval);
                 subscriptions.add(new Msg(val.getBytes()), lastPipe);
             }
-        } else if (option == ZMQ.ZMQ_UNSUBSCRIBE && manual) {
+        }
+        else if (option == ZMQ.ZMQ_UNSUBSCRIBE && manual) {
             if (null != lastPipe) {
                 String val = Options.parseString(option, optval);
                 subscriptions.rm(new Msg(val.getBytes()), lastPipe);
@@ -215,7 +220,8 @@ public class XPub extends SocketBase
             manualSubscriptions.rm(pipe, sendUnsubscription, this);
 
             subscriptions.rm(pipe, (p, d, s, self)-> { }, this);
-        } else {
+        }
+        else {
             //  Remove the pipe from the trie. If there are topics that nobody
             //  is interested in anymore, send corresponding unsubscriptions
             //  upstream.

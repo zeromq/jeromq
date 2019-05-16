@@ -2345,15 +2345,18 @@ public class ZMQ
          * @param noDrop
          * @return true if the option was set, otherwise false.
          */
-        public boolean setXpubNoDrop(boolean noDrop) {
+        public boolean setXpubNoDrop(boolean noDrop)
+        {
             return setSocketOpt(zmq.ZMQ.ZMQ_XPUB_NODROP, noDrop);
         }
 
-        public boolean setXpubManual(boolean manual) {
+        public boolean setXpubManual(boolean manual)
+        {
             return setSocketOpt(zmq.ZMQ.ZMQ_XPUB_MANUAL, manual);
         }
 
-        public boolean setXpubVerboser(boolean verboser) {
+        public boolean setXpubVerboser(boolean verboser)
+        {
             return setSocketOpt(zmq.ZMQ.ZMQ_XPUB_VERBOSER, verboser);
         }
 
