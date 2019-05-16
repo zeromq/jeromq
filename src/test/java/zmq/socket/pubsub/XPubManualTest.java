@@ -1,8 +1,10 @@
 package zmq.socket.pubsub;
 
 import org.junit.Test;
-import zmq.*;
-
+import zmq.Ctx;
+import zmq.Msg;
+import zmq.SocketBase;
+import zmq.ZMQ;
 import java.io.IOException;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -48,17 +50,11 @@ public class XPubManualTest {
         rc = ZMQ.connect(subConnect2, "inproc://soname");
         assertThat(rc, is(true));
 
-
-
-
-
         Msg subMsg = ZMQ.recv(pubBind, ZMQ.ZMQ_DONTWAIT);
         ZMQ.setSocketOption(pubBind, ZMQ.ZMQ_SUBSCRIBE, subMsg.data());
 
         subMsg = ZMQ.recv(pubBind, ZMQ.ZMQ_DONTWAIT);
         ZMQ.setSocketOption(pubBind, ZMQ.ZMQ_SUBSCRIBE, subMsg.data());
-
-
 
         int hwmlimit = hwm - 1;
         int sendCount = 0;

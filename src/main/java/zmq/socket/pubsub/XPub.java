@@ -3,7 +3,6 @@ package zmq.socket.pubsub;
 import java.util.ArrayDeque;
 import java.util.Deque;
 
-import jdk.nashorn.internal.runtime.regexp.joni.constants.OPCode;
 import zmq.Ctx;
 import zmq.Msg;
 import zmq.Options;
@@ -180,7 +179,7 @@ public class XPub extends SocketBase
                 verboseSubs = Options.parseBoolean(option, optval);
                 verboseUnsubs = false;
             }
-            else if(option == ZMQ.ZMQ_XPUB_VERBOSER) {
+            else if (option == ZMQ.ZMQ_XPUB_VERBOSER) {
                 verboseSubs = Options.parseBoolean(option, optval);
                 verboseUnsubs = verboseSubs;
             }
