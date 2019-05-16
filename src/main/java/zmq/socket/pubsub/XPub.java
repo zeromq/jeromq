@@ -36,18 +36,34 @@ public class XPub extends SocketBase
     //  List of all subscriptions mapped to corresponding pipes.
     private final Mtrie subscriptions;
 
+    //  List of manual subscriptions mapped to corresponding pipes.
+    private final Mtrie manualSubscriptions;
+
     //  Distributor of messages holding the list of outbound pipes.
     private final Dist dist;
 
     // If true, send all subscription messages upstream, not just
     // unique ones
-    private boolean verbose;
+    private boolean verboseSubs;
+
+    // If true, send all unsubscription messages upstream, not just
+    // unique ones
+    private boolean verboseUnsubs;
 
     //  True if we are in the middle of sending a multi-part message.
     private boolean more;
 
     //  Drop messages if HWM reached, otherwise return with false
     private boolean lossy;
+
+    //  Subscriptions will not bed added automatically, only after calling set option with ZMQ_SUBSCRIBE or ZMQ_UNSUBSCRIBE
+    private boolean manual;
+
+    //  Last pipe that sent subscription message, only used if xpub is on manual
+    private Pipe lastPipe;
+
+    // Pipes that sent subscriptions messages that have not yet been processed, only used if xpub is on manual
+    private final Deque<Pipe> pendingPipes;
 
     //  List of pending (un)subscriptions, ie. those that were already
     //  applied to the trie, but not yet received by the user.
@@ -62,12 +78,17 @@ public class XPub extends SocketBase
         super(parent, tid, sid);
 
         options.type = ZMQ.ZMQ_XPUB;
-        verbose = false;
+        verboseSubs = false;
+        verboseUnsubs = false;
         more = false;
         lossy = true;
+        manual = false;
 
         subscriptions = new Mtrie();
+        manualSubscriptions = new Mtrie();
         dist = new Dist();
+        lastPipe = null;
+        pendingPipes = new ArrayDeque<>();
         pendingData = new ArrayDeque<>();
         pendingFlags = new ArrayDeque<>();
     }
@@ -96,27 +117,52 @@ public class XPub extends SocketBase
         Msg sub;
         while ((sub = pipe.read()) != null) {
             //  Apply the subscription to the trie
+            boolean subscribe = false;
             int size = sub.size();
             if (size > 0 && (sub.get(0) == 0 || sub.get(0) == 1)) {
-                boolean unique;
-                if (sub.get(0) == 0) {
-                    unique = subscriptions.rm(sub, pipe);
-                }
-                else {
-                    unique = subscriptions.add(sub, pipe);
-                }
-
-                //  If the subscription is not a duplicate, store it so that it can be
-                //  passed to used on next recv call. (Unsubscribe is not verbose.)
-                if (options.type == ZMQ.ZMQ_XPUB && (unique || (sub.get(0) > 0 && verbose))) {
-                    pendingData.add(Blob.createBlob(sub));
-                    pendingFlags.add(0);
-                }
+                subscribe = sub.get(0) == 1;
             }
             else {
                 //  Process user message coming upstream from xsub socket
                 pendingData.add(Blob.createBlob(sub));
                 pendingFlags.add(sub.flags());
+                continue;
+            }
+
+            if (manual) {
+                // Store manual subscription to use on termination
+                if (!subscribe) {
+                    manualSubscriptions.rm(sub, pipe);
+                }
+                else {
+                    manualSubscriptions.add(sub, pipe);
+                }
+
+                pendingPipes.add(pipe);
+
+                //  ZMTP 3.1 hack: we need to support sub/cancel commands, but
+                //  we can't give them back to userspace as it would be an API
+                //  breakage since the payload of the message is completely
+                //  different. Manually craft an old-style message instead.
+                pendingData.add(Blob.createBlob(sub));
+                pendingFlags.add(0);
+            }
+            else {
+                boolean notify;
+                if (!subscribe) {
+                    notify = subscriptions.rm(sub, pipe) || verboseUnsubs;
+                }
+                else {
+                    notify = subscriptions.add(sub, pipe) || verboseSubs;
+                }
+
+                //  If the request was a new subscription, or the subscription
+                //  was removed, or verbose mode is enabled, store it so that
+                //  it can be passed to the user on next recv call.
+                if (options.type == ZMQ.ZMQ_XPUB && notify) {
+                    pendingData.add(Blob.createBlob(sub));
+                    pendingFlags.add(0);
+                }
             }
         }
     }
@@ -130,11 +176,34 @@ public class XPub extends SocketBase
     @Override
     public boolean xsetsockopt(int option, Object optval)
     {
-        if (option == ZMQ.ZMQ_XPUB_VERBOSE) {
-            verbose = Options.parseBoolean(option, optval);
+        if (option == ZMQ.ZMQ_XPUB_VERBOSE || option == ZMQ.ZMQ_XPUB_VERBOSER
+                || option == ZMQ.ZMQ_XPUB_NODROP || option == ZMQ.ZMQ_XPUB_MANUAL) {
+            if (option == ZMQ.ZMQ_XPUB_VERBOSE) {
+                verboseSubs = Options.parseBoolean(option, optval);
+                verboseUnsubs = false;
+            }
+            else if (option == ZMQ.ZMQ_XPUB_VERBOSER) {
+                verboseSubs = Options.parseBoolean(option, optval);
+                verboseUnsubs = verboseSubs;
+            }
+            else if (option == ZMQ.ZMQ_XPUB_NODROP) {
+                lossy = !Options.parseBoolean(option, optval);
+            }
+            else if (option == ZMQ.ZMQ_XPUB_MANUAL) {
+                manual = Options.parseBoolean(option, optval);
+            }
         }
-        else if (option == ZMQ.ZMQ_XPUB_NODROP) {
-            lossy = !Options.parseBoolean(option, optval);
+        else if (option == ZMQ.ZMQ_SUBSCRIBE && manual) {
+            if (null != lastPipe) {
+                String val = Options.parseString(option, optval);
+                subscriptions.add(new Msg(val.getBytes()), lastPipe);
+            }
+        }
+        else if (option == ZMQ.ZMQ_UNSUBSCRIBE && manual) {
+            if (null != lastPipe) {
+                String val = Options.parseString(option, optval);
+                subscriptions.rm(new Msg(val.getBytes()), lastPipe);
+            }
         }
         else {
             errno.set(ZError.EINVAL);
@@ -147,11 +216,18 @@ public class XPub extends SocketBase
     @Override
     protected void xpipeTerminated(Pipe pipe)
     {
-        //  Remove the pipe from the trie. If there are topics that nobody
-        //  is interested in anymore, send corresponding unsubscriptions
-        //  upstream.
+        if (manual) {
+            manualSubscriptions.rm(pipe, sendUnsubscription, this);
 
-        subscriptions.rm(pipe, sendUnsubscription, this);
+            subscriptions.rm(pipe, (p, d, s, self)-> { }, this);
+        }
+        else {
+            //  Remove the pipe from the trie. If there are topics that nobody
+            //  is interested in anymore, send corresponding unsubscriptions
+            //  upstream.
+
+            subscriptions.rm(pipe, sendUnsubscription, this);
+        }
 
         dist.terminated(pipe);
     }
@@ -206,6 +282,11 @@ public class XPub extends SocketBase
             return null;
         }
 
+        // User is reading a message, set lastPipe and remove it from the deque
+        if (manual && !pendingPipes.isEmpty()) {
+            lastPipe = pendingPipes.pollFirst();
+        }
+
         Blob first = pendingData.pollFirst();
         Msg msg = new Msg(first.data());
         int flags = pendingFlags.pollFirst();
@@ -229,6 +310,11 @@ public class XPub extends SocketBase
             System.arraycopy(data, 0, unsub, 1, size);
             pendingData.add(Blob.createBlob(unsub));
             pendingFlags.add(0);
+
+            if (manual) {
+                lastPipe = null;
+                pendingPipes.clear();
+            }
         }
     }
 }
