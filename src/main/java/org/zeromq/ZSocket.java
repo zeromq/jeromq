@@ -49,6 +49,18 @@ public class ZSocket implements AutoCloseable
      *
      * @return the socket's type.
      */
+    public SocketType getSocketType()
+    {
+        return SocketType.type(getType());
+    }
+
+    /**
+     * Retrieve the socket type for the current 'socket'. The socket type is specified at socket
+     * creation time and cannot be modified afterwards.
+     *
+     * @see ZSocket#getSocketType()
+     * @return the socket's type.
+     */
     public int getType()
     {
         return (int) getOption(ZMQ.ZMQ_TYPE);
