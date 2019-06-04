@@ -149,8 +149,8 @@ public class TestPushPullThreadedTcp
     public void testIssue338() throws InterruptedException, IOException
     {
         try (
-             final ZSocket pull = new ZSocket(ZMQ.PULL);
-             final ZSocket push = new ZSocket(ZMQ.PUSH)) {
+             final ZSocket pull = new ZSocket(SocketType.PULL);
+             final ZSocket push = new ZSocket(SocketType.PUSH)) {
             final String host = "tcp://localhost:" + Utils.findOpenPort();
             pull.bind(host);
             push.connect(host);
