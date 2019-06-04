@@ -34,6 +34,16 @@ public class ZSocket implements AutoCloseable
     }
 
     /**
+     * Create a ZeroMQ socket
+     *
+     * @param socketType ZeroMQ Socket type
+     */
+    public ZSocket(final SocketType socketType)
+    {
+        this(socketType.type());
+    }
+
+    /**
      * Retrieve the socket type for the current 'socket'. The socket type is specified at socket
      * creation time and cannot be modified afterwards.
      *
