@@ -14,8 +14,8 @@ public class ZSocketTest
         int port = Utils.findOpenPort();
 
         try (
-             final ZSocket pull = new ZSocket(ZMQ.PULL);
-             final ZSocket push = new ZSocket(ZMQ.PUSH)) {
+             final ZSocket pull = new ZSocket(SocketType.PULL);
+             final ZSocket push = new ZSocket(SocketType.PUSH)) {
             pull.bind("tcp://*:" + port);
             push.connect("tcp://127.0.0.1:" + port);
 
@@ -24,6 +24,10 @@ public class ZSocketTest
             final String actual = pull.receiveStringUtf8();
 
             assertEquals(expected, actual);
+            assertEquals(SocketType.PULL, pull.getSocketType());
+            assertEquals(ZMQ.PULL, pull.getType());
+            assertEquals(SocketType.PUSH, push.getSocketType());
+            assertEquals(ZMQ.PUSH, push.getType());
         }
     }
 }
