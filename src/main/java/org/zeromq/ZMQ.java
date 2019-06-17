@@ -3633,7 +3633,7 @@ public class ZMQ
             selector = context.selector();
             assert (selector != null);
 
-            items = new LinkedList<>();
+            items = new ArrayList<>(size);
             timeout = -1L;
         }
 
@@ -3827,8 +3827,10 @@ public class ZMQ
         /**
          * Get the index for the next position in the poll set size.
          *
+         * @deprecated use getSize instead
          * @return the index for the next position in the poll set size.
          */
+        @Deprecated
         public int getNext()
         {
             return items.size();
