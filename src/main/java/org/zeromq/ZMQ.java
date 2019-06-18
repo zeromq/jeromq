@@ -6,10 +6,10 @@ import java.nio.channels.SelectableChannel;
 import java.nio.channels.Selector;
 import java.nio.charset.Charset;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -3633,7 +3633,7 @@ public class ZMQ
             selector = context.selector();
             assert (selector != null);
 
-            items = new LinkedList<>();
+            items = new ArrayList<>(size);
             timeout = -1L;
         }
 
@@ -3827,8 +3827,10 @@ public class ZMQ
         /**
          * Get the index for the next position in the poll set size.
          *
+         * @deprecated use getSize instead
          * @return the index for the next position in the poll set size.
          */
+        @Deprecated
         public int getNext()
         {
             return items.size();
