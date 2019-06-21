@@ -7,6 +7,7 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
@@ -476,5 +477,45 @@ public class TestZPoller
         pipe.sink().write(ByteBuffer.wrap(new byte[] { 1, 2, 3 }));
 
         return pipe;
+    }
+
+    @Test
+    public void testIssue729() throws InterruptedException, IOException
+    {
+        int port = Utils.findOpenPort();
+        ZContext ctx = new ZContext();
+        Socket sub = ctx.createSocket(SocketType.SUB);
+        Socket pub = ctx.createSocket(SocketType.PUB);
+        sub.bind("tcp://127.0.0.1:" + port);
+        pub.connect("tcp://127.0.0.1:" + port);
+        boolean subscribe = sub.subscribe("");
+        assertTrue("SUB Socket could not subscribe", subscribe);
+        Thread.sleep(1000);
+        ZPoller zPoller = new ZPoller(ctx);
+        zPoller.register(new ZPoller.ZPollItem(sub, null, ZPoller.POLLIN));
+
+        Thread server = new Thread(new Runnable()
+        {
+            @Override
+            public void run()
+            {
+                while (true) {
+                    pub.send("hello");
+                    try {
+                        Thread.sleep(100);
+                    }
+                    catch (InterruptedException ignored) {
+                    }
+                }
+            }
+        });
+        server.start();
+        int rc = zPoller.poll(-1);
+        server.interrupt();
+        assertThat("ZPoller does not understand SUB socket signaled", rc, is(1));
+        boolean pollin = zPoller.pollin(sub);
+        assertTrue(pollin);
+        String hello = sub.recvStr();
+        assertThat("recieved message are not identical to what has been sent", hello, is("hello"));
     }
 }
