@@ -490,7 +490,6 @@ public class TestZPoller
         pub.connect("tcp://127.0.0.1:" + port);
         boolean subscribe = sub.subscribe("");
         assertTrue("SUB Socket could not subscribe", subscribe);
-        Thread.sleep(1000);
         ZPoller zPoller = new ZPoller(ctx);
         zPoller.register(new ZPoller.ZPollItem(sub, null, ZPoller.POLLIN));
 
