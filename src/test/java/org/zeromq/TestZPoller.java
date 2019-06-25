@@ -518,7 +518,8 @@ public class TestZPoller
             assertTrue(pollin);
             String hello = sub.recvStr();
             assertThat("recieved message are not identical to what has been sent", hello, is("hello"));
-        } finally {
+        }
+        finally {
             zPoller.close();
             ctx.close();
         }
