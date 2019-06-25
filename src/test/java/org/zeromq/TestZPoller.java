@@ -491,30 +491,36 @@ public class TestZPoller
         boolean subscribe = sub.subscribe("");
         assertTrue("SUB Socket could not subscribe", subscribe);
         ZPoller zPoller = new ZPoller(ctx);
-        zPoller.register(new ZPoller.ZPollItem(sub, null, ZPoller.POLLIN));
 
-        Thread server = new Thread(new Runnable()
-        {
-            @Override
-            public void run()
+        try {
+            zPoller.register(new ZPoller.ZPollItem(sub, null, ZPoller.POLLIN));
+
+            Thread server = new Thread(new Runnable()
             {
-                while (true) {
-                    pub.send("hello");
-                    try {
-                        Thread.sleep(100);
-                    }
-                    catch (InterruptedException ignored) {
+                @Override
+                public void run()
+                {
+                    while (true) {
+                        pub.send("hello");
+                        try {
+                            Thread.sleep(100);
+                        }
+                        catch (InterruptedException ignored) {
+                        }
                     }
                 }
-            }
-        });
-        server.start();
-        int rc = zPoller.poll(-1);
-        server.interrupt();
-        assertThat("ZPoller does not understand SUB socket signaled", rc, is(1));
-        boolean pollin = zPoller.pollin(sub);
-        assertTrue(pollin);
-        String hello = sub.recvStr();
-        assertThat("recieved message are not identical to what has been sent", hello, is("hello"));
+            });
+            server.start();
+            int rc = zPoller.poll(-1);
+            server.interrupt();
+            assertThat("ZPoller does not understand SUB socket signaled", rc, is(1));
+            boolean pollin = zPoller.pollin(sub);
+            assertTrue(pollin);
+            String hello = sub.recvStr();
+            assertThat("recieved message are not identical to what has been sent", hello, is("hello"));
+        } finally {
+            zPoller.close();
+            ctx.close();
+        }
     }
 }
