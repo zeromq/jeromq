@@ -152,7 +152,7 @@ public class mdbroker
      */
     private void destroy()
     {
-        Worker[] deleteList = workers.entrySet().toArray(new Worker[0]);
+        Worker[] deleteList = workers.values().toArray(new Worker[0]);
         for (Worker worker : deleteList) {
             deleteWorker(worker, true);
         }

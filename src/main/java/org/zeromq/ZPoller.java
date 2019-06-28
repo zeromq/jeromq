@@ -320,16 +320,13 @@ public class ZPoller implements Closeable
             boolean first = true;
             for (ItemHolder holder : holders) {
                 if (holder.item().hasEvent(events)) {
+                    if (first) {
+                        first = false;
+                        has = true;
+                    }
                     EventsHandler handler = holder.handler() == null ? globalHandler : holder.handler();
                     if (handler != null) {
-                        boolean evts = handler.events(socket, events);
-                        if (first) {
-                            first = false;
-                            has = evts;
-                        }
-                        else {
-                            has &= evts;
-                        }
+                        has &= handler.events(socket, events);
                     }
                 }
             }

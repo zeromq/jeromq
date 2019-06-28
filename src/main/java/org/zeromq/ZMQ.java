@@ -6,9 +6,10 @@ import java.nio.channels.SelectableChannel;
 import java.nio.channels.Selector;
 import java.nio.charset.Charset;
 import java.util.HashMap;
-import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -3614,14 +3615,9 @@ public class ZMQ
         private final Selector selector;
         private final Context  context;
 
-        private PollItem[] items;
-        private int        next;
-        private int        used;
+        private List<PollItem> items;
 
         private long timeout;
-
-        // When socket is removed from polling, store free slots here
-        private final LinkedList<Integer> freeSlots;
 
         /**
          * Class constructor.
@@ -3637,11 +3633,8 @@ public class ZMQ
             selector = context.selector();
             assert (selector != null);
 
-            items = new PollItem[size];
+            items = new ArrayList<>(size);
             timeout = -1L;
-            next = 0;
-
-            freeSlots = new LinkedList<>();
         }
 
         /**
@@ -3733,25 +3726,8 @@ public class ZMQ
          */
         private int registerInternal(PollItem item)
         {
-            int pos;
-
-            if (!freeSlots.isEmpty()) {
-                // If there are free slots in our array, remove one
-                // from the free list and use it.
-                pos = freeSlots.remove();
-            }
-            else {
-                if (next >= items.length) {
-                    PollItem[] nitems = new PollItem[items.length + SIZE_INCREMENT];
-                    System.arraycopy(items, 0, nitems, 0, items.length);
-                    items = nitems;
-                }
-                pos = next++;
-            }
-
-            items[pos] = item;
-            used++;
-            return pos;
+          items.add(item);
+          return items.size() - 1;
         }
 
         /**
@@ -3781,20 +3757,7 @@ public class ZMQ
          */
         private void unregisterInternal(Object socket)
         {
-            for (int i = 0; i < next; ++i) {
-                PollItem item = items[i];
-                if (item == null) {
-                    continue;
-                }
-                if (item.socket == socket || item.getRawSocket() == socket) {
-                    items[i] = null;
-
-                    freeSlots.add(i);
-                    --used;
-
-                    break;
-                }
-            }
+          items.removeIf(item -> item.socket == socket || item.getRawSocket() == socket);
         }
 
         /**
@@ -3805,10 +3768,10 @@ public class ZMQ
          */
         public PollItem getItem(int index)
         {
-            if (index < 0 || index >= this.next) {
+            if (index < 0 || index >= items.size()) {
                 return null;
             }
-            return this.items[index];
+            return this.items.get(index);
         }
 
         /**
@@ -3819,10 +3782,10 @@ public class ZMQ
          */
         public Socket getSocket(int index)
         {
-            if (index < 0 || index >= this.next) {
+            if (index < 0 || index >= items.size()) {
                 return null;
             }
-            return items[index].socket;
+            return items.get(index).socket;
         }
 
         /**
@@ -3858,17 +3821,19 @@ public class ZMQ
          */
         public int getSize()
         {
-            return items.length;
+            return items.size();
         }
 
         /**
          * Get the index for the next position in the poll set size.
          *
+         * @deprecated use getSize instead
          * @return the index for the next position in the poll set size.
          */
+        @Deprecated
         public int getNext()
         {
-            return this.next;
+            return items.size();
         }
 
         /**
@@ -3906,18 +3871,18 @@ public class ZMQ
             if (tout < -1) {
                 return 0;
             }
-            if (items.length <= 0 || next <= 0) {
+            if (items.isEmpty()) {
                 return 0;
             }
-            zmq.poll.PollItem[] pollItems = new zmq.poll.PollItem[used];
-            for (int i = 0, j = 0; i < next; i++) {
-                if (items[i] != null) {
-                    pollItems[j++] = items[i].base;
+            zmq.poll.PollItem[] pollItems = new zmq.poll.PollItem[items.size()];
+            for (int i = 0, j = 0; i < items.size(); i++) {
+                if (items.get(i) != null) {
+                    pollItems[j++] = items.get(i).base;
                 }
             }
 
             try {
-                return zmq.ZMQ.poll(selector, pollItems, used, tout);
+                return zmq.ZMQ.poll(selector, pollItems, items.size(), tout);
             }
             catch (ZError.IOException e) {
                 if (context.isTerminated()) {
@@ -3932,46 +3897,46 @@ public class ZMQ
         /**
          * Check whether the specified element in the poll set was signaled for input.
          *
-         * @param index
+         * @param index of element
          * @return true if the element was signaled.
          */
         public boolean pollin(int index)
         {
-            if (index < 0 || index >= this.next) {
+            if (index < 0 || index >= items.size()) {
                 return false;
             }
 
-            return items[index].isReadable();
+            return items.get(index).isReadable();
         }
 
         /**
          * Check whether the specified element in the poll set was signaled for output.
          *
-         * @param index
+         * @param index of element
          * @return true if the element was signaled.
          */
         public boolean pollout(int index)
         {
-            if (index < 0 || index >= this.next) {
+            if (index < 0 || index >= items.size()) {
                 return false;
             }
 
-            return items[index].isWritable();
+            return items.get(index).isWritable();
         }
 
         /**
          * Check whether the specified element in the poll set was signaled for error.
          *
-         * @param index
+         * @param index of element
          * @return true if the element was signaled.
          */
         public boolean pollerr(int index)
         {
-            if (index < 0 || index >= this.next) {
+            if (index < 0 || index >= items.size()) {
                 return false;
             }
 
-            return items[index].isError();
+            return items.get(index).isError();
         }
     }
 
