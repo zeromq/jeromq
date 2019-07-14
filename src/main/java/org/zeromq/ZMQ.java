@@ -3758,7 +3758,7 @@ public class ZMQ
          */
         private void unregisterInternal(Object socket)
         {
-            for (Iterator<PollItem> it = items.iterator(); it.hasNext();) {
+            for (Iterator<PollItem> it = items.iterator(); it.hasNext(); ) {
                 PollItem item = it.next();
                 if (item.socket == socket || item.getRawSocket() == socket) {
                     it.remove();
