@@ -228,7 +228,8 @@ public class Msg
             if (buf.arrayOffset() == 0 && array.length == size) {
                 // If the backing array is exactly what we need, return it without copy.
                 return array;
-            } else {
+            }
+            else {
                 // Else use it to make an efficient copy.
                 return Arrays.copyOfRange(array, offset, offset + size);
             }
@@ -355,7 +356,8 @@ public class Msg
 
         if (buf.hasArray()) {
             System.arraycopy(buf.array(), buf.arrayOffset() + index, dst, off, count);
-        } else {
+        }
+        else {
             ByteBuffer dup = buf.duplicate();
             dup.position(index);
             dup.get(dst, off, count);

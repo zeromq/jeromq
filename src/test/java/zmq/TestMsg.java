@@ -148,7 +148,8 @@ public class TestMsg
     // Check that data returned by Msg#getBytes(int, byte[], int, int) and Msg#get(int) are
     // consistent.
     @Test
-    public void testGetBytesSameAsGet() {
+    public void testGetBytesSameAsGet()
+    {
         Msg msg1 = new Msg(new byte[] {42});
         Msg msg2 = new Msg(msg1);
 
@@ -164,7 +165,8 @@ public class TestMsg
 
     // Check that Msg#data() is correct when the backing array has an offset.
     @Test
-    public void testDataNonZeroOffset() {
+    public void testDataNonZeroOffset()
+    {
         byte[] data = new byte[]{10, 11, 12};
 
         ByteBuffer buffer = ByteBuffer.wrap(data, 1, 2).slice();
@@ -175,7 +177,8 @@ public class TestMsg
 
     // Check that Msg#data() is correct when the end of the backing array is not used by the buffer.
     @Test
-    public void testDataArrayExtendsFurther() {
+    public void testDataArrayExtendsFurther()
+    {
         byte[] data = new byte[]{10, 11, 12};
 
         ByteBuffer buffer = ByteBuffer.wrap(data, 0, 2).slice();
@@ -187,7 +190,8 @@ public class TestMsg
     // Check that data returned by Msg#getBytes(int, byte[], int, int) is correct when the backing
     // array has an offset.
     @Test
-    public void testGetBytesNonZeroOffset() {
+    public void testGetBytesNonZeroOffset()
+    {
         byte[] data = new byte[]{10, 11, 12};
 
         ByteBuffer buffer = ByteBuffer.wrap(data, 1, 2).slice();
@@ -202,7 +206,8 @@ public class TestMsg
     // Check that data returned by Msg#getBytes(int, byte[], int, int) is correct when the end of
     // the backing array is not used by the buffer.
     @Test
-    public void testGetBytesArrayExtendsFurther() {
+    public void testGetBytesArrayExtendsFurther()
+    {
         byte[] data = new byte[]{10, 11, 12};
 
         ByteBuffer buffer = ByteBuffer.wrap(data, 0, 2).slice();
@@ -216,7 +221,8 @@ public class TestMsg
 
     // Check that Msg#data() doesn't make unnecessary copies.
     @Test
-    public void testDataNoCopy() {
+    public void testDataNoCopy()
+    {
         byte[] data = new byte[]{10, 11, 12};
 
         Msg msg = new Msg(data);
