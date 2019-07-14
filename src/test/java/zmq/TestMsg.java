@@ -1,6 +1,7 @@
 package zmq;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.junit.Assert.assertThat;
 
 import java.nio.ByteBuffer;
@@ -142,5 +143,90 @@ public class TestMsg
         buffer.position(0);
         final Msg msg = new Msg(buffer);
         return msg;
+    }
+
+    // Check that data returned by Msg#getBytes(int, byte[], int, int) and Msg#get(int) are
+    // consistent.
+    @Test
+    public void testGetBytesSameAsGet()
+    {
+        Msg msg1 = new Msg(new byte[] {42});
+        Msg msg2 = new Msg(msg1);
+
+        msg2.put(5);
+
+        byte firstByte = msg2.get(0);
+
+        byte[] data = new byte[1];
+        msg2.getBytes(0, data, 0, 1);
+
+        assertThat(data[0], is(firstByte));
+    }
+
+    // Check that Msg#data() is correct when the backing array has an offset.
+    @Test
+    public void testDataNonZeroOffset()
+    {
+        byte[] data = new byte[]{10, 11, 12};
+
+        ByteBuffer buffer = ByteBuffer.wrap(data, 1, 2).slice();
+        Msg msg = new Msg(buffer);
+
+        assertThat(msg.data(), is(new byte[]{11, 12}));
+    }
+
+    // Check that Msg#data() is correct when the end of the backing array is not used by the buffer.
+    @Test
+    public void testDataArrayExtendsFurther()
+    {
+        byte[] data = new byte[]{10, 11, 12};
+
+        ByteBuffer buffer = ByteBuffer.wrap(data, 0, 2).slice();
+        Msg msg = new Msg(buffer);
+
+        assertThat(msg.data(), is(new byte[]{10, 11}));
+    }
+
+    // Check that data returned by Msg#getBytes(int, byte[], int, int) is correct when the backing
+    // array has an offset.
+    @Test
+    public void testGetBytesNonZeroOffset()
+    {
+        byte[] data = new byte[]{10, 11, 12};
+
+        ByteBuffer buffer = ByteBuffer.wrap(data, 1, 2).slice();
+        Msg msg = new Msg(buffer);
+
+        byte[] gotData = new byte[2];
+        msg.getBytes(0, gotData, 0, 2);
+
+        assertThat(msg.data(), is(new byte[]{11, 12}));
+    }
+
+    // Check that data returned by Msg#getBytes(int, byte[], int, int) is correct when the end of
+    // the backing array is not used by the buffer.
+    @Test
+    public void testGetBytesArrayExtendsFurther()
+    {
+        byte[] data = new byte[]{10, 11, 12};
+
+        ByteBuffer buffer = ByteBuffer.wrap(data, 0, 2).slice();
+        Msg msg = new Msg(buffer);
+
+        byte[] gotData = new byte[2];
+        msg.getBytes(0, gotData, 0, 2);
+
+        assertThat(msg.data(), is(new byte[]{10, 11}));
+    }
+
+    // Check that Msg#data() doesn't make unnecessary copies.
+    @Test
+    public void testDataNoCopy()
+    {
+        byte[] data = new byte[]{10, 11, 12};
+
+        Msg msg = new Msg(data);
+
+        assertThat(msg.data(), sameInstance(data));
     }
 }
