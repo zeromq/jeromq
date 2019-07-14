@@ -6,6 +6,7 @@ import java.nio.channels.SelectableChannel;
 import java.nio.channels.Selector;
 import java.nio.charset.Charset;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -3757,7 +3758,12 @@ public class ZMQ
          */
         private void unregisterInternal(Object socket)
         {
-          items.removeIf(item -> item.socket == socket || item.getRawSocket() == socket);
+            for (Iterator<PollItem> it = items.iterator(); it.hasNext();) {
+                PollItem item = it.next();
+                if (item.socket == socket || item.getRawSocket() == socket) {
+                    it.remove();
+                }
+            }
         }
 
         /**
