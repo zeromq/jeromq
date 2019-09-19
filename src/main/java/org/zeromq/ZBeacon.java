@@ -28,6 +28,8 @@ public class ZBeacon
     private final AtomicReference<byte[]>   beacon            = new AtomicReference<>(new byte[0]);
     private final AtomicLong                broadcastInterval = new AtomicLong(DEFAULT_BROADCAST_INTERVAL);
     private final AtomicReference<Listener> listener          = new AtomicReference<>();
+    private AtomicReference<Thread.UncaughtExceptionHandler> clientHandler = new AtomicReference<>();
+    private AtomicReference<Thread.UncaughtExceptionHandler> serverHandler = new AtomicReference<>();
 
     public ZBeacon(int port, byte[] beacon)
     {
@@ -122,27 +124,38 @@ public class ZBeacon
     public void setUncaughtExceptionHandlers(Thread.UncaughtExceptionHandler clientHandler,
                                              Thread.UncaughtExceptionHandler serverHandler)
     {
-        broadcastClient.thread.setUncaughtExceptionHandler(clientHandler);
-        broadcastServer.thread.setUncaughtExceptionHandler(serverHandler);
+        this.clientHandler.set(clientHandler);
+        this.serverHandler.set(serverHandler);
     }
 
     public void startClient()
     {
-        if (!broadcastClient.isRunning) {
+        if (!broadcastClient.isRunning)
+        {
             if (broadcastClient.thread == null)
+            {
                 broadcastClient.thread = new Thread(broadcastClient);
-            broadcastClient.thread.setDaemon(true);
+                broadcastClient.thread.setName("ZBeacon Client Thread");
+                broadcastClient.thread.setDaemon(true);
+                broadcastClient.thread.setUncaughtExceptionHandler(clientHandler.get());
+            }
             broadcastClient.thread.start();
         }
     }
 
     public void startServer()
     {
-        if (!broadcastServer.isRunning) {
-            if (listener.get() != null) {
+        if (!broadcastServer.isRunning)
+        {
+            if (listener.get() != null)
+            {
                 if (broadcastServer.thread == null)
+                {
                     broadcastServer.thread = new Thread(broadcastServer);
-                broadcastServer.thread.setDaemon(true);
+                    broadcastServer.thread.setName("ZBeacon Server Thread");
+                    broadcastServer.thread.setDaemon(true);
+                    broadcastServer.thread.setUncaughtExceptionHandler(serverHandler.get());
+                }
                 broadcastServer.thread.start();
             }
         }
