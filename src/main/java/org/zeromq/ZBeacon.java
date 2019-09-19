@@ -51,15 +51,15 @@ public class ZBeacon
         this(host, DEFAULT_BROADCAST_ADDRESS, port, beacon, DEFAULT_BROADCAST_INTERVAL, ignoreLocalAddress, blocking);
     }
 
-    public ZBeacon(String host, byte[] serverAddress, int port, byte[] beacon, long broadcastInterval, boolean ignoreLocalAddress, boolean blocking)
+    public ZBeacon(String broadcastAddress, byte[] serverAddress, int port, byte[] beacon, long broadcastInterval, boolean ignoreLocalAddress, boolean blocking)
     {
-        Objects.requireNonNull(host, "Host cannot be null");
+        Objects.requireNonNull(broadcastAddress, "Host cannot be null");
         Objects.requireNonNull(serverAddress, "Server address cannot be null");
         Objects.requireNonNull(beacon, "Beacon cannot be null");
         this.broadcastInterval.set(broadcastInterval);
         this.beacon.set(beacon);
         broadcastServer = new BroadcastServer(serverAddress, port, ignoreLocalAddress, blocking);
-        broadcastClient = new BroadcastClient(host, port, this.broadcastInterval);
+        broadcastClient = new BroadcastClient(serverAddress, broadcastAddress, port, this.broadcastInterval);
     }
 
     public static class Builder
@@ -223,16 +223,18 @@ public class ZBeacon
     private class BroadcastClient implements Runnable
     {
         private DatagramChannel         broadcastChannel;
-        private final InetSocketAddress broadcastInetSocketAddress;
+        private final InetSocketAddress broadcastAddress;
+        private final InetSocketAddress interfaceAddress;
         private final AtomicLong        broadcastInterval;
         private boolean                 isRunning;
         private Thread                  thread;
 
-        public BroadcastClient(String host, int port, AtomicLong broadcastInterval)
+        public BroadcastClient(byte[] interfaceAddress, String broadcastAddress, int port, AtomicLong broadcastInterval)
         {
             this.broadcastInterval = broadcastInterval;
             try {
-                broadcastInetSocketAddress = new InetSocketAddress(InetAddress.getByName(host), port);
+                this.broadcastAddress = new InetSocketAddress(InetAddress.getByName(broadcastAddress), port);
+                this.interfaceAddress = new InetSocketAddress(InetAddress.getByAddress(interfaceAddress), 0);
             }
             catch (UnknownHostException unknownHostException) {
                 throw new RuntimeException(unknownHostException);
@@ -245,10 +247,12 @@ public class ZBeacon
             try {
                 broadcastChannel = DatagramChannel.open();
                 broadcastChannel.socket().setBroadcast(true);
+                broadcastChannel.bind(interfaceAddress);
+
                 isRunning = true;
                 while (!thread.interrupted() && isRunning) {
                     try {
-                        broadcastChannel.send(ByteBuffer.wrap(beacon.get()), broadcastInetSocketAddress);
+                        broadcastChannel.send(ByteBuffer.wrap(beacon.get()), broadcastAddress);
                         Thread.sleep(broadcastInterval.get());
                     }
                     catch (InterruptedException | ClosedByInterruptException interruptedException) {
