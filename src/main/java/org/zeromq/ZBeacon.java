@@ -51,7 +51,7 @@ public class ZBeacon
         this(host, DEFAULT_BROADCAST_ADDRESS, port, beacon, DEFAULT_BROADCAST_INTERVAL, ignoreLocalAddress, blocking);
     }
 
-    private ZBeacon(String host, byte[] serverAddress, int port, byte[] beacon, long broadcastInterval, boolean ignoreLocalAddress, boolean blocking)
+    public ZBeacon(String host, byte[] serverAddress, int port, byte[] beacon, long broadcastInterval, boolean ignoreLocalAddress, boolean blocking)
     {
         Objects.requireNonNull(host, "Host cannot be null");
         Objects.requireNonNull(serverAddress, "Server address cannot be null");
