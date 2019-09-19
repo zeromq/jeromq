@@ -16,6 +16,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import org.zeromq.ZMQException;
+
 import zmq.io.IOThread;
 import zmq.pipe.Pipe;
 import zmq.socket.Sockets;
@@ -68,7 +70,7 @@ public class Ctx
     }
 
     //  Used to check whether the object is a context.
-    private int tag;
+    private boolean active;
 
     //  Sockets belonging to this context. We need the list so that
     //  we can notify the sockets when zmq_term() is called. The sockets
@@ -144,7 +146,7 @@ public class Ctx
 
     public Ctx()
     {
-        tag = 0xabadcafe;
+        active = true;
         terminating = false;
         reaper = null;
         slotCount = 0;
@@ -200,15 +202,25 @@ public class Ctx
         //  corresponding io_thread/socket objects.
         termMailbox.close();
 
-        tag = 0xdeadbeef;
+        active = false;
     }
 
-    //  Returns false if object is not a context.
-    //
-    //  This will also return false if terminate() has been called.
+    /**
+     * @return false if {@link #terminate()}terminate() has been called.
+     */
+    public boolean isActive()
+    {
+        return active;
+    }
+
+    /**
+     * @return false if {@link #terminate()}terminate() has been called.
+     * @deprecated use {@link #isActive()} instead
+     */
+    @Deprecated
     public boolean checkTag()
     {
-        return tag == 0xabadcafe;
+        return active;
     }
 
     //  This function is called when user invokes zmq_term. If there are
@@ -257,7 +269,7 @@ public class Ctx
             //  Wait till reaper thread closes all the sockets.
             Command cmd = termMailbox.recv(WAIT_FOREVER);
             if (cmd == null) {
-                throw new IllegalStateException();
+                throw new IllegalStateException(ZError.toString(errno.get()));
             }
             assert (cmd.type == Command.Type.DONE) : cmd;
 
@@ -383,7 +395,7 @@ public class Ctx
 
             //  If maxSockets limit was reached, return error.
             if (emptySlots.isEmpty()) {
-                throw new IllegalStateException("EMFILE");
+                throw new ZMQException(ZError.EMFILE);
             }
 
             //  Choose a slot for the socket.
@@ -709,7 +721,7 @@ public class Ctx
         // in waiting_for_delimiter state, which means no more writes can be done
         // and the identity write fails and causes an assert. Check if the socket
         // is open before sending.
-        if (pendingConnection.endpoint.options.recvIdentity && pendingConnection.endpoint.socket.checkTag()) {
+        if (pendingConnection.endpoint.options.recvIdentity && pendingConnection.endpoint.socket.isActive()) {
             Msg id = new Msg(bindOptions.identitySize);
             id.put(bindOptions.identity, 0, bindOptions.identitySize);
             id.setFlags(Msg.IDENTITY);

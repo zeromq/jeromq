@@ -12,6 +12,7 @@ import java.security.SecureRandom;
 
 import zmq.io.net.Address;
 import zmq.io.net.tcp.TcpUtils;
+import zmq.util.function.Supplier;
 
 public class Utils
 {
@@ -165,8 +166,13 @@ public class Utils
 
     public static void checkArgument(boolean expression, String errorMessage)
     {
+        checkArgument(expression, () -> errorMessage);
+    }
+
+    public static void checkArgument(boolean expression, Supplier<String> errorMessage)
+    {
         if (!expression) {
-            throw new IllegalArgumentException(errorMessage);
+            throw new IllegalArgumentException(errorMessage.get());
         }
     }
 }

@@ -9,7 +9,7 @@ import java.nio.channels.Pipe;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import zmq.util.Errno;
 import zmq.util.Utils;
@@ -28,8 +28,8 @@ final class Signaler implements Closeable
     private final ByteBuffer         rdummy = ByteBuffer.allocate(1);
 
     // Selector.selectNow at every sending message doesn't show enough performance
-    private final AtomicInteger wcursor = new AtomicInteger(0);
-    private int                 rcursor = 0;
+    private final AtomicLong wcursor = new AtomicLong(0);
+    private long             rcursor = 0;
 
     private final Errno errno;
     private final int   pid;
@@ -98,7 +98,6 @@ final class Signaler implements Closeable
                 nbytes = w.write(wdummy);
             }
             catch (IOException e) {
-                e.printStackTrace();
                 throw new ZError.IOException(e);
             }
             if (nbytes == 0) {
@@ -133,13 +132,20 @@ final class Signaler implements Closeable
                 rc = selector.select(timeout);
             }
         }
-        catch (ClosedSelectorException | IOException e) {
-            e.printStackTrace();
+        catch (ClosedSelectorException e) {
             errno.set(ZError.EINTR);
             return false;
         }
+        catch (IOException e) {
+            errno.set(ZError.exccode(e));
+            return false;
+        }
 
-        if (rc == 0) {
+        if (rc == 0 && timeout < 0 && ! selector.keys().isEmpty()) {
+            errno.set(ZError.EINTR);
+            return false;
+        }
+        else if (rc == 0) {
             errno.set(ZError.EAGAIN);
             return false;
         }
@@ -159,7 +165,6 @@ final class Signaler implements Closeable
                 nbytes = r.read(rdummy);
             }
             catch (ClosedChannelException e) {
-                e.printStackTrace();
                 errno.set(ZError.EINTR);
                 return;
             }

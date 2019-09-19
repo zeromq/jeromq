@@ -7,7 +7,7 @@ import java.util.Arrays;
 import org.zeromq.ZMQ.Socket;
 
 /**
- * First implementation of an agent for a remotely controlled background service for 0MQ.
+ * First implementation of an agent for a remotely controlled background service for ØMQ.
  * Used in conjunction with a ZStar, but not mandatory.
  *<p>
  * An agent is a mechanism allowing to send messages from one thread to another, and to receive messages from this other thread.
@@ -258,6 +258,7 @@ public interface ZAgent
          * Creates and opens a selector.
          *
          * @return the opened selector.
+         * @throws IOException
          */
         Selector create() throws IOException;
 
@@ -265,6 +266,7 @@ public interface ZAgent
          * Destroys the previously opened selector.
          *
          * @param selector the selector to close
+         * @throws IOException
          */
         void destroy(Selector selector) throws IOException;
     }

@@ -1,11 +1,15 @@
 package zmq.io.net.tcp;
 
+import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.UnknownHostException;
 
+import org.zeromq.ZMQException;
+
+import zmq.ZError;
 import zmq.io.net.Address;
 import zmq.io.net.ProtocolFamily;
 import zmq.io.net.StandardProtocolFamily;
@@ -77,9 +81,13 @@ public class TcpAddress implements Address.IZAddress
         }
     }
 
-    // This function enhances tcp_address_t::resolve() with ability to parse
-    // additional cidr-like(/xx) mask value at the end of the name string.
-    // Works only with remote hostnames.
+    /**
+     * @param name
+     * @param ipv6
+     * @param local ignored
+     * @return
+     * @see zmq.io.net.Address.IZAddress#resolve(java.lang.String, boolean, boolean)
+     */
     @Override
     public InetSocketAddress resolve(String name, boolean ipv6, boolean local)
     {
@@ -114,24 +122,41 @@ public class TcpAddress implements Address.IZAddress
 
         InetAddress addrNet = null;
 
+        // '*' as unspecified address is not accepted in Java
+        // '::' for IPv6 is accepted
         if (addrStr.equals("*")) {
-            addrStr = "0.0.0.0";
+            addrStr = ipv6 ? "::" : "0.0.0.0";
         }
+
         try {
-            for (InetAddress ia : InetAddress.getAllByName(addrStr)) {
-                if (ipv6 && !(ia instanceof Inet6Address)) {
-                    continue;
+            InetAddress[] addresses = InetAddress.getAllByName(addrStr);
+            if (ipv6) {
+                // prefer IPv6: return the first ipv6 or the first value if not found
+                for (InetAddress addr : addresses) {
+                    if (addr instanceof Inet6Address) {
+                        addrNet = addr;
+                        break;
+                    }
                 }
-                addrNet = ia;
-                break;
+                if (addrNet == null) {
+                    addrNet = addresses[0];
+                }
+            }
+            else {
+                for (InetAddress addr : addresses) {
+                    if (addr instanceof Inet4Address) {
+                        addrNet = addr;
+                        break;
+                    }
+                }
             }
         }
         catch (UnknownHostException e) {
-            throw new IllegalArgumentException(e);
+            throw new ZMQException(e.getMessage(), ZError.EADDRNOTAVAIL, e);
         }
 
         if (addrNet == null) {
-            throw new IllegalArgumentException(name);
+            throw new ZMQException(addrStr + " not found matching IPv4/IPv6 settings", ZError.EADDRNOTAVAIL);
         }
 
         return new InetSocketAddress(addrNet, port);

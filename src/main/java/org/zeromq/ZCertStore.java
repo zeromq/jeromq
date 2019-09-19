@@ -25,8 +25,7 @@ import org.zeromq.util.ZMetadata;
     certificate stores, and lets you easily load them from disk, and check
     if a given client public key is known or not. The {@link org.zeromq.ZCert} class does the
     work of managing a single certificate.
-<p/>
- * Those files need to be in ZMP-Format which is created by {@link org.zeromq.ZConfig}
+ * <p>Those files need to be in ZMP-Format which is created by {@link org.zeromq.ZConfig}</p>
  */
 public class ZCertStore
 {
@@ -187,6 +186,7 @@ public class ZCertStore
     /**
      * check if a z85-based public key is in the certificate store.
      * This method will scan the folder for changes on every call
+     * @param publicKey
      */
     public boolean containsPublicKey(String publicKey)
     {

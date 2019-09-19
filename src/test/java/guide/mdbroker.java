@@ -152,7 +152,7 @@ public class mdbroker
      */
     private void destroy()
     {
-        Worker[] deleteList = workers.entrySet().toArray(new Worker[0]);
+        Worker[] deleteList = workers.values().toArray(new Worker[0]);
         for (Worker worker : deleteList) {
             deleteWorker(worker, true);
         }
@@ -323,7 +323,7 @@ public class mdbroker
     }
 
     /**
-     * Look for & kill expired workers. Workers are oldest to most recent, so we
+     * Look for &amp; kill expired workers. Workers are oldest to most recent, so we
      * stop at the first alive worker.
      */
     public synchronized void purgeWorkers()

@@ -46,9 +46,6 @@ public class TcpConnecter extends Own implements IPollEvents
     //  Current reconnect ivl, updated for backoff strategy
     private int currentReconnectIvl;
 
-    // String representation of endpoint to connect to
-    private final String endpoint;
-
     // Socket
     private final SocketBase socket;
 
@@ -67,7 +64,6 @@ public class TcpConnecter extends Own implements IPollEvents
         assert (this.addr != null);
         //        assert (NetProtocol.tcp.equals(this.addr.protocol())); // not always true, as ipc is emulated by tcp
 
-        endpoint = this.addr.toString();
         socket = session.getSocket();
     }
 
@@ -264,7 +260,6 @@ public class TcpConnecter extends Own implements IPollEvents
         }
 
         //  Create the socket.
-        fd = SocketChannel.open();
         if (options.selectorChooser == null) {
             fd = SocketChannel.open();
         }
@@ -272,21 +267,9 @@ public class TcpConnecter extends Own implements IPollEvents
             fd = options.selectorChooser.choose(resolved, options).openSocketChannel();
         }
 
-        //  IPv6 address family not supported, try automatic downgrade to IPv4.
-        if (fd == null && resolved.family() == StandardProtocolFamily.INET6 && options.ipv6) {
-            resolved = addr.resolve(false);
-            if (resolved == null) {
-                return false;
-            }
-            // TODO V4 automatic downgrade to IPV4
-            sa = resolved.address();
-            fd = SocketChannel.open();
-
-        }
-        assert (fd != null);
-
-        //  On some systems, IPv4 mapping in IPv6 sockets is disabled by default.
-        //  Switch it on in such cases.
+        // On some systems, IPv4 mapping in IPv6 sockets is disabled by default.
+        // Switch it on in such cases.
+        // The method enableIpv4Mapping is empty. Still to be written
         if (resolved.family() == StandardProtocolFamily.INET6) {
             TcpUtils.enableIpv4Mapping(fd);
         }

@@ -1,6 +1,72 @@
 # Changelog
 
-## v0.5.0 (2018-10-27)
+## v0.5.1 (2019-04-03)
+
+### Added
+
+* [#677](https://github.com/zeromq/jeromq/pull/677): ZPoller now supports
+  registering multiple event handlers on a single socket or channel.
+
+* [#685](https://github.com/zeromq/jeromq/pull/685),
+  [#687](https://github.com/zeromq/jeromq/pull/687): ZMQ.Socket has new methods
+  that encode and decode messages based on a picture pattern which is compatible
+  to ZProto: `sendPicture`, `recvPicture`, `sendBinaryPicture` and
+  `recvBinaryPicture`.
+
+* [#692](https://github.com/zeromq/jeromq/pull/692): Added an overload of the
+  ZBeacon that has an additional `serverAddress` option so that the broadcast
+  address can be specified. The default value is still `255.255.255.255`.
+
+* [#694](https://github.com/zeromq/jeromq/pull/694): Added a draft ZNeedle
+  helper class for serialization and deserialization within a frame.
+
+* [#697](https://github.com/zeromq/jeromq/pull/697): Added encoding/decoding of
+  the `COMMAND` flag when using CURVE encryption.
+
+* [#698](https://github.com/zeromq/jeromq/pull/698): Added a
+  `Msg.putShortString` method.
+
+### Changed
+
+* [#671](https://github.com/zeromq/jeromq/pull/671),
+  [#672](https://github.com/zeromq/jeromq/pull/672): In the internal
+  `zmq.io.StreamEngine` class, a `ZError.InstantiationException` is now thrown
+  when a decoder or encoder cannot be instantiated.  Previously, a stacktrace
+  would be printed and `null` would be returned instead of a decoder/encoder
+  instance.
+
+* [#673](https://github.com/zeromq/jeromq/pull/673): `zmq.Mailbox.recv` now
+  handles `EINTR` by returning `null`. This can happen, for example, if the
+  channel is closed.
+
+* [#679](https://github.com/zeromq/jeromq/pull/679): Fixed a file descriptor
+  leak when opening a TCP connection.
+
+* [#680](https://github.com/zeromq/jeromq/pull/680): Various improvements to
+  support for IPv6 and name resolution.
+
+  IPv6 is now enabled if the properties `java.net.preferIPv4Stack=false` or
+  `java.net.preferIPv6Addresses=true` are set.
+
+* [#684](https://github.com/zeromq/jeromq/pull/684): Fixed a bug where
+  `zmq.Msg.getBytes` was writing to an internal buffer instead of the given
+  buffer.
+
+* [#688](https://github.com/zeromq/jeromq/pull/688): Javadoc fixes.
+
+* [#691](https://github.com/zeromq/jeromq/pull/691): Fixed a bug where timers
+  would accumulate in the PollerBase when failed connections were retried,
+  causing a memory leak.
+
+* [#693](https://github.com/zeromq/jeromq/pull/693): Fixed a Java 8-related
+  compilation error.
+
+* [#702](https://github.com/zeromq/jeromq/pull/702): Removed all usage of
+  `java.util.function`, `java.util.stream`, `java.util.Objects` and
+  `java.util.Optional`, which are known to cause problems for some versions of
+  Android. Replaced their usage with internal implementations.
+
+## v0.5.0 (2019-02-18)
 
 ### Added
 
@@ -51,7 +117,8 @@
   syntax to create IAttachedRunnable and IDetachedRunnable.
 
 * Refactored code to use Java 8 features like lambdas and streams in various
-  places. See [#570](https://github.com/zeromq/jeromq/pull/571), for example.
+  places. See [#570](https://github.com/zeromq/jeromq/pull/571) and
+  [#650](https://github.com/zeromq/jeromq/pull/650), for example.
 
 * [#510](https://github.com/zeromq/jeromq/pull/510): Polling now measures time
   in nanoseconds instead of microseconds, ensuring a higher degree of precision.
@@ -120,6 +187,56 @@
 
 * [#610](https://github.com/zeromq/jeromq/pull/610): Added some asserts in
   places where there could potentially be NullPointerExceptions.
+
+* [#623](https://github.com/zeromq/jeromq/pull/623): `Options.rcvbuf` and
+  `Options.sndbuf` will now adjust `Config.IN_BATCH_SIZE` and
+  `Config.OUT_BATCH_SIZE` accordingly.
+
+* [#634](https://github.com/zeromq/jeromq/pull/634): We are now using a 64-bit
+  long, instead of a 32-bit integer, as a cursor in the internal
+  `java.zmq.Signaler` class. This change should not affect the library user,
+  except that it will now take longer for the value to overflow. Previously,
+  with the 32-bit integer cursor, the Signaler could overflow within a month or
+  so under heavy load, causing serious problems such as a server being unable to
+  accept new client connections.
+
+* [#642](https://github.com/zeromq/jeromq/pull/642),
+  [#646](https://github.com/zeromq/jeromq/pull/646),
+  [#652](https://github.com/zeromq/jeromq/pull/652): Removed debug printing
+  intended for development use only.
+
+* [#643](https://github.com/zeromq/jeromq/pull/643): Added some checks in parts
+  of the codebase related to encryption and authentication mechanisms.
+
+* [#652](https://github.com/zeromq/jeromq/pull/652): IOExceptions that occur
+  during polling will now set `errno` more accurately depending on the
+  exception. Previously, the `errno` would always be set to `EINTR` when an
+  IOException occurs during polling.
+
+* [#653](https://github.com/zeromq/jeromq/pull/653): `ZError.toString` now
+  defaults to `"errno " + Integer.toString(code)` if a string version of that
+  error code hasn't been implemented.
+
+* [#654](https://github.com/zeromq/jeromq/pull/654): In a low-level place where
+	an `IllegalStateException` was thrown with no arguments before, the string
+  value of the `errno` is now included to provide some context.
+
+* [#655](https://github.com/zeromq/jeromq/pull/655): In a low-level place in
+  the polling code, `EINTR` is now correctly reported to indicate that polling
+  was interrupted, whereas we used to miss it and try to poll again.
+
+* [#657](https://github.com/zeromq/jeromq/pull/657): When destroying a ZPoller,
+  we will no longer close the poller's Selector, as that is handled by the
+  context.
+
+* [#659](https://github.com/zeromq/jeromq/pull/659): Made internal
+  optimizations to ZContext. The only visible change should be that the order of
+  the sockets when you call `getSockets()` is no longer deterministic, as we are
+  now storing them internally in a Set rather than a List.
+
+* [#660](https://github.com/zeromq/jeromq/pull/660): When creating a socket and
+  the `maxSockets` limit is reached, a ZMQException is now thrown instead of the
+  more generic IllegalStateException.
 
 ## v0.4.3 (2017-11-17)
 

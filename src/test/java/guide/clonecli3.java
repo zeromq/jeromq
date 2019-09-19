@@ -13,7 +13,7 @@ import org.zeromq.ZMQ.Socket;
 
 /**
  * Clone client Model Three
- * @author Danish Shrestha <dshrestha06@gmail.com>
+ * @author Danish Shrestha &lt;dshrestha06@gmail.com&gt;
  *
  */
 public class clonecli3

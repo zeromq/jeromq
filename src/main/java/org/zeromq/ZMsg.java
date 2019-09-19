@@ -9,10 +9,11 @@ import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Deque;
 import java.util.Iterator;
-import java.util.function.Consumer;
 
 import org.zeromq.ZMQ.Socket;
+
 import zmq.util.Draft;
+import zmq.util.function.Consumer;
 
 /**
  * The ZMsg class provides methods to send and receive multipart messages
@@ -26,7 +27,7 @@ import zmq.util.Draft;
  *
  * // Add several frames into one message
  * ZMsg msg = new ZMsg();
- * for (int i = 0;i< 10;i++) {
+ * for (int i = 0 ; i &lt; 10 ; i++) {
  *     msg.addString("Frame" + i);
  * }
  * msg.send(output);
@@ -252,43 +253,43 @@ public class ZMsg implements Iterable<ZFrame>, Deque<ZFrame>
         return msg;
     }
 
-  /**
-   * This API is in DRAFT state and is subject to change at ANY time until declared stable
-   * handle incoming message with a handler
-   *
-   * @param socket
-   * @param flags see ZMQ constants
-   * @param handler handler to handle incoming message
-   * @param exceptionHandler handler to handle exceptions
-   */
-  @Draft
-  public static void recvMsg(ZMQ.Socket socket, int flags,
-                                                        Consumer<ZMsg> handler,
-                                                        Consumer<ZMQException> exceptionHandler)
-  {
-    try {
-      handler.accept(ZMsg.recvMsg(socket, flags));
+    /**
+     * This API is in DRAFT state and is subject to change at ANY time until declared stable
+     * handle incoming message with a handler
+     *
+     * @param socket
+     * @param flags see ZMQ constants
+     * @param handler handler to handle incoming message
+     * @param exceptionHandler handler to handle exceptions
+     */
+    @Draft
+    public static void recvMsg(ZMQ.Socket socket, int flags,
+                               Consumer<ZMsg> handler,
+                               Consumer<ZMQException> exceptionHandler)
+    {
+        try {
+            handler.accept(ZMsg.recvMsg(socket, flags));
+        }
+        catch (ZMQException e) {
+            exceptionHandler.accept(e);
+        }
     }
-    catch (ZMQException e) {
-      exceptionHandler.accept(e);
+
+    /**
+     * This API is in DRAFT state and is subject to change at ANY time until declared stable
+     * handle incoming message with a handler
+     *
+     * @param socket
+     * @param flags see ZMQ constants
+     * @param handler handler to handle incoming message
+     */
+    @Draft
+    public static void recvMsg(ZMQ.Socket socket, int flags, Consumer<ZMsg> handler)
+    {
+        handler.accept(ZMsg.recvMsg(socket, flags));
     }
-  }
 
-  /**
-   * This API is in DRAFT state and is subject to change at ANY time until declared stable
-   * handle incoming message with a handler
-   *
-   * @param socket
-   * @param flags see ZMQ constants
-   * @param handler handler to handle incoming message
-   */
-  @Draft
-  public static void recvMsg(ZMQ.Socket socket, int flags, Consumer<ZMsg> handler)
-  {
-    handler.accept(ZMsg.recvMsg(socket, flags));
-  }
-
-  /**
+    /**
      * Save message to an open data output stream.
      *
      * Data saved as:

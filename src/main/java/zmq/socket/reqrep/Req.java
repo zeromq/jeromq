@@ -138,7 +138,7 @@ public class Req extends Dealer
                 if (msg == null) {
                     return null;
                 }
-                if (!msg.hasMore() || msg.size() != 4 || Wire.getUInt32(msg, 0) != requestId) {
+                if (!msg.hasMore() || msg.size() != 4 || msg.getInt(0) != requestId) {
                     //  Skip the remaining frames and try the next message
                     while (msg.hasMore()) {
                         msg = recvReplyPipe();

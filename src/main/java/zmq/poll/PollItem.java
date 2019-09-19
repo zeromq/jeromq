@@ -50,32 +50,32 @@ public class PollItem
         return interest;
     }
 
-    public final boolean isReadable()
+    public boolean isReadable()
     {
         return (ready & ZMQ.ZMQ_POLLIN) > 0;
     }
 
-    public final boolean isWritable()
+    public boolean isWritable()
     {
         return (ready & ZMQ.ZMQ_POLLOUT) > 0;
     }
 
-    public final boolean isError()
+    public boolean isError()
     {
         return (ready & ZMQ.ZMQ_POLLERR) > 0;
     }
 
-    public final SocketBase getSocket()
+    public SocketBase getSocket()
     {
         return socket;
     }
 
-    public final SelectableChannel getRawSocket()
+    public SelectableChannel getRawSocket()
     {
         return channel;
     }
 
-    public final SelectableChannel getChannel()
+    public SelectableChannel getChannel()
     {
         if (socket != null) {
             //  If the poll item is a 0MQ socket we are interested in input on the
@@ -89,29 +89,28 @@ public class PollItem
         }
     }
 
-    public final int interestOps()
+    public int interestOps()
     {
         return interest;
     }
 
-    @Deprecated
-    public final int zinterestOps()
+    public int zinterestOps()
     {
         return zinterest;
     }
 
-    public final boolean hasEvent(int events)
+    public boolean hasEvent(int events)
     {
         return (zinterest & events) > 0;
     }
 
-    public final int interestOps(int ops)
+    public int interestOps(int ops)
     {
         init(ops);
         return interest;
     }
 
-    public final int readyOps(SelectionKey key, int nevents)
+    public int readyOps(SelectionKey key, int nevents)
     {
         ready = 0;
 
@@ -147,7 +146,7 @@ public class PollItem
         return ready;
     }
 
-    public final int readyOps()
+    public int readyOps()
     {
         return ready;
     }

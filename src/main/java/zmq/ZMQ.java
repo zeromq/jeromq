@@ -9,6 +9,7 @@ import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
@@ -121,10 +122,11 @@ public class ZMQ
     public static final int ZMQ_SOCKS_PROXY              = 67;
     public static final int ZMQ_XPUB_NODROP              = 69;
     public static final int ZMQ_BLOCKY                   = 70;
-
+    public static final int ZMQ_XPUB_MANUAL              = 71;
     public static final int ZMQ_HEARTBEAT_IVL            = 75;
     public static final int ZMQ_HEARTBEAT_TTL            = 76;
     public static final int ZMQ_HEARTBEAT_TIMEOUT        = 77;
+    public static final int ZMQ_XPUB_VERBOSER            = 78;
     @Deprecated
     public static final int ZMQ_XPUB_VERBOSE_UNSUBSCRIBE = 78;
 
@@ -193,7 +195,7 @@ public class ZMQ
 
     public static final byte[] SUBSCRIPTION_ALL = new byte[0];
 
-    public static final Charset CHARSET = Charset.forName("UTF-8");
+    public static final Charset CHARSET = StandardCharsets.UTF_8;
 
     public static final byte[] PROXY_PAUSE     = "PAUSE".getBytes(ZMQ.CHARSET);
     public static final byte[] PROXY_RESUME    = "RESUME".getBytes(ZMQ.CHARSET);
@@ -284,7 +286,7 @@ public class ZMQ
 
     private static void checkContext(Ctx ctx)
     {
-        if (ctx == null || !ctx.checkTag()) {
+        if (ctx == null || !ctx.isActive()) {
             throw new IllegalStateException();
         }
     }
@@ -293,12 +295,6 @@ public class ZMQ
     {
         checkContext(ctx);
         ctx.terminate();
-    }
-
-    private static void shutdownContext(Ctx ctx)
-    {
-        checkContext(ctx);
-        ctx.shutdown();
     }
 
     public static void setContextOption(Ctx ctx, int option, int optval)
@@ -336,7 +332,7 @@ public class ZMQ
 
     private static void checkSocket(SocketBase s)
     {
-        if (s == null || !s.checkTag()) {
+        if (s == null || !s.isActive()) {
             throw new IllegalStateException();
         }
     }

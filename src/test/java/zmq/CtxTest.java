@@ -30,7 +30,9 @@ public class CtxTest
                 sockets.add(socket);
             }
         }
-        sockets.stream().forEach(ZMQ::close);
+        for (SocketBase socket : sockets) {
+            ZMQ.close(socket);
+        }
         ZMQ.term(ctx);
 
         assertThat(ctx.checkTag(), is(false));

@@ -12,6 +12,7 @@ import zmq.Ctx;
 import zmq.Helper;
 import zmq.Msg;
 import zmq.SocketBase;
+import zmq.ZError;
 import zmq.ZMQ;
 import zmq.util.Errno;
 import zmq.util.ValueReference;
@@ -122,17 +123,18 @@ public class CustomEncoderTest
     }
 
     @SuppressWarnings("deprecation")
-    @Test
+    @Test(expected = ZError.InstantiationException.class)
     public void testAssignWrongCustomEncoder()
     {
         Ctx ctx = ZMQ.createContext();
-
         SocketBase socket = ctx.createSocket(ZMQ.ZMQ_PAIR);
 
-        boolean rc = socket.setSocketOpt(ZMQ.ZMQ_ENCODER, WrongEncoder.class);
-        assertThat(rc, is(false));
-
-        ZMQ.close(socket);
-        ZMQ.term(ctx);
+        try {
+            socket.setSocketOpt(ZMQ.ZMQ_ENCODER, WrongEncoder.class);
+        }
+        finally {
+            ZMQ.close(socket);
+            ZMQ.term(ctx);
+        }
     }
 }

@@ -60,15 +60,15 @@ class NullMechanism extends Mechanism
         }
 
         if (zapReplyReceived && !OK.equals(statusCode)) {
-            appendData(msg, ERROR);
-            appendData(msg, statusCode);
+            msg.putShortString(ERROR);
+            msg.putShortString(statusCode);
 
             errorCommandSent = true;
             return 0;
         }
 
         //  Add mechanism string
-        appendData(msg, READY);
+        msg.putShortString(READY);
 
         //  Add socket type property
         String socketType = socketType(options.type);
@@ -87,7 +87,6 @@ class NullMechanism extends Mechanism
     public int processHandshakeCommand(Msg msg)
     {
         if (readyCommandReceived || errorCommandReceived) {
-            puts("NULL I: client sent invalid NULL handshake (duplicate READY)");
             return ZError.EPROTO;
         }
         int dataSize = msg.size();
@@ -100,7 +99,6 @@ class NullMechanism extends Mechanism
             rc = processErrorCommand(msg);
         }
         else {
-            puts("NULL I: client sent invalid NULL handshake (not READY) ");
             return ZError.EPROTO;
         }
         return rc;

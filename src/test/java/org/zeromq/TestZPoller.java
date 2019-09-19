@@ -7,10 +7,15 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.channels.Pipe;
 import java.nio.channels.SelectableChannel;
+import java.nio.channels.Selector;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.Test;
@@ -19,8 +24,52 @@ import org.zeromq.ZPoller.EventsHandler;
 import org.zeromq.ZPoller.ItemCreator;
 import org.zeromq.ZPoller.ItemHolder;
 
+import zmq.util.function.BiFunction;
+
 public class TestZPoller
 {
+    private final class EventsHandlerCounter implements BiFunction<SelectableChannel, Integer, Boolean>
+    {
+        private final AtomicInteger count;
+
+        private EventsHandlerCounter(AtomicInteger count)
+        {
+            this.count = count;
+        }
+
+        @Override
+        public Boolean apply(SelectableChannel channel, Integer events)
+        {
+            assertThat((events & ZPoller.IN) > 0, is(true));
+            try {
+                Pipe.SourceChannel sc = (Pipe.SourceChannel) channel;
+                sc.read(ByteBuffer.allocate(5));
+                count.incrementAndGet();
+                return true;
+            }
+            catch (IOException e) {
+                return false;
+            }
+        }
+    }
+
+    private final class EventsHandlerErrorCounter implements BiFunction<SelectableChannel, Integer, Boolean>
+    {
+        private final AtomicInteger error;
+
+        private EventsHandlerErrorCounter(AtomicInteger error)
+        {
+            this.error = error;
+        }
+
+        @Override
+        public Boolean apply(SelectableChannel channel, Integer events)
+        {
+            error.incrementAndGet();
+            return false;
+        }
+    }
+
     private static class EventsHandlerAdapter implements EventsHandler
     {
         @Override
@@ -373,6 +422,105 @@ public class TestZPoller
         }
         finally {
             poller.close();
+            ctx.close();
+        }
+    }
+
+    @Test
+    public void testMultipleRegistrations() throws IOException
+    {
+        Selector selector = Selector.open();
+        AtomicInteger count = new AtomicInteger();
+        AtomicInteger error = new AtomicInteger();
+
+        BiFunction<SelectableChannel, Integer, Boolean> cb1 = new EventsHandlerCounter(count);
+        BiFunction<SelectableChannel, Integer, Boolean> cb2 = new EventsHandlerCounter(count);
+        BiFunction<SelectableChannel, Integer, Boolean> cberr = new EventsHandlerErrorCounter(error);
+        Pipe[] pipes = new Pipe[2];
+        try (
+                ZPoller poller = new ZPoller(selector)) {
+            pipes[0] = pipe(poller, cberr, cb1, cb2);
+            pipes[1] = pipe(poller, cberr, cb1, cb2);
+            int max = 10;
+            do {
+                poller.poll(100);
+                --max;
+            } while (count.get() != 4 && max > 0);
+
+            assertThat("Not all events handlers checked", error.get(), is(equalTo(0)));
+            if (max == 0 && count.get() != 4) {
+                fail("Unable to poll after 10 attempts");
+            }
+        }
+        finally {
+            selector.close();
+            for (Pipe pipe : pipes) {
+                pipe.sink().close();
+                pipe.source().close();
+            }
+        }
+    }
+
+    @SafeVarargs
+    private final Pipe pipe(ZPoller poller, BiFunction<SelectableChannel, Integer, Boolean> errors,
+                            BiFunction<SelectableChannel, Integer, Boolean>... ins)
+                                    throws IOException
+    {
+        Pipe pipe = Pipe.open();
+        Pipe.SourceChannel source = pipe.source();
+        source.configureBlocking(false);
+        for (BiFunction<SelectableChannel, Integer, Boolean> handler : ins) {
+            poller.register(source, handler, ZPoller.IN);
+        }
+        poller.register(source, errors, ZPoller.ERR);
+
+        pipe.sink().write(ByteBuffer.wrap(new byte[] { 1, 2, 3 }));
+
+        return pipe;
+    }
+
+    @Test
+    public void testIssue729() throws InterruptedException, IOException
+    {
+        int port = Utils.findOpenPort();
+        ZContext ctx = new ZContext();
+        Socket sub = ctx.createSocket(SocketType.SUB);
+        Socket pub = ctx.createSocket(SocketType.PUB);
+        sub.bind("tcp://127.0.0.1:" + port);
+        pub.connect("tcp://127.0.0.1:" + port);
+        boolean subscribe = sub.subscribe("");
+        assertTrue("SUB Socket could not subscribe", subscribe);
+        ZPoller zPoller = new ZPoller(ctx);
+
+        try {
+            zPoller.register(new ZPoller.ZPollItem(sub, null, ZPoller.POLLIN));
+
+            Thread server = new Thread(new Runnable()
+            {
+                @Override
+                public void run()
+                {
+                    while (true) {
+                        pub.send("hello");
+                        try {
+                            Thread.sleep(100);
+                        }
+                        catch (InterruptedException ignored) {
+                        }
+                    }
+                }
+            });
+            server.start();
+            int rc = zPoller.poll(-1);
+            server.interrupt();
+            assertThat("ZPoller does not understand SUB socket signaled", rc, is(1));
+            boolean pollin = zPoller.pollin(sub);
+            assertTrue(pollin);
+            String hello = sub.recvStr();
+            assertThat("recieved message are not identical to what has been sent", hello, is("hello"));
+        }
+        finally {
+            zPoller.close();
             ctx.close();
         }
     }

@@ -4,8 +4,10 @@ import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.SocketChannel;
+import java.util.Arrays;
 
 import zmq.io.Metadata;
+import zmq.util.Utils;
 import zmq.util.Wire;
 
 public class Msg
@@ -58,6 +60,20 @@ public class Msg
         }
 
         @Override
+        public Msg putShortString(String data)
+        {
+            if (data == null) {
+                return this;
+            }
+            int length = data.length();
+            Utils.checkArgument(length < 256, "String must be strictly smaller than 256 characters");
+            out.write((byte) length);
+            out.write(data.getBytes(ZMQ.CHARSET), 0, length);
+            setWriteIndex(getWriteIndex() + length + 1);
+            return this;
+        }
+
+        @Override
         public void setFlags(int flags)
         {
             super.setFlags(flags);
@@ -88,8 +104,7 @@ public class Msg
     // the file descriptor where this message originated, needs to be 64bit due to alignment
     private SocketChannel fileDesc;
 
-    private int              size;
-    private byte[]           data;
+    private final int        size;
     private final ByteBuffer buf;
     // keep track of relative write position
     private int writeIndex = 0;
@@ -107,7 +122,6 @@ public class Msg
         this.flags = 0;
         this.size = capacity;
         this.buf = ByteBuffer.wrap(new byte[capacity]).order(ByteOrder.BIG_ENDIAN);
-        this.data = buf.array();
     }
 
     public Msg(byte[] src)
@@ -118,7 +132,6 @@ public class Msg
         this.type = Type.DATA;
         this.flags = 0;
         this.size = src.length;
-        this.data = src;
         this.buf = ByteBuffer.wrap(src).order(ByteOrder.BIG_ENDIAN);
     }
 
@@ -130,12 +143,6 @@ public class Msg
         this.type = Type.DATA;
         this.flags = 0;
         this.buf = src.duplicate();
-        if (buf.hasArray() && buf.position() == 0 && buf.limit() == buf.capacity()) {
-            this.data = buf.array();
-        }
-        else {
-            this.data = null;
-        }
         this.size = buf.remaining();
     }
 
@@ -148,10 +155,6 @@ public class Msg
         this.flags = m.flags;
         this.size = m.size;
         this.buf = m.buf != null ? m.buf.duplicate() : null;
-        if (m.data != null) {
-            this.data = new byte[this.size];
-            System.arraycopy(m.data, 0, this.data, 0, m.size);
-        }
     }
 
     private Msg(Msg src, ByteArrayOutputStream out)
@@ -208,13 +211,36 @@ public class Msg
         flags = 0;
     }
 
+    /**
+     * Returns the message data.
+     *
+     * If possible, a reference to the data is returned, without copy.
+     * Otherwise a new byte array will be allocated and the data will be copied.
+     *
+     * @return the message data.
+     */
     public byte[] data()
     {
-        if (data == null) {
-            data = new byte[buf.remaining()];
-            buf.duplicate().get(data);
+        if (buf.hasArray()) {
+            byte[] array = buf.array();
+            int offset = buf.arrayOffset();
+
+            if (buf.arrayOffset() == 0 && array.length == size) {
+                // If the backing array is exactly what we need, return it without copy.
+                return array;
+            }
+            else {
+                // Else use it to make an efficient copy.
+                return Arrays.copyOfRange(array, offset, offset + size);
+            }
         }
-        return data;
+
+        // No backing array -> use ByteBuffer#get().
+        byte[] array = new byte[size];
+        ByteBuffer dup = buf.duplicate();
+        dup.position(0);
+        dup.get(array);
+        return array;
     }
 
     public ByteBuffer buf()
@@ -327,13 +353,14 @@ public class Msg
     public int getBytes(int index, byte[] dst, int off, int len)
     {
         int count = Math.min(len, size - index);
-        if (data == null) {
-            ByteBuffer dup = buf.duplicate();
-            dup.position(index);
-            dup.put(dst, off, count);
+
+        if (buf.hasArray()) {
+            System.arraycopy(buf.array(), buf.arrayOffset() + index, dst, off, count);
         }
         else {
-            System.arraycopy(data, index, dst, off, count);
+            ByteBuffer dup = buf.duplicate();
+            dup.position(index);
+            dup.get(dst, off, count);
         }
 
         return count;
@@ -388,5 +415,24 @@ public class Msg
         buf.limit(srcOffset + srcLength).position(srcOffset);
         destination.put(buf);
         buf.limit(limit).position(position);
+    }
+
+    /**
+     * Puts a string into the message, prefixed with its length.
+     * Users shall size the message by adding 1 to the length of the string:
+     * It needs to be able to accommodate (data.length+1) more bytes.
+     *
+     * @param data a string shorter than 256 characters. If null, defaults to a no-op.
+     * @return the same message.
+     */
+    public Msg putShortString(String data)
+    {
+        if (data == null) {
+            return this;
+        }
+        ByteBuffer dup = buf.duplicate();
+        dup.position(writeIndex);
+        writeIndex += Wire.putShortString(dup, data);
+        return this;
     }
 }

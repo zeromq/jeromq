@@ -16,6 +16,7 @@ public class ZHelper
 
     /**
      * Receives all message parts from socket, prints neatly
+     * @param sock
      */
     public static void dump(Socket sock)
     {

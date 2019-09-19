@@ -285,8 +285,6 @@ public abstract class Mechanism
                 return session.errno.get();
             }
             if ((msg.flags() & Msg.MORE) == (idx < 6 ? 0 : Msg.MORE)) {
-                //  Temporary support for security debugging
-                puts("NULL I: ZAP handler sent incomplete reply message " + msg);
                 return ZError.EPROTO;
             }
             msgs.add(msg);
@@ -294,29 +292,21 @@ public abstract class Mechanism
 
         //  Address delimiter frame
         if (msgs.get(0).size() > 0) {
-            //  Temporary support for security debugging
-            puts("NULL I: ZAP handler sent malformed reply message in address delimiter frame " + msgs.get(0));
             return ZError.EPROTO;
         }
 
         //  Version frame
         if (msgs.get(1).size() != 3 || !compare(msgs.get(1), "1.0", false)) {
-            //  Temporary support for security debugging
-            puts("NULL I: ZAP handler sent bad version number " + msgs.get(1));
             return ZError.EPROTO;
         }
 
         //  Request id frame
         if (msgs.get(2).size() != 1 || !compare(msgs.get(2), "1", false)) {
-            //  Temporary support for security debugging
-            puts("NULL I: ZAP handler sent bad request ID " + msgs.get(2));
             return ZError.EPROTO;
         }
 
         //  Status code frame
         if (msgs.get(3).size() != 3) {
-            //  Temporary support for security debugging
-            puts("NULL I: ZAP handler rejected client authentication " + msgs.get(3));
             return ZError.EPROTO;
         }
 
@@ -329,17 +319,6 @@ public abstract class Mechanism
         //  Process metadata frame
 
         return parseMetadata(msgs.get(6), 0, true);
-    }
-
-    protected final void puts(String msg)
-    {
-        //  Temporary support for security debugging
-        System.out.println(session + " " + msg);
-    }
-
-    protected final void appendData(Msg msg, String data)
-    {
-        Msgs.put(msg, data);
     }
 
     public void destroy()

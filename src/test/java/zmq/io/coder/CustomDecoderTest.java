@@ -10,6 +10,7 @@ import org.junit.Test;
 import zmq.Ctx;
 import zmq.Msg;
 import zmq.SocketBase;
+import zmq.ZError;
 import zmq.ZMQ;
 import zmq.io.coder.IDecoder.Step;
 import zmq.msg.MsgAllocatorThreshold;
@@ -37,20 +38,24 @@ public class CustomDecoderTest
                                           }
                                       };
 
-        byte[] header = new byte[10];
-        Msg    msg;
-        int    size   = -1;
+        ByteBuffer header = ByteBuffer.allocate(10);
+        Msg        msg;
+        int        size   = -1;
 
         public CustomDecoder(int bufsize, long maxmsgsize)
         {
             super(new Errno(), bufsize, maxmsgsize, new MsgAllocatorThreshold());
-            nextStep(header, 10, readHeader);
+            nextStep(header, readHeader);
         }
 
         private Step.Result readHeader()
         {
-            assertThat(new String(header, 0, 6, ZMQ.CHARSET), is("HEADER"));
-            ByteBuffer b = ByteBuffer.wrap(header, 6, 4);
+            byte[] headerBuff = new byte[6];
+            header.position(0);
+            header.get(headerBuff);
+            assertThat(new String(headerBuff, 0, 6, ZMQ.CHARSET), is("HEADER"));
+            ByteBuffer b = header.duplicate();
+            b.position(6);
             size = b.getInt();
 
             msg = allocate(size);
@@ -61,7 +66,7 @@ public class CustomDecoderTest
 
         private Step.Result readBody()
         {
-            nextStep(header, 10, readHeader);
+            nextStep(header, readHeader);
             return Step.Result.DECODED;
         }
     }
@@ -121,17 +126,18 @@ public class CustomDecoderTest
     }
 
     @SuppressWarnings("deprecation")
-    @Test
+    @Test(expected = ZError.InstantiationException.class)
     public void testAssignWrongCustomDecoder()
     {
         Ctx ctx = ZMQ.createContext();
-
         SocketBase socket = ctx.createSocket(ZMQ.ZMQ_PAIR);
 
-        boolean rc = socket.setSocketOpt(ZMQ.ZMQ_DECODER, WrongDecoder.class);
-        assertThat(rc, is(false));
-
-        ZMQ.close(socket);
-        ZMQ.term(ctx);
+        try {
+            socket.setSocketOpt(ZMQ.ZMQ_DECODER, WrongDecoder.class);
+        }
+        finally {
+            ZMQ.close(socket);
+            ZMQ.term(ctx);
+        }
     }
 }

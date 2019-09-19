@@ -3,13 +3,16 @@ package zmq;
 import java.net.SocketException;
 import java.nio.channels.ClosedChannelException;
 
+import org.zeromq.ZMQ.Error;
+import org.zeromq.UncheckedZMQException;
+
 public class ZError
 {
     private ZError()
     {
     }
 
-    public static class CtxTerminatedException extends RuntimeException
+    public static class CtxTerminatedException extends UncheckedZMQException
     {
         private static final long serialVersionUID = -4404921838608052956L;
 
@@ -19,7 +22,7 @@ public class ZError
         }
     }
 
-    public static class InstantiationException extends RuntimeException
+    public static class InstantiationException extends UncheckedZMQException
     {
         private static final long serialVersionUID = -4404921838608052955L;
 
@@ -27,9 +30,19 @@ public class ZError
         {
             super(cause);
         }
+
+        public InstantiationException(String message, Throwable cause)
+        {
+            super(message, cause);
+        }
+
+        public InstantiationException(String message)
+        {
+            super(message);
+        }
     }
 
-    public static class IOException extends RuntimeException
+    public static class IOException extends UncheckedZMQException
     {
         private static final long serialVersionUID = 9202470691157986262L;
 
@@ -95,18 +108,6 @@ public class ZError
 
     public static String toString(int code)
     {
-        switch (code) {
-        case EADDRINUSE:
-            return "Address already in use";
-        case EFSM:
-            return "Operation cannot be accomplished in current state";
-        case ENOCOMPATPROTO:
-            return "The protocol is not compatible with the socket type";
-        case ETERM:
-            return "Context was terminated";
-        case EMTHREAD:
-            return "No thread available";
-        }
-        return "";
+        return Error.findByCode(code).getMessage();
     }
 }

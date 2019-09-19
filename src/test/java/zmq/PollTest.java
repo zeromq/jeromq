@@ -3,104 +3,67 @@ package zmq;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.Pipe;
 import java.nio.channels.Pipe.SinkChannel;
 import java.nio.channels.Pipe.SourceChannel;
+import java.nio.channels.SelectableChannel;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.util.UUID;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import zmq.poll.PollItem;
 
 public class PollTest
 {
-    @Test
-    public void testPollTcp() throws Exception
+    static interface TxRx<R>
     {
-        Ctx context = ZMQ.init(1);
-        assertThat(context, notNullValue());
-
-        Selector selector = context.createSelector();
-        assertThat(selector, notNullValue());
-
-        PollItem[] items = new PollItem[2];
-
-        ServerSocketChannel server = ServerSocketChannel.open();
-        assertThat(server, notNullValue());
-        server.configureBlocking(false);
-        server.bind(null);
-        InetSocketAddress addr = (InetSocketAddress) server.socket().getLocalSocketAddress();
-
-        SocketChannel channelIn = SocketChannel.open();
-        assertThat(channelIn, notNullValue());
-        channelIn.configureBlocking(false);
-        boolean rc = channelIn.connect(addr);
-        assertThat(rc, is(false));
-
-        SocketChannel channelOut = server.accept();
-        channelOut.configureBlocking(false);
-
-        rc = channelIn.finishConnect();
-        assertThat(rc, is(true));
-
-        items[0] = new PollItem(channelOut, ZMQ.ZMQ_POLLOUT);
-        items[1] = new PollItem(channelIn, ZMQ.ZMQ_POLLIN);
-
-        int counter = 0;
-        boolean done = false;
-        boolean sent = false;
-        while (true) {
-            int events = ZMQ.poll(selector, items, 1000);
-            if (events < 0) {
-                break;
-            }
-            counter++;
-
-            if (items[0].isWritable() && !sent) {
-                ByteBuffer bb = ByteBuffer.allocate(3);
-                bb.put("tcp".getBytes());
-                bb.flip();
-                int written = channelOut.write(bb);
-                assertThat(written, is(3));
-                sent = true;
-            }
-            if (items[1].isReadable()) {
-                ByteBuffer bb = ByteBuffer.allocate(3);
-                int read = channelIn.read(bb);
-                String r = new String(bb.array(), 0, read);
-                assertThat(r, is("tcp"));
-                done = true;
-                break;
-            }
-        }
-        assertThat(done, is(true));
-        assertThat(counter, is(2));
-
-        context.closeSelector(selector);
-        ZMQ.term(context);
-
-        channelIn.close();
-        channelOut.close();
-        server.close();
+        R apply(ByteBuffer bb) throws IOException;
     }
 
     @Test
-    public void testPollPipe() throws Exception
+    public void testPollTcp() throws IOException
     {
-        Ctx context = ZMQ.init(1);
-        assertThat(context, notNullValue());
+        ServerSocketChannel server = ServerSocketChannel.open();
+        assertThat(server, notNullValue());
+        server.configureBlocking(true);
+        server.bind(null);
+        InetSocketAddress addr = (InetSocketAddress) server.socket().getLocalSocketAddress();
 
-        Selector selector = context.createSelector();
-        assertThat(selector, notNullValue());
+        SocketChannel in = SocketChannel.open();
+        assertThat(in, notNullValue());
+        in.configureBlocking(false);
+        boolean rc = in.connect(addr);
+        assertThat(rc, is(false));
 
-        PollItem[] items = new PollItem[2];
+        SocketChannel out = server.accept();
+        out.configureBlocking(false);
 
+        rc = in.finishConnect();
+        assertThat(rc, is(true));
+
+        try {
+            assertPoller(in, out, out::write, in::read);
+        }
+        finally {
+            in.close();
+            out.close();
+            server.close();
+        }
+    }
+
+    @Test
+    public void testPollPipe() throws IOException
+    {
         Pipe pipe = Pipe.open();
         assertThat(pipe, notNullValue());
 
@@ -112,48 +75,41 @@ public class PollTest
         assertThat(source, notNullValue());
         source.configureBlocking(false);
 
-        items[0] = new PollItem(sink, ZMQ.ZMQ_POLLOUT);
-        items[1] = new PollItem(source, ZMQ.ZMQ_POLLIN);
-
-        int counter = 0;
-        boolean done = false;
-        boolean sent = false;
-        while (true) {
-            int events = ZMQ.poll(selector, items, 1000);
-            if (events < 0) {
-                break;
-            }
-            counter++;
-
-            if (items[0].isWritable() && !sent) {
-                ByteBuffer bb = ByteBuffer.allocate(4);
-                bb.put("pipe".getBytes());
-                bb.flip();
-                int written = sink.write(bb);
-                assertThat(written, is(4));
-                sent = true;
-            }
-            if (items[1].isReadable()) {
-                ByteBuffer bb = ByteBuffer.allocate(5);
-                int read = source.read(bb);
-                String r = new String(bb.array(), 0, read);
-                assertThat(r, is("pipe"));
-                done = true;
-                break;
-            }
+        try {
+            assertPoller(source, sink, sink::write, source::read);
         }
-        assertThat(done, is(true));
-        assertThat(counter, is(2));
+        finally {
+            sink.close();
+            source.close();
+        }
 
-        context.closeSelector(selector);
-        ZMQ.term(context);
-
-        sink.close();
-        source.close();
     }
 
     @Test
-    public void testPollUdp() throws Exception
+    public void testPollUdp() throws IOException
+    {
+        DatagramChannel in = DatagramChannel.open();
+        assertThat(in, notNullValue());
+        in.configureBlocking(false);
+        in.socket().bind(null);
+        InetSocketAddress addr = (InetSocketAddress) in.socket().getLocalSocketAddress();
+
+        DatagramChannel out = DatagramChannel.open();
+        assertThat(out, notNullValue());
+        out.configureBlocking(false);
+        out.connect(addr);
+
+        try {
+            assertPoller(in, out, bb -> out.send(bb, addr), in::receive);
+        }
+        finally {
+            in.close();
+            out.close();
+        }
+    }
+
+    private <T extends SelectableChannel> void assertPoller(T in, T out, TxRx<Integer> tx, TxRx<Object> rx)
+            throws IOException
     {
         Ctx context = ZMQ.init(1);
         assertThat(context, notNullValue());
@@ -163,54 +119,50 @@ public class PollTest
 
         PollItem[] items = new PollItem[2];
 
-        DatagramChannel udpIn = DatagramChannel.open();
-        assertThat(udpIn, notNullValue());
-        udpIn.configureBlocking(false);
-        udpIn.socket().bind(null);
-        InetSocketAddress addr = (InetSocketAddress) udpIn.socket().getLocalSocketAddress();
+        items[0] = new PollItem(out, ZMQ.ZMQ_POLLOUT);
+        items[1] = new PollItem(in, ZMQ.ZMQ_POLLIN);
 
-        DatagramChannel udpOut = DatagramChannel.open();
-        assertThat(udpOut, notNullValue());
-        udpOut.configureBlocking(false);
-        udpOut.connect(addr);
-
-        items[0] = new PollItem(udpOut, ZMQ.ZMQ_POLLOUT);
-        items[1] = new PollItem(udpIn, ZMQ.ZMQ_POLLIN);
-
-        int counter = 0;
-        boolean done = false;
-        boolean sent = false;
+        String payload = UUID.randomUUID().toString();
+        boolean sending = true;
         while (true) {
             int events = ZMQ.poll(selector, items, 1000);
             if (events < 0) {
-                break;
+                fail("unable to poll events");
             }
-            counter++;
 
-            if (items[0].isWritable() && !sent) {
-                ByteBuffer bb = ByteBuffer.allocate(3);
-                bb.put("udp".getBytes());
+            if (sending && items[0].isWritable()) {
+                sending = false;
+                ByteBuffer bb = ByteBuffer.allocate(payload.length());
+                bb.put(payload.getBytes());
                 bb.flip();
-                int written = udpOut.send(bb, addr);
-                assertThat(written, is(3));
-                sent = true;
+                int written = tx.apply(bb);
+
+                assertThat(written, is(payload.length()));
             }
-            if (items[1].isReadable()) {
-                ByteBuffer bb = ByteBuffer.allocate(3);
-                udpIn.receive(bb);
+            if (!sending && items[1].isReadable()) {
+                ByteBuffer bb = ByteBuffer.allocate(payload.length());
+                rx.apply(bb);
                 String read = new String(bb.array(), 0, bb.limit());
-                assertThat(read, is("udp"));
-                done = true;
+
+                assertThat(read, is(payload));
                 break;
             }
         }
-        assertThat(done, is(true));
-        assertThat(counter, is(2));
 
         context.closeSelector(selector);
         ZMQ.term(context);
+    }
 
-        udpIn.close();
-        udpOut.close();
+    @Ignore
+    @Test
+    public void testRepeated() throws IOException
+    {
+        for (int idx = 0; idx < 10_000_000; ++idx) {
+            if (idx % 10000 == 0) {
+                System.out.println(idx);
+            }
+            testPollTcp();
+            testPollUdp();
+        }
     }
 }

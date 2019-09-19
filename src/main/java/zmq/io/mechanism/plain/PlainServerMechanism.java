@@ -77,8 +77,6 @@ public class PlainServerMechanism extends Mechanism
             rc = produceInitiate(msg);
             break;
         default:
-            //  Temporary support for security debugging
-            puts("PLAIN Server I: invalid handshake command");
             rc = ZError.EPROTO;
             break;
 
@@ -119,22 +117,16 @@ public class PlainServerMechanism extends Mechanism
         int bytesLeft = msg.size();
         int index = 0;
         if (bytesLeft < 6 || !compare(msg, "HELLO", true)) {
-            //  Temporary support for security debugging
-            puts("PLAIN I: invalid PLAIN client, did not send HELLO");
             return ZError.EPROTO;
         }
         bytesLeft -= 6;
         index += 6;
         if (bytesLeft < 1) {
-            //  Temporary support for security debugging
-            puts("PLAIN I: invalid PLAIN client, did not send username");
             return ZError.EPROTO;
         }
         byte length = msg.get(index);
         bytesLeft -= 1;
         if (bytesLeft < length) {
-            //  Temporary support for security debugging
-            puts("PLAIN I: invalid PLAIN client, sent malformed username");
             return ZError.EPROTO;
         }
         byte[] tmp = new byte[length];
@@ -147,8 +139,6 @@ public class PlainServerMechanism extends Mechanism
         length = msg.get(index);
         bytesLeft -= 1;
         if (bytesLeft < length) {
-            //  Temporary support for security debugging
-            puts("PLAIN I: invalid PLAIN client, sent malformed password");
             return ZError.EPROTO;
         }
         tmp = new byte[length];
@@ -159,8 +149,6 @@ public class PlainServerMechanism extends Mechanism
         //        index += length;
 
         if (bytesLeft > 0) {
-            //  Temporary support for security debugging
-            puts("PLAIN I: invalid PLAIN client, sent extraneous data");
             return ZError.EPROTO;
         }
 
@@ -188,7 +176,7 @@ public class PlainServerMechanism extends Mechanism
 
     private int produceWelcome(Msg msg)
     {
-        appendData(msg, "WELCOME");
+        msg.putShortString("WELCOME");
         return 0;
     }
 
@@ -196,8 +184,6 @@ public class PlainServerMechanism extends Mechanism
     {
         int bytesLeft = msg.size();
         if (bytesLeft < 9 || !compare(msg, "INITIATE", true)) {
-            //  Temporary support for security debugging
-            puts("PLAIN I: invalid PLAIN client, did not send INITIATE");
             return ZError.EPROTO;
         }
 
@@ -211,7 +197,7 @@ public class PlainServerMechanism extends Mechanism
     private int produceReady(Msg msg)
     {
         //  Add command name
-        appendData(msg, "READY");
+        msg.putShortString("READY");
 
         //  Add socket type property
         String socketType = socketType(options.type);
@@ -229,8 +215,8 @@ public class PlainServerMechanism extends Mechanism
     {
         assert (statusCode != null && statusCode.length() == 3);
 
-        appendData(msg, "ERROR");
-        appendData(msg, statusCode);
+        msg.putShortString("ERROR");
+        msg.putShortString(statusCode);
 
         return 0;
     }

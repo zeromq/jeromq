@@ -5,73 +5,75 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Objects;
 
 import org.zeromq.ZMQ.Socket;
 import org.zeromq.ZPoller.EventsHandler;
 
+import zmq.util.Objects;
+
 /**
- * First implementation of a background actor remotely controlled for 0MQ.
- * <p>
- * This implementation is based on the {@link ZStar} one (TODO via inheritance now but this is not totally stamped and the use of the ZAgent would probably limit the collateral damages if changed)
- * so you should be first familiar with the metaphor there.
+ * <p>First implementation of a background actor remotely controlled for ØMQ.</p>
+ *
+ * <p>This implementation is based on the {@link ZStar} one (TODO via inheritance now but this is not totally stamped and the use of the ZAgent would probably limit the collateral damages if changed)
+ * so you should be first familiar with the metaphor there.</p>
+ *
+ * <p>To extensively sum up:
  * <br>
- * To extensively sum up:
- * <p>
  * A side or endpoint designates the same thing: the thread where lives one of the two parts of the Actor system.
- * <br/>
+ * </p>
  * An actor has 2 sides (with a trial to use theater terms for fun (: and hopefully clarity :)
- * <br/>
- * - the Corbeille side, or control side
- * <br/>
+ * <ul>
+ * <li>the Corbeille side, or control side
+ * <br>
  * This is where one can {@link #send(ZMsg) send} and {@link #recv() receive} control messages to the underneath actor via the ZActor and/or its agent.
- * <br/>
+ * <br>
  * The ZActor lives on this side and is a way to safely communicate with the distant provided Actor
- * <br/>
+ * <br>
  * Note: Corbeille is a french word designing the most privileged seats in the theater,
  * 1st floor, just above the orchestra (Wikipedia...).
  * It was the place where the King was standing during the shows, with the best seat of course!
  *
  * Fast users who would want to communicate with the distant {@link Actor} can use
- * {@link #send(ZMsg)} or {@link #recv()} from the ZActor as the ZActor is itself an agent!
- * <p>
- * - the Plateau side, or background side where all the performances are made by the provided actor.
- * <br/>
+ * {@link #send(ZMsg)} or {@link #recv()} from the ZActor as the ZActor is itself an agent!</li>
+ *
+ * <li>the Plateau side, or background side where all the performances are made by the provided actor.
+ * <br>
  * The provided {@link Actor} is living on the Plateau.
- * <br/>
+ * <br>
  * The Plateau is made of the Stage where {@link org.zeromq.ZActor.Actor#stage(org.zeromq.ZMQ.Socket, org.zeromq.ZMQ.Socket, org.zeromq.ZPoller, int) the effective processing occurs} and of the Backstage
  * where the provided actor can {@link org.zeromq.ZActor.Actor#backstage(org.zeromq.ZMQ.Socket, org.zeromq.ZPoller, int) send and receive} control messages to and from the ZActor.
- * <br/>
+ * <br>
  * From this side, the work is done via callbacks using the template-method pattern, applied with interfaces (?)
- * <p>
- *
- * The main purpose (or at least its intent) of this class is to clarify the contracts, roles, responsibilities and action levers related to the Plateau.
- * <p>
+ * </li>
+ * </ul>
+ * <p>The main purpose (or at least its intent) of this class is to clarify the contracts, roles, responsibilities and action levers related to the Plateau.
+ * <br>
  * The provided Actor will not be alone to do the processing of each loop.
- * <br/>
+ * <br>
  * It will be helped by a double responsible for passing the appropriate structures at the right moment.
  * As a developer point of view, this double helps also to limit the complexity of the process.
  * However Double is an uncommon one, capturing all the lights while letting the Actor taking care of all the invisible work in the shadows.
  * And this is one of the points where we begin to reach the limits of the metaphor...
- * <p>
+ * <br>
  * The ZActor takes care of the establishment of the background processing, calling the provided Actor
  * at appropriate times via its Double. It can also manage the {@link #sign() exited} state on the control side,
  * if using the provided {@link #send(ZMsg)} or {@link #recv()} methods.
- * <br/>
+ * <br>
  * It also takes care of the automatic closing of sockets and context if it had to create one.
- * <p>
- * An {@link Actor actor} is basically a contract interface that anyone who uses this ZActor SHALL comply to.<br/>
- * TODO This interface is still a little bit tough, as instead of the 5+2 Star callbacks, here are 10!
+ * <br>
+ * An {@link Actor actor} is basically a contract interface that anyone who uses this ZActor SHALL comply to.<br>
+ * </p>
+ *
+ * <p>TODO This interface is still a little bit tough, as instead of the 5+2 Star callbacks, here are 10!
  * But they allow you to have a hand on the key points of the looping, restart a new actor if needed, ...
  * Anyway, adapters like a {@link SimpleActor simple one} or a {@link Duo duo} are present to help you on that, reducing the amount of
- * methods to write.
- * <p>
- * PS: Je sais qu'il y a une différence entre acteur et comédien :)
- * PPS: I know nothing about theater!
- * <p>
- * Example of code for a minimalistic actor with no socket handling other than the control pipe:
+ * methods to write.</p>
  *
- * <p>
+ * <p>PS: Je sais qu'il y a une différence entre acteur et comédien :)</p>
+ * <p>PPS: I know nothing about theater!</p>
+ *
+ * <p>Example of code for a minimalistic actor with no socket handling other than the control pipe:</p>
+ *
  * <pre>
  * {@code
         Actor acting = new ZActor.SimpleActor()
@@ -107,7 +109,7 @@ import org.zeromq.ZPoller.EventsHandler;
         rc = actor.send("whatever");
         assert (!rc);
         // don't try to use the pipe
-}
+}</pre>
  */
 // remote controlled background message processing API for 0MQ.
 public class ZActor extends ZStar
@@ -162,7 +164,7 @@ public class ZActor extends ZStar
          *
          * @param pipe   the backstage control pipe
          * @param poller the poller of the double
-         * @return the timeout of the coming loop. <b>-1 to block, 0 to not wait, > 0 to wait</b> till max the returned duration in milliseconds
+         * @return the timeout of the coming loop. <b>-1 to block, 0 to not wait, &gt; 0 to wait</b> till max the returned duration in milliseconds
          */
         long looping(Socket pipe, ZPoller poller);
 
@@ -450,7 +452,7 @@ public class ZActor extends ZStar
      */
     @Deprecated
     public ZActor(final ZContext context, final SelectorCreator selector, final Actor actor, final String motdelafin,
-            final Object... args)
+                  final Object... args)
     {
         this(context, actor, motdelafin, args);
     }
@@ -465,6 +467,8 @@ public class ZActor extends ZStar
      *
      * @param actor
      *            the actor handling messages from either stage and backstage
+     * @param motdelafin
+     *            the final word used to mark the end of the actor. Null to disable this mechanism.
      * @param args
      *            the optional arguments that will be passed to the distant actor
      */

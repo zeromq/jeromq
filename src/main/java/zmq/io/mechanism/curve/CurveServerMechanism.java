@@ -115,8 +115,6 @@ public class CurveServerMechanism extends Mechanism
             rc = processInitiate(msg);
             break;
         default:
-            //  Temporary support for security debugging
-            puts("CURVE I: invalid handshake command");
             rc = ZError.EPROTO;
             break;
 
@@ -132,6 +130,9 @@ public class CurveServerMechanism extends Mechanism
         byte flags = 0;
         if (msg.hasMore()) {
             flags |= 0x01;
+        }
+        if (msg.isCommand()) {
+            flags |= 0x02;
         }
 
         ByteBuffer messageNonce = ByteBuffer.allocate(Curve.Size.NONCE.bytes());
@@ -151,7 +152,7 @@ public class CurveServerMechanism extends Mechanism
         assert (rc == 0);
 
         Msg encoded = new Msg(16 + mlen - Curve.Size.BOXZERO.bytes());
-        appendData(encoded, "MESSAGE");
+        encoded.putShortString("MESSAGE");
         encoded.put(messageNonce, 16, 8);
         encoded.put(messageBox, Curve.Size.BOXZERO.bytes(), mlen - Curve.Size.BOXZERO.bytes());
 
@@ -165,15 +166,11 @@ public class CurveServerMechanism extends Mechanism
         assert (state == State.CONNECTED);
 
         if (msg.size() < 33) {
-            //  Temporary support for security debugging
-            puts("CURVE I: invalid CURVE client, sent malformed command");
             errno.set(ZError.EPROTO);
             return null;
         }
 
         if (!compare(msg, "MESSAGE", true)) {
-            //  Temporary support for security debugging
-            puts("CURVE I: invalid CURVE client, did not send MESSAGE");
             errno.set(ZError.EPROTO);
             return null;
         }
@@ -182,7 +179,7 @@ public class CurveServerMechanism extends Mechanism
         messageNonce.put("CurveZMQMESSAGEC".getBytes(ZMQ.CHARSET));
         msg.transfer(messageNonce, 8, 8);
 
-        long nonce = Wire.getUInt64(msg, 8);
+        long nonce = msg.getLong(8);
 
         if (nonce <= cnPeerNonce) {
             errno.set(ZError.EPROTO);
@@ -206,14 +203,15 @@ public class CurveServerMechanism extends Mechanism
             if ((flags & 0x01) != 0) {
                 decoded.setFlags(Msg.MORE);
             }
+            if ((flags & 0x02) != 0) {
+                decoded.setFlags(Msg.COMMAND);
+            }
 
             messagePlaintext.position(Curve.Size.ZERO.bytes() + 1);
             decoded.put(messagePlaintext);
             return decoded;
         }
         else {
-            //  Temporary support for security debugging
-            puts("CURVE I: connection key used for MESSAGE is wrong");
             errno.set(ZError.EPROTO);
             return null;
         }
@@ -250,14 +248,10 @@ public class CurveServerMechanism extends Mechanism
     private int processHello(Msg msg)
     {
         if (msg.size() != 200) {
-            //  Temporary support for security debugging
-            puts("CURVE I: client HELLO is not correct size");
             return ZError.EPROTO;
         }
 
         if (!compare(msg, "HELLO", true)) {
-            //  Temporary support for security debugging
-            puts("CURVE I: client HELLO has invalid command name");
             return ZError.EPROTO;
         }
 
@@ -265,8 +259,6 @@ public class CurveServerMechanism extends Mechanism
         byte minor = msg.get(7);
 
         if (major != 1 || minor != 0) {
-            //  Temporary support for security debugging
-            puts("CURVE I: client HELLO has unknown version number");
             return ZError.EPROTO;
         }
 
@@ -279,7 +271,7 @@ public class CurveServerMechanism extends Mechanism
 
         helloNonce.put("CurveZMQHELLO---".getBytes(ZMQ.CHARSET));
         msg.transfer(helloNonce, 112, 8);
-        cnPeerNonce = Wire.getUInt64(msg, 112);
+        cnPeerNonce = msg.getLong(112);
 
         helloBox.position(Curve.Size.BOXZERO.bytes());
         msg.transfer(helloBox, 120, 80);
@@ -287,8 +279,6 @@ public class CurveServerMechanism extends Mechanism
         //  Open Box [64 * %x0](C'->S)
         int rc = cryptoBox.open(helloPlaintext, helloBox, helloBox.capacity(), helloNonce, cnClient, secretKey);
         if (rc != 0) {
-            //  Temporary support for security debugging
-            puts("CURVE I: cannot open client HELLO -- wrong server key?");
             return ZError.EPROTO;
         }
 
@@ -347,7 +337,7 @@ public class CurveServerMechanism extends Mechanism
         if (rc == -1) {
             return -1;
         }
-        appendData(msg, "WELCOME");
+        msg.putShortString("WELCOME");
         msg.put(welcomeNonce, 8, 16);
         msg.put(welcomeCiphertext, Curve.Size.BOXZERO.bytes(), 144);
 
@@ -358,14 +348,10 @@ public class CurveServerMechanism extends Mechanism
     private int processInitiate(Msg msg)
     {
         if (msg.size() < 257) {
-            //  Temporary support for security debugging
-            puts("CURVE I: client INITIATE is not correct size");
             return ZError.EPROTO;
         }
 
         if (!compare(msg, "INITIATE", true)) {
-            //  Temporary support for security debugging
-            puts("CURVE I: client INITIATE has invalid command name");
             return ZError.EPROTO;
         }
         ByteBuffer cookieNonce = ByteBuffer.allocate(Curve.Size.NONCE.bytes());
@@ -381,16 +367,12 @@ public class CurveServerMechanism extends Mechanism
 
         int rc = cryptoBox.secretboxOpen(cookiePlaintext, cookieBox, cookieBox.capacity(), cookieNonce, cookieKey);
         if (rc != 0) {
-            //  Temporary support for security debugging
-            puts("CURVE I: cannot open client INITIATE cookie");
             return ZError.EPROTO;
         }
 
         //  Check cookie plain text is as expected [C' + s']
         if (!compare(cookiePlaintext, cnClient, Curve.Size.ZERO.bytes(), 32)
                 || !compare(cookiePlaintext, cnSecret, Curve.Size.ZERO.bytes() + 32, 32)) {
-            //  Temporary support for security debugging
-            puts("CURVE I: client INITIATE cookie is not valid");
             return ZError.EPROTO;
         }
 
@@ -407,12 +389,10 @@ public class CurveServerMechanism extends Mechanism
         initiateNonce.put("CurveZMQINITIATE".getBytes(ZMQ.CHARSET));
         msg.transfer(initiateNonce, 105, 8);
 
-        cnPeerNonce = Wire.getUInt64(msg, 105);
+        cnPeerNonce = msg.getLong(105);
 
         rc = cryptoBox.open(initiatePlaintext, initiateBox, clen, initiateNonce, cnClient, cnSecret);
         if (rc != 0) {
-            //  Temporary support for security debugging
-            puts("CURVE I: cannot open client INITIATE");
             return ZError.EPROTO;
         }
 
@@ -435,15 +415,11 @@ public class CurveServerMechanism extends Mechanism
 
         rc = cryptoBox.open(vouchPlaintext, vouchBox, vouchBox.capacity(), vouchNonce, clientKey, cnSecret);
         if (rc != 0) {
-            //  Temporary support for security debugging
-            puts("CURVE I: cannot open client INITIATE vouch");
             return ZError.EPROTO;
         }
 
         //  What we decrypted must be the client's short-term public key
         if (!compare(vouchPlaintext, cnClient, Curve.Size.ZERO.bytes(), 32)) {
-            //  Temporary support for security debugging
-            puts("CURVE I: invalid handshake from client (public key)");
             return ZError.EPROTO;
         }
 
@@ -498,7 +474,7 @@ public class CurveServerMechanism extends Mechanism
         int rc = cryptoBox.afternm(readyBox, readyPlaintext, mlen, readyNonce, cnPrecom);
         assert (rc == 0);
 
-        appendData(msg, "READY");
+        msg.putShortString("READY");
         //  Short nonce, prefixed by "CurveZMQREADY---"
         msg.put(readyNonce, 16, 8);
         //  Box [metadata](S'->C')
@@ -514,8 +490,8 @@ public class CurveServerMechanism extends Mechanism
     {
         assert (statusCode != null && statusCode.length() == 3);
 
-        appendData(msg, "ERROR");
-        appendData(msg, statusCode);
+        msg.putShortString("ERROR");
+        msg.putShortString(statusCode);
 
         return 0;
     }

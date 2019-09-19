@@ -1,12 +1,10 @@
 package zmq.util;
 
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import zmq.ZMQ;
+import zmq.util.function.Supplier;
 
 /**
  * Manages set of timers.
@@ -19,56 +17,62 @@ import zmq.ZMQ;
 @Draft
 public final class Timers
 {
-    private static final long ONE_MILLISECOND = 1;
-
     public static final class Timer
     {
+        private final Timers   parent;
         private long           interval;
+        private boolean        alive = true;
         private final Handler  handler;
         private final Object[] args;
 
-        public Timer(long interval, Handler handler, Object... args)
+        private Timer(Timers parent, long interval, Handler handler, Object... args)
         {
+            assert (args != null);
+            this.parent = parent;
             this.interval = interval;
             this.handler = handler;
             this.args = args;
         }
 
-        @Override
-        public int hashCode()
+        /**
+         * Changes the interval of the timer.
+         * This method is slow, canceling existing and adding a new timer yield better performance.
+         * @param interval the new interval of the timer.
+         * @return true if set, otherwise false.
+         */
+        public boolean setInterval(long interval)
         {
-            final int prime = 31;
-            int result = 1;
-            result = prime * result + Arrays.hashCode(args);
-            result = prime * result + ((handler == null) ? 0 : handler.hashCode());
-            return result;
+            if (alive) {
+                this.interval = interval;
+                return parent.insert(this);
+            }
+            return false;
         }
 
-        @Override
-        public boolean equals(Object obj)
+        /**
+         * Reset the timer.
+         * This method is slow, canceling existing and adding a new timer yield better performance.
+         * @return true if reset, otherwise false.
+         */
+        public boolean reset()
         {
-            if (this == obj) {
+            if (alive) {
+                return parent.insert(this);
+            }
+            return false;
+        }
+
+        /**
+         * Cancels a timer.
+         * @return true if cancelled, otherwise false.
+         */
+        public boolean cancel()
+        {
+            if (alive) {
+                alive = false;
                 return true;
             }
-            if (obj == null) {
-                return false;
-            }
-            if (getClass() != obj.getClass()) {
-                return false;
-            }
-            Timer other = (Timer) obj;
-            if (handler == null) {
-                if (other.handler != null) {
-                    return false;
-                }
-            }
-            else if (!handler.equals(other.handler)) {
-                return false;
-            }
-            if (!Arrays.equals(args, other.args)) {
-                return false;
-            }
-            return true;
+            return false;
         }
     }
 
@@ -77,12 +81,28 @@ public final class Timers
         void time(Object... args);
     }
 
-    private final MultiMap<Long, Timer> timers          = new MultiMap<>();
-    private final Set<Timer>            cancelledTimers = new HashSet<>();
+    private final MultiMap<Long, Timer> timers = new MultiMap<>();
+    private final Supplier<Long>        clock;
+
+    public Timers()
+    {
+        this(() -> TimeUnit.NANOSECONDS.toMillis(Clock.nowNS()));
+    }
+
+    /**
+     * Builds a new timer.
+     * <p>
+     * <strong>This constructor is for testing and is not intended to be used in production code.</strong>
+     * @param clock the supplier of the current time in milliseconds.
+     */
+    public Timers(Supplier<Long> clock)
+    {
+        this.clock = clock;
+    }
 
     private long now()
     {
-        return Clock.nowNS();
+        return clock.get();
     }
 
     private boolean insert(Timer timer)
@@ -102,7 +122,8 @@ public final class Timers
         if (handler == null) {
             return null;
         }
-        final Timer timer = new Timer(TimeUnit.MILLISECONDS.toNanos(interval), handler, args);
+        Utils.checkArgument(interval > 0, "Delay of a timer has to be strictly greater than 0");
+        final Timer timer = new Timer(this, interval, handler, args);
         final boolean rc = insert(timer);
         assert (rc);
         return timer;
@@ -113,14 +134,13 @@ public final class Timers
      * This method is slow, canceling existing and adding a new timer yield better performance.
      * @param timer the timer to change the interval to.
      * @return true if set, otherwise false.
+     * @deprecated use {@link Timer#setInterval(long)} instead
      */
+    @Deprecated
     public boolean setInterval(Timer timer, long interval)
     {
-        if (timers.remove(timer)) {
-            timer.interval = TimeUnit.MILLISECONDS.toNanos(interval);
-            return insert(timer);
-        }
-        return false;
+        assert (timer.parent == this);
+        return timer.setInterval(interval);
     }
 
     /**
@@ -128,26 +148,26 @@ public final class Timers
      * This method is slow, canceling existing and adding a new timer yield better performance.
      * @param timer the timer to reset.
      * @return true if reset, otherwise false.
+     * @deprecated use {@link Timer#reset()} instead
      */
+    @Deprecated
     public boolean reset(Timer timer)
     {
-        if (timers.contains(timer)) {
-            return insert(timer);
-        }
-        return false;
+        assert (timer.parent == this);
+        return timer.reset();
     }
 
     /**
      * Cancel a timer.
      * @param timer the timer to cancel.
      * @return true if cancelled, otherwise false.
+     * @deprecated use {@link Timer#cancel()} instead
      */
+    @Deprecated
     public boolean cancel(Timer timer)
     {
-        if (timers.contains(timer)) {
-            return cancelledTimers.add(timer);
-        }
-        return false;
+        assert (timer.parent == this);
+        return timer.cancel();
     }
 
     /**
@@ -157,14 +177,14 @@ public final class Timers
     public long timeout()
     {
         final long now = now();
-        for (Entry<Timer, Long> entry : timers.entries()) {
+        for (Entry<Timer, Long> entry : entries()) {
             final Timer timer = entry.getKey();
-            final Long timeout = entry.getValue();
+            final Long expiration = entry.getValue();
 
-            if (!cancelledTimers.remove(timer)) {
+            if (timer.alive) {
                 //  Live timer, lets return the timeout
-                if (timeout - now > 0) {
-                    return ONE_MILLISECOND + TimeUnit.NANOSECONDS.toMillis(timeout - now);
+                if (expiration - now > 0) {
+                    return expiration - now;
                 }
                 else {
                     return 0;
@@ -172,7 +192,7 @@ public final class Timers
             }
 
             //  Remove it from the list of active timers.
-            timers.remove(timeout, timer);
+            timers.remove(expiration, timer);
         }
         //  Wait forever as no timers are alive
         return -1;
@@ -186,18 +206,18 @@ public final class Timers
     {
         int executed = 0;
         final long now = now();
-        for (Entry<Timer, Long> entry : timers.entries()) {
+        for (Entry<Timer, Long> entry : entries()) {
             final Timer timer = entry.getKey();
-            final Long timeout = entry.getValue();
+            final Long expiration = entry.getValue();
 
             //  Dead timer, lets remove it and continue
-            if (cancelledTimers.remove(timer)) {
+            if (!timer.alive) {
                 //  Remove it from the list of active timers.
-                timers.remove(timeout, timer);
+                timers.remove(expiration, timer);
                 continue;
             }
             //  Map is ordered, if we have to wait for current timer we can stop.
-            if (timeout - now > 0) {
+            if (expiration - now > 0) {
                 break;
             }
 
@@ -207,6 +227,11 @@ public final class Timers
             ++executed;
         }
         return executed;
+    }
+
+    Iterable<Entry<Timer, Long>> entries()
+    {
+        return timers.entries();
     }
 
     public int sleepAndExecute()

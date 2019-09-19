@@ -5,11 +5,16 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.Selector;
 import java.nio.charset.Charset;
-import java.util.LinkedList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.Random;
+import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Stream;
+
+import org.zeromq.proto.ZPicture;
 
 import zmq.Ctx;
 import zmq.SocketBase;
@@ -24,64 +29,64 @@ import zmq.util.Draft;
 import zmq.util.Z85;
 
 /**
- * The ØMQ lightweight messaging kernel is a library which extends the standard socket interfaces
+ * <p>The ØMQ lightweight messaging kernel is a library which extends the standard socket interfaces
  * with features traditionally provided by specialised messaging middleware products.
  * ØMQ sockets provide an abstraction of asynchronous message queues, multiple messaging patterns,
- * message filtering (subscriptions), seamless access to multiple transport protocols and more.
- * <p/>
- * Following is an overview of ØMQ concepts, describes how ØMQ abstracts standard sockets
- * and provides a reference manual for the functions provided by the ØMQ library.
- * <p/>
+ * message filtering (subscriptions), seamless access to multiple transport protocols and more.</p>
+ *
+ * <p>Following is an overview of ØMQ concepts, describes how ØMQ abstracts standard sockets
+ * and provides a reference manual for the functions provided by the ØMQ library.</p>
+ *
  * <h1>Contexts</h1>
- * Before using any ØMQ library functions you must create a {@link ZMQ.Context ØMQ context} using {@link ZMQ#context(int)}.
- * When you exit your application you must destroy the context using {@link ZMQ.Context#close()}.
- * <p/>
+ * <p>Before using any ØMQ library functions you must create a {@link ZMQ.Context ØMQ context} using {@link ZMQ#context(int)}.
+ * When you exit your application you must destroy the context using {@link ZMQ.Context#close()}.</p>
+ *
  * <h2>Thread safety</h2>
  * A ØMQ context is thread safe and may be shared among as many application threads as necessary,
  * without any additional locking required on the part of the caller.
- * <br/>
+ * <br>
  * Individual ØMQ sockets are not thread safe except in the case
  * where full memory barriers are issued when migrating a socket from one thread to another.
- * <br/>
+ * <br>
  * In practice this means applications can create a socket in one thread with * {@link ZMQ.Context#socket(SocketType)}
  * and then pass it to a newly created thread as part of thread initialization.
- * <p/>
+ *
  * <h2>Multiple contexts</h2>
  * Multiple contexts may coexist within a single application.
- * <br/>
+ * <br>
  * Thus, an application can use ØMQ directly and at the same time make use of any number of additional libraries
  * or components which themselves make use of ØMQ as long as the above guidelines regarding thread safety are adhered to.
- * <p/>
+ *
  * <h1>Messages</h1>
  * A ØMQ message is a discrete unit of data passed between applications or components of the same application.
  * ØMQ messages have no internal structure and from the point of view of ØMQ itself
  * they are considered to be opaque binary data.
- * <p/>
+ *
  * <h1>Sockets</h1>
  * {@link ZMQ.Socket ØMQ sockets} present an abstraction of a asynchronous message queue,
  * with the exact queueing semantics depending on the socket type in use.
- * <p/>
+ *
  * <h1>Transports</h1>
- * A ØMQ socket can use multiple different underlying transport mechanisms.
- * Each transport mechanism is suited to a particular purpose and has its own advantages and drawbacks.
- * <p/>
- * The following transport mechanisms are provided:<br/>
+ * <p>A ØMQ socket can use multiple different underlying transport mechanisms.
+ * Each transport mechanism is suited to a particular purpose and has its own advantages and drawbacks.</p>
+ *
+ * <p>The following transport mechanisms are provided:</p>
  * <ul>
  * <li>Unicast transport using TCP</li>
  * <li>Local inter-process communication transport</li>
  * <li>Local in-process (inter-thread) communication transport</li>
  * </ul>
- * <p/>
+ *
  * <h1>Proxies</h1>
- * ØMQ provides proxies to create fanout and fan-in topologies.
+ * <p>ØMQ provides proxies to create fanout and fan-in topologies.
  * A proxy connects a frontend socket to a backend socket
  * and switches all messages between the two sockets, opaquely.
- * A proxy may optionally capture all traffic to a third socket.
- * <p/>
+ * A proxy may optionally capture all traffic to a third socket.</p>
+ *
  * <h1>Security</h1>
- * A ØMQ socket can select a security mechanism. Both peers must use the same security mechanism.
- * <br/>
- * The following security mechanisms are provided for IPC and TCP connections:<br/>
+ * <p>A ØMQ socket can select a security mechanism. Both peers must use the same security mechanism.</p>
+ *
+ * <p>The following security mechanisms are provided for IPC and TCP connections:</p>
  * <ul>
  * <li>Null security</li>
  * <li>Plain-text authentication using username and password</li>
@@ -426,18 +431,72 @@ public class ZMQ
         EPROTONOSUPPORT(ZError.EPROTONOSUPPORT),
         ENOBUFS(ZError.ENOBUFS),
         ENETDOWN(ZError.ENETDOWN),
-        EADDRINUSE(ZError.EADDRINUSE),
+        EADDRINUSE(ZError.EADDRINUSE) {
+            @Override
+            public String getMessage()
+            {
+                return "Address already in use";
+            }
+        },
         EADDRNOTAVAIL(ZError.EADDRNOTAVAIL),
         ECONNREFUSED(ZError.ECONNREFUSED),
         EINPROGRESS(ZError.EINPROGRESS),
         EHOSTUNREACH(ZError.EHOSTUNREACH),
-        EMTHREAD(ZError.EMTHREAD),
-        EFSM(ZError.EFSM),
-        ENOCOMPATPROTO(ZError.ENOCOMPATPROTO),
-        ETERM(ZError.ETERM),
+        EMTHREAD(ZError.EMTHREAD) {
+            @Override
+            public String getMessage()
+            {
+                return "No thread available";
+            }
+        },
+        EFSM(ZError.EFSM) {
+            @Override
+            public String getMessage()
+            {
+                return "Operation cannot be accomplished in current state";
+            }
+        },
+        ENOCOMPATPROTO(ZError.ENOCOMPATPROTO) {
+            @Override
+            public String getMessage()
+            {
+                return "The protocol is not compatible with the socket type";
+            }
+        },
+        ETERM(ZError.ETERM) {
+            @Override
+            public String getMessage()
+            {
+                return "Context was terminated";
+            }
+        },
         ENOTSOCK(ZError.ENOTSOCK),
-        EAGAIN(ZError.EAGAIN);
+        EAGAIN(ZError.EAGAIN),
+        ENOENT(ZError.ENOENT),
+        EINTR(ZError.EINTR),
+        EACCESS(ZError.EACCESS),
+        EFAULT(ZError.EFAULT),
+        EINVAL(ZError.EINVAL),
+        EISCONN(ZError.EISCONN),
+        ENOTCONN(ZError.ENOTCONN),
+        EMSGSIZE(ZError.EMSGSIZE),
+        EAFNOSUPPORT(ZError.EAFNOSUPPORT),
+        ENETUNREACH(ZError.ENETUNREACH),
+        ECONNABORTED(ZError.ECONNABORTED),
+        ECONNRESET(ZError.ECONNRESET),
+        ETIMEDOUT(ZError.ETIMEDOUT),
+        ENETRESET(ZError.ENETRESET),
+        EIOEXC(ZError.EIOEXC),
+        ESOCKET(ZError.ESOCKET),
+        EMFILE(ZError.EMFILE),
+        EPROTO(ZError.EPROTO);
 
+        private static final Map<Integer, Error> map = new HashMap<>(Error.values().length);
+        static {
+            for (Error e : Error.values()) {
+                map.put(e.code, e);
+            }
+        }
         private final int code;
 
         Error(int code)
@@ -447,17 +506,22 @@ public class ZMQ
 
         public static Error findByCode(int code)
         {
-            for (Error e : Error.values()) {
-                if (e.getCode() == code) {
-                    return e;
-                }
+            if (map.containsKey(code)) {
+                return map.get(code);
             }
-            throw new IllegalArgumentException("Unknown " + Error.class.getName() + " enum code:" + code);
+            else {
+                throw new IllegalArgumentException("Unknown " + Error.class.getName() + " enum code: " + code);
+            }
         }
 
         public int getCode()
         {
             return code;
+        }
+
+        public String getMessage()
+        {
+            return "errno " + Integer.toString(code);
         }
     }
 
@@ -486,7 +550,7 @@ public class ZMQ
          */
         public boolean isTerminated()
         {
-            return !ctx.checkTag();
+            return !ctx.isActive();
         }
 
         /**
@@ -573,11 +637,11 @@ public class ZMQ
 
         /**
          * Creates a ØMQ socket within the specified context and return an opaque handle to the newly created socket.
-         * <br/>
+         * <br>
          * The type argument specifies the socket type, which determines the semantics of communication over the socket.
-         * <br/>
+         * <br>
          * The newly created socket is initially unbound, and not associated with any endpoints.
-         * <br/>
+         * <br>
          * In order to establish a message flow a socket must first be connected
          * to at least one endpoint with {@link org.zeromq.ZMQ.Socket#connect(String)},
          * or at least one endpoint must be created for accepting incoming connections with {@link org.zeromq.ZMQ.Socket#bind(String)}.
@@ -658,9 +722,9 @@ public class ZMQ
          * </ul>
          * </li>
          * </ul>
-         * <p/>
+         * <p>
          * <h1>Warning</h1>
-         * <br/>
+         * <br>
          * As ZMQ_LINGER defaults to "infinite", by default this method will block indefinitely if there are any pending connects or sends.
          * We strongly recommend to
          * <ul>
@@ -677,64 +741,59 @@ public class ZMQ
 
     /**
      * Abstracts an asynchronous message queue, with the exact queuing semantics depending on the socket type in use.
-     * <br/>
+     * <br>
      * Where conventional sockets transfer streams of bytes or discrete datagrams, ØMQ sockets transfer discrete messages.
-     * <p/>
      * <h1>Key differences to conventional sockets</h1>
-     * <br/>
      * Generally speaking, conventional sockets present a synchronous interface to either
      * connection-oriented reliable byte streams (SOCK_STREAM),
      * or connection-less unreliable datagrams (SOCK_DGRAM).
-     * <br/>
+     * <br>
      * In comparison, ØMQ sockets present an abstraction of an asynchronous message queue,
      * with the exact queueing semantics depending on the socket type in use.
      * Where conventional sockets transfer streams of bytes or discrete datagrams, ØMQ sockets transfer discrete messages.
-     * <p/>
+     * <br>
      * ØMQ sockets being asynchronous means that the timings of the physical connection setup and tear down, reconnect and effective delivery
      * are transparent to the user and organized by ØMQ itself.
      * Further, messages may be queued in the event that a peer is unavailable to receive them.
-     * <p/>
+     * <br>
      * Conventional sockets allow only strict one-to-one (two peers), many-to-one (many clients, one server), or in some cases one-to-many (multicast) relationships.
      * With the exception of {@link ZMQ#PAIR}, ØMQ sockets may be connected to multiple endpoints using {@link ZMQ.Socket#connect(String)},
      * while simultaneously accepting incoming connections from multiple endpoints bound to the socket using {@link ZMQ.Socket#bind(String)},
      * thus allowing many-to-many relationships.
-     * <p/>
      * <h1>Thread safety</h1>
-     * <br/>
      * ØMQ sockets are not thread safe. <strong>Applications MUST NOT use a socket from multiple threads</strong>
      * except after migrating a socket from one thread to another with a "full fence" memory barrier.
-     * <br/>
+     * <br>
      * ØMQ sockets are not Thread.interrupt safe. <strong>Applications MUST NOT interrupt threads using ØMQ sockets</strong>.
-     * <p/>
      * <h1>Messaging patterns</h1>
-     * <br/>
      * <ul>
      * <li>Request-reply
-     * <br/>The request-reply pattern is used for sending requests from a {@link ZMQ#REQ} client to one or more {@link ZMQ#REP} services, and receiving subsequent replies to each request sent.
+     * <br>
+     * The request-reply pattern is used for sending requests from a {@link ZMQ#REQ} client to one or more {@link ZMQ#REP} services, and receiving subsequent replies to each request sent.
      * The request-reply pattern is formally defined by http://rfc.zeromq.org/spec:28.
      * {@link ZMQ#REQ}, {@link ZMQ#REP}, {@link ZMQ#DEALER}, {@link ZMQ#ROUTER} socket types belong to this pattern.
      * </li>
      * <li>Publish-subscribe
-     * <br/>
+     * <br>
      * The publish-subscribe pattern is used for one-to-many distribution of data from a single publisher to multiple subscribers in a fan out fashion.
      * The publish-subscribe pattern is formally defined by http://rfc.zeromq.org/spec:29.
      * {@link ZMQ#SUB}, {@link ZMQ#PUB}, {@link ZMQ#XSUB}, {@link ZMQ#XPUB} socket types belong to this pattern.
      * </li>
      * <li>Pipeline
-     * <br/>
+     * <br>
      * The pipeline pattern is used for distributing data to nodes arranged in a pipeline. Data always flows down the pipeline, and each stage of the pipeline is connected to at least one node.
      * When a pipeline stage is connected to multiple nodes data is round-robined among all connected nodes.
      * The pipeline pattern is formally defined by http://rfc.zeromq.org/spec:30.
      * {@link ZMQ#PUSH}, {@link ZMQ#PULL} socket types belong to this pattern.
      * </li>
      * <li>Exclusive pair
-     * <br/>
+     * <br>
      * The exclusive pair pattern is used to connect a peer to precisely one other peer. This pattern is used for inter-thread communication across the inproc transport,
      * using {@link ZMQ#PAIR} socket type.
      * The exclusive pair pattern is formally defined by http://rfc.zeromq.org/spec:31.
      * </li>
      * <li>Native
-     * <br/>
+     * <br>
      * The native pattern is used for communicating with TCP peers and allows asynchronous requests and replies in either direction,
      * using {@link ZMQ#STREAM} socket type.
      * </li>
@@ -2293,10 +2352,20 @@ public class ZMQ
             return setSocketOpt(zmq.ZMQ.ZMQ_XPUB_NODROP, noDrop);
         }
 
+        public boolean setXpubManual(boolean manual)
+        {
+            return setSocketOpt(zmq.ZMQ.ZMQ_XPUB_MANUAL, manual);
+        }
+
+        public boolean setXpubVerboser(boolean verboser)
+        {
+            return setSocketOpt(zmq.ZMQ.ZMQ_XPUB_VERBOSER, verboser);
+        }
+
         /**
          * @return the IPV4ONLY
          * @see #setIPv4Only (boolean)
-         * @deprecated use {@link #isIPv6()} instead (inverted logic: ipv4 = true <==> ipv6 = false)
+         * @deprecated use {@link #isIPv6()} instead (inverted logic: ipv4 = true &lt;==&gt; ipv6 = false)
          */
         @Deprecated
         public boolean getIPv4Only()
@@ -2340,7 +2409,7 @@ public class ZMQ
          *
          * @param v4only A value of true will use IPv4 sockets, while the value of false will use IPv6 sockets
          * @return true if the option was set, otherwise false
-         * @deprecated use {@link #setIPv6(boolean)} instead (inverted logic: ipv4 = true <==> ipv6 = false)
+         * @deprecated use {@link #setIPv6(boolean)} instead (inverted logic: ipv4 = true &lt;==&gt; ipv6 = false)
          */
         @Deprecated
         public boolean setIPv4Only(boolean v4only)
@@ -2349,11 +2418,16 @@ public class ZMQ
         }
 
         /**
-         * Set the IPv6 option for the socket.
-         * A value of true means IPv6 is enabled on the socket, while false means the socket will use only IPv4.
-         * When IPv6 is enabled the socket will connect to, or accept connections from, both IPv4 and IPv6 hosts.
+         * <p>Set the IPv6 option for the socket.</p>
+         * <p>A value of true means IPv6 is enabled on the socket, while false means the socket will use only IPv4.
+         * When IPv6 is enabled the socket will connect to, or accept connections from, both IPv4 and IPv6 hosts.</p>
+         * <p>The default value is false, unless the following system properties are set:</p>
+         * <ul>
+         * <li>java.net.preferIPv4Stack=false</li>
+         * <li>java.net.preferIPv6Addresses=true</li>
+         * </ul>
          *
-         * @param v6 A value of true will use IPv6 sockets, while the value of false will use IPv4 sockets
+         * @param v6 A value of true will use IPv6 sockets, while the value of false will use IPv4 sockets only
          * @return true if the option was set, otherwise false
          * @see #isIPv6()
          */
@@ -2385,7 +2459,7 @@ public class ZMQ
 
         /**
          * @see #setDelayAttachOnConnect(boolean)
-         * @deprecated use {@link #setImmediate(boolean)} instead (inverted logic: immediate = true <==> delay attach on connect = false)
+         * @deprecated use {@link #setImmediate(boolean)} instead (inverted logic: immediate = true &lt;==&gt; delay attach on connect = false)
          */
         @Deprecated
         public boolean getDelayAttachOnConnect()
@@ -2964,13 +3038,13 @@ public class ZMQ
 
         /**
          * Connects the socket to an endpoint and then accepts incoming connections on that endpoint.
-         * <p/>
+         * <p>
          * The endpoint is a string consisting of a transport :// followed by an address.
-         * <br/>
+         * <br>
          * The transport specifies the underlying protocol to use.
-         * <br/>
+         * <br>
          * The address specifies the transport-specific address to connect to.
-         * <p/>
+         * <p>
          * ØMQ provides the the following transports:
          * <ul>
          * <li>tcp - unicast transport using TCP</li>
@@ -2979,23 +3053,23 @@ public class ZMQ
          * </ul>
          * Every ØMQ socket type except ZMQ_PAIR supports one-to-many and many-to-one semantics.
          * The precise semantics depend on the socket type.
-         * <p/>
+         * <p>
          * For most transports and socket types the connection is not performed immediately but as needed by ØMQ.
-         * <br/>
+         * <br>
          * Thus a successful call to connect(String) does not mean that the connection was or could actually be established.
-         * <br/>
+         * <br>
          * Because of this, for most transports and socket types
          * the order in which a server socket is bound and a client socket is connected to it does not matter.
-         * <br/>
+         * <br>
          * The first exception is when using the inproc:// transport: you must call {@link #bind(String)} before calling connect().
-         * <br/>
+         * <br>
          * The second exception are ZMQ_PAIR sockets, which do not automatically reconnect to endpoints.
-         * <p/>
+         * <p>
          * Following a connect(), for socket types except for ZMQ_ROUTER, the socket enters its normal ready state.
-         * <br/>
+         * <br>
          * By contrast, following a {@link #bind(String)} alone, the socket enters a mute state
          * in which the socket blocks or drops messages according to the socket type.
-         * <br/>
+         * <br>
          * A ZMQ_ROUTER socket enters its normal ready state for a specific peer
          * only when handshaking is complete for that peer, which may take an arbitrary time.
          *
@@ -3199,6 +3273,75 @@ public class ZMQ
         }
 
         /**
+         * Queues a 'picture' message to the socket (or actor), so it can be sent.
+         *
+         * @param picture The picture is a string that defines the type of each frame.
+         *                This makes it easy to send a complex multiframe message in
+         *                one call. The picture can contain any of these characters,
+         *                each corresponding to zero or one arguments:
+         *
+         *                <table>
+         *                <caption> </caption>
+         *                <tr><td>i = int  (stores signed integer)</td></tr>
+         *                <tr><td>1 = byte (stores 8-bit unsigned integer)</td></tr>
+         *                <tr><td>2 = int  (stores 16-bit unsigned integer)</td></tr>
+         *                <tr><td>4 = long (stores 32-bit unsigned integer)</td></tr>
+         *                <tr><td>8 = long (stores 64-bit unsigned integer)</td></tr>
+         *                <tr><td>s = String</td></tr>
+         *                <tr><td>b = byte[]</td></tr>
+         *                <tr><td>f = ZFrame</td></tr>
+         *                <tr><td>m = ZMsg (sends all frames in the ZMsg)</td></tr>
+         *                <tr><td>z = sends zero-sized frame (0 arguments)</td></tr>
+         *                </table>
+         *                Note that s, b, f and m are encoded the same way and the choice is
+         *                offered as a convenience to the sender, which may or may not already
+         *                have data in a ZFrame or ZMsg. Does not change or take ownership of
+         *                any arguments.
+         *
+         *                Also see {@link #recvPicture(String)}} how to recv a
+         *                multiframe picture.
+         * @param args    Arguments according to the picture
+         * @return true if successful, false if sending failed for any reason
+         */
+        @Draft
+        public boolean sendPicture(String picture, Object... args)
+        {
+            return new ZPicture().sendPicture(this, picture, args);
+        }
+
+        /**
+         * Queues a binary encoded 'picture' message to the socket (or actor), so it can be sent.
+         * This method is similar to {@link #sendPicture(String, Object...)}, except the arguments
+         * are encoded in a binary format that is compatible with zproto, and is designed to reduce
+         * memory allocations.
+         *
+         * @param picture The picture argument is a string that defines the
+         *                type of each argument. Supports these argument types:
+         *                <table>
+         *                <caption> </caption>
+         *                <tr><th style="text-align:left">pattern</th><th style="text-align:left">java type</th><th style="text-align:left">zproto type</th></tr>
+         *                <tr><td>1</td><td>int</td><td>type = "number" size = "1"</td></tr>
+         *                <tr><td>2</td><td>int</td><td>type = "number" size = "2"</td></tr>
+         *                <tr><td>4</td><td>long</td><td>type = "number" size = "3"</td></tr>
+         *                <tr><td>8</td><td>long</td><td>type = "number" size = "4"</td></tr>
+         *                <tr><td>s</td><td>String, 0-255 chars</td><td>type = "string"</td></tr>
+         *                <tr><td>S</td><td>String, 0-2^32-1 chars</td><td>type = "longstr"</td></tr>
+         *                <tr><td>c</td><td>byte[], 0-2^32-1 bytes</td><td>type = "chunk"</td></tr>
+         *                <tr><td>f</td><td>ZFrame</td><td>type = "frame"</td></tr>
+         *                <tr><td>m</td><td>ZMsg</td><td>type = "msg"</td></tr>
+         *                </table>
+         * @param args    Arguments according to the picture
+         * @return true when it has been queued on the socket and ØMQ has assumed responsibility for the message.
+         * This does not indicate that the message has been transmitted to the network.
+         * @apiNote Does not change or take ownership of any arguments.
+         */
+        @Draft
+        public boolean sendBinaryPicture(String picture, Object... args)
+        {
+            return new ZPicture().sendBinaryPicture(this, picture, args);
+        }
+
+        /**
          * Receives a message.
          *
          * @return the message received, as an array of bytes; null on error.
@@ -3206,19 +3349,6 @@ public class ZMQ
         public byte[] recv()
         {
             return recv(0);
-        }
-
-        /**
-         * Stream of incoming messages
-         * <p>
-         * This API is in DRAFT state and is subject to change at ANY time until declared stable
-         *
-         * @return infinite stream of the incoming messages
-         */
-        @Draft
-        public Stream<byte[]> recvStream()
-        {
-            return Stream.generate(this::recv);
         }
 
         /**
@@ -3314,17 +3444,6 @@ public class ZMQ
         }
 
         /**
-         * This API is in DRAFT state and is subject to change at ANY time until declared stable
-         *
-         * @return infinite stream of the incoming messages as a String object
-         */
-        @Draft
-        public Stream<String> recvStrStream()
-        {
-            return Stream.generate(this::recvStr);
-        }
-
-        /**
          * Receives a message as a string.
          *
          * @param flags either:
@@ -3350,12 +3469,63 @@ public class ZMQ
         }
 
         /**
+         * Receive a 'picture' message to the socket (or actor).
+         *
+         *
+         * @param picture The picture is a string that defines the type of each frame.
+         *                This makes it easy to recv a complex multiframe message in
+         *                one call. The picture can contain any of these characters,
+         *                each corresponding to zero or one elements in the result:
+         *
+         *                <table>
+         *               <caption> </caption>
+         *                <tr><td>i = int (stores signed integer)</td></tr>
+         *                <tr><td>1 = int (stores 8-bit unsigned integer)</td></tr>
+         *                <tr><td>2 = int (stores 16-bit unsigned integer)</td></tr>
+         *                <tr><td>4 = long (stores 32-bit unsigned integer)</td></tr>
+         *                <tr><td>8 = long (stores 64-bit unsigned integer)</td></tr>
+         *                <tr><td>s = String</td></tr>
+         *                <tr><td>b = byte[]</td></tr>
+         *                <tr><td>f = ZFrame (creates zframe)</td></tr>
+         *                <tr><td>m = ZMsg (creates a zmsg with the remaing frames)</td></tr>
+         *                <tr><td>z = null, asserts empty frame (0 arguments)</td></tr>
+         *                </table>
+         *
+         *                Also see {@link #sendPicture(String, Object...)} how to send a
+         *                multiframe picture.
+         *
+         * @return the picture elements as object array
+         */
+        @Draft
+        public Object[] recvPicture(String picture)
+        {
+            return new ZPicture().recvPicture(this, picture);
+        }
+
+        /**
+         * Receive a binary encoded 'picture' message from the socket (or actor).
+         * This method is similar to {@link #recv()}, except the arguments are encoded
+         * in a binary format that is compatible with zproto, and is designed to
+         * reduce memory allocations.
+         *
+         * @param picture The picture argument is a string that defines
+         *                the type of each argument. See {@link #sendBinaryPicture(String, Object...)}
+         *                for the supported argument types.
+         * @return the picture elements as object array
+         **/
+        @Draft
+        public Object[] recvBinaryPicture(final String picture)
+        {
+            return new ZPicture().recvBinaryPicture(this, picture);
+        }
+
+        /**
          * Start a monitoring socket where events can be received.
          * <p>
          * Lets an application thread track socket events (like connects) on a ZeroMQ socket.
          * Each call to this method creates a {@link ZMQ#PAIR} socket and binds that to the specified inproc:// endpoint.
          * To collect the socket events, you must create your own PAIR socket, and connect that to the endpoint.
-         * <br/>
+         * <br>
          * Supports only connection-oriented transports, that is, TCP, IPC.
          *
          * @param addr   the endpoint to receive events from. (must be inproc transport)
@@ -3420,14 +3590,14 @@ public class ZMQ
     {
         /**
          * For ØMQ sockets, at least one message may be received from the socket without blocking.
-         * <br/>
+         * <br>
          * For standard sockets this is equivalent to the POLLIN flag of the poll() system call
          * and generally means that at least one byte of data may be read from fd without blocking.
          */
         public static final int POLLIN  = zmq.ZMQ.ZMQ_POLLIN;
         /**
          * For ØMQ sockets, at least one message may be sent to the socket without blocking.
-         * <br/>
+         * <br>
          * For standard sockets this is equivalent to the POLLOUT flag of the poll() system call
          * and generally means that at least one byte of data may be written to fd without blocking.
          */
@@ -3435,7 +3605,7 @@ public class ZMQ
         /**
          * For standard sockets, this flag is passed through {@link zmq.ZMQ#poll(Selector, zmq.poll.PollItem[], long)} to the underlying poll() system call
          * and generally means that some sort of error condition is present on the socket specified by fd.
-         * <br/>
+         * <br>
          * For ØMQ sockets this flag has no effect if set in events, and shall never be returned in revents by {@link zmq.ZMQ#poll(Selector, zmq.poll.PollItem[], long)}.
          */
         public static final int POLLERR = zmq.ZMQ.ZMQ_POLLERR;
@@ -3446,14 +3616,9 @@ public class ZMQ
         private final Selector selector;
         private final Context  context;
 
-        private PollItem[] items;
-        private int        next;
-        private int        used;
+        private List<PollItem> items;
 
         private long timeout;
-
-        // When socket is removed from polling, store free slots here
-        private LinkedList<Integer> freeSlots;
 
         /**
          * Class constructor.
@@ -3469,11 +3634,8 @@ public class ZMQ
             selector = context.selector();
             assert (selector != null);
 
-            items = new PollItem[size];
+            items = new ArrayList<>(size);
             timeout = -1L;
-            next = 0;
-
-            freeSlots = new LinkedList<>();
         }
 
         /**
@@ -3565,25 +3727,8 @@ public class ZMQ
          */
         private int registerInternal(PollItem item)
         {
-            int pos;
-
-            if (!freeSlots.isEmpty()) {
-                // If there are free slots in our array, remove one
-                // from the free list and use it.
-                pos = freeSlots.remove();
-            }
-            else {
-                if (next >= items.length) {
-                    PollItem[] nitems = new PollItem[items.length + SIZE_INCREMENT];
-                    System.arraycopy(items, 0, nitems, 0, items.length);
-                    items = nitems;
-                }
-                pos = next++;
-            }
-
-            items[pos] = item;
-            used++;
-            return pos;
+          items.add(item);
+          return items.size() - 1;
         }
 
         /**
@@ -3613,18 +3758,10 @@ public class ZMQ
          */
         private void unregisterInternal(Object socket)
         {
-            for (int i = 0; i < next; ++i) {
-                PollItem item = items[i];
-                if (item == null) {
-                    continue;
-                }
+            for (Iterator<PollItem> it = items.iterator(); it.hasNext(); ) {
+                PollItem item = it.next();
                 if (item.socket == socket || item.getRawSocket() == socket) {
-                    items[i] = null;
-
-                    freeSlots.add(i);
-                    --used;
-
-                    break;
+                    it.remove();
                 }
             }
         }
@@ -3637,10 +3774,10 @@ public class ZMQ
          */
         public PollItem getItem(int index)
         {
-            if (index < 0 || index >= this.next) {
+            if (index < 0 || index >= items.size()) {
                 return null;
             }
-            return this.items[index];
+            return this.items.get(index);
         }
 
         /**
@@ -3651,10 +3788,10 @@ public class ZMQ
          */
         public Socket getSocket(int index)
         {
-            if (index < 0 || index >= this.next) {
+            if (index < 0 || index >= items.size()) {
                 return null;
             }
-            return items[index].socket;
+            return items.get(index).socket;
         }
 
         /**
@@ -3690,17 +3827,19 @@ public class ZMQ
          */
         public int getSize()
         {
-            return items.length;
+            return items.size();
         }
 
         /**
          * Get the index for the next position in the poll set size.
          *
+         * @deprecated use getSize instead
          * @return the index for the next position in the poll set size.
          */
+        @Deprecated
         public int getNext()
         {
-            return this.next;
+            return items.size();
         }
 
         /**
@@ -3722,7 +3861,7 @@ public class ZMQ
         /**
          * Issue a poll call, using the specified timeout value.
          * <p>
-         * Since ZeroMQ 3.0, the timeout parameter is in <i>milliseconds<i>,
+         * Since ZeroMQ 3.0, the timeout parameter is in <i>milliseconds</i>,
          * but prior to this the unit was <i>microseconds</i>.
          *
          * @param tout the timeout, as per zmq_poll ();
@@ -3738,18 +3877,18 @@ public class ZMQ
             if (tout < -1) {
                 return 0;
             }
-            if (items.length <= 0 || next <= 0) {
+            if (items.isEmpty()) {
                 return 0;
             }
-            zmq.poll.PollItem[] pollItems = new zmq.poll.PollItem[used];
-            for (int i = 0, j = 0; i < next; i++) {
-                if (items[i] != null) {
-                    pollItems[j++] = items[i].base;
+            zmq.poll.PollItem[] pollItems = new zmq.poll.PollItem[items.size()];
+            for (int i = 0, j = 0; i < items.size(); i++) {
+                if (items.get(i) != null) {
+                    pollItems[j++] = items.get(i).base;
                 }
             }
 
             try {
-                return zmq.ZMQ.poll(selector, pollItems, used, tout);
+                return zmq.ZMQ.poll(selector, pollItems, items.size(), tout);
             }
             catch (ZError.IOException e) {
                 if (context.isTerminated()) {
@@ -3764,46 +3903,46 @@ public class ZMQ
         /**
          * Check whether the specified element in the poll set was signaled for input.
          *
-         * @param index
+         * @param index of element
          * @return true if the element was signaled.
          */
         public boolean pollin(int index)
         {
-            if (index < 0 || index >= this.next) {
+            if (index < 0 || index >= items.size()) {
                 return false;
             }
 
-            return items[index].isReadable();
+            return items.get(index).isReadable();
         }
 
         /**
          * Check whether the specified element in the poll set was signaled for output.
          *
-         * @param index
+         * @param index of element
          * @return true if the element was signaled.
          */
         public boolean pollout(int index)
         {
-            if (index < 0 || index >= this.next) {
+            if (index < 0 || index >= items.size()) {
                 return false;
             }
 
-            return items[index].isWritable();
+            return items.get(index).isWritable();
         }
 
         /**
          * Check whether the specified element in the poll set was signaled for error.
          *
-         * @param index
+         * @param index of element
          * @return true if the element was signaled.
          */
         public boolean pollerr(int index)
         {
-            if (index < 0 || index >= this.next) {
+            if (index < 0 || index >= items.size()) {
                 return false;
             }
 
-            return items[index].isError();
+            return items.get(index).isError();
         }
     }
 
@@ -3947,72 +4086,64 @@ public class ZMQ
 
     /**
      * Class that interfaces the generation of CURVE key pairs.
-     * <p>
-     * The CURVE mechanism defines a mechanism for secure authentication and confidentiality for communications between a client and a server.
+     *
+     * <p>The CURVE mechanism defines a mechanism for secure authentication and confidentiality for communications between a client and a server.
      * CURVE is intended for use on public networks.
-     * The CURVE mechanism is defined by this document: http://rfc.zeromq.org/spec:25.
-     * <p/>
+     * The CURVE mechanism is defined by this document: http://rfc.zeromq.org/spec:25.</p>
+     *
      * <h1>Client and server roles</h1>
-     * <p/>
-     * A socket using CURVE can be either client or server, at any moment, but not both. The role is independent of bind/connect direction.
-     * A socket can change roles at any point by setting new options. The role affects all connect and bind calls that follow it.
-     * <p/>
-     * To become a CURVE server, the application sets the {@link ZMQ.Socket#setAsServerCurve(boolean)} option on the socket,
+     *
+     * <p>A socket using CURVE can be either client or server, at any moment, but not both. The role is independent of bind/connect direction.
+     * A socket can change roles at any point by setting new options. The role affects all connect and bind calls that follow it.</p>
+     *
+     * <p>To become a CURVE server, the application sets the {@link ZMQ.Socket#setAsServerCurve(boolean)} option on the socket,
      * and then sets the {@link ZMQ.Socket#setCurveSecretKey(byte[])} option to provide the socket with its long-term secret key.
-     * The application does not provide the socket with its long-term public key, which is used only by clients.
-     * <p/>
-     * To become a CURVE client, the application sets the {@link ZMQ.Socket#setCurveServerKey(byte[])} option
+     * The application does not provide the socket with its long-term public key, which is used only by clients.</p>
+     *
+     * <p>To become a CURVE client, the application sets the {@link ZMQ.Socket#setCurveServerKey(byte[])} option
      * with the long-term public key of the server it intends to connect to, or accept connections from, next.
      * The application then sets the {@link ZMQ.Socket#setCurvePublicKey(byte[])} and {@link ZMQ.Socket#setCurveSecretKey(byte[])} options with its client long-term key pair.
-     * If the server does authentication it will be based on the client's long term public key.
-     * <p/>
+     * If the server does authentication it will be based on the client's long term public key.</p>
+     *
      * <h1>Key encoding</h1>
-     * <p/>
-     * The standard representation for keys in source code is either 32 bytes of base 256 (binary) data,
+     *
+     * <p>The standard representation for keys in source code is either 32 bytes of base 256 (binary) data,
      * or 40 characters of base 85 data encoded using the Z85 algorithm defined by http://rfc.zeromq.org/spec:32.
      * The Z85 algorithm is designed to produce printable key strings for use in configuration files, the command line, and code.
-     * There is a reference implementation in C at https://github.com/zeromq/rfc/tree/master/src.
-     * <p/>
+     * There is a reference implementation in C at https://github.com/zeromq/rfc/tree/master/src.</p>
+     *
      * <h1>Test key values</h1>
-     * <p/>
-     * For test cases, the client shall use this long-term key pair (specified as hexadecimal and in Z85):
+     *
+     * <p>For test cases, the client shall use this long-term key pair (specified as hexadecimal and in Z85):</p>
      * <ul>
      * <li>public:
-     * <ul>
-     * <li>BB88471D65E2659B30C55A5321CEBB5AAB2B70A398645C26DCA2B2FCB43FC518</li>
-     * <li>Yne@$w-vo<fVvi]a<NY6T1ed:M$fCG*[IaLV{hID</li>
-     * </ul>
+     * <p>BB88471D65E2659B30C55A5321CEBB5AAB2B70A398645C26DCA2B2FCB43FC518</p>
+     * <p>{@code Yne@$w-vo<fVvi]a<NY6T1ed:M$fCG*[IaLV{hID}</p>
      * </li>
      * <li>secret:
-     * <ul>
-     * <li>7BB864B489AFA3671FBE69101F94B38972F24816DFB01B51656B3FEC8DFD0888</li>
-     * <li>D:)Q[IlAW!ahhC2ac:9*A}h:p?([4%wOTJ%JR%cs</li>
-     * </ul>
+     * <p>7BB864B489AFA3671FBE69101F94B38972F24816DFB01B51656B3FEC8DFD0888</p>
+     * <p>{@code D:)Q[IlAW!ahhC2ac:9*A}h:p?([4%wOTJ%JR%cs}</p>
      * </li>
      * </ul>
-     * <br/>
-     * And the server shall use this long-term key pair (specified as hexadecimal and in Z85):
+     *
+     * <p>And the server shall use this long-term key pair (specified as hexadecimal and in Z85):</p>
      * <ul>
      * <li>public:
-     * <ul>
-     * <li>54FCBA24E93249969316FB617C872BB0C1D1FF14800427C594CBFACF1BC2D652</li>
-     * <li>rq:rM>}U?@Lns47E1%kR.o@n%FcmmsL/@{H8]yf7</li>
-     * </ul>
+     * <p>54FCBA24E93249969316FB617C872BB0C1D1FF14800427C594CBFACF1BC2D652</p>
+     * <p>{@code rq:rM>}U?@Lns47E1%kR.o@n%FcmmsL/@{H8]yf7}</p>
      * </li>
      * <li>secret:
-     * <ul>
-     * <li>8E0BDD697628B91D8F245587EE95C5B04D48963F79259877B49CD9063AEAD3B7</li>
-     * <li>JTKVSB%%)wK0E.X)V>+}o?pNmC{O&4W4b!Ni{Lh6</li>
-     * </ul>
+     * <p>8E0BDD697628B91D8F245587EE95C5B04D48963F79259877B49CD9063AEAD3B7</p>
+     * <p>{@code JTKVSB%%)wK0E.X)V>+}o?pNmC{O&amp;4W4b!Ni{Lh6}</p>
      * </li>
      * </ul>
      */
     public static class Curve
     {
         /**
-         * Returns a newly generated random keypair consisting of a public key
-         * and a secret key.
-         * <p>
+         * <p>Returns a newly generated random keypair consisting of a public key
+         * and a secret key.</p>
+         *
          * <p>The keys are encoded using {@link #z85Encode}.</p>
          *
          * @return Randomly generated {@link KeyPair}
@@ -4024,9 +4155,8 @@ public class ZMQ
         }
 
         /**
-         * The function shall decode given key encoded as Z85 string into byte array.
-         * <br/>
-         * The length of string shall be divisible by 5.
+         * <p>The function shall decode given key encoded as Z85 string into byte array.</p>
+         * <p>The length of string shall be divisible by 5.</p>
          * <p>The decoding shall follow the ZMQ RFC 32 specification.</p>
          *
          * @param key Key to be decoded
@@ -4038,14 +4168,10 @@ public class ZMQ
         }
 
         /**
-         * Encodes the binary block specified by data into a string.
-         * <br/>
-         * The size of the binary block must be divisible by 4.
-         * <br/>
-         * A 32-byte CURVE key is encoded as 40 ASCII characters plus a null terminator.
-         * <br/>
-         * The function shall encode the binary block specified into a string.
-         * <p>
+         * <p>Encodes the binary block specified by data into a string.</p>
+         * <p>The size of the binary block must be divisible by 4.</p>
+         * <p>A 32-byte CURVE key is encoded as 40 ASCII characters plus a null terminator.</p>
+         * <p>The function shall encode the binary block specified into a string.</p>
          * <p>The encoding shall follow the ZMQ RFC 32 specification.</p>
          *
          * @param key Key to be encoded

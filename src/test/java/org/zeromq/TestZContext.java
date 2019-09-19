@@ -9,7 +9,7 @@ import org.zeromq.ZMQ.Socket;
 
 public class TestZContext
 {
-    @Test
+    @Test(timeout = 5000)
     public void testZContext()
     {
         ZContext ctx = new ZContext();
@@ -22,7 +22,7 @@ public class TestZContext
         assertThat(ctx.getSockets().isEmpty(), is(true));
     }
 
-    @Test
+    @Test(timeout = 5000)
     public void testZContextSocketCloseBeforeContextClose()
     {
         ZContext ctx = new ZContext();
@@ -33,7 +33,7 @@ public class TestZContext
         ctx.close();
     }
 
-    @Test
+    @Test(timeout = 5000)
     public void testZContextLinger()
     {
         ZContext ctx = new ZContext();
@@ -47,7 +47,7 @@ public class TestZContext
         ctx.close();
     }
 
-    @Test
+    @Test(timeout = 5000)
     public void testConstruction()
     {
         ZContext ctx = new ZContext();
@@ -60,7 +60,7 @@ public class TestZContext
     }
 
     @SuppressWarnings("deprecation")
-    @Test
+    @Test(timeout = 5000)
     public void testDestruction()
     {
         ZContext ctx = new ZContext();
@@ -78,7 +78,7 @@ public class TestZContext
         assertThat(ctx1.getContext(), notNullValue());
     }
 
-    @Test
+    @Test(timeout = 5000)
     public void testAddingSockets() throws ZMQException
     {
         ZContext ctx = new ZContext();
@@ -96,7 +96,7 @@ public class TestZContext
         }
     }
 
-    @Test
+    @Test(timeout = 5000)
     public void testRemovingSockets() throws ZMQException
     {
         ZContext ctx = new ZContext();
@@ -114,7 +114,7 @@ public class TestZContext
     }
 
     @SuppressWarnings("deprecation")
-    @Test
+    @Test(timeout = 5000)
     public void testShadow()
     {
         ZContext ctx = new ZContext();
@@ -134,7 +134,7 @@ public class TestZContext
         ctx.close();
     }
 
-    @Test
+    @Test(timeout = 5000)
     public void testSeveralPendingInprocSocketsAreClosedIssue595()
     {
         ZContext ctx = new ZContext();

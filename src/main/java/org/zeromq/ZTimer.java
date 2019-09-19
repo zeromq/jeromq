@@ -1,7 +1,6 @@
 package org.zeromq;
 
 import zmq.util.Draft;
-import zmq.util.Timers;
 
 /**
  * Manages set of timers.
@@ -10,31 +9,36 @@ import zmq.util.Timers;
  * Timer is repetitive and will be executed over time until canceled.
  *
  * This is a DRAFT class, and may change without notice.
+ * @deprecated scheduled for removal in future release. Please use {@link org.zeromq.timer.ZTimer} instead
  */
 @Draft
+@Deprecated
 public final class ZTimer
 {
     /**
      * Opaque representation of a timer.
+     * @deprecated use {@link org.zeromq.timer.ZTimer.Timer} instead
      */
+    @Deprecated
     public static final class Timer
     {
-        private final Timers.Timer delegate;
+        private final org.zeromq.timer.ZTimer.Timer delegate;
 
-        Timer(Timers.Timer delegate)
+        Timer(org.zeromq.timer.ZTimer.Timer delegate)
         {
             this.delegate = delegate;
         }
     }
 
     /**
-     * Called when the timer has been expired.
+     * @deprecated use {@link org.zeromq.timer.TimerHandler} instead
      */
-    public interface Handler extends Timers.Handler
+    @Deprecated
+    public interface Handler extends org.zeromq.timer.TimerHandler
     {
     }
 
-    private final Timers timer = new Timers();
+    private final org.zeromq.timer.ZTimer timer = new org.zeromq.timer.ZTimer();
 
     /**
      * Add timer to the set, timer repeats forever, or until cancel is called.
@@ -54,25 +58,29 @@ public final class ZTimer
     /**
      * Changes the interval of the timer.
      *
-     * This method is slow, cancelling existing and adding a new timer yield better performance.
+     * This method is slow, canceling existing and adding a new timer yield better performance.
      * @param timer the timer to change the interval to.
      * @return true if set, otherwise false.
+     * @deprecated use {@link org.zeromq.timer.ZTimer.Timer#setInterval(long)} instead
      */
+    @Deprecated
     public boolean setInterval(Timer timer, long interval)
     {
-        return this.timer.setInterval(timer.delegate, interval);
+        return timer.delegate.setInterval(interval);
     }
 
     /**
      * Reset the timer.
      *
-     * This method is slow, cancelling existing and adding a new timer yield better performance.
+     * This method is slow, canceling existing and adding a new timer yield better performance.
      * @param timer the timer to reset.
      * @return true if reset, otherwise false.
+     * @deprecated use {@link org.zeromq.timer.ZTimer.Timer#reset()} instead
      */
+    @Deprecated
     public boolean reset(Timer timer)
     {
-        return this.timer.reset(timer.delegate);
+        return timer.delegate.reset();
     }
 
     /**
@@ -80,10 +88,12 @@ public final class ZTimer
      *
      * @param timer the timer to cancel.
      * @return true if cancelled, otherwise false.
+     * @deprecated use {@link org.zeromq.timer.ZTimer.Timer#cancel()} instead
      */
+    @Deprecated
     public boolean cancel(Timer timer)
     {
-        return this.timer.cancel(timer.delegate);
+        return timer.delegate.cancel();
     }
 
     /**

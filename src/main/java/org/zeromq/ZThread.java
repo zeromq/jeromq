@@ -9,13 +9,11 @@ public class ZThread
     {
     }
 
-    @FunctionalInterface
     public interface IAttachedRunnable
     {
         void run(Object[] args, ZContext ctx, Socket pipe);
     }
 
-    @FunctionalInterface
     public interface IDetachedRunnable
     {
         void run(Object[] args);
@@ -26,7 +24,7 @@ public class ZThread
         private ZContext          ctx;
         private IAttachedRunnable attachedRunnable;
         private IDetachedRunnable detachedRunnable;
-        private Object[]          args;
+        private final Object[]    args;
         private Socket            pipe;
 
         protected ShimThread(ZContext ctx, IAttachedRunnable runnable, Object[] args, Socket pipe)

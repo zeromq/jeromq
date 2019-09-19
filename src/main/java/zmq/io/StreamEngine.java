@@ -1,11 +1,10 @@
 package zmq.io;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.util.Arrays;
-import java.util.function.Function;
-import java.util.function.Supplier;
 
 import zmq.Config;
 import zmq.Msg;
@@ -32,6 +31,8 @@ import zmq.util.Errno;
 import zmq.util.Utils;
 import zmq.util.ValueReference;
 import zmq.util.Wire;
+import zmq.util.function.Function;
+import zmq.util.function.Supplier;
 
 // This engine handles any socket with SOCK_STREAM semantics,
 // e.g. TCP socket or an UNIX domain socket.
@@ -123,10 +124,10 @@ public class StreamEngine implements IEngine, IPollEvents
     //  The session this engine is attached to.
     private SessionBase session;
 
-    private Options options;
+    private final Options options;
 
     // String representation of endpoint
-    private String endpoint;
+    private final String endpoint;
 
     private boolean plugged;
 
@@ -166,7 +167,7 @@ public class StreamEngine implements IEngine, IPollEvents
     // Socket
     private SocketBase socket;
 
-    private Address peerAddress;
+    private final Address peerAddress;
 
     private final Errno errno;
 
@@ -254,14 +255,18 @@ public class StreamEngine implements IEngine, IPollEvents
         handle = ioObject.addFd(fd);
         ioError = false;
 
+        //  Make sure batch sizes match large buffer sizes
+        final int inBatchSize = Math.max(options.rcvbuf, Config.IN_BATCH_SIZE.getValue());
+        final int outBatchSize = Math.max(options.sndbuf, Config.OUT_BATCH_SIZE.getValue());
+
         if (options.rawSocket) {
-            decoder = (IDecoder) instantiate(options.decoder, Config.IN_BATCH_SIZE.getValue(), options.maxMsgSize);
+            decoder = instantiate(options.decoder, inBatchSize, options.maxMsgSize);
             if (decoder == null) {
-                decoder = new RawDecoder(Config.IN_BATCH_SIZE.getValue());
+                decoder = new RawDecoder(inBatchSize);
             }
-            encoder = (IEncoder) instantiate(options.encoder, Config.OUT_BATCH_SIZE.getValue(), options.maxMsgSize);
+            encoder = instantiate(options.encoder, outBatchSize, options.maxMsgSize);
             if (encoder == null) {
-                encoder = new RawEncoder(errno, Config.OUT_BATCH_SIZE.getValue());
+                encoder = new RawEncoder(errno, outBatchSize);
             }
 
             // disable handshaking for raw socket
@@ -305,17 +310,18 @@ public class StreamEngine implements IEngine, IPollEvents
         inEvent();
     }
 
-    private Object instantiate(Class<?> decoder, int size, long max)
+    private <T> T instantiate(Class<T> clazz, int size, long max)
     {
-        if (decoder == null) {
+        if (clazz == null) {
             return null;
         }
         try {
-            return decoder.getConstructor(int.class, long.class).newInstance(size, max);
+            return clazz.getConstructor(int.class, long.class).newInstance(size, max);
         }
-        catch (Exception e) {
-            e.printStackTrace();
-            return null;
+        catch (InstantiationException | IllegalAccessException
+                | IllegalArgumentException | InvocationTargetException
+                | NoSuchMethodException | SecurityException e) {
+            throw new ZError.InstantiationException(e);
         }
     }
 
@@ -469,13 +475,16 @@ public class StreamEngine implements IEngine, IPollEvents
             outpos.set(null);
             outsize = encoder.encode(outpos, 0);
 
-            while (outsize < Config.OUT_BATCH_SIZE.getValue()) {
+            //  Make sure batch sizes match large buffer sizes
+            final int outBatchSize = Math.max(options.sndbuf, Config.OUT_BATCH_SIZE.getValue());
+
+            while (outsize < outBatchSize) {
                 Msg msg = nextMsg.get();
                 if (msg == null) {
                     break;
                 }
                 encoder.loadMsg(msg);
-                int n = encoder.encode(outpos, Config.OUT_BATCH_SIZE.getValue() - outsize);
+                int n = encoder.encode(outpos, outBatchSize - outsize);
                 assert (n > 0);
                 outsize += n;
             }
@@ -607,6 +616,10 @@ public class StreamEngine implements IEngine, IPollEvents
         //  Position of the version field in the greeting.
         final int revisionPos = SIGNATURE_SIZE;
 
+        //  Make sure batch sizes match large buffer sizes
+        final int inBatchSize = Math.max(options.rcvbuf, Config.IN_BATCH_SIZE.getValue());
+        final int outBatchSize = Math.max(options.sndbuf, Config.OUT_BATCH_SIZE.getValue());
+
         //  Receive the greeting.
         while (greetingRecv.position() < greetingSize) {
             final int n = read(greetingRecv);
@@ -712,8 +725,8 @@ public class StreamEngine implements IEngine, IPollEvents
 
             zmtpVersion = Protocol.V0;
 
-            encoder = new V1Encoder(errno, Config.OUT_BATCH_SIZE.getValue());
-            decoder = new V1Decoder(errno, Config.IN_BATCH_SIZE.getValue(), options.maxMsgSize, options.allocator);
+            encoder = new V1Encoder(errno, outBatchSize);
+            decoder = new V1Decoder(errno, inBatchSize, options.maxMsgSize, options.allocator);
 
             //  We have already sent the message header.
             //  Since there is no way to tell the encoder to
@@ -759,8 +772,8 @@ public class StreamEngine implements IEngine, IPollEvents
                 error(ErrorReason.PROTOCOL);
                 return false;
             }
-            encoder = new V1Encoder(errno, Config.OUT_BATCH_SIZE.getValue());
-            decoder = new V1Decoder(errno, Config.IN_BATCH_SIZE.getValue(), options.maxMsgSize, options.allocator);
+            encoder = new V1Encoder(errno, outBatchSize);
+            decoder = new V1Decoder(errno, inBatchSize, options.maxMsgSize, options.allocator);
 
             decodeDataAfterHandshake(V2_GREETING_SIZE);
         }
@@ -774,16 +787,16 @@ public class StreamEngine implements IEngine, IPollEvents
                 error(ErrorReason.PROTOCOL);
                 return false;
             }
-            encoder = new V2Encoder(errno, Config.OUT_BATCH_SIZE.getValue());
-            decoder = new V2Decoder(errno, Config.IN_BATCH_SIZE.getValue(), options.maxMsgSize, options.allocator);
+            encoder = new V2Encoder(errno, outBatchSize);
+            decoder = new V2Decoder(errno, inBatchSize, options.maxMsgSize, options.allocator);
 
             decodeDataAfterHandshake(V2_GREETING_SIZE);
         }
         else {
             zmtpVersion = Protocol.V3;
 
-            encoder = new V2Encoder(errno, Config.OUT_BATCH_SIZE.getValue());
-            decoder = new V2Decoder(errno, Config.IN_BATCH_SIZE.getValue(), options.maxMsgSize, options.allocator);
+            encoder = new V2Encoder(errno, outBatchSize);
+            decoder = new V2Decoder(errno, inBatchSize, options.maxMsgSize, options.allocator);
 
             greetingRecv.position(V2_GREETING_SIZE);
             if (mechanism.isMechanism(greetingRecv)) {
@@ -1149,7 +1162,7 @@ public class StreamEngine implements IEngine, IPollEvents
 
         Msg msg = new Msg(7 + heartbeatContext.length);
         msg.setFlags(Msg.COMMAND);
-        Msgs.put(msg, "PING");
+        msg.putShortString("PING");
         Wire.putUInt16(msg, options.heartbeatTtl);
         msg.put(heartbeatContext);
 
@@ -1172,7 +1185,7 @@ public class StreamEngine implements IEngine, IPollEvents
 
         Msg msg = new Msg(5 + pingContext.length);
         msg.setFlags(Msg.COMMAND);
-        Msgs.put(msg, "PONG");
+        msg.putShortString("PONG");
         msg.put(pingContext);
 
         msg = mechanism.encode(msg);
