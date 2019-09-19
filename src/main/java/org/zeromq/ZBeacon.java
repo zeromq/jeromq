@@ -19,8 +19,8 @@ import zmq.util.Objects;
 public class ZBeacon
 {
     public static final long    DEFAULT_BROADCAST_INTERVAL = 1000L;
-    public static final String  DEFAULT_BROADCAST_HOST     = "255.255.255.255";
-    private static final byte[] DEFAULT_BRODACAST_ADDRESS  = { 0, 0, 0, 0 };
+    public static final String  DEFAULT_BROADCAST_HOST     = "255.255.255.255"; // is this the source/interface address? or the broadcast address
+    private static final byte[] DEFAULT_BROADCAST_ADDRESS = { 0, 0, 0, 0 };
 
     private final BroadcastClient           broadcastClient;
     private final BroadcastServer           broadcastServer;
@@ -46,26 +46,24 @@ public class ZBeacon
 
     public ZBeacon(String host, int port, byte[] beacon, boolean ignoreLocalAddress, boolean blocking)
     {
-        this(host, DEFAULT_BRODACAST_ADDRESS, port, beacon, DEFAULT_BROADCAST_INTERVAL, ignoreLocalAddress, blocking);
+        this(host, DEFAULT_BROADCAST_ADDRESS, port, beacon, DEFAULT_BROADCAST_INTERVAL, ignoreLocalAddress, blocking);
     }
 
-    private ZBeacon(String host, byte[] serverAddress, int port, byte[] beacon, long broadcastInterval,
-                    boolean ignoreLocalAddress, boolean blocking)
+    private ZBeacon(String host, byte[] serverAddress, int port, byte[] beacon, long broadcastInterval, boolean ignoreLocalAddress, boolean blocking)
     {
         Objects.requireNonNull(host, "Host cannot be null");
         Objects.requireNonNull(serverAddress, "Server address cannot be null");
         Objects.requireNonNull(beacon, "Beacon cannot be null");
         this.broadcastInterval.set(broadcastInterval);
+        this.beacon.set(beacon);
         broadcastServer = new BroadcastServer(serverAddress, port, ignoreLocalAddress, blocking);
-        broadcastServer.setDaemon(true);
         broadcastClient = new BroadcastClient(host, port, this.broadcastInterval);
-        broadcastClient.setDaemon(true);
     }
 
     public static class Builder
     {
         private String  clientHost         = DEFAULT_BROADCAST_HOST;
-        private byte[]  serverAddr         = DEFAULT_BRODACAST_ADDRESS;
+        private byte[]  serverAddr         = DEFAULT_BROADCAST_ADDRESS;
         private int     port;
         private long    broadcastInterval  = DEFAULT_BROADCAST_INTERVAL;
         private byte[]  beacon;
@@ -124,27 +122,47 @@ public class ZBeacon
     public void setUncaughtExceptionHandlers(Thread.UncaughtExceptionHandler clientHandler,
                                              Thread.UncaughtExceptionHandler serverHandler)
     {
-        broadcastClient.setUncaughtExceptionHandler(clientHandler);
-        broadcastServer.setUncaughtExceptionHandler(serverHandler);
+        broadcastClient.thread.setUncaughtExceptionHandler(clientHandler);
+        broadcastServer.thread.setUncaughtExceptionHandler(serverHandler);
+    }
+
+    public void startClient()
+    {
+        if (!broadcastClient.isRunning) {
+            if (broadcastClient.thread == null)
+                broadcastClient.thread = new Thread(broadcastClient);
+            broadcastClient.thread.setDaemon(true);
+            broadcastClient.thread.start();
+        }
+    }
+
+    public void startServer()
+    {
+        if (!broadcastServer.isRunning) {
+            if (listener.get() != null) {
+                if (broadcastServer.thread == null)
+                    broadcastServer.thread = new Thread(broadcastServer);
+                broadcastServer.thread.setDaemon(true);
+                broadcastServer.thread.start();
+            }
+        }
     }
 
     public void start()
     {
-        if (listener.get() != null) {
-            broadcastServer.start();
-        }
-        broadcastClient.start();
+        startClient();
+        startServer();
     }
 
     public void stop() throws InterruptedException
     {
-        if (broadcastClient != null) {
-            broadcastClient.interrupt();
-            broadcastClient.join();
+        if (broadcastClient.thread != null) {
+            broadcastClient.thread.interrupt();
+            broadcastClient.thread.join();
         }
-        if (broadcastServer != null) {
-            broadcastServer.interrupt();
-            broadcastServer.join();
+        if (broadcastServer.thread != null) {
+            broadcastServer.thread.interrupt();
+            broadcastServer.thread.join();
         }
     }
 
@@ -189,11 +207,13 @@ public class ZBeacon
     /**
      * The broadcast client periodically sends beacons via UDP to the network.
      */
-    private class BroadcastClient extends Thread
+    private class BroadcastClient implements Runnable
     {
         private DatagramChannel         broadcastChannel;
         private final InetSocketAddress broadcastInetSocketAddress;
         private final AtomicLong        broadcastInterval;
+        private boolean                 isRunning;
+        private Thread                  thread;
 
         public BroadcastClient(String host, int port, AtomicLong broadcastInterval)
         {
@@ -212,7 +232,8 @@ public class ZBeacon
             try {
                 broadcastChannel = DatagramChannel.open();
                 broadcastChannel.socket().setBroadcast(true);
-                while (!interrupted()) {
+                isRunning = true;
+                while (!thread.interrupted() && isRunning) {
                     try {
                         broadcastChannel.send(ByteBuffer.wrap(beacon.get()), broadcastInetSocketAddress);
                         Thread.sleep(broadcastInterval.get());
@@ -231,6 +252,8 @@ public class ZBeacon
                 throw new RuntimeException(ioException);
             }
             finally {
+                isRunning = false;
+                thread = null;
                 try {
                     broadcastChannel.close();
                 }
@@ -245,10 +268,12 @@ public class ZBeacon
     /**
      * The broadcast server receives beacons.
      */
-    private class BroadcastServer extends Thread
+    private class BroadcastServer implements Runnable
     {
         private final DatagramChannel handle;            // Socket for send/recv
         private final boolean         ignoreLocalAddress;
+        private Thread                thread;
+        private boolean               isRunning;
 
         public BroadcastServer(byte[] serverAddress, int port, boolean ignoreLocalAddress, boolean blocking)
         {
@@ -272,34 +297,39 @@ public class ZBeacon
             ByteBuffer buffer = ByteBuffer.allocate(65535);
             SocketAddress sender;
             int size;
-            while (!interrupted()) {
-                buffer.clear();
-                try {
-                    int read = buffer.remaining();
-                    sender = handle.receive(buffer);
-                    if (sender == null) {
-                        continue;
+            isRunning = true;
+            try {
+                while (!thread.interrupted() && isRunning) {
+                    buffer.clear();
+                    try {
+                        int read = buffer.remaining();
+                        sender = handle.receive(buffer);
+                        if (sender == null) {
+                            continue;
+                        }
+
+                        InetAddress senderAddress = ((InetSocketAddress) sender).getAddress();
+
+                        if (ignoreLocalAddress
+                                && (InetAddress.getLocalHost().getHostAddress().equals(senderAddress.getHostAddress())
+                                || senderAddress.isAnyLocalAddress() || senderAddress.isLoopbackAddress())) {
+                            continue;
+                        }
+
+                        size = read - buffer.remaining();
+                        handleMessage(buffer, size, senderAddress);
+                    } catch (ClosedChannelException ioException) {
+                        break;
+                    } catch (IOException ioException) {
+                        isRunning = false;
+                        throw new RuntimeException(ioException);
                     }
-
-                    InetAddress senderAddress = ((InetSocketAddress) sender).getAddress();
-
-                    if (ignoreLocalAddress
-                            && (InetAddress.getLocalHost().getHostAddress().equals(senderAddress.getHostAddress())
-                                    || senderAddress.isAnyLocalAddress() || senderAddress.isLoopbackAddress())) {
-                        continue;
-                    }
-
-                    size = read - buffer.remaining();
-                    handleMessage(buffer, size, senderAddress);
                 }
-                catch (ClosedChannelException ioException) {
-                    break;
-                }
-                catch (IOException ioException) {
-                    throw new RuntimeException(ioException);
-                }
+            } finally {
+                handle.socket().close();
+                isRunning = false;
+                thread = null;
             }
-            handle.socket().close();
         }
 
         private void handleMessage(ByteBuffer buffer, int size, InetAddress from)
