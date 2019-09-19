@@ -302,7 +302,7 @@ public class ZBeacon
                 handle.configureBlocking(blocking);
                 DatagramSocket sock = handle.socket();
                 sock.setReuseAddress(true);
-                sock.bind(new InetSocketAddress(InetAddress.getByAddress(serverAddress), port));
+                sock.bind(new InetSocketAddress(port));
             }
             catch (IOException ioException) {
                 throw new RuntimeException(ioException);

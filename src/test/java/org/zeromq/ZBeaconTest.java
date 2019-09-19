@@ -22,7 +22,7 @@ public class ZBeaconTest
         int port = Utils.findOpenPort();
         ZBeacon.Builder builder = new ZBeacon.Builder().beacon(new byte[] { 'H', 'Y', 'D', 'R', 'A', 0x01, 0x12, 0x34 })
                 .ignoreLocalAddress(false).blocking(false).broadcastInterval(2000L).client("127.0.0.1").port(port)
-                .server(new byte[] { 0, 0, 0, 0 });
+                .server(new byte[] { 127, 0, 0, 1 });
         byte[] prefix = new byte[] { 'H', 'Y', 'D', 'R', 'A', 0x01 };
         ZBeacon beacon = builder.build();
         beacon.setPrefix(prefix);
