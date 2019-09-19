@@ -220,7 +220,7 @@ public class ZBeacon
     {
         private DatagramChannel         broadcastChannel;
         private final InetSocketAddress broadcastAddress;
-        private final InetSocketAddress interfaceAddress;
+        private final InetAddress       interfaceAddress;
         private final AtomicLong        broadcastInterval;
         private boolean                 isRunning;
         private Thread                  thread;
@@ -230,7 +230,7 @@ public class ZBeacon
             this.broadcastInterval = broadcastInterval;
             try {
                 this.broadcastAddress = new InetSocketAddress(InetAddress.getByName(broadcastAddress), port);
-                this.interfaceAddress = new InetSocketAddress(InetAddress.getByAddress(interfaceAddress), 0);
+                this.interfaceAddress = InetAddress.getByAddress(interfaceAddress);
             }
             catch (UnknownHostException unknownHostException) {
                 throw new RuntimeException(unknownHostException);
@@ -247,7 +247,7 @@ public class ZBeacon
                 //broadcastChannel.setOption(StandardSocketOptions.SO_REUSEPORT, true);
                 broadcastChannel.socket().setBroadcast(true);
                 broadcastChannel.socket().setReuseAddress(true);
-                broadcastChannel.bind(interfaceAddress);
+                broadcastChannel.bind(new InetSocketAddress(interfaceAddress, 0));
                 broadcastChannel.connect(broadcastAddress);
 
                 isRunning = true;
