@@ -1,11 +1,7 @@
 package org.zeromq;
 
 import java.io.IOException;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
-import java.net.UnknownHostException;
+import java.net.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedByInterruptException;
 import java.nio.channels.ClosedChannelException;
@@ -246,8 +242,13 @@ public class ZBeacon
         {
             try {
                 broadcastChannel = DatagramChannel.open();
+                //broadcastChannel.setOption(StandardSocketOptions.SO_BROADCAST, true);
+                //broadcastChannel.setOption(StandardSocketOptions.SO_REUSEADDR, true);
+                //broadcastChannel.setOption(StandardSocketOptions.SO_REUSEPORT, true);
                 broadcastChannel.socket().setBroadcast(true);
+                broadcastChannel.socket().setReuseAddress(true);
                 broadcastChannel.bind(interfaceAddress);
+                broadcastChannel.connect(broadcastAddress);
 
                 isRunning = true;
                 while (!thread.interrupted() && isRunning) {
