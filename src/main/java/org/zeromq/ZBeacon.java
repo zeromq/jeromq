@@ -1,7 +1,10 @@
 package org.zeromq;
 
 import java.io.IOException;
-import java.net.*;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedByInterruptException;
 import java.nio.channels.ClosedChannelException;
@@ -216,7 +219,7 @@ public class ZBeacon
     {
         private DatagramChannel         broadcastChannel;
         private final InetSocketAddress broadcastAddress;
-        private final InetAddress       interfaceAddress;
+        private final InetAddress interfaceAddress;
         private final AtomicLong        broadcastInterval;
         private boolean                 isRunning;
         private Thread                  thread;
@@ -243,7 +246,7 @@ public class ZBeacon
                 //broadcastChannel.setOption(StandardSocketOptions.SO_REUSEPORT, true);
                 broadcastChannel.socket().setBroadcast(true);
                 broadcastChannel.socket().setReuseAddress(true);
-                broadcastChannel.bind(new InetSocketAddress(interfaceAddress, 0));
+                broadcastChannel.socket().bind(new InetSocketAddress(interfaceAddress, 0));
                 broadcastChannel.connect(broadcastAddress);
 
                 isRunning = true;
@@ -297,9 +300,7 @@ public class ZBeacon
                 handle = DatagramChannel.open();
                 handle.configureBlocking(blocking);
                 handle.socket().setReuseAddress(true);
-
-                // Seems bind doesn't exist at all in old Android versions... wtf?
-                //handle.bind(new InetSocketAddress(port));
+                handle.socket().bind(new InetSocketAddress(port));
             }
             catch (IOException ioException) {
                 throw new RuntimeException(ioException);
