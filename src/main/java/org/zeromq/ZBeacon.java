@@ -128,8 +128,7 @@ public class ZBeacon
     {
         if (!broadcastClient.isRunning)
         {
-            if (broadcastClient.thread == null)
-            {
+            if (broadcastClient.thread == null) {
                 broadcastClient.thread = new Thread(broadcastClient);
                 broadcastClient.thread.setName("ZBeacon Client Thread");
                 broadcastClient.thread.setDaemon(true);
@@ -141,12 +140,9 @@ public class ZBeacon
 
     public void startServer()
     {
-        if (!broadcastServer.isRunning)
-        {
-            if (listener.get() != null)
-            {
-                if (broadcastServer.thread == null)
-                {
+        if (!broadcastServer.isRunning) {
+            if (listener.get() != null) {
+                if (broadcastServer.thread == null) {
                     broadcastServer.thread = new Thread(broadcastServer);
                     broadcastServer.thread.setName("ZBeacon Server Thread");
                     broadcastServer.thread.setDaemon(true);
@@ -301,7 +297,9 @@ public class ZBeacon
                 handle = DatagramChannel.open();
                 handle.configureBlocking(blocking);
                 handle.socket().setReuseAddress(true);
-                handle.bind(new InetSocketAddress(port));
+
+                // Seems bind doesn't exist at all in old Android versions... wtf?
+                //handle.bind(new InetSocketAddress(port));
             }
             catch (IOException ioException) {
                 throw new RuntimeException(ioException);
@@ -335,14 +333,17 @@ public class ZBeacon
 
                         size = read - buffer.remaining();
                         handleMessage(buffer, size, senderAddress);
-                    } catch (ClosedChannelException ioException) {
+                    }
+                    catch (ClosedChannelException ioException) {
                         break;
-                    } catch (IOException ioException) {
+                    }
+                    catch (IOException ioException) {
                         isRunning = false;
                         throw new RuntimeException(ioException);
                     }
                 }
-            } finally {
+            }
+            finally {
                 handle.socket().close();
                 isRunning = false;
                 thread = null;
