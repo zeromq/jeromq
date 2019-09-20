@@ -129,8 +129,7 @@ public class ZBeacon
 
     public void startClient()
     {
-        if (!broadcastClient.isRunning)
-        {
+        if (!broadcastClient.isRunning) {
             if (broadcastClient.thread == null) {
                 broadcastClient.thread = new Thread(broadcastClient);
                 broadcastClient.thread.setName("ZBeacon Client Thread");
