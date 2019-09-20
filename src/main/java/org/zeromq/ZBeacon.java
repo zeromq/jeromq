@@ -300,9 +300,8 @@ public class ZBeacon
                 // Create UDP socket
                 handle = DatagramChannel.open();
                 handle.configureBlocking(blocking);
-                DatagramSocket sock = handle.socket();
-                sock.setReuseAddress(true);
-                sock.bind(new InetSocketAddress(port));
+                handle.socket().setReuseAddress(true);
+                handle.bind(new InetSocketAddress(port));
             }
             catch (IOException ioException) {
                 throw new RuntimeException(ioException);
