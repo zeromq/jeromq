@@ -26,6 +26,7 @@ import zmq.io.mechanism.Mechanisms;
 import zmq.io.net.SelectorProviderChooser;
 import zmq.msg.MsgAllocator;
 import zmq.util.Draft;
+import zmq.util.Errno;
 import zmq.util.Z85;
 
 /**
@@ -861,6 +862,14 @@ public class ZMQ
             if (isClosed.compareAndSet(false, true)) {
                 base.close();
             }
+        }
+
+        /**
+         * This will get an exception message,if any.
+         * @return  zmq.Ctx.Errno
+         */
+        public Errno getErrno(){
+            return ctx.errno();
         }
 
         /**
