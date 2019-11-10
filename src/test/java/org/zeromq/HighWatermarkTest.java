@@ -12,6 +12,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.LockSupport;
 
 import org.junit.Test;
+import zmq.util.AndroidProblematic;
 
 public class HighWatermarkTest
 {
@@ -266,6 +267,7 @@ public class HighWatermarkTest
     }
 
     @Test
+    @AndroidProblematic
     public void testReliabilityOnWatermark2() throws IOException, InterruptedException
     {
         testWatermark(2);
@@ -292,7 +294,7 @@ public class HighWatermarkTest
         }
 
         threadPool.shutdown();
-        threadPool.awaitTermination(30, TimeUnit.SECONDS);
+        threadPool.awaitTermination(120, TimeUnit.SECONDS);
         long end = System.currentTimeMillis();
         assertThat(collector.success.get(), is(true));
         System.out.println("Test done in " + (end - start) + " millis.");

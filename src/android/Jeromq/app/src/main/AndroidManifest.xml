@@ -1,0 +1,12 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="je.romq">
+
+    <uses-permission android:name="android.permission.INTERNET"/>
+
+    <application
+        android:largeHeap="true"
+        android:allowBackup="false"
+        android:label="JeromqTester"
+        android:supportsRtl="true"
+        />
+</manifest>

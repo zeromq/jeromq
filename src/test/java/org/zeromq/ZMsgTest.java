@@ -373,7 +373,7 @@ public class ZMsgTest
 
         try {
             // Save msg to a file
-            File f = new File("zmsg.test");
+            File f = new File(TemporaryFolderFinder.resolve("zmsg.test"));
             DataOutputStream dos = new DataOutputStream(new FileOutputStream(f));
             assertThat(ZMsg.save(msg, dos), is(true));
             dos.close();

@@ -3,6 +3,7 @@ package org.zeromq;
 import java.io.Closeable;
 import java.nio.channels.Selector;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -85,8 +86,9 @@ public class ZContext implements Closeable
 
     private ZContext(Context context, boolean main, int ioThreads)
     {
-        this.sockets = ConcurrentHashMap.newKeySet();
-        this.selectors = ConcurrentHashMap.newKeySet();
+        // Android compatibility: not using ConcurrentHashMap.newKeySet()
+        this.sockets = Collections.newSetFromMap(new ConcurrentHashMap<>());
+        this.selectors = Collections.newSetFromMap(new ConcurrentHashMap<>());
         this.context = context;
         this.ioThreads = ioThreads;
         this.main = main;

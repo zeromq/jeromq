@@ -36,7 +36,7 @@ public class PollTest
         ServerSocketChannel server = ServerSocketChannel.open();
         assertThat(server, notNullValue());
         server.configureBlocking(true);
-        server.bind(null);
+        server.socket().bind(null);
         InetSocketAddress addr = (InetSocketAddress) server.socket().getLocalSocketAddress();
 
         SocketChannel in = SocketChannel.open();

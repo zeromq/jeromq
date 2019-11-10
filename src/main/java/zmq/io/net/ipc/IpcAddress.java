@@ -1,9 +1,13 @@
 package zmq.io.net.ipc;
 
+import java.net.Inet4Address;
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.NetworkInterface;
 import java.net.SocketAddress;
-import java.net.UnknownHostException;
+import java.net.SocketException;
+import java.util.Enumeration;
 
 import zmq.io.net.Address;
 import zmq.io.net.ProtocolFamily;
@@ -80,12 +84,7 @@ public class IpcAddress implements Address.IZAddress
             hash += 10000;
         }
 
-        try {
-            return new InetSocketAddress(InetAddress.getByName(null), hash);
-        }
-        catch (UnknownHostException e) {
-            throw new IllegalArgumentException(e);
-        }
+        return new InetSocketAddress(findAddress(ipv6, local), hash);
     }
 
     @Override
@@ -104,5 +103,26 @@ public class IpcAddress implements Address.IZAddress
     public SocketAddress sourceAddress()
     {
         return sourceAddress;
+    }
+
+    private InetAddress findAddress(boolean ipv6, boolean local)
+    {
+        Class addressClass = ipv6 ? Inet6Address.class : Inet4Address.class;
+        try {
+            for (Enumeration<NetworkInterface> interfaces = NetworkInterface
+                    .getNetworkInterfaces(); interfaces.hasMoreElements(); ) {
+                NetworkInterface net = interfaces.nextElement();
+                for (Enumeration<InetAddress> addresses = net.getInetAddresses(); addresses.hasMoreElements(); ) {
+                    InetAddress inetAddress = addresses.nextElement();
+                    if (inetAddress.isLoopbackAddress() == local && addressClass.isInstance(inetAddress)) {
+                        return inetAddress;
+                    }
+                }
+            }
+        }
+        catch (SocketException e) {
+            throw new IllegalArgumentException(e);
+        }
+        throw new IllegalArgumentException("no address found " + (ipv6 ? "IPV6" : "IPV4") + (local ? "local" : ""));
     }
 }

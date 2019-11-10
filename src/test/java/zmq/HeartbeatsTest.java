@@ -16,7 +16,9 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
 
+import zmq.util.AndroidProblematic;
 import zmq.util.TestUtils;
+import zmq.util.function.BiFunction;
 
 public class HeartbeatsTest
 {
@@ -24,75 +26,23 @@ public class HeartbeatsTest
 
     // Tests sequentiality of received messages while heartbeating
     @Test
+    @AndroidProblematic
     public void testSequentialityReceivedMessagesMultiThreadedPushBindPullConnect()
             throws IOException, InterruptedException
     {
-        final int port = Utils.findOpenPort();
-        final String host = "localhost";
-
-        Ctx ctx = ZMQ.init(1);
-        assertThat(ctx, notNullValue());
-
-        final SocketBase push = ctx.createSocket(ZMQ.ZMQ_PUSH);
-        assertThat(push, notNullValue());
-
-        boolean rc = ZMQ.setSocketOption(push, ZMQ.ZMQ_HEARTBEAT_IVL, 200);
-        assertThat(rc, is(true));
-
-        rc = push.bind(String.format("tcp://%s:%s", host, port));
-        assertThat(rc, is(true));
-
-        final SocketBase pull = ctx.createSocket(ZMQ.ZMQ_PULL);
-        rc = pull.connect(String.format("tcp://%s:%s", host, port));
-        assertThat(rc, is(true));
-
-        ExecutorService service = Executors.newFixedThreadPool(2);
-        service.submit(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                Thread.currentThread().setName("Push");
-                long counter = 0;
-                while (++counter < MAX) {
-                    String data = Long.toString(counter);
-                    int sent = ZMQ.send(push, Long.toString(counter), 0);
-                    assertThat(sent, is(data.length()));
-                }
-                push.close();
-            }
-        });
-        service.submit(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                Thread.currentThread().setName("Pull");
-                long counter = 0;
-                while (++counter < MAX) {
-                    Msg msg = ZMQ.recv(pull, 0);
-                    assertThat(msg, notNullValue());
-
-                    long received = Long.parseLong(new String(msg.data(), ZMQ.CHARSET));
-                    assertThat(received, is(counter));
-
-                    if (counter % (MAX / 10) == 0) {
-                        System.out.print(counter + " ");
-                    }
-                }
-                System.out.println();
-                pull.close();
-            }
-        });
-
-        service.shutdown();
-        service.awaitTermination(100, TimeUnit.SECONDS);
-        ctx.terminate();
+        testSequentialityReceivedMessagesMultiThreaded(SocketBase::bind, SocketBase::connect);
     }
 
     // Tests sequentiality of received messages while heartbeating
     @Test
+    @AndroidProblematic
     public void testSequentialityReceivedMessagesMultiThreadedPushConnectPullBind()
+            throws IOException, InterruptedException
+    {
+        testSequentialityReceivedMessagesMultiThreaded(SocketBase::connect, SocketBase::bind);
+    }
+
+    private void testSequentialityReceivedMessagesMultiThreaded(BiFunction<SocketBase, String, Boolean> endpointPush, BiFunction<SocketBase, String, Boolean> endpointPull)
             throws IOException, InterruptedException
     {
         final int port = Utils.findOpenPort();
@@ -107,11 +57,11 @@ public class HeartbeatsTest
         boolean rc = ZMQ.setSocketOption(push, ZMQ.ZMQ_HEARTBEAT_IVL, 200);
         assertThat(rc, is(true));
 
-        rc = push.connect(String.format("tcp://%s:%s", host, port));
+        rc = endpointPush.apply(push, String.format("tcp://%s:%s", host, port));
         assertThat(rc, is(true));
 
         final SocketBase pull = ctx.createSocket(ZMQ.ZMQ_PULL);
-        rc = pull.bind(String.format("tcp://%s:%s", host, port));
+        rc = endpointPull.apply(pull, String.format("tcp://%s:%s", host, port));
         assertThat(rc, is(true));
 
         ExecutorService service = Executors.newFixedThreadPool(2);
@@ -127,6 +77,7 @@ public class HeartbeatsTest
                     int sent = ZMQ.send(push, Long.toString(counter), 0);
                     assertThat(sent, is(data.length()));
                 }
+                System.out.println("Push finished");
                 push.close();
             }
         });
@@ -148,7 +99,7 @@ public class HeartbeatsTest
                         System.out.print(counter + " ");
                     }
                 }
-                System.out.println();
+                System.out.println("Pull finished");
                 pull.close();
             }
         });
@@ -447,9 +398,9 @@ public class HeartbeatsTest
         assertThat(rc, is(true));
 
         rc = ZMQ.monitorSocket(
-                               server,
-                               "inproc://monitor",
-                               ZMQ.ZMQ_EVENT_CONNECTED | ZMQ.ZMQ_EVENT_DISCONNECTED | ZMQ.ZMQ_EVENT_ACCEPTED);
+                server,
+                "inproc://monitor",
+                ZMQ.ZMQ_EVENT_CONNECTED | ZMQ.ZMQ_EVENT_DISCONNECTED | ZMQ.ZMQ_EVENT_ACCEPTED);
         assertThat(rc, is(true));
 
         return server;

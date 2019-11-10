@@ -61,12 +61,12 @@ public class TestZLoop
         DatagramChannel udpIn = DatagramChannel.open();
         assertThat(udpIn, notNullValue());
         udpIn.configureBlocking(false);
-        udpIn.bind(new InetSocketAddress(port));
+        udpIn.socket().bind(new InetSocketAddress(port));
 
         DatagramChannel udpOut = DatagramChannel.open();
         assertThat(udpOut, notNullValue());
         udpOut.configureBlocking(false);
-        udpOut.connect(addr);
+        udpOut.socket().connect(addr);
 
         final AtomicInteger counter = new AtomicInteger();
         final AtomicBoolean done = new AtomicBoolean();

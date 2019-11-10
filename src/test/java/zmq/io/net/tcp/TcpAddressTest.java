@@ -120,7 +120,8 @@ public class TcpAddressTest
         Address.IZAddress resolved = addr.resolved();
         InetSocketAddress sa = (InetSocketAddress) resolved.address();
         Assert.assertTrue(sa.getAddress() instanceof Inet6Address);
-        Assert.assertEquals("0:0:0:0:0:0:0:0", sa.getHostString());
+        String hostString = sa.getHostString();
+        Assert.assertTrue("::".equals(hostString) || "0:0:0:0:0:0:0:0".equals(hostString));
         Assert.assertEquals(port, sa.getPort());
     }
 
@@ -133,7 +134,8 @@ public class TcpAddressTest
         Address.IZAddress resolved = addr.resolved();
         InetSocketAddress sa = (InetSocketAddress) resolved.address();
         Assert.assertTrue(sa.getAddress() instanceof Inet6Address);
-        Assert.assertEquals("0:0:0:0:0:0:0:0", sa.getHostString());
+        String hostString = sa.getHostString();
+        Assert.assertTrue("::".equals(hostString) || "0:0:0:0:0:0:0:0".equals(hostString));
         Assert.assertEquals(port, sa.getPort());
     }
 
