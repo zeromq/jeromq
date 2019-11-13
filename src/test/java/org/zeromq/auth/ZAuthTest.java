@@ -12,6 +12,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.zeromq.SocketType;
+import org.zeromq.TemporaryFolderFinder;
 import org.zeromq.ZAuth;
 import org.zeromq.ZCert;
 import org.zeromq.ZCertStore;
@@ -27,12 +28,17 @@ public class ZAuthTest
     private static final String  PASSWORDS_FILE     = "target/passwords";
     private static final String  CERTIFICATE_FOLDER = "target/curve";
 
+    private String  certificateFolder = CERTIFICATE_FOLDER;
+    private String  passwordsFile = PASSWORDS_FILE;
+
     @Before
     public void init()
     {
         // create test-passwords
+        passwordsFile = TemporaryFolderFinder.resolve(PASSWORDS_FILE);
+        certificateFolder = TemporaryFolderFinder.resolve(CERTIFICATE_FOLDER);
         try {
-            FileWriter write = new FileWriter(PASSWORDS_FILE);
+            FileWriter write = new FileWriter(passwordsFile);
             write.write("guest=guest\n");
             write.write("tourist=1234\n");
             write.write("admin=secret\n");
@@ -183,7 +189,7 @@ public class ZAuthTest
             auth.setVerbose(VERBOSE_MODE);
             // auth send the replies
             auth.replies(true);
-            auth.configurePlain("*", PASSWORDS_FILE);
+            auth.configurePlain("*", passwordsFile);
 
             //  Create and bind server socket
             ZMQ.Socket server = ctx.createSocket(SocketType.PUSH);
@@ -232,7 +238,7 @@ public class ZAuthTest
             auth.setVerbose(true);
             // auth send the replies
             auth.replies(true);
-            auth.configurePlain("*", PASSWORDS_FILE);
+            auth.configurePlain("*", passwordsFile);
 
             //  Create and bind server socket
             ZMQ.Socket server = ctx.createSocket(SocketType.PUSH);
@@ -336,7 +342,7 @@ public class ZAuthTest
             auth.replies(true);
 
             //  Tell authenticator to use the certificate store in .curve
-            auth.configureCurve(CERTIFICATE_FOLDER);
+            auth.configureCurve(certificateFolder);
 
             //  We'll generate a new client certificate and save the public part
             //  in the certificate store (in practice this would be done by hand
@@ -347,7 +353,7 @@ public class ZAuthTest
             // wait a second before overwriting a cert, otherwise the certstore won't see that the file actually changed and will deny
             // if creating new files, this is not needed
             //            ZMQ.sleep(1);
-            clientCert.savePublic(CERTIFICATE_FOLDER + "/testcert.pub");
+            clientCert.savePublic(certificateFolder + "/testcert.pub");
 
             ZCert serverCert = new ZCert();
 
@@ -382,7 +388,7 @@ public class ZAuthTest
         }
         finally {
             ctx.close();
-            TestUtils.cleanupDir(CERTIFICATE_FOLDER);
+            TestUtils.cleanupDir(certificateFolder);
         }
     }
 
@@ -572,7 +578,7 @@ public class ZAuthTest
             auth.replies(true);
 
             //  Tell authenticator to use the certificate store in .curve
-            auth.configureCurve(CERTIFICATE_FOLDER);
+            auth.configureCurve(certificateFolder);
 
             //  We'll generate a new client certificate and save the public part
             //  in the certificate store (in practice this would be done by hand
@@ -618,7 +624,7 @@ public class ZAuthTest
         }
         finally {
             ctx.close();
-            TestUtils.cleanupDir(CERTIFICATE_FOLDER);
+            TestUtils.cleanupDir(certificateFolder);
         }
     }
 
@@ -653,7 +659,7 @@ public class ZAuthTest
     @After
     public void cleanup()
     {
-        File deletePasswords = new File(PASSWORDS_FILE);
+        File deletePasswords = new File(passwordsFile);
         deletePasswords.delete();
     }
 

@@ -6,12 +6,12 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.file.Files;
-import java.nio.file.Path;
 
 import org.junit.Test;
+import org.zeromq.TemporaryFolderFinder;
 
 public class TestUtils
 {
@@ -76,22 +76,25 @@ public class TestUtils
     @Test
     public void testDeleteFile() throws IOException
     {
-        Path path = Files.createTempFile("test", "suffix");
+        File dir = new File(TemporaryFolderFinder.resolve("testfile"));
+        dir.mkdirs();
+        File path = File.createTempFile("test", "suffix", dir);
 
-        assertThat(Files.exists(path), is(true));
-        Utils.delete(path.toFile());
-        assertThat(Files.exists(path), is(false));
+        assertThat(path.exists(), is(true));
+        Utils.delete(dir);
+        assertThat(path.exists(), is(false));
     }
 
     @Test
     public void testDeleteDir() throws IOException
     {
-        Path dir = Files.createTempDirectory("test");
-        Path path = Files.createTempFile(dir, "test", "suffix");
+        File dir = new File(TemporaryFolderFinder.resolve("testdir"));
+        dir.mkdirs();
+        File path = File.createTempFile("test", "suffix", dir);
 
-        Utils.delete(dir.toFile());
-        assertThat(Files.exists(dir), is(false));
-        assertThat(Files.exists(path), is(false));
+        Utils.delete(dir);
+        assertThat(dir.exists(), is(false));
+        assertThat(path.exists(), is(false));
     }
 
     @Test

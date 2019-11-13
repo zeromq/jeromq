@@ -105,7 +105,7 @@ public class ZPicture
                     msg.add(new ZFrame((byte[]) null));
                 }
                 else {
-                    other.forEach(msg::add);
+                    msg.addAll(other);
                 }
                 break;
             }
