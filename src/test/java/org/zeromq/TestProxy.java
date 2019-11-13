@@ -5,6 +5,7 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertThat;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -24,7 +25,7 @@ public class TestProxy
         private final String        name;
         private final AtomicBoolean result = new AtomicBoolean();
 
-        public Client(String name, String frontend)
+        Client(String name, String frontend)
         {
             this.name = name;
             this.frontend = frontend;
@@ -87,7 +88,7 @@ public class TestProxy
         private final String        name;
         private final AtomicBoolean result = new AtomicBoolean();
 
-        public Dealer(String name, String backend)
+        Dealer(String name, String backend)
         {
             this.name = name;
             this.backend = backend;
@@ -129,11 +130,11 @@ public class TestProxy
                 System.out.println(name + " received client identity " + ZData.strhex(identity));
 
                 msg = socket.recv(0);
-                msgAsString = new String(msg, ZMQ.CHARSET);
                 if (msg == null || msg.length != 0) {
                     System.out.println("Not bottom " + Arrays.toString(msg));
                     return false;
                 }
+                msgAsString = new String(msg, ZMQ.CHARSET);
                 System.out.println(name + " received bottom " + msgAsString);
 
                 msg = socket.recv(0);
@@ -158,38 +159,37 @@ public class TestProxy
 
     static class Proxy extends Thread
     {
-        private final String        frontend;
-        private final String        backend;
-        private final String        control;
         private final AtomicBoolean result = new AtomicBoolean();
+        private Context ctx;
+        private Socket frontend;
+        private Socket backend;
+        private Socket control;
 
-        Proxy(String frontend, String backend, String control)
+        private List<String> init()
         {
-            this.frontend = frontend;
-            this.backend = backend;
-            this.control = control;
+            ctx = ZMQ.context(1);
+            assert (ctx != null);
+
+            setName("Proxy");
+            frontend = ctx.socket(SocketType.ROUTER);
+
+            assertThat(frontend, notNullValue());
+            frontend.bind("tcp://*:*");
+
+            backend = ctx.socket(SocketType.DEALER);
+            assertThat(backend, notNullValue());
+            backend.bind("tcp://*:*");
+
+            control = ctx.socket(SocketType.PAIR);
+            assertThat(control, notNullValue());
+            control.bind("tcp://*:*");
+
+            return Arrays.asList(frontend.getLastEndpoint(), backend.getLastEndpoint(), control.getLastEndpoint());
         }
 
         @Override
         public void run()
         {
-            Context ctx = ZMQ.context(1);
-            assert (ctx != null);
-
-            setName("Proxy");
-            Socket frontend = ctx.socket(SocketType.ROUTER);
-
-            assertThat(frontend, notNullValue());
-            frontend.bind(this.frontend);
-
-            Socket backend = ctx.socket(SocketType.DEALER);
-            assertThat(backend, notNullValue());
-            backend.bind(this.backend);
-
-            Socket control = ctx.socket(SocketType.PAIR);
-            assertThat(control, notNullValue());
-            control.bind(this.control);
-
             ZMQ.proxy(frontend, backend, null, control);
 
             frontend.close();
@@ -212,11 +212,12 @@ public class TestProxy
     @Test
     public void testProxy() throws Exception
     {
-        String frontend = "tcp://localhost:" + Utils.findOpenPort();
-        String backend = "tcp://localhost:" + Utils.findOpenPort();
-        String controlEndpoint = "tcp://localhost:" + Utils.findOpenPort();
+        Proxy proxy = new Proxy();
+        List<String> addresses = proxy.init();
+        String frontend = addresses.get(0);
+        String backend = addresses.get(1);
+        String controlEndpoint = addresses.get(2);
 
-        Proxy proxy = new Proxy(frontend, backend, controlEndpoint);
         proxy.start();
 
         ExecutorService executor = Executors.newFixedThreadPool(4);

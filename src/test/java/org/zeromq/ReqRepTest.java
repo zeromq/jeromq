@@ -14,7 +14,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
 import org.zeromq.ZMQ.Socket;
-import zmq.util.AndroidProblematic;
+import zmq.util.AndroidIgnore;
 
 public class ReqRepTest
 {
@@ -57,7 +57,7 @@ public class ReqRepTest
             int currentServCount = 0;
             try (
                  ZMQ.Context context = ZMQ.context(1);
-                 ZMQ.Socket responder = context.socket(SocketType.REP);) {
+                 ZMQ.Socket responder = context.socket(SocketType.REP)) {
                 assertThat(responder, notNullValue());
                 boolean rc = responder.bind(address);
                 assertThat(rc, is(true));
@@ -112,7 +112,7 @@ public class ReqRepTest
         {
             try (
                  ZMQ.Context context = ZMQ.context(10);
-                 ZMQ.Socket socket = context.socket(SocketType.REQ);) {
+                 ZMQ.Socket socket = context.socket(SocketType.REQ)) {
                 boolean rc = socket.connect(address);
                 assertThat(rc, is(true));
                 for (int idx = 0; idx < loopCount; idx++) {
@@ -195,7 +195,7 @@ public class ReqRepTest
     }
 
     @Test
-    @AndroidProblematic // triggers OutofMemoryError on Android
+    @AndroidIgnore // triggers OutofMemoryError on Android
     public void testDisconnectOnLargeMessageIssue334() throws Exception
     {
         final int msgSizeMB = 100;
@@ -216,24 +216,18 @@ public class ReqRepTest
 
         final CountDownLatch latch = new CountDownLatch(1);
         final ExecutorService executorService = Executors.newSingleThreadExecutor();
-        executorService.submit(new Runnable()
-        {
-            @Override
-            // simulates a server reply
-            public void run()
-            {
-                final ZMQ.Socket rep = context.socket(SocketType.REP);
-                rep.bind(addr);
-                latch.countDown();
+        // simulates a server reply
+        executorService.submit(() -> {
+            final Socket rep = context.socket(SocketType.REP);
+            rep.bind(addr);
+            latch.countDown();
 
-                // just send the message back...
-                final ZMsg msg = ZMsg.recvMsg(rep);
-                msg.send(rep);
-                // shut down the socket to cause a disconnect while REQ socket receives the msg
-                rep.close();
-                // btw.: setting linger time did not change the result
-            }
-
+            // just send the message back...
+            final ZMsg msg = ZMsg.recvMsg(rep);
+            msg.send(rep);
+            // shut down the socket to cause a disconnect while REQ socket receives the msg
+            rep.close();
+            // btw.: setting linger time did not change the result
         });
 
         executorService.shutdown();
@@ -242,7 +236,7 @@ public class ReqRepTest
         latch.await(1, TimeUnit.SECONDS);
         final long start = System.currentTimeMillis();
         try (
-             final ZMQ.Socket req = context.socket(SocketType.REQ);) {
+             final ZMQ.Socket req = context.socket(SocketType.REQ)) {
             req.connect(addr);
             request.send(req);
             final ZMsg response = ZMsg.recvMsg(req);

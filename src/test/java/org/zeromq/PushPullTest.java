@@ -4,45 +4,45 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertThat;
 
-import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 
 import org.junit.Test;
-
-import zmq.util.Utils;
 
 public class PushPullTest
 {
     private static final int REPETITIONS = 10;
 
-    class Sender implements Runnable
+    static class Sender implements Runnable
     {
         private final CountDownLatch latch;
-        private final int            port;
+        private ZMQ.Context context;
+        private ZMQ.Socket socket;
 
-        public Sender(CountDownLatch latch, int port)
+        Sender(CountDownLatch latch)
         {
             this.latch = latch;
-            this.port = port;
         }
 
-        @Override
-        public void run()
+        private String init()
         {
-            String address = "tcp://*:" + port;
-
-            ZMQ.Context context = ZMQ.context(1);
+            context = ZMQ.context(1);
             assertThat(context, notNullValue());
-            ZMQ.Socket socket = context.socket(SocketType.PUSH);
+            socket = context.socket(SocketType.PUSH);
             assertThat(socket, notNullValue());
 
             // Socket options
             boolean rc = socket.setLinger(1000);
             assertThat(rc, is(true));
 
-            rc = socket.bind(address);
+            rc = socket.bind("tcp://*:*");
             assertThat(rc, is(true));
 
+            return socket.getLastEndpoint();
+        }
+
+        @Override
+        public void run()
+        {
             // Ensure that receiver is "connected" before sending
             try {
                 latch.await();
@@ -52,7 +52,7 @@ public class PushPullTest
             }
 
             for (int idx = 0; idx < REPETITIONS; ++idx) {
-                rc = socket.send("data" + idx);
+                boolean rc = socket.send("data" + idx);
                 assertThat(rc, is(true));
             }
 
@@ -61,22 +61,20 @@ public class PushPullTest
         }
     }
 
-    class Receiver implements Runnable
+    static class Receiver implements Runnable
     {
         private final CountDownLatch latch;
-        private final int            port;
+        private final String address;
 
-        public Receiver(CountDownLatch latch, int port)
+        Receiver(CountDownLatch latch, String address)
         {
             this.latch = latch;
-            this.port = port;
+            this.address = address;
         }
 
         @Override
         public void run()
         {
-            String address = "tcp://localhost:" + port;
-
             ZMQ.Context context = ZMQ.context(1);
             assertThat(context, notNullValue());
             ZMQ.Socket socket = context.socket(SocketType.PULL);
@@ -94,8 +92,6 @@ public class PushPullTest
             for (int idx = 0; idx < REPETITIONS; ++idx) {
                 String recvd = socket.recvStr();
                 assertThat(recvd, is("data" + idx));
-
-                ZMQ.msleep(10);
             }
 
             socket.close();
@@ -104,14 +100,14 @@ public class PushPullTest
     }
 
     @Test
-    public void testIssue131() throws InterruptedException, IOException
+    public void testIssue131() throws InterruptedException
     {
         CountDownLatch latch = new CountDownLatch(1);
 
-        final int port = Utils.findOpenPort();
-
-        Thread sender = new Thread(new Sender(latch, port));
-        Thread receiver = new Thread(new Receiver(latch, port));
+        Sender target = new Sender(latch);
+        String address = target.init();
+        Thread sender = new Thread(target);
+        Thread receiver = new Thread(new Receiver(latch, address));
 
         // Start sender before receiver and use latch to ensure that receiver has connected
         // before sender is sending messages
@@ -120,5 +116,26 @@ public class PushPullTest
 
         sender.join();
         receiver.join();
+    }
+
+    @Test
+    public void testConnection()
+    {
+        try (ZContext ctx = new ZContext()) {
+            ZMQ.Socket server = ctx.createSocket(SocketType.PUSH);
+            final int port = server.bindToRandomPort("tcp://*");
+
+            //  Create and connect client socket
+            ZMQ.Socket client = ctx.createSocket(SocketType.PULL);
+            boolean rc = client.connect("tcp://127.0.0.1:" + port);
+            assertThat(rc, is(true));
+
+            //  Send a single message from server to client
+            rc = server.send("Hello");
+            assertThat(rc, is(true));
+
+            String msg = client.recvStr();
+            assertThat(msg, is("Hello"));
+        }
     }
 }

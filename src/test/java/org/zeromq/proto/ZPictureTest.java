@@ -73,8 +73,9 @@ public class ZPictureTest
 
         boolean rc = pull.setReceiveTimeOut(50);
         assertThat(rc, is(true));
-        int port = push.bindToRandomPort("tcp://127.0.0.1");
-        rc = pull.connect("tcp://127.0.0.1:" + port);
+        rc = push.bind("tcp://*:*");
+        assertThat(rc, is(true));
+        rc = pull.connect(push.getLastEndpoint());
         assertThat(rc, is(true));
 
         String picture = "i1248sbcfzm";
@@ -128,8 +129,9 @@ public class ZPictureTest
 
         boolean rc = pull.setReceiveTimeOut(50);
         assertThat(rc, is(true));
-        int port = push.bindToRandomPort("tcp://127.0.0.1");
-        rc = pull.connect("tcp://127.0.0.1:" + port);
+        rc = push.bind("tcp://*:*");
+        assertThat(rc, is(true));
+        rc = pull.connect(push.getLastEndpoint());
         assertThat(rc, is(true));
 
         String picture = "1248sSbcfm";

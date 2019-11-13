@@ -21,7 +21,7 @@ public class TestPoller
         private final AtomicBoolean received = new AtomicBoolean();
         private final String        address;
 
-        public Client(String addr)
+        Client(String addr)
         {
             this.address = addr;
         }
@@ -47,17 +47,15 @@ public class TestPoller
     @Test
     public void testPollerPollout() throws Exception
     {
-        int port = Utils.findOpenPort();
-        String addr = "tcp://127.0.0.1:" + port;
-
-        Client client = new Client(addr);
-
         ZMQ.Context context = ZMQ.context(1);
 
         //  Socket to send messages to
         ZMQ.Socket sender = context.socket(SocketType.PUSH);
         sender.setImmediate(false);
-        sender.bind(addr);
+        sender.bind("tcp://*:*");
+        String addr = sender.getLastEndpoint();
+
+        Client client = new Client(addr);
 
         ZMQ.Poller outItems = context.poller();
         outItems.register(sender, ZMQ.Poller.POLLOUT);
@@ -89,7 +87,7 @@ public class TestPoller
     @Test
     public void testExitPollerIssue580() throws InterruptedException, ExecutionException
     {
-        Future<Integer> future = null;
+        Future<Integer> future;
 
         ExecutorService service = Executors.newSingleThreadExecutor();
         try (

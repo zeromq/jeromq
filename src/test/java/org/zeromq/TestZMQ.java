@@ -226,8 +226,9 @@ public class TestZMQ
 
         boolean rc = pull.setReceiveTimeOut(50);
         assertThat(rc, is(true));
-        int port = push.bindToRandomPort("tcp://127.0.0.1");
-        rc = pull.connect("tcp://127.0.0.1:" + port);
+        rc = push.bind("tcp://*:*");
+        assertThat(rc, is(true));
+        rc = pull.connect(push.getLastEndpoint());
         assertThat(rc, is(true));
 
         String picture = "1248sScfm";
@@ -242,7 +243,7 @@ public class TestZMQ
                                     429496729,
                                     Long.MAX_VALUE,
                                     "Hello World",
-                                    "Hello cruel World!",
+                                    "Bye cruel World!",
                                     "ABC".getBytes(ZMQ.CHARSET),
                                     new ZFrame("My frame"),
                                     msg);
@@ -254,7 +255,7 @@ public class TestZMQ
         assertThat(objects[2], is(equalTo(429496729)));
         assertThat(objects[3], is(equalTo(Long.MAX_VALUE)));
         assertThat(objects[4], is(equalTo("Hello World")));
-        assertThat(objects[5], is(equalTo("Hello cruel World!")));
+        assertThat(objects[5], is(equalTo("Bye cruel World!")));
         assertThat(objects[6], is(equalTo("ABC".getBytes(zmq.ZMQ.CHARSET))));
         assertThat(objects[7], is(equalTo(new ZFrame("My frame"))));
         ZMsg expectedMsg = new ZMsg();

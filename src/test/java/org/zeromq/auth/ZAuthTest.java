@@ -10,6 +10,7 @@ import java.io.IOException;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.zeromq.SocketType;
 import org.zeromq.TemporaryFolderFinder;
@@ -54,8 +55,7 @@ public class ZAuthTest
     {
         System.out.println("testNull");
         //  Create context
-        final ZContext ctx = new ZContext();
-        try {
+        try (final ZContext ctx = new ZContext()) {
             ZAuth auth = new ZAuth(ctx);
             //  Get some indication of what the authenticator is deciding
             auth.setVerbose(VERBOSE_MODE);
@@ -85,9 +85,6 @@ public class ZAuthTest
 
             auth.close();
         }
-        finally {
-            ctx.close();
-        }
     }
 
     @Test
@@ -95,8 +92,7 @@ public class ZAuthTest
     {
         System.out.println("testNullAllowed");
         //  Create context
-        final ZContext ctx = new ZContext();
-        try {
+        try (final ZContext ctx = new ZContext()) {
             ZAuth auth = new ZAuth(ctx);
             //  Get some indication of what the authenticator is deciding
             auth.setVerbose(VERBOSE_MODE);
@@ -127,9 +123,6 @@ public class ZAuthTest
 
             auth.close();
         }
-        finally {
-            ctx.close();
-        }
     }
 
     @Test
@@ -137,8 +130,7 @@ public class ZAuthTest
     {
         System.out.println("testNullWithNoDomain");
         //  Create context
-        final ZContext ctx = new ZContext();
-        try {
+        try (final ZContext ctx = new ZContext()) {
             ZAuth auth = new ZAuth(ctx);
             //  Get some indication of what the authenticator is deciding
             auth.setVerbose(VERBOSE_MODE);
@@ -169,9 +161,6 @@ public class ZAuthTest
 
             auth.close();
         }
-        finally {
-            ctx.close();
-        }
     }
 
     @Test
@@ -179,8 +168,7 @@ public class ZAuthTest
     {
         System.out.println("testPlainWithPassword");
         //  Create context
-        final ZContext ctx = new ZContext();
-        try {
+        try (final ZContext ctx = new ZContext()) {
             //  Start an authentication engine for this context. This engine
             //  allows or denies incoming connections (talking to the libzmq
             //  core over a protocol called ZAP).
@@ -218,9 +206,6 @@ public class ZAuthTest
 
             auth.close();
         }
-        finally {
-            ctx.close();
-        }
     }
 
     @Test
@@ -228,8 +213,7 @@ public class ZAuthTest
     {
         System.out.println("testPlainWithPasswordDenied");
         //  Create context
-        final ZContext ctx = new ZContext();
-        try {
+        try (final ZContext ctx = new ZContext()) {
             //  Start an authentication engine for this context. This engine
             //  allows or denies incoming connections (talking to the libzmq
             //  core over a protocol called ZAP).
@@ -253,17 +237,10 @@ public class ZAuthTest
             boolean rc = client.connect("tcp://127.0.0.1:" + port);
             assertThat(rc, is(true));
 
-            //  Send a single message from server to client
-            rc = server.send("Hello");
-            assertThat(rc, is(true));
-
             ZAuth.ZapReply reply = auth.nextReply();
             assertThat(reply.statusCode, is(400));
 
             auth.close();
-        }
-        finally {
-            ctx.close();
         }
     }
 
@@ -274,8 +251,7 @@ public class ZAuthTest
         // accept any client-certificate
 
         //  Create context
-        final ZContext ctx = new ZContext();
-        try {
+        try (final ZContext ctx = new ZContext()) {
             ZAuth auth = new ZAuth(ctx, new ZCertStore.Hasher());
 
             //  Get some indication of what the authenticator is deciding
@@ -320,9 +296,6 @@ public class ZAuthTest
 
             auth.close();
         }
-        finally {
-            ctx.close();
-        }
 
     }
 
@@ -330,8 +303,7 @@ public class ZAuthTest
     public void testCurveSuccessful() throws IOException
     {
         System.out.println("testCurveSuccessful");
-        final ZContext ctx = new ZContext();
-        try {
+        try (final ZContext ctx = new ZContext()) {
             //  Start an authentication engine for this context. This engine
             //  allows or denies incoming connections (talking to the libzmq
             //  core over a protocol called ZAP).
@@ -387,7 +359,6 @@ public class ZAuthTest
             auth.close();
         }
         finally {
-            ctx.close();
             TestUtils.cleanupDir(certificateFolder);
         }
     }
@@ -396,8 +367,7 @@ public class ZAuthTest
     public void testBlacklistDenied() throws IOException
     {
         System.out.println("testBlacklistDenied");
-        final ZContext ctx = new ZContext();
-        try {
+        try (final ZContext ctx = new ZContext()) {
             //  Start an authentication engine for this context. This engine
             //  allows or denies incoming connections (talking to the libzmq
             //  core over a protocol called ZAP).
@@ -420,18 +390,11 @@ public class ZAuthTest
             boolean rc = client.connect("tcp://127.0.0.1:" + port);
             assertThat(rc, is(true));
 
-            //  Send a single message from server to client
-            rc = server.send("Hello");
-            assertThat(rc, is(true));
-
             ZAuth.ZapReply reply = auth.nextReply(true);
             assertThat(reply.statusCode, is(400));
             assertThat(reply.userId, is(""));
 
             auth.close();
-        }
-        finally {
-            ctx.close();
         }
     }
 
@@ -439,8 +402,7 @@ public class ZAuthTest
     public void testBlacklistAllowed() throws IOException
     {
         System.out.println("testBlacklistAllowed");
-        final ZContext ctx = new ZContext();
-        try {
+        try (final ZContext ctx = new ZContext()) {
             //  Start an authentication engine for this context. This engine
             //  allows or denies incoming connections (talking to the libzmq
             //  core over a protocol called ZAP).
@@ -473,17 +435,13 @@ public class ZAuthTest
 
             auth.close();
         }
-        finally {
-            ctx.close();
-        }
     }
 
     @Test
     public void testWhitelistDenied() throws IOException
     {
         System.out.println("testWhitelistDenied");
-        final ZContext ctx = new ZContext();
-        try {
+        try (final ZContext ctx = new ZContext()) {
             //  Start an authentication engine for this context. This engine
             //  allows or denies incoming connections (talking to the libzmq
             //  core over a protocol called ZAP).
@@ -506,18 +464,11 @@ public class ZAuthTest
             boolean rc = client.connect("tcp://127.0.0.1:" + port);
             assertThat(rc, is(true));
 
-            //  Send a single message from server to client
-            rc = server.send("Hello");
-            assertThat(rc, is(true));
-
             ZAuth.ZapReply reply = auth.nextReply(true);
             assertThat(reply.statusCode, is(400));
             assertThat(reply.userId, is(""));
 
             auth.close();
-        }
-        finally {
-            ctx.close();
         }
     }
 
@@ -525,8 +476,7 @@ public class ZAuthTest
     public void testWhitelistAllowed() throws IOException
     {
         System.out.println("testWhitelistAllowed");
-        final ZContext ctx = new ZContext();
-        try {
+        try (final ZContext ctx = new ZContext()) {
             //  Start an authentication engine for this context. This engine
             //  allows or denies incoming connections (talking to the libzmq
             //  core over a protocol called ZAP).
@@ -559,9 +509,6 @@ public class ZAuthTest
 
             auth.close();
         }
-        finally {
-            ctx.close();
-        }
     }
 
     @Test
@@ -569,8 +516,7 @@ public class ZAuthTest
     {
         System.out.println("testCurveFail");
         // this is the same test but here we do not save the client's certificate into the certstore's folder
-        final ZContext ctx = new ZContext();
-        try {
+        try (final ZContext ctx = new ZContext()) {
             ZAuth auth = new ZAuth(ctx, new ZCertStore.Timestamper());
             //  Get some indication of what the authenticator is deciding
             auth.setVerbose(VERBOSE_MODE);
@@ -623,7 +569,6 @@ public class ZAuthTest
             auth.close();
         }
         finally {
-            ctx.close();
             TestUtils.cleanupDir(certificateFolder);
         }
     }
@@ -632,8 +577,7 @@ public class ZAuthTest
     public void testNoReplies() throws IOException
     {
         System.out.println("testNoReplies");
-        final ZContext ctx = new ZContext();
-        try {
+        try (final ZContext ctx = new ZContext()) {
             //  Start an authentication engine for this context. This engine
             //  allows or denies incoming connections (talking to the libzmq
             //  core over a protocol called ZAP).
@@ -651,9 +595,6 @@ public class ZAuthTest
 
             auth.close();
         }
-        finally {
-            ctx.close();
-        }
     }
 
     @After
@@ -663,15 +604,16 @@ public class ZAuthTest
         deletePasswords.delete();
     }
 
-    //    @Test
+    @Test
+    @Ignore
     public void testRepeated() throws IOException
     {
-        for (int idx = 0; idx < 10000; ++idx) {
+        for (int idx = 0; idx < 10_000; ++idx) {
             System.out.println("+++++ " + idx);
-            testCurveSuccessful();
             testCurveFail();
-            testPlainWithPassword();
-            testCurveAnyClient();
+            testPlainWithPasswordDenied();
+            testWhitelistDenied();
+            testBlacklistDenied();
         }
     }
 }

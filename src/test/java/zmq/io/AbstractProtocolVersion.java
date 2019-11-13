@@ -23,7 +23,7 @@ import zmq.util.TestUtils;
 
 public abstract class AbstractProtocolVersion
 {
-    protected static final int REPETITIONS = 1000;
+    static final int REPETITIONS = 1000;
 
     static class SocketMonitor extends Thread
     {
@@ -31,7 +31,7 @@ public abstract class AbstractProtocolVersion
         private final String      monitorAddr;
         private final ZMQ.Event[] events = new ZMQ.Event[1];
 
-        public SocketMonitor(Ctx ctx, String monitorAddr)
+        SocketMonitor(Ctx ctx, String monitorAddr)
         {
             this.ctx = ctx;
             this.monitorAddr = monitorAddr;
@@ -57,7 +57,7 @@ public abstract class AbstractProtocolVersion
         }
     }
 
-    protected byte[] assertProtocolVersion(int version, List<ByteBuffer> raws, String payload)
+    byte[] assertProtocolVersion(int version, List<ByteBuffer> raws, String payload)
             throws IOException, InterruptedException
     {
         String host = "tcp://localhost:*";
@@ -97,7 +97,7 @@ public abstract class AbstractProtocolVersion
         final Event event = monitor.events[0];
         assertThat(event, notNullValue());
         assertThat(event.event, is(ZMQ.ZMQ_EVENT_HANDSHAKE_PROTOCOL));
-        assertThat((Integer) event.arg, is(version));
+        assertThat(event.arg, is(version));
 
         InputStream in = sender.getInputStream();
         byte[] data = new byte[255];
@@ -111,7 +111,7 @@ public abstract class AbstractProtocolVersion
         return Arrays.copyOf(data, read);
     }
 
-    protected List<ByteBuffer> raws(int revision)
+    List<ByteBuffer> raws(int revision)
     {
         List<ByteBuffer> raws = new ArrayList<>();
         ByteBuffer raw = ByteBuffer.allocate(12);

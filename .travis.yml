@@ -1,5 +1,67 @@
-matrix:
+jobs:
   include:
+    - language: android
+      dist: bionic
+      addons:
+        apt:
+          packages:
+            - bridge-utils
+            - libpulse0
+            - libvirt-bin
+            - qemu-kvm
+            - virtinst
+            - ubuntu-vm-builder
+      env:
+        global:
+        - API=16
+        - ABI=x86
+      before_install:
+        - export ANDROID_HOME=${HOME}/android-sdk
+        - export ANDROID_TOOLS_URL="https://dl.google.com/android/repository/sdk-tools-linux-4333796.zip"
+        - export GRAVIS="https://raw.githubusercontent.com/DanySK/Gravis-CI/master/"
+        - export TOOLS=${ANDROID_HOME}/tools
+        - export PATH=${ANDROID_HOME}:${ANDROID_HOME}/emulator:${TOOLS}:${TOOLS}/bin:${ANDROID_HOME}/platform-tools:${PATH}
+        # install KVM
+        - sudo adduser $USER libvirt
+        - sudo adduser $USER kvm
+        # install Java
+        - curl "${GRAVIS}.install-jdk-travis.sh" --output ~/.install-jdk-travis.sh
+        - export JDK="1.8"
+        - source ~/.install-jdk-travis.sh
+        # install Android
+        - wget -q "${ANDROID_TOOLS_URL}" -O android-sdk-tools.zip
+        - unzip -q android-sdk-tools.zip -d ${ANDROID_HOME}
+        - rm android-sdk-tools.zip
+        # Avoid harmless sdk manager warning
+        - echo 'count=0' > ~/.android/repositories.cfg
+        - yes | sdkmanager --licenses >/dev/null
+        # Install needed tools and images for Android
+        - echo y | sdkmanager --no_https "platform-tools" > /dev/null
+        - echo y | sdkmanager --no_https "tools" > /dev/null
+        - echo y | sdkmanager --no_https "build-tools;28.0.3" > /dev/null
+        - echo y | sdkmanager --no_https "platforms;android-28" > /dev/null
+        - echo y | sdkmanager --no_https "emulator" > /dev/null
+        - ./scripts/prepare-android.sh
+      install:
+        # Install Android target
+        - echo y | sdkmanager --no_https "system-images;android-16;default;x86" > /dev/null
+        - echo y | sdkmanager --no_https "platforms;android-16" > /dev/null
+        # Create emulated device
+        - echo no | avdmanager create avd --force -n test -k "system-images;android-16;default;x86" -c 10M
+        - test -e ${ANDROID_HOME}/emulator/emulator
+        - sudo -E sudo -u $USER -E bash -c "${ANDROID_HOME}/emulator/emulator -avd test -verbose -no-snapshot -no-audio -no-window -camera-back none -camera-front none -selinux permissive -qemu -m 2048 &"
+        # Build the project while emulator is starting
+        - cd src/android/Jeromq
+        - ./gradlew build > /dev/null
+        # Wait for emulator to be ready
+        - ./scripts/android-wait-for-emulator.sh
+        - adb shell settings put global window_animation_scale 0 &
+        - adb shell settings put global transition_animation_scale 0 &
+        - adb shell settings put global animator_duration_scale 0 &
+        - adb shell input keyevent 82 &
+      script:
+        - ./gradlew connectedCheck  --stacktrace
+
     - language: java
       jdk: openjdk8
 
@@ -15,23 +77,15 @@ matrix:
     - language: java
       jdk: oraclejdk12
 
-    - language: android
-      jdk: openjdk8
-      android:
-        components:
-          - tools
-          - platform-tools
-
-    - language: android
-      jdk: oraclejdk8
-      android:
-        components:
-          - tools
-          - platform-tools
-
+before_cache:
+  - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
+  - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
 cache:
   directories:
     - $HOME/.m2
+    - $HOME/.gradle/caches/
+    - $HOME/.gradle/wrapper/
+    - $HOME/.android/build-cache
 
 install: mvn install --quiet -DskipTests=true -Dgpg.skip=true
 

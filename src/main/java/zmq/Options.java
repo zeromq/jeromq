@@ -571,7 +571,11 @@ public class Options
         catch (ClassCastException e) {
             throw new IllegalArgumentException(e);
         }
-        catch (InstantiationException | IllegalAccessException e) {
+        catch (InstantiationException e) {
+            throw new ZError.InstantiationException(e);
+        }
+        // Android compatibility: multi-catch is only available from API 19
+        catch (IllegalAccessException e) {
             throw new ZError.InstantiationException(e);
         }
     }

@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
 
-import zmq.util.AndroidProblematic;
+import zmq.util.AndroidIgnore;
 import zmq.util.TestUtils;
 import zmq.util.function.BiFunction;
 
@@ -26,7 +26,7 @@ public class HeartbeatsTest
 
     // Tests sequentiality of received messages while heartbeating
     @Test
-    @AndroidProblematic
+    @AndroidIgnore
     public void testSequentialityReceivedMessagesMultiThreadedPushBindPullConnect()
             throws IOException, InterruptedException
     {
@@ -35,7 +35,7 @@ public class HeartbeatsTest
 
     // Tests sequentiality of received messages while heartbeating
     @Test
-    @AndroidProblematic
+    @AndroidIgnore
     public void testSequentialityReceivedMessagesMultiThreadedPushConnectPullBind()
             throws IOException, InterruptedException
     {

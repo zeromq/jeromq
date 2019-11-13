@@ -5,7 +5,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.zeromq.auth.TestUtils;
 import org.zeromq.util.ZMetadata;
-import zmq.util.AndroidProblematic;
+import zmq.util.AndroidIgnore;
 
 import java.io.File;
 import java.io.IOException;
@@ -16,7 +16,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
 
-@AndroidProblematic
+@AndroidIgnore
 public class ZCertTest
 {
     private static final String CERT_LOCATION = "target/testCerts";

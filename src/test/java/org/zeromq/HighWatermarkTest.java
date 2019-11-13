@@ -3,7 +3,6 @@ package org.zeromq;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
-import java.io.IOException;
 import java.security.SecureRandom;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -12,30 +11,40 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.LockSupport;
 
 import org.junit.Test;
-import zmq.util.AndroidProblematic;
+import zmq.util.AndroidIgnore;
 
 public class HighWatermarkTest
 {
-    public static final int N_MESSAGES   = 30000;
-    public static final int MESSAGE_SIZE = 50;
+    private static final int N_MESSAGES   = 30000;
+    private static final int MESSAGE_SIZE = 50;
 
-    public static final int FILL_WATERMARK = 3000;
-    public static final int TRACE          = 7000;
+    private static final int FILL_WATERMARK = 3000;
+    private static final int TRACE          = 7000;
 
     public static class Dispatcher implements Runnable
     {
         private final String control;
-
-        private final String  dispatch;
         private final boolean trace;
         private final String  msg;
+        private final ZContext context;
 
-        public Dispatcher(String msg, String dispatch, String control, boolean trace)
+        private ZMQ.Socket sender;
+
+        Dispatcher(String msg, String control, boolean trace)
         {
             this.msg = msg;
-            this.dispatch = dispatch;
             this.control = control;
             this.trace = trace;
+            this.context = new ZContext(1);
+        }
+
+        //  Socket to send messages on
+        private String initDispatch()
+        {
+            sender = context.createSocket(SocketType.PUSH);
+            sender.setImmediate(false);
+            sender.bind("tcp://*:*");
+            return sender.getLastEndpoint();
         }
 
         @Override
@@ -43,24 +52,17 @@ public class HighWatermarkTest
         {
             Thread.currentThread().setName("Dispatcher");
 
-            ZContext context = new ZContext(1);
-
-            //  Socket to send messages on
-            ZMQ.Socket sender = context.createSocket(SocketType.PUSH);
-            sender.setImmediate(false);
-            sender.bind(dispatch);
-
-            ZMQ.Socket controller = context.createSocket(SocketType.SUB);
-            controller.subscribe(ZMQ.SUBSCRIPTION_ALL);
-            controller.connect(control);
-
             try {
+                ZMQ.Socket controller = context.createSocket(SocketType.SUB);
+                controller.subscribe(ZMQ.SUBSCRIPTION_ALL);
+                controller.connect(control);
+
                 System.out.println("Sending " + N_MESSAGES + " tasks (" + MESSAGE_SIZE + "b) to workers\n");
 
                 //  The first message is "0" and signals start of batch
                 sender.send("0", 0);
 
-                System.out.println("Started dispatcher on " + dispatch);
+                System.out.println("Started dispatcher on " + sender.getLastEndpoint());
 
                 //  Send N_MESSAGES tasks
                 for (int taskNbr = 0; taskNbr < N_MESSAGES; taskNbr++) {
@@ -120,7 +122,7 @@ public class HighWatermarkTest
             sender.connect(collect);
 
             ZMQ.Socket controller = context.createSocket(SocketType.SUB);
-            controller.subscribe("FINISH");
+            controller.subscribe(ZMQ.SUBSCRIPTION_ALL);
             controller.connect(control);
 
             ZMQ.Poller poller = context.createPoller(3);
@@ -170,32 +172,46 @@ public class HighWatermarkTest
                 }
                 poller.close();
                 context.close();
-                if (trace) {
-                    System.out.println("Worker #" + index + " done.");
-                }
+                System.out.println("Worker #" + index + " done.");
             }
         }
     }
 
     public static class Collector implements Runnable
     {
-        private final String control;
+        private final ZContext context;
 
         private final boolean trace;
-        private final String  collect;
         private final String  msg;
 
         private final int workers;
 
         private final AtomicBoolean success = new AtomicBoolean();
 
-        public Collector(String msg, String collect, String control, int workers, boolean trace)
+        private ZMQ.Socket receiver;
+        private ZMQ.Socket controller;
+
+        Collector(String msg, int workers, boolean trace)
         {
             this.msg = msg;
-            this.collect = collect;
-            this.control = control;
             this.workers = workers;
             this.trace = trace;
+            this.context = new ZContext(1);
+        }
+
+        private String initCollect()
+        {
+            receiver = context.createSocket(SocketType.PULL);
+            receiver.setImmediate(false);
+            receiver.bind("tcp://*:*");
+            return receiver.getLastEndpoint();
+        }
+
+        private String initControl()
+        {
+            controller = context.createSocket(SocketType.PUB);
+            controller.bind("tcp://*:*");
+            return controller.getLastEndpoint();
         }
 
         @Override
@@ -203,18 +219,8 @@ public class HighWatermarkTest
         {
             Thread.currentThread().setName("Collector");
             if (trace) {
-                System.out.println("Started collector on " + collect);
+                System.out.println("Started collector on " + receiver.getLastEndpoint());
             }
-
-            //  Prepare our context and socket
-            ZContext context = new ZContext(1);
-
-            ZMQ.Socket receiver = context.createSocket(SocketType.PULL);
-            receiver.setImmediate(false);
-            receiver.bind(collect);
-
-            ZMQ.Socket controller = context.createSocket(SocketType.PUB);
-            controller.bind(control);
 
             try {
                 //  Wait for start of batch
@@ -251,42 +257,44 @@ public class HighWatermarkTest
 
                 controller.send("FINISH"); // Signal dispatcher to finish
             }
+            catch (Throwable t) {
+                t.printStackTrace();
+            }
             finally {
                 context.close();
                 System.out.println("Collector done.");
             }
-
             success.set(true);
         }
     }
 
     @Test
-    public void testReliabilityOnWatermark() throws IOException, InterruptedException
+    public void testReliabilityOnWatermark() throws InterruptedException
     {
         testWatermark(1);
     }
 
     @Test
-    @AndroidProblematic
-    public void testReliabilityOnWatermark2() throws IOException, InterruptedException
+    @AndroidIgnore
+    public void testReliabilityOnWatermark2() throws InterruptedException
     {
         testWatermark(2);
     }
 
-    private void testWatermark(int workers) throws IOException, InterruptedException
+    private void testWatermark(int workers) throws InterruptedException
     {
         long start = System.currentTimeMillis();
 
         ExecutorService threadPool = Executors.newFixedThreadPool(workers + 2);
 
-        String control = "tcp://localhost:" + Utils.findOpenPort();
-        String collect = "tcp://localhost:" + Utils.findOpenPort();
-        String dispatch = "tcp://localhost:" + Utils.findOpenPort();
-
         String msg = randomString(MESSAGE_SIZE);
 
-        Dispatcher dispatcher = new Dispatcher(msg, dispatch, control, false);
-        Collector collector = new Collector(msg, collect, control, workers, false);
+        Collector collector = new Collector(msg, workers, false);
+        String collect = collector.initCollect();
+        String control = collector.initControl();
+
+        Dispatcher dispatcher = new Dispatcher(msg, control, false);
+        String dispatch = dispatcher.initDispatch();
         threadPool.submit(dispatcher);
         threadPool.submit(collector);
         for (int idx = 0; idx < workers; ++idx) {
@@ -294,7 +302,7 @@ public class HighWatermarkTest
         }
 
         threadPool.shutdown();
-        threadPool.awaitTermination(120, TimeUnit.SECONDS);
+        threadPool.awaitTermination(360, TimeUnit.SECONDS);
         long end = System.currentTimeMillis();
         assertThat(collector.success.get(), is(true));
         System.out.println("Test done in " + (end - start) + " millis.");
@@ -305,7 +313,6 @@ public class HighWatermarkTest
     private static final String       ABC = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
     private static final SecureRandom rnd = new SecureRandom();
 
-    // http://stackoverflow.com/a/157202
     private static String randomString(int len)
     {
         StringBuilder sb = new StringBuilder(len);

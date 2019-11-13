@@ -4,7 +4,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
 
-import java.io.IOException;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -20,60 +19,44 @@ import org.junit.Test;
 import org.zeromq.ZMQ.Socket;
 import org.zeromq.ZProxy.Plug;
 
-import zmq.util.Utils;
-
 public class XpubXsubZTest
 {
-    private AtomicReference<Throwable> testIssue476(final int front, final int back, final int max,
+    private AtomicReference<Throwable> testIssue476(final String front, final String back, final int max,
                                                     ExecutorService service, final ZContext ctx)
             throws InterruptedException, ExecutionException
     {
         final AtomicInteger numberReceived = new AtomicInteger(0);
 
-        Future<?> subscriber = service.submit(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                Thread.currentThread().setName("Subscriber");
-                final ZContext ctx = new ZContext();
-                try {
-                    final ZMQ.Socket requester = ctx.createSocket(SocketType.SUB);
-                    requester.connect("tcp://localhost:" + back);
-                    requester.subscribe("hello".getBytes(ZMQ.CHARSET));
+        Future<?> subscriber = service.submit(() -> {
+            Thread.currentThread().setName("Subscriber");
+            try (ZContext ctx1 = new ZContext()) {
+                final Socket requester = ctx1.createSocket(SocketType.SUB);
+                requester.connect(back);
+                requester.subscribe("hello".getBytes(ZMQ.CHARSET));
 
-                    while (numberReceived.get() < max) {
-                        ZMsg.recvMsg(requester);
-                        numberReceived.incrementAndGet();
-                    }
-                }
-                finally {
-                    ctx.close();
+                while (numberReceived.get() < max) {
+                    ZMsg.recvMsg(requester);
+                    numberReceived.incrementAndGet();
                 }
             }
         });
 
         final AtomicReference<Throwable> error = new AtomicReference<>();
-        service.submit(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                Thread.currentThread().setName("Publisher");
-                try {
-                    ZMQ.Socket pub = ctx.createSocket(SocketType.PUB);
-                    pub.connect("tcp://localhost:" + front);
-                    while (numberReceived.get() < max) {
-                        ZMsg message = ZMsg.newStringMsg("hello", "world");
-                        boolean rc = message.send(pub);
-                        assertThat(rc, is(true));
-                        ZMQ.msleep(5);
-                    }
+        service.submit(() -> {
+            Thread.currentThread().setName("Publisher");
+            try {
+                Socket pub = ctx.createSocket(SocketType.PUB);
+                pub.connect(front);
+                while (numberReceived.get() < max) {
+                    ZMsg message = ZMsg.newStringMsg("hello", "world");
+                    boolean rc = message.send(pub);
+                    assertThat(rc, is(true));
+                    ZMQ.msleep(5);
                 }
-                catch (Throwable ex) {
-                    error.set(ex);
-                    ex.printStackTrace();
-                }
+            }
+            catch (Throwable ex) {
+                error.set(ex);
+                ex.printStackTrace();
             }
         });
 
@@ -93,29 +76,25 @@ public class XpubXsubZTest
     }
 
     @Test
-    public void testIssue476() throws InterruptedException, IOException, ExecutionException
+    public void testIssue476() throws InterruptedException, ExecutionException
     {
-        final int front = Utils.findOpenPort();
-        final int back = Utils.findOpenPort();
-
         final int max = 10;
 
         ExecutorService service = Executors.newFixedThreadPool(3);
         final ZContext ctx = new ZContext();
-        service.submit(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                Thread.currentThread().setName("Proxy");
-                ZMQ.Socket xpub = ctx.createSocket(SocketType.XPUB);
-                xpub.bind("tcp://*:" + back);
-                ZMQ.Socket xsub = ctx.createSocket(SocketType.XSUB);
-                xsub.bind("tcp://*:" + front);
-                ZMQ.Socket ctrl = ctx.createSocket(SocketType.PAIR);
-                ctrl.bind("inproc://ctrl-proxy");
-                ZMQ.proxy(xpub, xsub, null, ctrl);
-            }
+        ZMQ.Socket xpub = ctx.createSocket(SocketType.XPUB);
+        xpub.bind("tcp://*:*");
+        ZMQ.Socket xsub = ctx.createSocket(SocketType.XSUB);
+        xsub.bind("tcp://*:*");
+
+        String back = xpub.getLastEndpoint();
+        String front = xsub.getLastEndpoint();
+
+        service.submit(() -> {
+            Thread.currentThread().setName("Proxy");
+            Socket ctrl = ctx.createSocket(SocketType.PAIR);
+            ctrl.bind("inproc://ctrl-proxy");
+            ZMQ.proxy(xpub, xsub, null, ctrl);
         });
         final AtomicReference<Throwable> error = testIssue476(front, back, max, service, ctx);
         ZMQ.Socket ctrl = ctx.createSocket(SocketType.PAIR);
@@ -133,11 +112,8 @@ public class XpubXsubZTest
 
     @SuppressWarnings("deprecation")
     @Test
-    public void testIssue476WithZProxy() throws InterruptedException, IOException, ExecutionException
+    public void testIssue476WithZProxy() throws InterruptedException, ExecutionException
     {
-        final int front = Utils.findOpenPort();
-        final int back = Utils.findOpenPort();
-
         final int max = 10;
 
         ExecutorService service = Executors.newFixedThreadPool(3);
@@ -161,19 +137,33 @@ public class XpubXsubZTest
             }
 
             @Override
-            public boolean configure(Socket socket, Plug place, Object... args) throws IOException
+            public boolean configure(Socket socket, Plug place, Object... args)
             {
                 if (place == Plug.FRONT) {
-                    return socket.bind("tcp://*:" + front);
+                    return socket.bind("tcp://*:*");
                 }
                 if (place == Plug.BACK) {
-                    return socket.bind("tcp://*:" + back);
+                    return socket.bind("tcp://*:*");
                 }
                 return true;
+            }
+
+            @Override
+            public boolean configure(Socket pipe, ZMsg cfg, Socket frontend, Socket backend, Socket capture,
+                                     Object... args)
+            {
+                ZMsg reply = new ZMsg();
+                reply.addString(frontend.getLastEndpoint());
+                reply.addString(backend.getLastEndpoint());
+                return reply.send(pipe);
             }
         };
         ZProxy proxy = ZProxy.newZProxy(ctx, null, actor, UUID.randomUUID().toString());
         proxy.start(true);
+        ZMsg ret = proxy.configure(new ZMsg().addString("ports"));
+        String front = ret.popString();
+        String back = ret.popString();
+
         final AtomicReference<Throwable> error = testIssue476(front, back, max, service, ctx);
 
         proxy.exit(false);
@@ -188,11 +178,8 @@ public class XpubXsubZTest
 
     @SuppressWarnings("deprecation")
     @Test
-    public void testIssue476WithZProxyZmqPump() throws InterruptedException, IOException, ExecutionException
+    public void testIssue476WithZProxyZmqPump() throws InterruptedException, ExecutionException
     {
-        final int front = Utils.findOpenPort();
-        final int back = Utils.findOpenPort();
-
         final int max = 10;
 
         ExecutorService service = Executors.newFixedThreadPool(3);
@@ -216,20 +203,32 @@ public class XpubXsubZTest
             }
 
             @Override
-            public boolean configure(Socket socket, Plug place, Object... args) throws IOException
+            public boolean configure(Socket socket, Plug place, Object... args)
             {
                 if (place == Plug.FRONT) {
-                    return socket.bind("tcp://*:" + front);
+                    return socket.bind("tcp://*:*");
                 }
                 if (place == Plug.BACK) {
-                    return socket.bind("tcp://*:" + back);
+                    return socket.bind("tcp://*:*");
                 }
                 return true;
+            }
+
+            @Override
+            public boolean configure(Socket pipe, ZMsg cfg, Socket frontend, Socket backend, Socket capture,
+                                     Object... args)
+            {
+                ZMsg reply = new ZMsg();
+                reply.addString(frontend.getLastEndpoint());
+                reply.addString(backend.getLastEndpoint());
+                return reply.send(pipe);
             }
         };
         ZProxy proxy = ZProxy.newProxy(ctx, "XPub-XSub", actor, UUID.randomUUID().toString());
         proxy.start(true);
-
+        ZMsg ret = proxy.configure(new ZMsg().addString("ports"));
+        String front = ret.popString();
+        String back = ret.popString();
         final AtomicReference<Throwable> error = testIssue476(front, back, max, service, ctx);
         proxy.exit(false);
 

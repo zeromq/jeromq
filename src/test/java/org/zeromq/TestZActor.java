@@ -8,10 +8,12 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.zeromq.ZActor.Actor;
 import org.zeromq.ZMQ.Socket;
+import zmq.util.AndroidIgnore;
 
 public class TestZActor
 {
     @Test
+    @AndroidIgnore
     public void testMinimalistic()
     {
         final Actor acting = new ZActor.SimpleActor()
