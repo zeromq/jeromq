@@ -17,6 +17,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.zeromq.proto.ZPicture;
 
 import zmq.Ctx;
+import zmq.Options;
 import zmq.SocketBase;
 import zmq.ZError;
 import zmq.ZError.CtxTerminatedException;
@@ -4140,6 +4141,9 @@ public class ZMQ
      */
     public static class Curve
     {
+        public static final int KEY_SIZE = Options.CURVE_KEYSIZE;
+        public static final int KEY_SIZE_Z85 = Options.CURVE_KEYSIZE_Z85;
+
         /**
          * <p>Returns a newly generated random keypair consisting of a public key
          * and a secret key.</p>
@@ -4183,7 +4187,8 @@ public class ZMQ
         }
 
         /**
-         * A container for a public and a corresponding secret key
+         * A container for a public and a corresponding secret key.
+         * Keys have to be encoded in Z85 format.
          */
         public static class KeyPair
         {
@@ -4199,6 +4204,9 @@ public class ZMQ
 
             public KeyPair(final String publicKey, final String secretKey)
             {
+                Utils.checkArgument(publicKey != null, "Public key cannot be null");
+                Utils.checkArgument(publicKey.length() == Curve.KEY_SIZE_Z85, "Public key has to be Z85 format");
+                Utils.checkArgument(secretKey == null || secretKey.length() == Curve.KEY_SIZE_Z85, "Secret key has to be null or in Z85 format");
                 this.publicKey = publicKey;
                 this.secretKey = secretKey;
             }

@@ -113,20 +113,12 @@ public class Metadata
 
     public final byte[] bytes()
     {
-        ByteArrayOutputStream stream = new ByteArrayOutputStream(size());
-        try {
+        try (ByteArrayOutputStream stream = new ByteArrayOutputStream(size())) {
             write(stream);
             return stream.toByteArray();
         }
         catch (IOException e) {
             return new byte[0];
-        }
-        finally {
-            try {
-                stream.close();
-            }
-            catch (IOException e) {
-            }
         }
     }
 
