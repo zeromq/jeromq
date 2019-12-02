@@ -3,12 +3,13 @@ package org.zeromq;
 import java.io.File;
 import java.io.IOException;
 import java.io.Writer;
+import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Date;
 
+import org.zeromq.ZMQ.Curve;
 import org.zeromq.ZMQ.Curve.KeyPair;
 import org.zeromq.util.ZMetadata;
-
-import zmq.Options;
-import zmq.util.Z85;
 
 /**
  *
@@ -42,35 +43,64 @@ public class ZCert
     private final String    secretTxt;                  //  Secret key in Z85 text
     private final ZMetadata metadata = new ZMetadata(); //  Certificate metadata
 
-    public ZCert(String publickey)
-    {
-        if (publickey.length() == Options.CURVE_KEYSIZE) {
-            // in binary-format
-            publicKey = publickey.getBytes(ZMQ.CHARSET);
-            publicTxt = ZMQ.Curve.z85Encode(publicKey);
-        }
-        else {
-            Utils.checkArgument(
-                                publickey.length() == Options.CURVE_KEYSIZE_Z85,
-                                String.format(
-                                              "Public key shall have a size of either %1$d or %2$d",
-                                              Options.CURVE_KEYSIZE,
-                                              Options.CURVE_KEYSIZE_Z85));
-            // Z85-Coded
-            publicKey = Z85.decode(publickey);
-            publicTxt = publickey;
-        }
-        secretKey = null;
-        secretTxt = null;
-    }
-
     public ZCert()
     {
-        KeyPair keypair = ZMQ.Curve.generateKeyPair();
-        publicKey = ZMQ.Curve.z85Decode(keypair.publicKey);
-        publicTxt = keypair.publicKey;
-        secretKey = ZMQ.Curve.z85Decode(keypair.secretKey);
-        secretTxt = keypair.secretKey;
+        this(ZMQ.Curve.generateKeyPair());
+    }
+
+    public ZCert(String publicKey)
+    {
+        this(publicKey, null);
+    }
+
+    public ZCert(KeyPair keypair)
+    {
+        this(keypair.publicKey, keypair.secretKey);
+    }
+
+    public ZCert(byte[] publicKey, byte[] secretKey)
+    {
+        Utils.checkArgument(publicKey != null, "Public key has to be provided for a ZCert");
+        assertKey(publicKey.length, Curve.KEY_SIZE, "Public");
+        if (secretKey != null) {
+            assertKey(secretKey.length, Curve.KEY_SIZE, "Secret");
+        }
+        this.publicKey = Arrays.copyOf(publicKey, publicKey.length);
+        this.publicTxt = Curve.z85Encode(this.publicKey);
+
+        if (secretKey == null) {
+            this.secretKey = null;
+            this.secretTxt = null;
+        }
+        else {
+            this.secretKey = Arrays.copyOf(secretKey, secretKey.length);
+            this.secretTxt = Curve.z85Encode(this.secretKey);
+        }
+    }
+
+    public ZCert(String publicKey, String secretKey)
+    {
+        Utils.checkArgument(publicKey != null, "Public key has to be provided for a ZCert");
+        assertKey(publicKey.length(), Curve.KEY_SIZE_Z85, "Public");
+        if (secretKey != null) {
+            assertKey(secretKey.length(), Curve.KEY_SIZE_Z85, "Secret");
+        }
+        this.publicKey = Curve.z85Decode(publicKey);
+        this.publicTxt = publicKey;
+
+        if (secretKey == null) {
+            this.secretKey = null;
+            this.secretTxt = null;
+        }
+        else {
+            this.secretKey = Curve.z85Decode(secretKey);
+            this.secretTxt = secretKey;
+        }
+    }
+
+    private void assertKey(int length, int expected, String flavour)
+    {
+        Utils.checkArgument(length == expected, flavour + " key shall have a size of " + expected);
     }
 
     public byte[] getPublicKey()
@@ -109,8 +139,20 @@ public class ZCert
         metadata.set(key, value);
     }
 
+    public void unsetMeta(String key)
+    {
+        metadata.remove(key);
+    }
+
+    public String getMeta(String key)
+    {
+        return metadata.get(key);
+    }
+
     private void add(ZMetadata meta, ZConfig config)
     {
+        String now = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").format(new Date());
+        config.addComment(String.format("** Generated on %1$s by ZCert **", now));
         for (String key : meta.keySet()) {
             config.putValue("metadata/" + key, meta.get(key));
         }
