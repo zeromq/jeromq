@@ -1,6 +1,6 @@
 jobs:
   include:
-    - language: android
+    - language: bash
       dist: bionic
       addons:
         apt:
@@ -13,6 +13,7 @@ jobs:
             - ubuntu-vm-builder
       env:
         global:
+        - ANDROID=
         - API=16
         - ABI=x86
       before_install:
@@ -21,6 +22,7 @@ jobs:
         - export GRAVIS="https://raw.githubusercontent.com/DanySK/Gravis-CI/master/"
         - export TOOLS=${ANDROID_HOME}/tools
         - export PATH=${ANDROID_HOME}:${ANDROID_HOME}/emulator:${TOOLS}:${TOOLS}/bin:${ANDROID_HOME}/platform-tools:${PATH}
+        - export ADB_INSTALL_TIMEOUT=8
         # install KVM
         - sudo adduser $USER libvirt
         - sudo adduser $USER kvm

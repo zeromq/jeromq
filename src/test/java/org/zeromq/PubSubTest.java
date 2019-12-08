@@ -5,12 +5,10 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertThat;
 
 import java.io.IOException;
-import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.Ignore;
@@ -29,56 +27,32 @@ public class PubSubTest
 
         final int messagesNumber = 1000;
         //run publisher
-        Runnable pub = new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                ZMQ.Socket publisher = context.socket(SocketType.PUB);
-                publisher.bind(address);
-                int count = messagesNumber;
-                while (count-- > 0) {
-                    publisher.send(msg);
-                    System.out.println("Send message " + count);
-                }
-                publisher.close();
+        Runnable pub = () -> {
+            Socket publisher = context.socket(SocketType.PUB);
+            publisher.bind(address);
+            int count = messagesNumber;
+            while (count-- > 0) {
+                publisher.send(msg);
+                System.out.println("Send message " + count);
             }
-
+            publisher.close();
         };
         //run subscriber
-        Runnable sub = new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                ZMQ.Socket subscriber = context.socket(SocketType.SUB);
-                subscriber.connect(address);
-                subscriber.subscribe(ZMQ.SUBSCRIPTION_ALL);
-                int count = messagesNumber;
-                while (count-- > 0) {
-                    subscriber.recv();
-                    System.out.println("Received message " + count);
-                }
-                subscriber.close();
+        Runnable sub = () -> {
+            Socket subscriber = context.socket(SocketType.SUB);
+            subscriber.connect(address);
+            subscriber.subscribe(ZMQ.SUBSCRIPTION_ALL);
+            int count = messagesNumber;
+            while (count-- > 0) {
+                subscriber.recv();
+                System.out.println("Received message " + count);
             }
+            subscriber.close();
         };
-        ExecutorService executor = Executors.newFixedThreadPool(2, new ThreadFactory()
-        {
-            @Override
-            public Thread newThread(Runnable r)
-            {
-                Thread thread = new Thread(r);
-                thread.setUncaughtExceptionHandler(new UncaughtExceptionHandler()
-                {
-                    @Override
-                    public void uncaughtException(Thread t, Throwable e)
-                    {
-                        e.printStackTrace();
-                    }
-                });
-                return thread;
-            }
-
+        ExecutorService executor = Executors.newFixedThreadPool(2, r -> {
+            Thread thread = new Thread(r);
+            thread.setUncaughtExceptionHandler((t, e) -> e.printStackTrace());
+            return thread;
         });
         executor.submit(sub);
         zmq.ZMQ.sleep(1);
@@ -128,36 +102,31 @@ public class PubSubTest
         final int port = Utils.findOpenPort();
         final ExecutorService service = Executors.newFixedThreadPool(2);
 
-        final Runnable pub = new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                final ZMQ.Context ctx = ZMQ.context(1);
-                assertThat(ctx, notNullValue());
-                final ZMQ.Socket pub = ctx.socket(SocketType.PUB);
-                assertThat(pub, notNullValue());
+        final Runnable pub = () -> {
+            final ZMQ.Context ctx = ZMQ.context(1);
+            assertThat(ctx, notNullValue());
+            final Socket pub1 = ctx.socket(SocketType.PUB);
+            assertThat(pub1, notNullValue());
 
-                boolean rc = pub.bind("tcp://*:" + port);
+            boolean rc = pub1.bind("tcp://*:" + port);
+            assertThat(rc, is(true));
+
+            for (int idx = 1; idx <= 15; ++idx) {
+                rc = pub1.sendMore("test/");
+                assertThat(rc, is(true));
+                rc = pub1.send("data" + idx);
                 assertThat(rc, is(true));
 
-                for (int idx = 1; idx <= 15; ++idx) {
-                    rc = pub.sendMore("test/");
-                    assertThat(rc, is(true));
-                    rc = pub.send("data" + idx);
-                    assertThat(rc, is(true));
-
-                    System.out.printf("Send-%d/", idx);
-                    ZMQ.sleep(1);
-                }
-                pub.close();
-                ctx.close();
+                System.out.printf("Send-%d/", idx);
+                ZMQ.sleep(1);
             }
+            pub1.close();
+            ctx.close();
         };
         final Callable<Integer> sub = new Callable<Integer>()
         {
             @Override
-            public Integer call() throws Exception
+            public Integer call()
             {
                 final ZMQ.Context ctx = ZMQ.context(1);
                 assertThat(ctx, notNullValue());
@@ -209,7 +178,7 @@ public class PubSubTest
         service.submit(pub);
         service.shutdown();
         service.awaitTermination(60, TimeUnit.SECONDS);
-
+        System.out.println();
         final int receivedAfterUnsubscription = rc.get();
         assertThat(receivedAfterUnsubscription, is(0));
     }

@@ -5,7 +5,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.zeromq.auth.TestUtils;
 import org.zeromq.util.ZMetadata;
-import zmq.util.AndroidIgnore;
 
 import java.io.File;
 import java.io.IOException;
@@ -16,17 +15,17 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
 
-@AndroidIgnore
 public class ZCertTest
 {
     private static final String CERT_LOCATION = "target/testCerts";
+    private final String certLocation = TemporaryFolderFinder.resolve(CERT_LOCATION);
 
     @Before
     public void init()
     {
         // first cleanup test-directory if still present
-        TestUtils.cleanupDir(CERT_LOCATION);
-        File store = new File(CERT_LOCATION);
+        TestUtils.cleanupDir(certLocation);
+        File store = new File(certLocation);
 
         store.mkdirs();
     }
@@ -34,7 +33,7 @@ public class ZCertTest
     @After
     public void tearDown()
     {
-        TestUtils.cleanupDir(CERT_LOCATION);
+        TestUtils.cleanupDir(certLocation);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -203,8 +202,8 @@ public class ZCertTest
     public void testSavePublicFile() throws IOException
     {
         ZCert cert = new ZCert();
-        cert.savePublic(CERT_LOCATION + "/test.cert");
-        File file = new File(CERT_LOCATION + "/test.cert");
+        cert.savePublic(certLocation + "/test.cert");
+        File file = new File(certLocation + "/test.cert");
         assertThat(file.exists(), is(true));
     }
 
@@ -212,8 +211,8 @@ public class ZCertTest
     public void testSaveSecretFile() throws IOException
     {
         ZCert cert = new ZCert();
-        cert.saveSecret(CERT_LOCATION + "/test_secret.cert");
-        File file = new File(CERT_LOCATION + "/test_secret.cert");
+        cert.saveSecret(certLocation + "/test_secret.cert");
+        File file = new File(certLocation + "/test_secret.cert");
         assertThat(file.exists(), is(true));
     }
 }
