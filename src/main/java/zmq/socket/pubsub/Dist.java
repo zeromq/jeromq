@@ -208,4 +208,9 @@ class Dist
     {
         return eligible;
     }
+
+    int matching()
+    {
+        return matching;
+    }
 }
