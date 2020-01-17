@@ -29,15 +29,6 @@
 
 ### Changed
 
-* [#720](https://github.com/zeromq/jeromq/pull/720): Removed a println debug
-  statement in `Poller.rebuildSelector`.
-
-* [#733](https://github.com/zeromq/jeromq/pull/733): Fixed a bug introduced in
-  JeroMQ 0.5.1 where `ZPoller.poll` was returning -1 instead of 1.
-
-* [#735](https://github.com/zeromq/jeromq/pull/735): Fixed bugs related to
-  the handling of bytes in the Msg class.
-
 * Fixes for Android compatibility:
   * [#710](https://github.com/zeromq/jeromq/pull/710): Use traditional loops
     instead of streams.
@@ -47,6 +38,15 @@
     instead of lambdas.
   * [#752](https://github.com/zeromq/jeromq/pull/752): Various fixes discovered
     by creating an Android project within the JeroMQ repo for testing purposes.
+
+* [#720](https://github.com/zeromq/jeromq/pull/720): Removed a println debug
+  statement in `Poller.rebuildSelector`.
+
+* [#733](https://github.com/zeromq/jeromq/pull/733): Fixed a bug introduced in
+  JeroMQ 0.5.1 where `ZPoller.poll` was returning -1 instead of 1.
+
+* [#735](https://github.com/zeromq/jeromq/pull/735): Fixed bugs related to
+  the handling of bytes in the Msg class.
 
 * [#759](https://github.com/zeromq/jeromq/pull/759): Fixed an
   IndexOutOfBoundsException that occurs when the number of subscriptions exceeds
