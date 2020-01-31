@@ -1,5 +1,57 @@
 # Changelog
 
+## v0.5.2 (2020-01-XX)
+
+### Added
+
+* [#715](https://github.com/zeromq/jeromq/pull/715): Added a ZCert constructor
+  that takes a Writer as an argument, in order to support writing to the
+  Writer instead of to a file.
+
+* [#716](https://github.com/zeromq/jeromq/pull/716): Added a ZTicket API, as
+  well as a ZTicker API, which combines ZTimer and ZTicket.
+
+* [#724](https://github.com/zeromq/jeromq/pull/724): Added support for the XPUB
+  options `ZMQ_XPUB_MANUAL` and `ZMQ_XPUB_VERBOSER`.
+
+* [#727](https://github.com/zeromq/jeromq/pull/727): Added a ZSocket constructor
+  that takes a SocketType enum value as an argument.
+
+* [#747](https://github.com/zeromq/jeromq/pull/747): Improvements to
+  ZBeacon:
+  * Added `startClient` and `startServer` methods, to support restarting the
+    client or server individually.
+  * You can now specify the interface address when constructing a
+    BroadcastClient.
+
+* [#755](https://github.com/zeromq/jeromq/pull/755): Added ZCert constructors
+  that take (mandatory) public and (optional) secret keys as arguments.
+
+### Changed
+
+* Fixes for Android compatibility:
+  * [#710](https://github.com/zeromq/jeromq/pull/710): Use traditional loops
+    instead of streams.
+  * [#717](https://github.com/zeromq/jeromq/pull/717): Don't use
+    `Map.computeIfAbsent`.
+  * [#736](https://github.com/zeromq/jeromq/pull/736): Use java.util.Iterator
+    instead of lambdas.
+  * [#752](https://github.com/zeromq/jeromq/pull/752): Various fixes discovered
+    by creating an Android project within the JeroMQ repo for testing purposes.
+
+* [#720](https://github.com/zeromq/jeromq/pull/720): Removed a println debug
+  statement in `Poller.rebuildSelector`.
+
+* [#733](https://github.com/zeromq/jeromq/pull/733): Fixed a bug introduced in
+  JeroMQ 0.5.1 where `ZPoller.poll` was returning -1 instead of 1.
+
+* [#735](https://github.com/zeromq/jeromq/pull/735): Fixed bugs related to
+  the handling of bytes in the Msg class.
+
+* [#759](https://github.com/zeromq/jeromq/pull/759): Fixed an
+  IndexOutOfBoundsException that occurs when the number of subscriptions exceeds
+  the HWM.
+
 ## v0.5.1 (2019-04-03)
 
 ### Added
