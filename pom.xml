@@ -203,13 +203,13 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-javadoc-plugin</artifactId>
-          <version>3.0.1</version>
+          <version>3.1.1</version>
           <configuration>
             <keywords>true</keywords>
             <source>1.8</source>
             <tags>
               <tag>
-                <name>apiNote</name>
+                <name>api.note</name>
                 <placement>a</placement>
                 <head>API Note</head>
               </tag>

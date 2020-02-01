@@ -85,7 +85,7 @@ public class TcpAddress implements Address.IZAddress
      * @param name
      * @param ipv6
      * @param local ignored
-     * @return
+     * @return the resolved address
      * @see zmq.io.net.Address.IZAddress#resolve(java.lang.String, boolean, boolean)
      */
     @Override

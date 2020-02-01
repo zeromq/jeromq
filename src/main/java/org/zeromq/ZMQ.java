@@ -2207,7 +2207,7 @@ public class ZMQ
         /**
          * Set a custom {@link java.nio.channels.spi.SelectorProvider} chooser.
          *
-         * @param chooser, the custom chooser.
+         * @param chooser the custom chooser.
          * @return true if the option was set, otherwise false.
          */
         public boolean setSelectorChooser(SelectorProviderChooser chooser)
@@ -3334,7 +3334,7 @@ public class ZMQ
          * @param args    Arguments according to the picture
          * @return true when it has been queued on the socket and ØMQ has assumed responsibility for the message.
          * This does not indicate that the message has been transmitted to the network.
-         * @apiNote Does not change or take ownership of any arguments.
+         * @api.note Does not change or take ownership of any arguments.
          */
         @Draft
         public boolean sendBinaryPicture(String picture, Object... args)
