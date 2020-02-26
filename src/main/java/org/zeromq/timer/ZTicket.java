@@ -169,7 +169,14 @@ public final class ZTicket
         sortIfNeeded();
         //  Tickets are sorted, so check first ticket
         Ticket first = tickets.get(0);
-        return first.start - now() + first.delay;
+        long time = first.start - now() + first.delay;
+
+        if (time > 0) {
+            return time;
+        }
+        else {
+            return 0;
+        }
     }
 
     /**
