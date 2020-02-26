@@ -46,7 +46,7 @@ public class ZPicture
      * @param args    Arguments according to the picture
      * @return true when it has been queued on the socket and ØMQ has assumed responsibility for the message.
      * This does not indicate that the message has been transmitted to the network.
-     * @apiNote Does not change or take ownership of any arguments.
+     * @api.note Does not change or take ownership of any arguments.
      */
     @Draft
     public ZMsg msgBinaryPicture(String picture, Object... args)
