@@ -24,6 +24,7 @@ import org.zeromq.ZPoller.EventsHandler;
 import org.zeromq.ZPoller.ItemCreator;
 import org.zeromq.ZPoller.ItemHolder;
 
+import zmq.ZError;
 import zmq.util.function.BiFunction;
 
 public class TestZPoller
@@ -461,7 +462,6 @@ public class TestZPoller
         }
     }
 
-    @SafeVarargs
     private final Pipe pipe(ZPoller poller, BiFunction<SelectableChannel, Integer, Boolean> errors,
                             BiFunction<SelectableChannel, Integer, Boolean>... ins)
                                     throws IOException
@@ -501,11 +501,14 @@ public class TestZPoller
                 public void run()
                 {
                     while (true) {
-                        pub.send("hello");
                         try {
+                            pub.send("hello");
                             Thread.sleep(100);
                         }
                         catch (InterruptedException ignored) {
+                        }
+                        catch (ZMQException exc) {
+                            assertThat(exc.getErrorCode(), is(ZError.ETERM));
                         }
                     }
                 }

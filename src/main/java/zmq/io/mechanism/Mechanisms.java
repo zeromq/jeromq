@@ -45,9 +45,7 @@ public enum Mechanisms
                     errors.add("password is invalid");
                 }
                 if (!errors.isEmpty()) {
-                    throw new IllegalStateException("Plain mechanism definition incomplete: "
-                                                    + String.join(", ",
-                                                                  errors));
+                    throw new IllegalStateException("Plain mechanism definition incomplete: " + errors);
                 }
             }
         }
@@ -77,7 +75,7 @@ public enum Mechanisms
                 errors.add("not a server and no server public key given");
             }
             if (!errors.isEmpty()) {
-                throw new IllegalStateException("Curve mechanism definition incomplete: " +  String.join(", ", errors));
+                throw new IllegalStateException("Curve mechanism definition incomplete: " +  errors);
             }
         }
         @Override

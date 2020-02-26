@@ -40,6 +40,11 @@ public class ZMetadata
         metadata.set(key, value);
     }
 
+    public final void remove(String key)
+    {
+        metadata.remove(key);
+    }
+
     public final byte[] bytes()
     {
         return metadata.bytes();

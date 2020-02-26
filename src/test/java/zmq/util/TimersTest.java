@@ -21,14 +21,9 @@ public class TimersTest
     private Timers        timers;
     private AtomicBoolean invoked = new AtomicBoolean();
 
-    private final Timers.Handler handler = new Timers.Handler()
-    {
-        @Override
-        public void time(Object... args)
-        {
-            AtomicBoolean invoked = (AtomicBoolean) args[0];
-            invoked.set(true);
-        }
+    private final Timers.Handler handler = args -> {
+        AtomicBoolean invoked = (AtomicBoolean) args[0];
+        invoked.set(true);
     };
 
     @Before
@@ -186,7 +181,7 @@ public class TimersTest
     public void testTimerOrder()
     {
         final AtomicLong time = new AtomicLong();
-        Timers timer = new Timers(() -> time.get());
+        Timers timer = new Timers(time::get);
 
         Timer timer100 = timer.add(100, handler, invoked);
         Timer timer1000 = timer.add(1000, handler, invoked);

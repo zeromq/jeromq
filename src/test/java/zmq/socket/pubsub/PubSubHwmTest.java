@@ -1,17 +1,18 @@
 package zmq.socket.pubsub;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertThat;
-
-import java.io.IOException;
 
 import org.junit.Test;
 
 import zmq.Ctx;
+import zmq.Msg;
 import zmq.SocketBase;
 import zmq.ZError;
 import zmq.ZMQ;
+import zmq.util.Wire;
 
 public class PubSubHwmTest
 {
@@ -135,7 +136,7 @@ public class PubSubHwmTest
     }
 
     @Test
-    public void testResetHwm() throws IOException
+    public void testResetHwm()
     {
         // hwm should apply to the messages that have already been received
         // with hwm 11024: send 9999 msg, receive 9999, send 1100, receive 1100
@@ -203,6 +204,79 @@ public class PubSubHwmTest
             ++recvCount;
         }
         assertThat(recvCount, is(secondCount));
+
+        // Clean up
+        ZMQ.close(sub);
+        ZMQ.close(pub);
+        ZMQ.term(ctx);
+    }
+
+    @Test
+    public void testSubscriptionsHwmTcp()
+    {
+        assertHwmSubscription(999, "tcp://*:*");
+    }
+
+    @Test
+    public void testSubscriptionsHwmInproc()
+    {
+        assertHwmSubscription(2000, "inproc://pubsub");
+    }
+
+    private void assertHwmSubscription(int subscribed, String endpoint)
+    {
+        int allSubscriptions = 30_000;
+        int subscriptionNotSent = allSubscriptions - 1;
+        Ctx ctx = ZMQ.createContext();
+
+        SocketBase pub = ctx.createSocket(ZMQ.ZMQ_PUB);
+        assertThat(pub, notNullValue());
+
+        boolean rc = ZMQ.bind(pub, endpoint);
+        assertThat(rc, is(true));
+
+        String host = (String) ZMQ.getSocketOptionExt(pub, ZMQ.ZMQ_LAST_ENDPOINT);
+        assertThat(host, notNullValue());
+
+        // Set up connect socket
+        SocketBase sub = ctx.createSocket(ZMQ.ZMQ_SUB);
+        assertThat(sub, notNullValue());
+
+        rc = ZMQ.setSocketOption(sub, ZMQ.ZMQ_RCVTIMEO, 100);
+        assertThat(rc, is(true));
+
+        // send a lot of subscriptions, far beyond the HWM
+        int idx = 0;
+        for (; idx < allSubscriptions; ++idx) {
+            rc = ZMQ.setSocketOption(sub, ZMQ.ZMQ_SUBSCRIBE, Wire.putUInt32(idx));
+            // at some point, sending will trigger the HWM and subscription will be dropped
+            assertThat(rc, is(true));
+        }
+        rc = ZMQ.connect(sub, host);
+        assertThat(rc, is(true));
+
+        ZMQ.msleep(500);
+
+        // Send messages
+        int sent = ZMQ.send(pub, Wire.putUInt32(1), 0);
+        assertThat(sent, is(4));
+        sent = ZMQ.send(pub, Wire.putUInt32(subscribed), 0);
+        assertThat(sent, is(4));
+        sent = ZMQ.send(pub, Wire.putUInt32(subscriptionNotSent), 0);
+        assertThat(sent, is(4));
+
+        ZMQ.msleep(500);
+
+        Msg msg = ZMQ.recv(sub, 0);
+        assertThat(msg, notNullValue());
+        assertThat(msg.data(), is(Wire.putUInt32(1)));
+
+        msg = ZMQ.recv(sub, 0);
+        assertThat(msg, notNullValue());
+        assertThat(msg.data(), is(Wire.putUInt32(subscribed)));
+
+        msg = ZMQ.recv(sub, 0);
+        assertThat(msg, nullValue());
 
         // Clean up
         ZMQ.close(sub);

@@ -14,6 +14,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
 import org.zeromq.ZMQ.Socket;
+import zmq.util.AndroidProblematic;
 
 public class ReqRepTest
 {
@@ -194,6 +195,7 @@ public class ReqRepTest
     }
 
     @Test
+    @AndroidProblematic // triggers OutofMemoryError on Android
     public void testDisconnectOnLargeMessageIssue334() throws Exception
     {
         final int msgSizeMB = 100;

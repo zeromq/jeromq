@@ -141,7 +141,7 @@ JeroMQ.
 
 ## License
 
-All source files are copyright © 2007-2018 contributors as noted in the AUTHORS file.
+All source files are copyright © 2007-2020 contributors as noted in the AUTHORS file.
 
 Free use of this software is granted under the terms of the Mozilla Public License 2.0. For details see the file `LICENSE` included with the JeroMQ distribution.
 
