@@ -11,6 +11,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.zeromq.timer.ZTicket.Ticket;
 import org.zeromq.timer.ZTimer.Timer;
+import zmq.ZMQ;
 
 public class ZTickerTest
 {
@@ -66,6 +67,16 @@ public class ZTickerTest
         Ticket ticket = ticker.addTicket(1, NOOP);
         assertThat(ticket, is(notNullValue()));
         assertThat(ticker.timeout(), is(1L));
+    }
+
+    @Test
+    public void testTicketTimeout()
+    {
+        ZTicker ticker = new ZTicker();
+        Ticket ticket = ticker.addTicket(1, NOOP);
+        ZMQ.sleep(1);
+        assertThat(ticket, is(notNullValue()));
+        assertThat(ticker.timeout(), is(0L));
     }
 
     @Test
