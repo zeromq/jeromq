@@ -486,6 +486,13 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
                 assert (written);
                 pipes[0].flush();
 
+                //  If set, send the hello msg of the local socket to the peer.
+                if (options.canSendHelloMsg && options.helloMsg != null) {
+                    written = pipes[0].write(options.helloMsg);
+                    assert (written);
+                    pipes[0].flush();
+                }
+
                 pendConnection(addr, new Ctx.Endpoint(this, options), pipes);
             }
             else {
@@ -505,6 +512,20 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
                     id.put(peer.options.identity, 0, peer.options.identitySize);
                     id.setFlags(Msg.IDENTITY);
                     boolean written = pipes[1].write(id);
+                    assert (written);
+                    pipes[1].flush();
+                }
+
+                //  If set, send the hello msg of the local socket to the peer.
+                if (options.canSendHelloMsg && options.helloMsg != null) {
+                    boolean written = pipes[0].write(options.helloMsg);
+                    assert (written);
+                    pipes[0].flush();
+                }
+
+                //  If set, send the hello msg of the peer to the local socket.
+                if (peer.options.canSendHelloMsg && peer.options.helloMsg != null) {
+                    boolean written = pipes[1].write(peer.options.helloMsg);
                     assert (written);
                     pipes[1].flush();
                 }

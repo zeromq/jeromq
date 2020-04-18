@@ -100,6 +100,7 @@ public class Router extends SocketBase
         options.type = ZMQ.ZMQ_ROUTER;
         options.recvIdentity = true;
         options.rawSocket = false;
+        options.canSendHelloMsg = true;
 
         fq = new FQ();
         prefetchedId = new Msg();

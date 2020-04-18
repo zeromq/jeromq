@@ -2989,6 +2989,20 @@ public class ZMQ
         }
 
         /**
+         * When set, the socket will automatically send a hello message when a new connection is made or accepted.
+         * You may set this on DEALER or ROUTER sockets.
+         * The combination with ZMQ_HEARTBEAT_IVL is powerful and simplify protocols,
+         * as now heartbeat and sending the hello message can be left out of protocols and be handled by zeromq.
+         *
+         * @param helloMsg
+         * @return true if the option was set, otherwise false
+         */
+        public boolean setHelloMsg(byte[] helloMsg)
+        {
+            return setSocketOpt(zmq.ZMQ.ZMQ_HELLO_MSG, helloMsg);
+        }
+
+        /**
          * Bind to network interface. Start listening for new connections.
          *
          * @param addr the endpoint to bind to.

@@ -729,6 +729,13 @@ public class Ctx
             assert (written);
             pendingConnection.bindPipe.flush();
         }
+
+        //  If set, send the hello msg of the peer to the local socket.
+        if (bindOptions.canSendHelloMsg && bindOptions.helloMsg != null) {
+            boolean written = pendingConnection.bindPipe.write(bindOptions.helloMsg);
+            assert (written);
+            pendingConnection.bindPipe.flush();
+        }
     }
 
     public Errno errno()

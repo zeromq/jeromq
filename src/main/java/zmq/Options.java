@@ -166,6 +166,10 @@ public class Options
 
     public SelectorProviderChooser selectorChooser;
 
+    // Hello msg to send to peer upon connecting
+    public Msg helloMsg;
+    public boolean canSendHelloMsg;
+
     public final Errno errno = new Errno();
 
     public Options()
@@ -220,6 +224,9 @@ public class Options
         allocator = new MsgAllocatorThreshold(Config.MSG_ALLOCATION_HEAP_THRESHOLD.getValue());
 
         selectorChooser = null;
+
+        canSendHelloMsg = false;
+        helloMsg = null;
     }
 
     @SuppressWarnings("deprecation")
@@ -542,6 +549,21 @@ public class Options
                 return true;
             }
             return false;
+
+        case ZMQ.ZMQ_HELLO_MSG:
+            if (optval == null) {
+                helloMsg = null;
+            }
+            else {
+                byte[] bytes = parseBytes(option, optval);
+                if (bytes.length == 0) {
+                    helloMsg = null;
+                }
+                else {
+                    helloMsg = new Msg(Arrays.copyOf(bytes, bytes.length));
+                }
+            }
+            return true;
 
         default:
             throw new IllegalArgumentException("Unknown Option " + option);
