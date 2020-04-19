@@ -6,6 +6,7 @@ import java.util.List;
 import zmq.Ctx;
 import zmq.Options;
 import zmq.SocketBase;
+import zmq.io.HelloMsgSession;
 import zmq.io.IOThread;
 import zmq.io.SessionBase;
 import zmq.io.net.Address;
@@ -125,7 +126,12 @@ public enum Sockets
 
     public SessionBase create(IOThread ioThread, boolean connect, SocketBase socket, Options options, Address addr)
     {
-        return new SessionBase(ioThread, connect, socket, options, addr);
+        if (options.canSendHelloMsg && options.helloMsg != null) {
+            return new HelloMsgSession(ioThread, connect, socket, options, addr);
+        }
+        else {
+            return new SessionBase(ioThread, connect, socket, options, addr);
+        }
     }
 
     public static SessionBase createSession(IOThread ioThread, boolean connect, SocketBase socket, Options options,

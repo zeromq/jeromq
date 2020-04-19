@@ -45,6 +45,7 @@ public class Req extends Dealer
         receivingReply = false;
         messageBegins = true;
         options.type = ZMQ.ZMQ_REQ;
+        options.canSendHelloMsg = false;
         requestIdFramesEnabled = false;
         requestId = Utils.randomInt();
         strict = true;

@@ -22,6 +22,7 @@ public class Rep extends Router
         requestBegins = true;
 
         options.type = ZMQ.ZMQ_REP;
+        options.canSendHelloMsg = false;
     }
 
     @Override
