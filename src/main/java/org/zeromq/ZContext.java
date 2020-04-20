@@ -162,8 +162,12 @@ public class ZContext implements Closeable
             return;
         }
         s.setLinger(linger);
-        s.close();
-        this.sockets.remove(s);
+        try {
+            s.close();
+        }
+        finally {
+            sockets.remove(s);
+        }
     }
 
     /**
