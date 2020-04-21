@@ -147,7 +147,7 @@ public class ppworker
 
                         if (interval < INTERVAL_MAX)
                             interval *= 2;
-                        ctx.destroySocket(worker);
+                        worker.close();
                         worker = worker_socket(ctx);
                         liveness = HEARTBEAT_LIVENESS;
                     }

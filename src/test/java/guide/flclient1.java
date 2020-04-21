@@ -34,7 +34,7 @@ public class flclient1
             reply = ZMsg.recvMsg(client);
 
         //  Close socket in any case, we're done with it now
-        ctx.destroySocket(client);
+        client.close();
         poller.close();
         return reply;
     }

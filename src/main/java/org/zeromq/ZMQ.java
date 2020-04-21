@@ -807,7 +807,7 @@ public class ZMQ
         private static final int DYNFROM = 0xc000;
         private static final int DYNTO   = 0xffff;
 
-        private final Ctx           ctx;
+        private final ZContext      zctx;
         private final SocketBase    base;
         private final AtomicBoolean isClosed = new AtomicBoolean(false);
 
@@ -819,7 +819,18 @@ public class ZMQ
          */
         protected Socket(Context context, SocketType type)
         {
-            this(context, type.type);
+            this(context, null, type.type);
+        }
+
+        /**
+         * Class constructor.
+         *
+         * @param context a 0MQ context previously created.
+         * @param type    the socket type.
+         */
+        protected Socket(ZContext context, SocketType type)
+        {
+            this(context.getContext(), context, type.type);
         }
 
         /**
@@ -832,13 +843,18 @@ public class ZMQ
         @Deprecated
         protected Socket(Context context, int type)
         {
-            ctx = context.ctx;
-            base = ctx.createSocket(type);
+            this(context, null, type);
+        }
+
+        private Socket(Context context, ZContext zctx, int type)
+        {
+            this.zctx = zctx;
+            base = context.ctx.createSocket(type);
         }
 
         protected Socket(SocketBase base)
         {
-            ctx = null;
+            zctx = null;
             this.base = base;
         }
 
@@ -854,10 +870,22 @@ public class ZMQ
 
         /**
          * This is an explicit "destructor". It can be called to ensure the corresponding 0MQ Socket
-         * has been disposed of.
+         * has been disposed of. If the socket was created from a org.zeromq.ZContext, it will remove
+         * the reference to this socket from it.
          */
+        @SuppressWarnings("deprecation")
         @Override
         public void close()
+        {
+            if (zctx != null) {
+                zctx.destroySocket(this);
+            }
+            else {
+                internalClose();
+            }
+        }
+
+        void internalClose()
         {
             if (isClosed.compareAndSet(false, true)) {
                 base.close();

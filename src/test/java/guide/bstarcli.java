@@ -64,7 +64,7 @@ public class bstarcli
 
                         //  Old socket is confused; close it and open a new one
                         poller.unregister(client);
-                        ctx.destroySocket(client);
+                        client.close();;
                         serverNbr = (serverNbr + 1) % 2;
                         Thread.sleep(SETTLE_DELAY);
                         System.out.printf("I: connecting to server at %s...\n", server[serverNbr]);

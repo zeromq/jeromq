@@ -242,7 +242,7 @@ public class OptionsTest
         options.setSocketOpt(ZMQ.ZMQ_HANDSHAKE_IVL, -1);
     }
 
-    @Test
+    @Test(timeout = 5000)
     public void testSelectorObject()
     {
         try (ZContext ctx = new ZContext();

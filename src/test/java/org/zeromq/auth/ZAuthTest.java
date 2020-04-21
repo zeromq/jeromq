@@ -49,7 +49,7 @@ public class ZAuthTest
         }
     }
 
-    @Test
+    @Test(timeout = 5000)
     public void testNull() throws IOException
     {
         System.out.println("testNull");
@@ -90,7 +90,7 @@ public class ZAuthTest
         }
     }
 
-    @Test
+    @Test(timeout = 5000)
     public void testNullAllowed() throws IOException
     {
         System.out.println("testNullAllowed");
@@ -132,7 +132,7 @@ public class ZAuthTest
         }
     }
 
-    @Test
+    @Test(timeout = 5000)
     public void testNullWithNoDomain() throws IOException
     {
         System.out.println("testNullWithNoDomain");
@@ -174,7 +174,7 @@ public class ZAuthTest
         }
     }
 
-    @Test
+    @Test(timeout = 5000)
     public void testPlainWithPassword() throws IOException
     {
         System.out.println("testPlainWithPassword");
@@ -223,7 +223,7 @@ public class ZAuthTest
         }
     }
 
-    @Test
+    @Test(timeout = 5000)
     public void testPlainWithPasswordDenied() throws IOException
     {
         System.out.println("testPlainWithPasswordDenied");
@@ -267,7 +267,7 @@ public class ZAuthTest
         }
     }
 
-    @Test
+    @Test(timeout = 5000)
     public void testCurveAnyClient() throws IOException
     {
         System.out.println("testCurveAnyClient");
@@ -326,7 +326,7 @@ public class ZAuthTest
 
     }
 
-    @Test
+    @Test(timeout = 5000)
     public void testCurveSuccessful() throws IOException
     {
         System.out.println("testCurveSuccessful");
@@ -392,7 +392,7 @@ public class ZAuthTest
         }
     }
 
-    @Test
+    @Test(timeout = 5000)
     public void testBlacklistDenied() throws IOException
     {
         System.out.println("testBlacklistDenied");
@@ -435,7 +435,7 @@ public class ZAuthTest
         }
     }
 
-    @Test
+    @Test(timeout = 5000)
     public void testBlacklistAllowed() throws IOException
     {
         System.out.println("testBlacklistAllowed");
@@ -478,7 +478,7 @@ public class ZAuthTest
         }
     }
 
-    @Test
+    @Test(timeout = 5000)
     public void testWhitelistDenied() throws IOException
     {
         System.out.println("testWhitelistDenied");
@@ -521,7 +521,7 @@ public class ZAuthTest
         }
     }
 
-    @Test
+    @Test(timeout = 5000)
     public void testWhitelistAllowed() throws IOException
     {
         System.out.println("testWhitelistAllowed");
@@ -564,7 +564,7 @@ public class ZAuthTest
         }
     }
 
-    @Test
+    @Test(timeout = 5000)
     public void testCurveFail() throws IOException
     {
         System.out.println("testCurveFail");
@@ -628,7 +628,7 @@ public class ZAuthTest
         }
     }
 
-    @Test
+    @Test(timeout = 5000)
     public void testNoReplies() throws IOException
     {
         System.out.println("testNoReplies");

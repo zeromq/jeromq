@@ -322,7 +322,7 @@ public class ParanoidPiratServerWithLazyPiratClientTest
                     if (interval < INTERVAL_MAX) {
                         interval *= 2;
                     }
-                    ctx.destroySocket(worker);
+                    worker.close();
                     worker = workerSocket(ctx);
                     liveness = HEARTBEAT_LIVENESS;
                 }
@@ -408,7 +408,7 @@ public class ParanoidPiratServerWithLazyPiratClientTest
                         System.out.println("W: Client - no response from server, retrying");
                         //  Old socket is confused; close it and open a new one
                         poller.unregister(client);
-                        ctx.destroySocket(client);
+                        client.close();
                         System.out.println("I: Client - reconnecting to server");
                         client = ctx.createSocket(SocketType.REQ);
                         client.connect("tcp://localhost:" + portQueue);

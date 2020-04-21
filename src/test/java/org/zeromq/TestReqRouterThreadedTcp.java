@@ -57,7 +57,7 @@ public class TestReqRouterThreadedTcp
             msg.destroy();
 
             // Clean up.
-            ctx.destroySocket(server);
+            server.close();
             ctx.close();
         }
     }
@@ -100,7 +100,7 @@ public class TestReqRouterThreadedTcp
             finished.set(true);
 
             // Clean up.
-            ctx.destroySocket(client);
+            client.close();
             ctx.close();
         }
 

@@ -589,7 +589,7 @@ public class ZActor extends ZStar
                 iter.remove();
                 if (socket != null) {
                     poller.unregister(socket);
-                    context.destroySocket(socket);
+                    socket.close();
                     // call back the actor to inform that a socket has been closed.
                     actor.closed(socket);
                 }

@@ -76,7 +76,7 @@ public class mdwrkapi
     void reconnectToBroker()
     {
         if (worker != null) {
-            ctx.destroySocket(worker);
+            worker.close();
         }
         worker = ctx.createSocket(SocketType.DEALER);
         worker.connect(broker);

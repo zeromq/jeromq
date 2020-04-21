@@ -1070,7 +1070,7 @@ public class ZProxy
         public boolean destroyed(ZContext ctx, Socket pipe, ZPoller poller)
         {
             if (capture != null) {
-                ctx.destroySocket(capture);
+                capture.close();
             }
             state.alive = false;
             if (!state.restart) {

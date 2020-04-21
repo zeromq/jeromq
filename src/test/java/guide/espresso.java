@@ -31,7 +31,7 @@ public class espresso
                     break; //  Interrupted
                 count++;
             }
-            ctx.destroySocket(subscriber);
+            subscriber.close();
         }
     }
 
@@ -56,7 +56,7 @@ public class espresso
                 catch (InterruptedException e) {
                 }
             }
-            ctx.destroySocket(publisher);
+            publisher.close();
         }
     }
 

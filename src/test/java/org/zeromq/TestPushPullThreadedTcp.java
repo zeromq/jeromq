@@ -138,8 +138,8 @@ public class TestPushPullThreadedTcp
         assertThat("Unable to send messages", client.finished.get(), is(true));
         assertThat("Unable to receive messages", worker.finished.get(), is(true));
 
-        ctx.destroySocket(receiver);
-        ctx.destroySocket(sender);
+        receiver.close();
+        sender.close();
         ctx.close();
 
         System.out.println("Test done in " + (end - start) + " millis.");

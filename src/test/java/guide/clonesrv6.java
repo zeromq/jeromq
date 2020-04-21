@@ -222,7 +222,7 @@ public class clonesrv6
                     msg.store(srv.kvmap);
                 }
                 System.out.printf("I: received snapshot=%d\n", srv.sequence);
-                srv.ctx.destroySocket(snapshot);
+                snapshot.close();
 
             }
 

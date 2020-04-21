@@ -42,7 +42,7 @@ public class mdcliapi2
     void reconnectToBroker()
     {
         if (client != null) {
-            ctx.destroySocket(client);
+            client.close();;
         }
         client = ctx.createSocket(SocketType.DEALER);
         client.connect(broker);
