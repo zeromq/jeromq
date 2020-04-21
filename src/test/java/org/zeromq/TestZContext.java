@@ -100,15 +100,12 @@ public class TestZContext
     public void testRemovingSockets() throws ZMQException
     {
         ZContext ctx = new ZContext();
-        try {
-            Socket s = ctx.createSocket(SocketType.PUB);
+        try (Socket s = ctx.createSocket(SocketType.PUB)) {
             assertThat(s, notNullValue());
             assertThat(ctx.getSockets().size(), is(1));
-
-            ctx.destroySocket(s);
-            assertThat(ctx.getSockets().size(), is(0));
         }
         finally {
+            assertThat(ctx.getSockets().size(), is(0));
             ctx.close();
         }
     }

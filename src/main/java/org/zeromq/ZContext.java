@@ -104,7 +104,7 @@ public class ZContext implements Closeable
     public void destroy()
     {
         for (Socket socket : sockets) {
-            destroySocket(socket);
+            socket.internalClose();
         }
         sockets.clear();
 
@@ -130,7 +130,7 @@ public class ZContext implements Closeable
     public Socket createSocket(SocketType type)
     {
         // Create and register socket
-        Socket socket = context.socket(type);
+        Socket socket = new Socket(this, type);
         socket.setRcvHWM(this.rcvhwm);
         socket.setSndHWM(this.sndhwm);
         sockets.add(socket);
@@ -151,11 +151,14 @@ public class ZContext implements Closeable
     }
 
     /**
+     * @deprecated Now the method {@link org.zeromq.ZMQ.Socket#close()} take care of removing
+     *             the socket from this context.
      * Destroys managed socket within this context
      * and remove from sockets list
      * @param s
      *          org.zeromq.Socket object to destroy
      */
+    @Deprecated
     public void destroySocket(Socket s)
     {
         if (s == null) {
@@ -163,7 +166,7 @@ public class ZContext implements Closeable
         }
         s.setLinger(linger);
         try {
-            s.close();
+            s.internalClose();
         }
         finally {
             sockets.remove(s);
