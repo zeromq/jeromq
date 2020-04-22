@@ -285,8 +285,7 @@ public class ZConfig
 
     public static ZConfig load(String filename) throws IOException
     {
-        BufferedReader reader = new BufferedReader(new FileReader(filename));
-        try {
+        try (BufferedReader reader = new BufferedReader(new FileReader(filename))) {
             List<String> content = new ArrayList<>();
 
             String line = reader.readLine();
@@ -302,9 +301,6 @@ public class ZConfig
             }
 
             return load(new ZConfig("root", null), content, 0, new AtomicInteger());
-        }
-        finally {
-            reader.close();
         }
     }
 
