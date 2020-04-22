@@ -428,10 +428,34 @@ public class ZMQ
 
     public enum Error
     {
-        ENOTSUP(ZError.ENOTSUP),
-        EPROTONOSUPPORT(ZError.EPROTONOSUPPORT),
-        ENOBUFS(ZError.ENOBUFS),
-        ENETDOWN(ZError.ENETDOWN),
+        ENOTSUP(ZError.ENOTSUP) {
+            @Override
+            public String getMessage()
+            {
+                return "Not supported";
+            }
+        },
+        EPROTONOSUPPORT(ZError.EPROTONOSUPPORT) {
+            @Override
+            public String getMessage()
+            {
+                return "Protocol not supported";
+            }
+        },
+        ENOBUFS(ZError.ENOBUFS) {
+            @Override
+            public String getMessage()
+            {
+                return "No buffer space available";
+            }
+        },
+        ENETDOWN(ZError.ENETDOWN) {
+            @Override
+            public String getMessage()
+            {
+                return "Network is down";
+            }
+        },
         EADDRINUSE(ZError.EADDRINUSE) {
             @Override
             public String getMessage()
@@ -439,10 +463,34 @@ public class ZMQ
                 return "Address already in use";
             }
         },
-        EADDRNOTAVAIL(ZError.EADDRNOTAVAIL),
-        ECONNREFUSED(ZError.ECONNREFUSED),
-        EINPROGRESS(ZError.EINPROGRESS),
-        EHOSTUNREACH(ZError.EHOSTUNREACH),
+        EADDRNOTAVAIL(ZError.EADDRNOTAVAIL) {
+            @Override
+            public String getMessage()
+            {
+                return "Address not available";
+            }
+        },
+        ECONNREFUSED(ZError.ECONNREFUSED) {
+            @Override
+            public String getMessage()
+            {
+                return "Connection refused";
+            }
+        },
+        EINPROGRESS(ZError.EINPROGRESS) {
+            @Override
+            public String getMessage()
+            {
+                return "Operation in progress";
+            }
+        },
+        EHOSTUNREACH(ZError.EHOSTUNREACH) {
+            @Override
+            public String getMessage()
+            {
+                return "Host unreachable";
+            }
+        },
         EMTHREAD(ZError.EMTHREAD) {
             @Override
             public String getMessage()
