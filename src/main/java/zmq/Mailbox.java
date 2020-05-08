@@ -1,6 +1,5 @@
 package zmq;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.nio.channels.SelectableChannel;
 import java.util.concurrent.locks.Lock;
@@ -9,7 +8,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import zmq.pipe.YPipe;
 import zmq.util.Errno;
 
-public final class Mailbox implements Closeable
+public final class Mailbox implements IMailbox
 {
     //  The pipe to store actual commands.
     private final YPipe<Command> cpipe;
@@ -55,7 +54,8 @@ public final class Mailbox implements Closeable
         return signaler.getFd();
     }
 
-    void send(final Command cmd)
+    @Override
+    public void send(final Command cmd)
     {
         boolean ok = false;
         sync.lock();
@@ -72,6 +72,7 @@ public final class Mailbox implements Closeable
         }
     }
 
+    @Override
     public Command recv(long timeout)
     {
         Command cmd;

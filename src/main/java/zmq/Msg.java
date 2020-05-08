@@ -111,6 +111,8 @@ public class Msg
     // keep track of relative read position
     private int readIndex = 0;
 
+    private int routingId;
+
     public Msg()
     {
         this(0);
@@ -434,5 +436,36 @@ public class Msg
         dup.position(writeIndex);
         writeIndex += Wire.putShortString(dup, data);
         return this;
+    }
+
+    /**
+    * Return the routing id of a message. The routing id represent the CLIENT socket that sent the message to the
+    * SERVER socket.
+    * @return the routing id
+    * */
+    public int getRoutingId()
+    {
+        return routingId;
+    }
+
+    /**
+     * Set the routing id on a message. The routing id represent the CLIENT socket which the message should be sent to.
+     * Only SERVER socket is currently using the routing id.
+     * @param routingId the routing id
+     * @return true if successfully set the routing id.
+     */
+    public boolean setRoutingId(int routingId)
+    {
+        if (routingId != 0) {
+            this.routingId = routingId;
+            return true;
+        }
+
+        return false;
+    }
+
+    public void resetRoutingId()
+    {
+        routingId = 0;
     }
 }

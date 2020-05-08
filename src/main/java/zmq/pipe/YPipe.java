@@ -100,7 +100,7 @@ public class YPipe<T> implements YPipeBase<T>
     {
         //  Was the value prefetched already? If so, return.
         int h = queue.frontPos();
-        if (h != r) {
+        if (h != r && r != -1) {
             return true;
         }
 

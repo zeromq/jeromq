@@ -106,7 +106,7 @@ public class Ctx
 
     //  Array of pointers to mailboxes for both application and I/O threads.
     private int       slotCount;
-    private Mailbox[] slots;
+    private IMailbox[] slots;
 
     //  Mailbox for zmq_term thread.
     private final Mailbox termMailbox;
@@ -435,7 +435,7 @@ public class Ctx
             finally {
                 optSync.unlock();
             }
-            slots = new Mailbox[slotCount];
+            slots = new IMailbox[slotCount];
 
             //  Initialize the infrastructure for zmq_term thread.
             slots[TERM_TID] = termMailbox;
