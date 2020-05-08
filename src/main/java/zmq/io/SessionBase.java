@@ -309,7 +309,8 @@ public class SessionBase extends Own implements Pipe.IPipeEvents, IPollEvents
             errno.set(ZError.ECONNREFUSED);
             return ZError.ECONNREFUSED;
         }
-        if (peer.options.type != ZMQ.ZMQ_REP && peer.options.type != ZMQ.ZMQ_ROUTER) {
+        if (peer.options.type != ZMQ.ZMQ_REP && peer.options.type != ZMQ.ZMQ_ROUTER &&
+                peer.options.type != ZMQ.ZMQ_SERVER) {
             errno.set(ZError.ECONNREFUSED);
             return ZError.ECONNREFUSED;
         }

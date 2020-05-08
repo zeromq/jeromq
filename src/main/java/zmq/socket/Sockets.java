@@ -20,6 +20,8 @@ import zmq.socket.reqrep.Dealer;
 import zmq.socket.reqrep.Rep;
 import zmq.socket.reqrep.Req;
 import zmq.socket.reqrep.Router;
+import zmq.socket.clientserver.Server;
+import zmq.socket.clientserver.Client;
 
 public enum Sockets
 {
@@ -111,6 +113,20 @@ public enum Sockets
         SocketBase create(Ctx parent, int tid, int sid)
         {
             return new Stream(parent, tid, sid);
+        }
+    },
+    SERVER("CLIENT") {
+        @Override
+        SocketBase create(Ctx parent, int tid, int sid)
+        {
+            return new Server(parent, tid, sid);
+        }
+    },
+    CLIENT("SERVER") {
+        @Override
+        SocketBase create(Ctx parent, int tid, int sid)
+        {
+            return new Client(parent, tid, sid);
         }
     };
 
