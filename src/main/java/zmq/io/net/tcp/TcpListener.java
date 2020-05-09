@@ -3,6 +3,7 @@ package zmq.io.net.tcp;
 import java.io.IOException;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.util.Locale;
 
 import zmq.Options;
 import zmq.Own;
@@ -22,7 +23,7 @@ public class TcpListener extends Own implements IPollEvents
 {
     private static boolean isWindows;
     static {
-        String os = System.getProperty("os.name").toLowerCase();
+        String os = System.getProperty("os.name").toLowerCase(Locale.ENGLISH);
         isWindows = os.contains("win");
     }
 
