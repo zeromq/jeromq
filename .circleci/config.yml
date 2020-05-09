@@ -128,7 +128,7 @@ jobs:
             #don't persist_to_workspace, can't be done in parallel with testsj13
     testsandroid:
         docker:
-            - image: circleci/android:api-28-alpha
+            - image: circleci/android:api-29
         steps:
             - attach_workspace:
                 at: /tmp/ws
@@ -140,6 +140,9 @@ jobs:
                     mv -n /tmp/ws/home/circleci/project/.??* /home/circleci/project/
             - run:
                 command: |
+                    sdkmanager --update
+                    # default android sdk is old, manually update it
+                    (cd /tmp && curl -JORL https://dl.google.com/android/repository/commandlinetools-linux-6200805_latest.zip  && sudo unzip -o commandlinetools-linux-6200805_latest.zip -d /opt/android/sdk)
                     rm src/android/Jeromq/{,app}/build.gradle
                     /opt/android/sdk/tools/bin/lint --showall --xml target/lint-results.xml --sources src/main/java --exitcode --disable Assert --classpath target/classes --config src/android/Jeromq/lint.xml src
     publish:
