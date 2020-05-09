@@ -126,6 +126,22 @@ jobs:
             - store_test_results:
                 path: target/surefire-reports
             #don't persist_to_workspace, can't be done in parallel with testsj13
+    testsandroid:
+        docker:
+            - image: circleci/android:api-28-alpha
+        steps:
+            - attach_workspace:
+                at: /tmp/ws
+            - run:
+                command: |
+                    mv -n /tmp/ws/home/circleci/.m2 /home/circleci/
+                    mv -n /tmp/ws/home/circleci/.sonar /home/circleci/
+                    mv -n /tmp/ws/home/circleci/project/* /home/circleci/project/
+                    mv -n /tmp/ws/home/circleci/project/.??* /home/circleci/project/
+            - run:
+                command: |
+                    rm src/android/Jeromq/{,app}/build.gradle
+                    /opt/android/sdk/tools/bin/lint --showall --xml target/lint-results.xml --sources src/main/java --exitcode --disable Assert --classpath target/classes --config src/android/Jeromq/lint.xml src
     publish:
         docker:
             - image: circleci/openjdk:13-jdk-buster
@@ -196,11 +212,15 @@ workflows:
       - testsj13:
           requires:
               - build
+      - testsandroid:
+          requires:
+              - build
       - publish:
           requires:
               - testsj8
               - testsj11
               - testsj13
+              - testsandroid
       - savecache:
           requires:
               - publish
