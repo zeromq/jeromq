@@ -151,6 +151,8 @@ jobs:
                 environment:
                     JAVA_HOME: /usr/java/openjdk-13
                     MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.log.org.apache.maven.plugins.shade=ERROR -Xmx2048m"
+            - store_artifacts:
+                path: target/jeromq-*.jar
             - persist_to_workspace:
                 root: /
                 paths:

@@ -24,6 +24,8 @@
   </developers>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <jdk.compile.home>${jdk.8.home}</jdk.compile.home>
+    <bootclasspath>${jdk.compile.home}/jre/lib/rt.jar</bootclasspath>
   </properties>
   <dependencies>
     <dependency>
@@ -74,6 +76,10 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
+        <configuration>
+          <bootclasspath>${bootclasspath}</bootclasspath>
+          <source>1.8</source>
+        </configuration>
         <executions>
           <execution>
             <id>attach-javadocs</id>
@@ -88,6 +94,9 @@
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.8.0</version>
         <configuration>
+          <compilerArgs>
+              <arg>-Xbootclasspath/p:${bootclasspath}</arg>
+          </compilerArgs>
           <source>1.8</source>
           <target>1.8</target>
         </configuration>
