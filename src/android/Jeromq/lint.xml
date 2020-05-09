@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<lint>
+    <!-- Disable the given check in this project -->
+    <issue id="MissingApplicationIcon" severity="ignore" />
+    <issue id="MissingVersion" severity="ignore" />
+    <issue id="Assert" severity="ignore" />
+</lint>
