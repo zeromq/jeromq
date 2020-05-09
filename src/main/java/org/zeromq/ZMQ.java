@@ -38,11 +38,11 @@ import zmq.util.Z85;
  * <p>Following is an overview of ØMQ concepts, describes how ØMQ abstracts standard sockets
  * and provides a reference manual for the functions provided by the ØMQ library.</p>
  *
- * <h1>Contexts</h1>
+ * <h2>Contexts</h2>
  * <p>Before using any ØMQ library functions you must create a {@link ZMQ.Context ØMQ context} using {@link ZMQ#context(int)}.
  * When you exit your application you must destroy the context using {@link ZMQ.Context#close()}.</p>
  *
- * <h2>Thread safety</h2>
+ * <h3>Thread safety</h3>
  * A ØMQ context is thread safe and may be shared among as many application threads as necessary,
  * without any additional locking required on the part of the caller.
  * <br>
@@ -52,22 +52,22 @@ import zmq.util.Z85;
  * In practice this means applications can create a socket in one thread with * {@link ZMQ.Context#socket(SocketType)}
  * and then pass it to a newly created thread as part of thread initialization.
  *
- * <h2>Multiple contexts</h2>
+ * <h3>Multiple contexts</h3>
  * Multiple contexts may coexist within a single application.
  * <br>
  * Thus, an application can use ØMQ directly and at the same time make use of any number of additional libraries
  * or components which themselves make use of ØMQ as long as the above guidelines regarding thread safety are adhered to.
  *
- * <h1>Messages</h1>
+ * <h2>Messages</h2>
  * A ØMQ message is a discrete unit of data passed between applications or components of the same application.
  * ØMQ messages have no internal structure and from the point of view of ØMQ itself
  * they are considered to be opaque binary data.
  *
- * <h1>Sockets</h1>
+ * <h2>Sockets</h2>
  * {@link ZMQ.Socket ØMQ sockets} present an abstraction of a asynchronous message queue,
  * with the exact queueing semantics depending on the socket type in use.
  *
- * <h1>Transports</h1>
+ * <h2>Transports</h2>
  * <p>A ØMQ socket can use multiple different underlying transport mechanisms.
  * Each transport mechanism is suited to a particular purpose and has its own advantages and drawbacks.</p>
  *
@@ -78,13 +78,13 @@ import zmq.util.Z85;
  * <li>Local in-process (inter-thread) communication transport</li>
  * </ul>
  *
- * <h1>Proxies</h1>
+ * <h2>Proxies</h2>
  * <p>ØMQ provides proxies to create fanout and fan-in topologies.
  * A proxy connects a frontend socket to a backend socket
  * and switches all messages between the two sockets, opaquely.
  * A proxy may optionally capture all traffic to a third socket.</p>
  *
- * <h1>Security</h1>
+ * <h2>Security</h2>
  * <p>A ØMQ socket can select a security mechanism. Both peers must use the same security mechanism.</p>
  *
  * <p>The following security mechanisms are provided for IPC and TCP connections:</p>
@@ -772,7 +772,7 @@ public class ZMQ
          * </li>
          * </ul>
          * <p>
-         * <h1>Warning</h1>
+         * <h3>Warning</h3>
          * <br>
          * As ZMQ_LINGER defaults to "infinite", by default this method will block indefinitely if there are any pending connects or sends.
          * We strongly recommend to
@@ -792,7 +792,7 @@ public class ZMQ
      * Abstracts an asynchronous message queue, with the exact queuing semantics depending on the socket type in use.
      * <br>
      * Where conventional sockets transfer streams of bytes or discrete datagrams, ØMQ sockets transfer discrete messages.
-     * <h1>Key differences to conventional sockets</h1>
+     * <h2>Key differences to conventional sockets</h2>
      * Generally speaking, conventional sockets present a synchronous interface to either
      * connection-oriented reliable byte streams (SOCK_STREAM),
      * or connection-less unreliable datagrams (SOCK_DGRAM).
@@ -809,12 +809,12 @@ public class ZMQ
      * With the exception of {@link ZMQ#PAIR}, ØMQ sockets may be connected to multiple endpoints using {@link ZMQ.Socket#connect(String)},
      * while simultaneously accepting incoming connections from multiple endpoints bound to the socket using {@link ZMQ.Socket#bind(String)},
      * thus allowing many-to-many relationships.
-     * <h1>Thread safety</h1>
+     * <h2>Thread safety</h2>
      * ØMQ sockets are not thread safe. <strong>Applications MUST NOT use a socket from multiple threads</strong>
      * except after migrating a socket from one thread to another with a "full fence" memory barrier.
      * <br>
      * ØMQ sockets are not Thread.interrupt safe. <strong>Applications MUST NOT interrupt threads using ØMQ sockets</strong>.
-     * <h1>Messaging patterns</h1>
+     * <h2>Messaging patterns</h2>
      * <ul>
      * <li>Request-reply
      * <br>
@@ -4182,7 +4182,7 @@ public class ZMQ
      * CURVE is intended for use on public networks.
      * The CURVE mechanism is defined by this document: http://rfc.zeromq.org/spec:25.</p>
      *
-     * <h1>Client and server roles</h1>
+     * <h2>Client and server roles</h2>
      *
      * <p>A socket using CURVE can be either client or server, at any moment, but not both. The role is independent of bind/connect direction.
      * A socket can change roles at any point by setting new options. The role affects all connect and bind calls that follow it.</p>
@@ -4196,14 +4196,14 @@ public class ZMQ
      * The application then sets the {@link ZMQ.Socket#setCurvePublicKey(byte[])} and {@link ZMQ.Socket#setCurveSecretKey(byte[])} options with its client long-term key pair.
      * If the server does authentication it will be based on the client's long term public key.</p>
      *
-     * <h1>Key encoding</h1>
+     * <h3>Key encoding</h3>
      *
      * <p>The standard representation for keys in source code is either 32 bytes of base 256 (binary) data,
      * or 40 characters of base 85 data encoded using the Z85 algorithm defined by http://rfc.zeromq.org/spec:32.
      * The Z85 algorithm is designed to produce printable key strings for use in configuration files, the command line, and code.
      * There is a reference implementation in C at https://github.com/zeromq/rfc/tree/master/src.</p>
      *
-     * <h1>Test key values</h1>
+     * <h3>Test key values</h3>
      *
      * <p>For test cases, the client shall use this long-term key pair (specified as hexadecimal and in Z85):</p>
      * <ul>
