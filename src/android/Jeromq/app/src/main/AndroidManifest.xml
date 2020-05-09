@@ -3,6 +3,9 @@
 
     <uses-permission android:name="android.permission.INTERNET"/>
 
+    <uses-sdk android:minSdkVersion="19"
+              android:targetSdkVersion="29" />
+
     <application
         android:largeHeap="true"
         android:allowBackup="false"
