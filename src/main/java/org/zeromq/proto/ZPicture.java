@@ -1,5 +1,6 @@
 package org.zeromq.proto;
 
+import java.util.Locale;
 import java.util.regex.Pattern;
 
 import org.zeromq.ZFrame;
@@ -287,23 +288,23 @@ public class ZPicture
             char pattern = picture.charAt(pictureIndex);
             switch (pattern) {
             case 'i': {
-                msg.add(String.format("%d", (int) args[argIndex]));
+                msg.add(String.format(Locale.ENGLISH, "%d", (int) args[argIndex]));
                 break;
             }
             case '1': {
-                msg.add(String.format("%d", (0xff) & (int) args[argIndex]));
+                msg.add(String.format(Locale.ENGLISH, "%d", (0xff) & (int) args[argIndex]));
                 break;
             }
             case '2': {
-                msg.add(String.format("%d", (0xffff) & (int) args[argIndex]));
+                msg.add(String.format(Locale.ENGLISH, "%d", (0xffff) & (int) args[argIndex]));
                 break;
             }
             case '4': {
-                msg.add(String.format("%d", (0xffffffff) & (int) args[argIndex]));
+                msg.add(String.format(Locale.ENGLISH, "%d", (0xffffffff) & (int) args[argIndex]));
                 break;
             }
             case '8': {
-                msg.add(String.format("%d", (long) args[argIndex]));
+                msg.add(String.format(Locale.ENGLISH, "%d", (long) args[argIndex]));
                 break;
             }
             case 's': {

@@ -6,6 +6,7 @@ import java.io.Writer;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.Locale;
 
 import org.zeromq.ZMQ.Curve;
 import org.zeromq.ZMQ.Curve.KeyPair;
@@ -151,7 +152,7 @@ public class ZCert
 
     private void add(ZMetadata meta, ZConfig config)
     {
-        String now = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ").format(new Date());
+        String now = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.ENGLISH).format(new Date());
         config.addComment(String.format("** Generated on %1$s by ZCert **", now));
         for (String key : meta.keySet()) {
             config.putValue("metadata/" + key, meta.get(key));

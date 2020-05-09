@@ -1,5 +1,7 @@
 package org.zeromq;
 
+import java.util.Locale;
+
 import org.zeromq.ZMQ.Error;
 import org.zeromq.ZMQ.Socket;
 
@@ -89,7 +91,7 @@ public class ZThread
         Socket pipe = ctx.createSocket(SocketType.PAIR);
 
         if (pipe != null) {
-            pipe.bind(String.format("inproc://zctx-pipe-%d", pipe.hashCode()));
+            pipe.bind(String.format(Locale.ENGLISH, "inproc://zctx-pipe-%d", pipe.hashCode()));
         }
         else {
             return null;
@@ -101,7 +103,7 @@ public class ZThread
         if (cpipe == null) {
             return null;
         }
-        cpipe.connect(String.format("inproc://zctx-pipe-%d", pipe.hashCode()));
+        cpipe.connect(String.format(Locale.ENGLISH, "inproc://zctx-pipe-%d", pipe.hashCode()));
 
         //  Prepare child thread
         Thread shim = new ShimThread(ccontext, runnable, args, cpipe);
