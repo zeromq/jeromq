@@ -24,8 +24,13 @@
   </developers>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.compiler.source>8</maven.compiler.source>
+    <maven.compiler.target>8</maven.compiler.target>
     <jdk.compile.home>${jdk.8.home}</jdk.compile.home>
     <bootclasspath>${jdk.compile.home}/jre/lib/rt.jar</bootclasspath>
+    <!-- Indirection needed to keep optionnal jacoco settings and external argument lines-->
+    <arg.line></arg.line>
+    <argLine>${arg.line}</argLine>
   </properties>
   <dependencies>
     <dependency>
@@ -78,7 +83,8 @@
         <artifactId>maven-javadoc-plugin</artifactId>
         <configuration>
           <bootclasspath>${bootclasspath}</bootclasspath>
-          <source>1.8</source>
+          <detectJavaApiLink>true</detectJavaApiLink>
+          <source>${maven.compiler.source}</source>
         </configuration>
         <executions>
           <execution>
@@ -97,8 +103,9 @@
           <compilerArgs>
               <arg>-Xbootclasspath/p:${bootclasspath}</arg>
           </compilerArgs>
-          <source>1.8</source>
-          <target>1.8</target>
+          <!-- needed for maven-plugin-javadoc to find the source version to use -->
+          <source>${maven.compiler.source}</source>
+          <target>${maven.compiler.target}</target>
         </configuration>
       </plugin>
       <plugin>
