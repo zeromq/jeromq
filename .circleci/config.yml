@@ -166,7 +166,7 @@ jobs:
                         PUBLISH="install"
                     fi
                     echo "publishing jobs: $PUBLISH"
-                    mvn -B $PUBLISH -Pskip -Dmaven.test.skip=true -s .circleci/settings.xml
+                    mvn -B $PUBLISH -Pskip,javadoc -Dmaven.test.skip=true -s .circleci/settings.xml
                 environment:
                     JAVA_HOME: /usr/java/openjdk-13
                     MAVEN_OPTS: "-Xmx2048m"

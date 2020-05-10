@@ -31,6 +31,8 @@
     <!-- Indirection needed to keep optionnal jacoco settings and external argument lines-->
     <arg.line></arg.line>
     <argLine>${arg.line}</argLine>
+    <!-- Hides incompatibily in javadoc headers between java 8 and latter -->
+    <doclint>html</doclint>
   </properties>
   <dependencies>
     <dependency>
@@ -406,5 +408,12 @@
         </plugins>
       </build>
     </profile>
-  </profiles>
+    <profile>
+      <!-- strict javadoc compliance -->
+      <id>javadoc</id>
+      <properties>
+        <doclint>all</doclint>
+      </properties>
+    </profile>
+   </profiles>
 </project>
