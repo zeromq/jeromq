@@ -2,7 +2,6 @@
 
 Pure Java implementation of libzmq (http://zeromq.org).
 
-[![Build Status](https://travis-ci.org/zeromq/jeromq.png)](https://travis-ci.org/zeromq/jeromq)
 [![Coverage Status](https://coveralls.io/repos/github/zeromq/jeromq/badge.svg?branch=master)](https://coveralls.io/github/zeromq/jeromq?branch=master)
 [![Maven Central](https://img.shields.io/maven-central/v/org.zeromq/jeromq.svg)](https://maven-badges.herokuapp.com/maven-central/org.zeromq/jeromq)
 [![Javadocs](http://www.javadoc.io/badge/org.zeromq/jeromq.svg)](http://www.javadoc.io/doc/org.zeromq/jeromq)
