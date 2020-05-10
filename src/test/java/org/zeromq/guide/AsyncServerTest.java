@@ -226,7 +226,7 @@ public class AsyncServerTest
 
     //The main thread simply starts several clients, and a server, and then
     //waits for the server to finish.
-    @Test
+    @Test(timeout = 5000)
     public void testAsyncServer() throws Exception
     {
         try (

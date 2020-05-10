@@ -65,6 +65,7 @@
         <version>3.0.0-M3</version>
         <configuration>
           <useSystemClassLoader>false</useSystemClassLoader>
+          <rerunFailingTestsCount>5</rerunFailingTestsCount>
         </configuration>
       </plugin>
       <plugin>
@@ -236,6 +237,7 @@
   </reporting>
   <profiles>
     <profile>
+      <!--Activate jacoco coverage -->
       <id>coverage</id>
         <activation>
           <activeByDefault>false</activeByDefault>
@@ -293,6 +295,7 @@
       </build>
     </profile>
     <profile>
+      <!-- Used with the phase 'site' to check plugins and dependency versions -->
       <id>versions</id>
       <reporting>
         <plugins>
@@ -314,6 +317,7 @@
       </reporting>
     </profile>
     <profile>
+      <!-- Activate the checkstyle plugin, to ensure conformance with code style -->
       <id>checkstyle</id>
       <build>
         <plugins>
@@ -348,6 +352,9 @@
       </build>
     </profile>
     <profile>
+      <!-- With this profile, it's possible to used the latest jvm but still get jar compatible with pre-9 JVM.
+           It must be used with -Djdk.8.home=$JAVA8_HOME. Example:
+           JAVA_HOME=$JAVA14_HOME mvn compile -Pcrosscompile -Djdk.8.home=$JAVA8_HOME !-->
       <id>crosscompile</id>
       <build>
         <plugins>
@@ -367,6 +374,7 @@
       </build>
     </profile>
     <profile>
+      <!-- Used to sign a release -->
       <id>release</id>
       <activation>
         <property>
