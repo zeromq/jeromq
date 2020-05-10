@@ -34,7 +34,7 @@ jobs:
                     - openjdk-8
     build:
         docker:
-            - image: circleci/openjdk:13-jdk-buster
+            - image: circleci/openjdk:14-jdk-buster
         steps:
             - attach_workspace:
                 at: /tmp/ws
@@ -46,7 +46,7 @@ jobs:
             - run:
                 command: mvn -B clean compile -Pcheckstyle,crosscompile -s .circleci/settings.xml
                 environment:
-                    JAVA_HOME: /usr/java/openjdk-13
+                    JAVA_HOME: /usr/java/openjdk-14
                     MAVEN_OPTS: "-Xmx2048m"
             - persist_to_workspace:
                 root: /
