@@ -1,14 +1,9 @@
 <settings>
     <servers>
         <server>
-            <id>sonatype-nexus-snapshots</id>
+            <id>ossrh</id>
             <username>${env.SONATYPE_PASSWORD}</username>
             <password>${env.SONATYPE_USERNAME}</password>
-        </server>
-        <server>
-            <id>bintray-release</id>
-            <username>${env.BINTRAY_USERNAME}</username>
-            <password>${env.BINTRAY_PASSWORDD}</password>
         </server>
     </servers>
     <activeProfiles>
