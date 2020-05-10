@@ -21,7 +21,7 @@ import zmq.util.Utils;
 
 public class XpubXsubTest
 {
-    @Test
+    @Test(timeout = 5000)
     public void testXpubSub() throws InterruptedException, IOException, ExecutionException
     {
         final Ctx ctx = zmq.ZMQ.createContext();
@@ -93,7 +93,7 @@ public class XpubXsubTest
         System.out.println("Done.");
     }
 
-    @Test
+    @Test(timeout = 5000)
     public void testXpubXSub() throws InterruptedException, IOException, ExecutionException
     {
         final Ctx ctx = zmq.ZMQ.createContext();
@@ -153,7 +153,7 @@ public class XpubXsubTest
         zmq.ZMQ.term(ctx);
     }
 
-    @Test
+    @Test(timeout = 5000)
     public void testIssue476() throws InterruptedException, IOException, ExecutionException
     {
         final int front = Utils.findOpenPort();
