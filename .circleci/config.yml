@@ -73,7 +73,7 @@ jobs:
                     else
                         SONAR=""
                     fi
-                    mvn -B test $SONAR -Pskip -Darg.line="-Xmx3192m" -s .circleci/settings.xml
+                    mvn -B test $SONAR -Pskip -Darg.line="-Xmx2048m" -s .circleci/settings.xml
                 environment:
                     JAVA_HOME: /usr/java/openjdk-13
                     MAVEN_OPTS: "-Xmx1024m"
@@ -98,7 +98,7 @@ jobs:
                     mv -n /tmp/ws/home/circleci/project/.??* /home/circleci/project/
             - run:
                 command: |
-                    mvn -B test -Pskip -Darg.line="-Xmx3192m" -s .circleci/settings.xml
+                    mvn -B test -Pskip -Darg.line="-Xmx2048m" -s .circleci/settings.xml
                 environment:
                     JAVA_HOME: /usr/local/openjdk-11
                     MAVEN_OPTS: "-Xmx512m"
@@ -119,7 +119,7 @@ jobs:
                     mv -n /tmp/ws/home/circleci/project/.??* /home/circleci/project/
             - run:
                 command: |
-                    mvn -B test -Pskip -Darg.line="-Xmx3192m" -s .circleci/settings.xml
+                    mvn -B test -Pskip -Darg.line="-Xmx2048m" -s .circleci/settings.xml
                 environment:
                     JAVA_HOME: /usr/local/openjdk-8
                     MAVEN_OPTS: "-Xmx512m"
@@ -169,7 +169,7 @@ jobs:
                     mvn -B $PUBLISH -Pskip -Dmaven.test.skip=true -s .circleci/settings.xml
                 environment:
                     JAVA_HOME: /usr/java/openjdk-13
-                    MAVEN_OPTS: "-Dorg.slf4j.simpleLogger.log.org.apache.maven.plugins.shade=ERROR -Xmx2048m"
+                    MAVEN_OPTS: "-Xmx2048m"
             - store_artifacts:
                 path: target/jeromq-*.jar
             - persist_to_workspace:
