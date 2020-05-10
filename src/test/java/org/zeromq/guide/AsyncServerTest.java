@@ -226,7 +226,7 @@ public class AsyncServerTest
 
     //The main thread simply starts several clients, and a server, and then
     //waits for the server to finish.
-    @Test(timeout = 5000)
+    @Test(timeout = 10000)
     public void testAsyncServer() throws Exception
     {
         try (
@@ -246,7 +246,7 @@ public class AsyncServerTest
                 actors.add(new ZActor(ctx, new Worker(threadNbr), null));
             }
 
-            ZMQ.sleep(5);
+            ZMQ.sleep(1);
 
             status = proxy.pause(true);
             assertThat(status, is(ZProxy.PAUSED));
