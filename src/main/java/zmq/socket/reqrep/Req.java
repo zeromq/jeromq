@@ -241,6 +241,7 @@ public class Req extends Dealer
         enum State
         {
             BOTTOM,
+            REQUEST_ID,
             BODY
         }
 
@@ -265,6 +266,21 @@ public class Req extends Dealer
 
             switch (state) {
             case BOTTOM:
+                if (msg.hasMore()) {
+                    //  In case option ZMQ_CORRELATE is on, allow request_id to be
+                    //  transfered as first frame (would be too cumbersome to check
+                    //  whether the option is actually on or not).
+                    if (msg.size() == 4) {
+                        state = State.REQUEST_ID;
+                        return super.pushMsg (msg);
+                    }
+                    else if (msg.size() == 0) {
+                        state = State.BODY;
+                        return super.pushMsg(msg);
+                    }
+                }
+                break;
+             case REQUEST_ID:
                 if (msg.hasMore() && msg.size() == 0) {
                     state = State.BODY;
                     return super.pushMsg(msg);
