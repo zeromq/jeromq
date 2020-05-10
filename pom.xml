@@ -100,9 +100,6 @@
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.8.0</version>
         <configuration>
-          <compilerArgs>
-              <arg>-Xbootclasspath/p:${bootclasspath}</arg>
-          </compilerArgs>
           <!-- needed for maven-plugin-javadoc to find the source version to use -->
           <source>${maven.compiler.source}</source>
           <target>${maven.compiler.target}</target>
@@ -204,6 +201,10 @@
               </tag>
             </tags>
           </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-compiler-plugin</artifactId>
         </plugin>
     <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -355,6 +356,25 @@
                 </configuration>
               </execution>
             </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>crosscompile</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <configuration>
+              <compilerArgs>
+                  <arg>-Xbootclasspath/p:${bootclasspath}</arg>
+              </compilerArgs>
+              <!-- needed for maven-plugin-javadoc to find the source version to use -->
+              <source>${maven.compiler.source}</source>
+              <target>${maven.compiler.target}</target>
+            </configuration>
           </plugin>
         </plugins>
       </build>
