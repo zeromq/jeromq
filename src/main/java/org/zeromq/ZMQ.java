@@ -772,7 +772,7 @@ public class ZMQ
          * </li>
          * </ul>
          * <p>
-         * <h3>Warning</h3>
+         * <h4>Warning</h4>
          * <br>
          * As ZMQ_LINGER defaults to "infinite", by default this method will block indefinitely if there are any pending connects or sends.
          * We strongly recommend to
