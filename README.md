@@ -2,7 +2,9 @@
 # JeroMQ
 
 Pure Java implementation of libzmq (http://zeromq.org).
+
 [![CircleCI](https://circleci.com/gh/zeromq/jeromq.svg?style=svg)](https://circleci.com/gh/zeromq/jeromq)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=zeromq_jeromq&metric=alert_status)](https://sonarcloud.io/dashboard?id=zeromq_jeromq)
 [![Coverage Status](https://coveralls.io/repos/github/zeromq/jeromq/badge.svg?branch=master)](https://coveralls.io/github/zeromq/jeromq?branch=master)
 [![Maven Central](https://img.shields.io/maven-central/v/org.zeromq/jeromq.svg)](https://maven-badges.herokuapp.com/maven-central/org.zeromq/jeromq)
 [![Javadocs](http://www.javadoc.io/badge/org.zeromq/jeromq.svg)](http://www.javadoc.io/doc/org.zeromq/jeromq)
