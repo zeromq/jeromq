@@ -272,7 +272,7 @@ public class Req extends Dealer
                     //  whether the option is actually on or not).
                     if (msg.size() == 4) {
                         state = State.REQUEST_ID;
-                        return super.pushMsg (msg);
+                        return super.pushMsg(msg);
                     }
                     else if (msg.size() == 0) {
                         state = State.BODY;
