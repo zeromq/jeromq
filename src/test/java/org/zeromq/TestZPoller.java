@@ -130,7 +130,7 @@ public class TestZPoller
         }
     }
 
-    @Test
+    @Test(timeout = 5000)
     public void testPollerPollout() throws IOException, InterruptedException
     {
         final int port = Utils.findOpenPort();
@@ -178,7 +178,7 @@ public class TestZPoller
         }
     }
 
-    @Test
+    @Test(timeout = 5000)
     public void testUseNull() throws IOException
     {
         final ZContext context = new ZContext();
@@ -224,7 +224,7 @@ public class TestZPoller
         context.close();
     }
 
-    @Test
+    @Test(timeout = 5000)
     public void testZPollerNew() throws IOException
     {
         ZContext ctx = new ZContext();
@@ -243,7 +243,7 @@ public class TestZPoller
         }
     }
 
-    @Test
+    @Test(timeout = 5000)
     public void testGlobalHandler() throws IOException
     {
         ZContext ctx = new ZContext();
@@ -260,7 +260,7 @@ public class TestZPoller
         }
     }
 
-    @Test
+    @Test(timeout = 5000)
     public void testItemEqualsBasic() throws IOException
     {
         ZContext ctx = new ZContext();
@@ -283,7 +283,7 @@ public class TestZPoller
         }
     }
 
-    @Test
+    @Test(timeout = 5000)
     public void testItemEquals() throws IOException
     {
         ZContext ctx = new ZContext();
@@ -317,7 +317,7 @@ public class TestZPoller
         }
     }
 
-    @Test
+    @Test(timeout = 5000)
     public void testReadable() throws IOException
     {
         ZContext ctx = new ZContext();
@@ -341,7 +341,7 @@ public class TestZPoller
         }
     }
 
-    @Test
+    @Test(timeout = 5000)
     public void testWritable() throws IOException
     {
         ZContext ctx = new ZContext();
@@ -365,7 +365,7 @@ public class TestZPoller
         }
     }
 
-    @Test
+    @Test(timeout = 5000)
     public void testError() throws IOException
     {
         ZContext ctx = new ZContext();
@@ -389,7 +389,7 @@ public class TestZPoller
         }
     }
 
-    @Test
+    @Test(timeout = 5000)
     public void testRegister() throws IOException
     {
         ZContext ctx = new ZContext();
@@ -406,7 +406,7 @@ public class TestZPoller
         }
     }
 
-    @Test
+    @Test(timeout = 5000)
     public void testItems() throws IOException
     {
         ZContext ctx = new ZContext();
@@ -427,7 +427,7 @@ public class TestZPoller
         }
     }
 
-    @Test
+    @Test(timeout = 5000)
     public void testMultipleRegistrations() throws IOException
     {
         Selector selector = Selector.open();
@@ -479,7 +479,7 @@ public class TestZPoller
         return pipe;
     }
 
-    @Test
+    @Test(timeout = 5000)
     public void testIssue729() throws InterruptedException, IOException
     {
         int port = Utils.findOpenPort();
