@@ -118,7 +118,7 @@ public class ZAuthTest
     public void testNullWithNoDomain() throws IOException
     {
         try (ZContext ctx = new ZContext();
-             ZAuth auth = new ZAuth(ctx)){
+             ZAuth auth = new ZAuth(ctx)) {
             //  Get some indication of what the authenticator is deciding
             auth.setVerbose(VERBOSE_MODE);
             // auth send the replies
@@ -152,11 +152,11 @@ public class ZAuthTest
     public void testPlainWithPassword() throws IOException
     {
         try (ZContext ctx = new ZContext();
-             ZAuth auth = new ZAuth(ctx);){
+             ZAuth auth = new ZAuth(ctx);) {
             //  Start an authentication engine for this context. This engine
             //  allows or denies incoming connections (talking to the libzmq
             //  core over a protocol called ZAP).
-           
+
             //  Get some indication of what the authenticator is deciding
             auth.setVerbose(VERBOSE_MODE);
             // auth send the replies
@@ -197,7 +197,7 @@ public class ZAuthTest
         try (ZContext ctx = new ZContext();
              ZAuth auth = new ZAuth(ctx);
              ZMQ.Socket server = ctx.createSocket(SocketType.PUSH);
-             ZMQ.Socket client = ctx.createSocket(SocketType.PULL);){
+             ZMQ.Socket client = ctx.createSocket(SocketType.PULL);) {
             //  Start an authentication engine for this context. This engine
             //  allows or denies incoming connections (talking to the libzmq
             //  core over a protocol called ZAP).
@@ -235,8 +235,7 @@ public class ZAuthTest
         try (ZContext ctx = new ZContext();
              ZAuth auth = new ZAuth(ctx, new ZCertStore.Hasher());
              ZMQ.Socket server = ctx.createSocket(SocketType.PUSH);
-             ZMQ.Socket client = ctx.createSocket(SocketType.PULL);){
-
+             ZMQ.Socket client = ctx.createSocket(SocketType.PULL);) {
             //  Get some indication of what the authenticator is deciding
             auth.setVerbose(VERBOSE_MODE);
             // auth send the replies
@@ -285,11 +284,11 @@ public class ZAuthTest
         try (ZContext ctx = new ZContext();
              ZAuth auth = new ZAuth(ctx, new ZCertStore.Hasher());
              ZMQ.Socket server = ctx.createSocket(SocketType.PUSH);
-             ZMQ.Socket client = ctx.createSocket(SocketType.PULL);){
+             ZMQ.Socket client = ctx.createSocket(SocketType.PULL);) {
             //  Start an authentication engine for this context. This engine
             //  allows or denies incoming connections (talking to the libzmq
             //  core over a protocol called ZAP).
-            
+
             //  Get some indication of what the authenticator is deciding
             auth.setVerbose(VERBOSE_MODE);
             // auth send the replies
@@ -345,11 +344,11 @@ public class ZAuthTest
         try (ZContext ctx = new ZContext();
              ZAuth auth = new ZAuth(ctx, new ZCertStore.Timestamper());
              ZMQ.Socket server = ctx.createSocket(SocketType.PUSH);
-             ZMQ.Socket client = ctx.createSocket(SocketType.PULL);){
+             ZMQ.Socket client = ctx.createSocket(SocketType.PULL);) {
             //  Start an authentication engine for this context. This engine
             //  allows or denies incoming connections (talking to the libzmq
             //  core over a protocol called ZAP).
-            
+
             //  Get some indication of what the authenticator is deciding
             auth.setVerbose(VERBOSE_MODE);
             // auth send the replies
@@ -359,7 +358,6 @@ public class ZAuthTest
             auth.deny("127.0.0.1");
 
             //  Create and bind server socket
-            
             server.setZapDomain("global".getBytes());
             final int port = server.bindToRandomPort("tcp://*");
 
@@ -384,11 +382,11 @@ public class ZAuthTest
         try (ZContext ctx = new ZContext();
              ZAuth auth = new ZAuth(ctx, new ZCertStore.Hasher());
              ZMQ.Socket server = ctx.createSocket(SocketType.PUSH);
-             ZMQ.Socket client = ctx.createSocket(SocketType.PULL);){
+             ZMQ.Socket client = ctx.createSocket(SocketType.PULL);) {
             //  Start an authentication engine for this context. This engine
             //  allows or denies incoming connections (talking to the libzmq
             //  core over a protocol called ZAP).
-            
+
             //  Get some indication of what the authenticator is deciding
             auth.setVerbose(VERBOSE_MODE);
             // auth send the replies
@@ -422,11 +420,11 @@ public class ZAuthTest
         try (ZContext ctx = new ZContext();
              ZAuth auth = new ZAuth(ctx, new ZCertStore.Hasher());
              ZMQ.Socket server = ctx.createSocket(SocketType.PUSH);
-             ZMQ.Socket client = ctx.createSocket(SocketType.PULL)){
+             ZMQ.Socket client = ctx.createSocket(SocketType.PULL)) {
             //  Start an authentication engine for this context. This engine
             //  allows or denies incoming connections (talking to the libzmq
             //  core over a protocol called ZAP).
-            
+
             //  Get some indication of what the authenticator is deciding
             auth.setVerbose(VERBOSE_MODE);
             // auth send the replies
@@ -440,7 +438,6 @@ public class ZAuthTest
             final int port = server.bindToRandomPort("tcp://*");
 
             //  Create and connect client socket
-            ;
             boolean rc = client.connect("tcp://127.0.0.1:" + port);
             assertThat(rc, is(true));
 
@@ -461,11 +458,11 @@ public class ZAuthTest
         try (ZContext ctx = new ZContext();
              ZAuth auth = new ZAuth(ctx, new ZCertStore.Hasher());
              ZMQ.Socket server = ctx.createSocket(SocketType.PUSH);
-             ZMQ.Socket client = ctx.createSocket(SocketType.PULL);){
+             ZMQ.Socket client = ctx.createSocket(SocketType.PULL);) {
             //  Start an authentication engine for this context. This engine
             //  allows or denies incoming connections (talking to the libzmq
             //  core over a protocol called ZAP).
-            
+
             //  Get some indication of what the authenticator is deciding
             auth.setVerbose(VERBOSE_MODE);
             // auth send the replies
@@ -479,7 +476,6 @@ public class ZAuthTest
             final int port = server.bindToRandomPort("tcp://*");
 
             //  Create and connect client socket
-            
             boolean rc = client.connect("tcp://127.0.0.1:" + port);
             assertThat(rc, is(true));
 
@@ -501,7 +497,7 @@ public class ZAuthTest
         try (ZContext ctx = new ZContext();
              ZAuth auth = new ZAuth(ctx, new ZCertStore.Timestamper());
              ZMQ.Socket server = ctx.createSocket(SocketType.PUSH);
-             ZMQ.Socket client = ctx.createSocket(SocketType.PULL);){
+             ZMQ.Socket client = ctx.createSocket(SocketType.PULL);) {
             //  Get some indication of what the authenticator is deciding
             auth.setVerbose(VERBOSE_MODE);
             // auth send the replies
@@ -555,7 +551,7 @@ public class ZAuthTest
     public void testNoReplies() throws IOException
     {
         try (ZContext ctx = new ZContext();
-             ZAuth auth = new ZAuth(ctx, new ZCertStore.Hasher());){
+             ZAuth auth = new ZAuth(ctx, new ZCertStore.Hasher());) {
             //  Start an authentication engine for this context. This engine
             //  allows or denies incoming connections (talking to the libzmq
             //  core over a protocol called ZAP).

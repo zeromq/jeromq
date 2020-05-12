@@ -6,7 +6,6 @@ import static org.junit.Assert.assertThat;
 
 import java.io.IOException;
 import java.lang.Thread.UncaughtExceptionHandler;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
@@ -60,10 +59,17 @@ public class ProxyTerminateTest
                 // Connect backend to frontend via a proxy
                 ZMQ.proxy(frontend, backend, null, control);
                 resultHander.complete(true);
-            } finally {
-                Optional.ofNullable(frontend).ifPresent(ZMQ::close);
-                Optional.ofNullable(backend).ifPresent(ZMQ::close);
-                Optional.ofNullable(control).ifPresent(ZMQ::close);
+            }
+            finally {
+                if (frontend != null) {
+                    ZMQ.close(frontend);
+                }
+                if (backend != null) {
+                    ZMQ.close(backend);
+                }
+                if (control != null) {
+                    ZMQ.close(control);
+                }
             }
         }
 
@@ -90,9 +96,11 @@ public class ProxyTerminateTest
 
         CompletableFuture<Boolean> resultHander = new CompletableFuture<>();
         Thread thread = new Thread(new ServerTask(ctx, frontend, backend, resultHander));
-        thread.setUncaughtExceptionHandler(new UncaughtExceptionHandler() {
+        thread.setUncaughtExceptionHandler(new UncaughtExceptionHandler()
+        {
             @Override
-            public void uncaughtException(Thread t, Throwable e) {
+            public void uncaughtException(Thread t, Throwable e)
+            {
                 resultHander.completeExceptionally(e);
             }
         });
