@@ -8,6 +8,7 @@ import java.net.InetAddress;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.Ignore;
 import org.junit.Test;
@@ -15,39 +16,63 @@ import org.zeromq.ZBeacon.Listener;
 
 public class ZBeaconTest
 {
-    @Test
+    @SuppressWarnings("deprecation")
+    @Test(timeout = 2000)
     public void testUseBuilder() throws InterruptedException, IOException
     {
-        final CountDownLatch latch = new CountDownLatch(1);
+        long interval = ZBeacon.DEFAULT_BROADCAST_INTERVAL / 2;
+        AtomicLong beacon1 = new AtomicLong(0);
+        AtomicLong beacon2 = new AtomicLong(0);
+        CountDownLatch latch = new CountDownLatch(2);
         int port = Utils.findOpenPort();
-        ZBeacon.Builder builder = new ZBeacon.Builder().beacon(new byte[] { 'H', 'Y', 'D', 'R', 'A', 0x01, 0x12, 0x34 })
-                .ignoreLocalAddress(false).blocking(false).broadcastInterval(2000L).client("127.0.0.1").port(port)
-                .server(new byte[] { 127, 0, 0, 1 });
-        byte[] prefix = new byte[] { 'H', 'Y', 'D', 'R', 'A', 0x01 };
+        byte[] beacondata = new byte[] { 'H', 'Y', 'D', 'R', 'A', 0x01, 0x12, 0x34 };
+        AtomicReference<byte[]> receivedBeacon = new AtomicReference<>();
+        ZBeacon.Builder builder = new ZBeacon.Builder()
+                .beacon(beacondata)
+                .ignoreLocalAddress(false)
+                .broadcastInterval(interval)
+                .client(InetAddress.getLoopbackAddress()).port(port)
+                .server(InetAddress.getLoopbackAddress())
+                .prefix(new byte[] { 'H', 'Y', 'D', 'R', 'A', 0x01 })
+                .listener(new Listener()
+                {
+                    @Override
+                    public void onBeacon(InetAddress sender, byte[] received)
+                    {
+                        if (beacon1.get() == 0) {
+                            beacon1.set(System.currentTimeMillis());
+                        }
+                        else if (beacon2.get() == 0) {
+                            beacon2.set(System.currentTimeMillis());
+                            receivedBeacon.set(received);
+                        }
+                        latch.countDown();
+                    }
+                });
         ZBeacon beacon = builder.build();
-        beacon.setPrefix(prefix);
-        beacon.setListener(new Listener()
-        {
-            @Override
-            public void onBeacon(InetAddress sender, byte[] beacon)
-            {
-                latch.countDown();
-            }
-        });
+        try {
+            beacon.start();
+            assertThat(latch.await(interval * 3, TimeUnit.MILLISECONDS), is(Boolean.TRUE));
+        }
+        finally {
+            beacon.stop();
+        }
 
-        beacon.start();
-        latch.await(20, TimeUnit.SECONDS);
-        assertThat(latch.getCount(), is(0L));
-        beacon.stop();
+        //Ensure that the real interval is almost the required interval
+        assertThat(((beacon2.get() - beacon1.get()) / 10), is(interval / 10));
+        assertThat(receivedBeacon.get(), is(beacondata));
+
     }
 
-    @Test
+    @SuppressWarnings("deprecation")
+    @Test(timeout = 2000)
     public void testReceiveOwnBeacons() throws InterruptedException, IOException
     {
         final CountDownLatch latch = new CountDownLatch(1);
         byte[] beacon = new byte[] { 'H', 'Y', 'D', 'R', 'A', 0x01, 0x12, 0x34 };
         byte[] prefix = new byte[] { 'H', 'Y', 'D', 'R', 'A', 0x01 };
         int port = Utils.findOpenPort();
+        @SuppressWarnings("resource")
         ZBeacon zbeacon = new ZBeacon("127.0.0.1", port, beacon, false);
         zbeacon.setPrefix(prefix);
         zbeacon.setListener(new Listener()
@@ -59,13 +84,18 @@ public class ZBeaconTest
             }
         });
 
-        zbeacon.start();
-        latch.await(20, TimeUnit.SECONDS);
-        assertThat(latch.getCount(), is(0L));
-        zbeacon.stop();
+        try {
+            zbeacon.start();
+            latch.await(20, TimeUnit.SECONDS);
+            assertThat(latch.getCount(), is(0L));
+        }
+        finally {
+            zbeacon.stop();
+        }
     }
 
-    @Test
+    @SuppressWarnings("deprecation")
+    @Test(timeout = 2000)
     @Ignore
     public void testIgnoreOwnBeacon() throws IOException, InterruptedException
     {
@@ -73,6 +103,7 @@ public class ZBeaconTest
 
         final byte[] beacon = new byte[] { 'Z', 'R', 'E', 0x01, 0x2 };
         final byte[] prefix = new byte[] { 'Z', 'R', 'E', 0x01 };
+        @SuppressWarnings("resource")
         final ZBeacon zbeacon = new ZBeacon(ZBeacon.DEFAULT_BROADCAST_HOST, port, beacon, true);
         zbeacon.setPrefix(prefix);
 
@@ -100,13 +131,15 @@ public class ZBeaconTest
         assertThat(counter.get(), is(0L));
     }
 
-    @Test
+    @SuppressWarnings("deprecation")
+    @Test(timeout = 2000)
     public void testReceiveOwnBeaconsBlocking() throws InterruptedException, IOException
     {
         final CountDownLatch latch = new CountDownLatch(1);
         byte[] beacon = new byte[] { 'H', 'Y', 'D', 'R', 'A', 0x01, 0x12, 0x34 };
         byte[] prefix = new byte[] { 'H', 'Y', 'D', 'R', 'A', 0x01 };
         int port = Utils.findOpenPort();
+        @SuppressWarnings("resource")
         ZBeacon zbeacon = new ZBeacon("127.0.0.1", port, beacon, false, true);
         zbeacon.setPrefix(prefix);
         zbeacon.setListener(new Listener()
@@ -118,13 +151,18 @@ public class ZBeaconTest
             }
         });
 
-        zbeacon.start();
-        latch.await(20, TimeUnit.SECONDS);
-        assertThat(latch.getCount(), is(0L));
-        zbeacon.stop();
+        try {
+            zbeacon.start();
+            latch.await(20, TimeUnit.SECONDS);
+            assertThat(latch.getCount(), is(0L));
+        }
+        finally {
+            zbeacon.stop();
+        }
     }
 
-    @Test
+    @SuppressWarnings("deprecation")
+    @Test(timeout = 2000)
     @Ignore
     public void testIgnoreOwnBeaconBlocking() throws IOException, InterruptedException
     {
@@ -132,6 +170,7 @@ public class ZBeaconTest
 
         final byte[] beacon = new byte[] { 'Z', 'R', 'E', 0x01, 0x2 };
         final byte[] prefix = new byte[] { 'Z', 'R', 'E', 0x01 };
+        @SuppressWarnings("resource")
         final ZBeacon zbeacon = new ZBeacon(ZBeacon.DEFAULT_BROADCAST_HOST, port, beacon, true, true);
         zbeacon.setPrefix(prefix);
 
