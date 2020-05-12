@@ -144,7 +144,7 @@ jobs:
                     # default android sdk is old, manually update it
                     (cd /tmp && curl -JORL https://dl.google.com/android/repository/commandlinetools-linux-6200805_latest.zip  && sudo unzip -o commandlinetools-linux-6200805_latest.zip -d /opt/android/sdk)
                     rm src/android/Jeromq/{,app}/build.gradle
-                    /opt/android/sdk/tools/bin/lint --showall --xml target/lint-results.xml --sources src/main/java --exitcode --disable Assert --classpath target/classes --config src/android/Jeromq/lint.xml src
+                    /opt/android/sdk/tools/bin/lint --showall --xml target/lint-results.xml --sources src/main/java --exitcode --disable Assert --classpath target/classes --config src/android/Jeromq/lint.xml src/main
     publish:
         docker:
             - image: circleci/openjdk:13-jdk-buster
