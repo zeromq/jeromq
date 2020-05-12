@@ -1,5 +1,6 @@
 package org.zeromq;
 
+import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
@@ -417,6 +418,7 @@ public class ZMsgTest
         assertThat(msg3.isEmpty(), is(true));
     }
 
+    @SuppressWarnings("deprecation")
     @Test
     public void testClosedContext()
     {
@@ -444,7 +446,7 @@ public class ZMsgTest
             fail();
         }
         catch (ZMQException e) {
-            assertThat(e.getErrorCode(), is(ZError.ETERM));
+            assertThat(e.getErrorCode(), anyOf(is(ZError.ETERM), is(ZError.EINTR)));
         }
     }
 }
