@@ -1,6 +1,7 @@
 package zmq.io.net.tcp;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Locale;
@@ -164,6 +165,19 @@ public class TcpListener extends Own implements IPollEvents
     {
         //  Convert the textual address into address structure.
         address = new TcpAddress(addr, options.ipv6);
+        return setAddress();
+    }
+
+    //  Set address to listen on, used by IpcListener that already resolved the address.
+    protected boolean setAddress(InetSocketAddress addr)
+    {
+        //  Convert the textual address into address structure.
+        address = new TcpAddress(addr);
+        return setAddress();
+    }
+
+    private boolean setAddress()
+    {
         endpoint = address.toString();
 
         //  Create a listening socket.

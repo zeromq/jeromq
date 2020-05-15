@@ -35,7 +35,6 @@ public class IpcListener extends TcpListener
         address = new IpcAddress(addr);
 
         InetSocketAddress sock = (InetSocketAddress) address.address();
-        String fake = sock.getAddress().getHostAddress() + ":" + sock.getPort();
-        return super.setAddress(fake);
+        return super.setAddress(sock);
     }
 }

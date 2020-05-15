@@ -30,6 +30,18 @@ public class IpcAddress implements Address.IZAddress
         }
     }
 
+    private static final boolean DEFAULTIPV6;
+    static {
+        String preferIPv4Stack = System.getProperty("java.net.preferIPv4Stack", "");
+        String preferIPv6Addresses = System.getProperty("java.net.preferIPv6Addresses", "");
+        if (!"true".equalsIgnoreCase(preferIPv4Stack) && "true".equalsIgnoreCase(preferIPv6Addresses)) {
+            DEFAULTIPV6 = true;
+        }
+        else {
+            DEFAULTIPV6 = false;
+        }
+    }
+
     private String                  name;
     private final InetSocketAddress address;
     private final SocketAddress     sourceAddress;
@@ -38,9 +50,9 @@ public class IpcAddress implements Address.IZAddress
     {
         String[] strings = addr.split(";");
 
-        address = resolve(strings[0], false, false);
+        address = resolve(strings[0], DEFAULTIPV6, true);
         if (strings.length == 2 && !"".equals(strings[1])) {
-            sourceAddress = resolve(strings[1], false, false);
+            sourceAddress = resolve(strings[1], DEFAULTIPV6, true);
         }
         else {
             sourceAddress = null;
@@ -68,7 +80,7 @@ public class IpcAddress implements Address.IZAddress
     }
 
     @Override
-    public InetSocketAddress resolve(String name, boolean ipv6, boolean local)
+    public InetSocketAddress resolve(String name, boolean ipv6, boolean loopback)
     {
         this.name = name;
 
@@ -84,7 +96,7 @@ public class IpcAddress implements Address.IZAddress
             hash += 10000;
         }
 
-        return new InetSocketAddress(findAddress(ipv6, local), hash);
+        return new InetSocketAddress(findAddress(ipv6, loopback), hash);
     }
 
     @Override
@@ -105,16 +117,16 @@ public class IpcAddress implements Address.IZAddress
         return sourceAddress;
     }
 
-    private InetAddress findAddress(boolean ipv6, boolean local)
+    private InetAddress findAddress(boolean ipv6, boolean loopback)
     {
-        Class addressClass = ipv6 ? Inet6Address.class : Inet4Address.class;
+        Class<? extends InetAddress> addressClass = ipv6 ? Inet6Address.class : Inet4Address.class;
         try {
             for (Enumeration<NetworkInterface> interfaces = NetworkInterface
                     .getNetworkInterfaces(); interfaces.hasMoreElements(); ) {
                 NetworkInterface net = interfaces.nextElement();
                 for (Enumeration<InetAddress> addresses = net.getInetAddresses(); addresses.hasMoreElements(); ) {
                     InetAddress inetAddress = addresses.nextElement();
-                    if (inetAddress.isLoopbackAddress() == local && addressClass.isInstance(inetAddress)) {
+                    if (inetAddress.isLoopbackAddress() == loopback && addressClass.isInstance(inetAddress)) {
                         return inetAddress;
                     }
                 }
@@ -123,6 +135,6 @@ public class IpcAddress implements Address.IZAddress
         catch (SocketException e) {
             throw new IllegalArgumentException(e);
         }
-        throw new IllegalArgumentException("no address found " + (ipv6 ? "IPV6" : "IPV4") + (local ? "local" : ""));
+        throw new IllegalArgumentException("no address found " + (ipv6 ? "IPV6" : "IPV4") + (loopback ? "local" : ""));
     }
 }
