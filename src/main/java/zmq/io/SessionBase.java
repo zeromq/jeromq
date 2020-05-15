@@ -475,8 +475,7 @@ public class SessionBase extends Own implements Pipe.IPipeEvents, IPollEvents
 
         //  For delayed connect situations, terminate the pipe
         //  and reestablish later on
-        if (pipe != null && !options.immediate && !NetProtocol.pgm.equals(addr.protocol())
-                && !NetProtocol.epgm.equals(addr.protocol()) && !NetProtocol.norm.equals(addr.protocol())) {
+        if (pipe != null && !options.immediate && ! addr.protocol().isMulticast) {
             pipe.hiccup();
             pipe.terminate(false);
             terminatingPipes.add(pipe);
@@ -516,7 +515,7 @@ public class SessionBase extends Own implements Pipe.IPipeEvents, IPollEvents
         switch (protocol) {
         case tcp:
             if (options.socksProxyAddress != null) {
-                Address proxyAddress = new Address(NetProtocol.tcp.name(), options.socksProxyAddress);
+                Address proxyAddress = new Address(NetProtocol.tcp, options.socksProxyAddress);
                 SocksConnecter connecter = new SocksConnecter(ioThread, this, options, addr, proxyAddress, wait);
                 launchChild(connecter);
             }

@@ -3,9 +3,6 @@ package zmq.io.net;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 
-import zmq.io.net.ipc.IpcAddress;
-import zmq.io.net.tcp.TcpAddress;
-
 public class Address
 {
     public interface IZAddress
@@ -26,9 +23,26 @@ public class Address
 
     private IZAddress resolved;
 
+    /**
+     * @param protocol
+     * @param address
+     * @throws {@link IllegalArgumentException} if the protocol name can be matched to an actual supported protocol
+     */
+    @Deprecated
     public Address(final String protocol, final String address)
     {
         this.protocol = NetProtocol.getProtocol(protocol);
+        this.address = address;
+        resolved = null;
+    }
+
+    /**
+     * @param protocol
+     * @param address
+     */
+    public Address(final NetProtocol protocol, final String address)
+    {
+        this.protocol = protocol;
         this.address = address;
         resolved = null;
     }
@@ -44,10 +58,7 @@ public class Address
     @Override
     public String toString()
     {
-        if (NetProtocol.tcp == protocol && isResolved()) {
-            return resolved.toString();
-        }
-        else if (NetProtocol.ipc == protocol && isResolved()) {
+        if (isResolved()) {
             return resolved.toString();
         }
         else if (protocol != null && !address.isEmpty()) {
@@ -89,16 +100,7 @@ public class Address
 
     public IZAddress resolve(boolean ipv6)
     {
-        if (NetProtocol.tcp.equals(protocol)) {
-            resolved = new TcpAddress(address, ipv6);
-            return resolved;
-        }
-        else if (NetProtocol.ipc.equals(protocol)) {
-            resolved = new IpcAddress(address);
-            return resolved;
-        }
-        else {
-            return null;
-        }
+        resolved = protocol.zresolve(address, ipv6);
+        return resolved;
     }
 }

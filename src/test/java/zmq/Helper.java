@@ -16,6 +16,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import zmq.io.IOThread;
 import zmq.io.SessionBase;
 import zmq.io.net.Address;
+import zmq.io.net.NetProtocol;
 import zmq.pipe.Pipe;
 import zmq.util.Errno;
 
@@ -113,7 +114,7 @@ public class Helper
 
         public DummySession()
         {
-            this(new DummyIOThread(), false, new DummySocket(), new Options(), new Address("tcp", "localhost:9090"));
+            this(new DummyIOThread(), false, new DummySocket(), new Options(), new Address(NetProtocol.tcp, "localhost:9090"));
         }
 
         public DummySession(IOThread ioThread, boolean connect, SocketBase socket, Options options, Address addr)
