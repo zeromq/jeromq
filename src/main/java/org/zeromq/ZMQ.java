@@ -921,12 +921,11 @@ public class ZMQ
          * has been disposed of. If the socket was created from a org.zeromq.ZContext, it will remove
          * the reference to this socket from it.
          */
-        @SuppressWarnings("deprecation")
         @Override
         public void close()
         {
             if (zctx != null) {
-                zctx.destroySocket(this);
+                zctx.closeSocket(this);
             }
             else {
                 internalClose();

@@ -151,20 +151,37 @@ public class ZContext implements Closeable
     }
 
     /**
-     * @deprecated Now the method {@link org.zeromq.ZMQ.Socket#close()} take care of removing
-     *             the socket from this context.
-     * Destroys managed socket within this context
-     * and remove from sockets list
-     * @param s
-     *          org.zeromq.Socket object to destroy
+     * Destroys a managed socket within this context and remove
+     * from sockets list. This method should be used  only for
+     * fast or emergency close as is set linger instead of using the
+     * socket current value.
+     * @param s {@link org.zeromq.ZMQ.Socket} object to destroy
      */
-    @Deprecated
     public void destroySocket(Socket s)
     {
         if (s == null) {
             return;
         }
         s.setLinger(linger);
+        try {
+            s.internalClose();
+        }
+        finally {
+            sockets.remove(s);
+        }
+    }
+
+    /**
+     * Close managed socket within this context and remove from sockets list.
+     * There is no need to call this method as any {@link Socket} created by
+     * this context will call it on termination.
+     * @param s {@link org.zeromq.ZMQ.Socket} object to destroy
+     */
+    void closeSocket(Socket s)
+    {
+        if (s == null) {
+            return;
+        }
         try {
             s.internalClose();
         }
