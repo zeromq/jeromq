@@ -426,119 +426,46 @@ public class ZMQ
         zmq.ZMQ.sleep(amount, unit);
     }
 
+    /**
+     * Resolve code from errornumber.
+     * <p>
+     * Messages are taken from https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/errno.h.html
+     */
     public enum Error
     {
-        ENOTSUP(ZError.ENOTSUP) {
-            @Override
-            public String getMessage()
-            {
-                return "Not supported";
-            }
-        },
-        EPROTONOSUPPORT(ZError.EPROTONOSUPPORT) {
-            @Override
-            public String getMessage()
-            {
-                return "Protocol not supported";
-            }
-        },
-        ENOBUFS(ZError.ENOBUFS) {
-            @Override
-            public String getMessage()
-            {
-                return "No buffer space available";
-            }
-        },
-        ENETDOWN(ZError.ENETDOWN) {
-            @Override
-            public String getMessage()
-            {
-                return "Network is down";
-            }
-        },
-        EADDRINUSE(ZError.EADDRINUSE) {
-            @Override
-            public String getMessage()
-            {
-                return "Address already in use";
-            }
-        },
-        EADDRNOTAVAIL(ZError.EADDRNOTAVAIL) {
-            @Override
-            public String getMessage()
-            {
-                return "Address not available";
-            }
-        },
-        ECONNREFUSED(ZError.ECONNREFUSED) {
-            @Override
-            public String getMessage()
-            {
-                return "Connection refused";
-            }
-        },
-        EINPROGRESS(ZError.EINPROGRESS) {
-            @Override
-            public String getMessage()
-            {
-                return "Operation in progress";
-            }
-        },
-        EHOSTUNREACH(ZError.EHOSTUNREACH) {
-            @Override
-            public String getMessage()
-            {
-                return "Host unreachable";
-            }
-        },
-        EMTHREAD(ZError.EMTHREAD) {
-            @Override
-            public String getMessage()
-            {
-                return "No thread available";
-            }
-        },
-        EFSM(ZError.EFSM) {
-            @Override
-            public String getMessage()
-            {
-                return "Operation cannot be accomplished in current state";
-            }
-        },
-        ENOCOMPATPROTO(ZError.ENOCOMPATPROTO) {
-            @Override
-            public String getMessage()
-            {
-                return "The protocol is not compatible with the socket type";
-            }
-        },
-        ETERM(ZError.ETERM) {
-            @Override
-            public String getMessage()
-            {
-                return "Context was terminated";
-            }
-        },
-        ENOTSOCK(ZError.ENOTSOCK),
-        EAGAIN(ZError.EAGAIN),
-        ENOENT(ZError.ENOENT),
-        EINTR(ZError.EINTR),
-        EACCESS(ZError.EACCESS),
-        EFAULT(ZError.EFAULT),
-        EINVAL(ZError.EINVAL),
-        EISCONN(ZError.EISCONN),
-        ENOTCONN(ZError.ENOTCONN),
-        EMSGSIZE(ZError.EMSGSIZE),
-        EAFNOSUPPORT(ZError.EAFNOSUPPORT),
-        ENETUNREACH(ZError.ENETUNREACH),
-        ECONNABORTED(ZError.ECONNABORTED),
-        ECONNRESET(ZError.ECONNRESET),
-        ETIMEDOUT(ZError.ETIMEDOUT),
-        ENETRESET(ZError.ENETRESET),
+        ENOTSUP(ZError.ENOTSUP, "Not supported"),
+        EPROTONOSUPPORT(ZError.EPROTONOSUPPORT, "Protocol not supported"),
+        ENOBUFS(ZError.ENOBUFS, "No buffer space available"),
+        ENETDOWN(ZError.ENETDOWN, "Network is down"),
+        EADDRINUSE(ZError.EADDRINUSE, "Address already in use"),
+        EADDRNOTAVAIL(ZError.EADDRNOTAVAIL, "Address not available"),
+        ECONNREFUSED(ZError.ECONNREFUSED, "Connection refused"),
+        EINPROGRESS(ZError.EINPROGRESS, "Operation in progress"),
+        EHOSTUNREACH(ZError.EHOSTUNREACH, "Host unreachable"),
+        EMTHREAD(ZError.EMTHREAD, "No thread available"),
+        EFSM(ZError.EFSM, "Operation cannot be accomplished in current state"),
+        ENOCOMPATPROTO(ZError.ENOCOMPATPROTO, "The protocol is not compatible with the socket type"),
+        ETERM(ZError.ETERM, "Context was terminated"),
+        ENOTSOCK(ZError.ENOTSOCK, "Not a socket"),
+        EAGAIN(ZError.EAGAIN, "Resource unavailable, try again"),
+        ENOENT(ZError.ENOENT, "No such file or directory"),
+        EINTR(ZError.EINTR, "Interrupted function"),
+        EACCESS(ZError.EACCESS, "Permission denied"),
+        EFAULT(ZError.EFAULT, "Bad address"),
+        EINVAL(ZError.EINVAL, "Invalid argument"),
+        EISCONN(ZError.EISCONN, "Socket is connected"),
+        ENOTCONN(ZError.ENOTCONN, "The socket is not connected"),
+        EMSGSIZE(ZError.EMSGSIZE, "Message too large"),
+        EAFNOSUPPORT(ZError.EAFNOSUPPORT, "Address family not supported"),
+        ENETUNREACH(ZError.ENETUNREACH, "Network unreachable"),
+        ECONNABORTED(ZError.ECONNABORTED, "Connection aborted"),
+        ECONNRESET(ZError.ECONNRESET, "Connection reset"),
+        ETIMEDOUT(ZError.ETIMEDOUT, "Connection timed out"),
+        ENETRESET(ZError.ENETRESET, "Connection aborted by network"),
         EIOEXC(ZError.EIOEXC),
         ESOCKET(ZError.ESOCKET),
-        EMFILE(ZError.EMFILE),
-        EPROTO(ZError.EPROTO);
+        EMFILE(ZError.EMFILE, "File descriptor value too large"),
+        EPROTO(ZError.EPROTO, "Protocol error");
 
         private static final Map<Integer, Error> map = new HashMap<>(Error.values().length);
         static {
@@ -547,10 +474,18 @@ public class ZMQ
             }
         }
         private final int code;
+        private final String message;
 
         Error(int code)
         {
             this.code = code;
+            this.message = "errno " + Integer.toString(code);
+        }
+
+        Error(int code, String message)
+        {
+            this.code = code;
+            this.message = message;
         }
 
         public static Error findByCode(int code)
@@ -570,7 +505,7 @@ public class ZMQ
 
         public String getMessage()
         {
-            return "errno " + Integer.toString(code);
+            return message;
         }
     }
 
