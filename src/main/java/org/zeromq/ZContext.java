@@ -99,11 +99,13 @@ public class ZContext implements Closeable
     }
 
     /**
-     * Destructor.  Call this to gracefully terminate context and close any managed 0MQ sockets
+     * Destructor.  Call this to gracefully terminate context and close any managed 0MQ sockets. It will
+     * apply the default linger to each socket still alive.
      */
     public void destroy()
     {
         for (Socket socket : sockets) {
+            socket.setLinger(linger);
             socket.internalClose();
         }
         sockets.clear();
@@ -156,19 +158,18 @@ public class ZContext implements Closeable
      * fast or emergency close as is set linger instead of using the
      * socket current value.
      * @param s {@link org.zeromq.ZMQ.Socket} object to destroy
+     * @deprecated Now the method {@link org.zeromq.ZMQ.Socket#close()} take care of removing
+     *             the socket from this context.
      */
+    @Deprecated
     public void destroySocket(Socket s)
     {
         if (s == null) {
             return;
         }
         s.setLinger(linger);
-        try {
-            s.internalClose();
-        }
-        finally {
-            sockets.remove(s);
-        }
+        s.internalClose();
+        sockets.remove(s);
     }
 
     /**
@@ -182,12 +183,8 @@ public class ZContext implements Closeable
         if (s == null) {
             return;
         }
-        try {
-            s.internalClose();
-        }
-        finally {
-            sockets.remove(s);
-        }
+        s.internalClose();
+        sockets.remove(s);
     }
 
     /**
@@ -286,7 +283,7 @@ public class ZContext implements Closeable
     }
 
     /**
-     * @return the linger
+     * @return the linger in millisecond
      */
     public int getLinger()
     {
@@ -294,7 +291,10 @@ public class ZContext implements Closeable
     }
 
     /**
-     * @param linger the linger to set
+     * Set the linger period that will be applied to each socket on ZContext {@link #destroy()}. The value
+     * should be between 0 (immediate drop) and a short value. -1 will possibly hang the
+     * {@link #destroy()} if the remote endpoint have a problem and so should be avoided.
+     * @param linger the linger to set in millisecond.
      */
     public void setLinger(int linger)
     {
