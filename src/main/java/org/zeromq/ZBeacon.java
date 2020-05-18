@@ -291,7 +291,7 @@ public class ZBeacon
      * @param beacon
      */
     @Deprecated
-    public void setBeacon(byte[] beacon)
+    public synchronized void setBeacon(byte[] beacon)
     {
         this.beacon.set(Arrays.copyOf(beacon, beacon.length));
     }
