@@ -227,7 +227,7 @@ public class Msg
             byte[] array = buf.array();
             int offset = buf.arrayOffset();
 
-            if (buf.arrayOffset() == 0 && array.length == size) {
+            if (offset == 0 && array.length == size) {
                 // If the backing array is exactly what we need, return it without copy.
                 return array;
             }
@@ -235,14 +235,14 @@ public class Msg
                 // Else use it to make an efficient copy.
                 return Arrays.copyOfRange(array, offset, offset + size);
             }
+        } else {
+            // No backing array -> use ByteBuffer#get().
+            byte[] array = new byte[size];
+            ByteBuffer dup = buf.duplicate();
+            dup.position(0);
+            dup.get(array);
+            return array;
         }
-
-        // No backing array -> use ByteBuffer#get().
-        byte[] array = new byte[size];
-        ByteBuffer dup = buf.duplicate();
-        dup.position(0);
-        dup.get(array);
-        return array;
     }
 
     public ByteBuffer buf()
