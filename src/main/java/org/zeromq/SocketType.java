@@ -342,7 +342,79 @@ public enum SocketType
      * </table>
      */
     STREAM(ZMQ.STREAM),
+
+    /**
+     * <p>Flag to specify CLIENT socket.</p>
+     *
+     * <p>The CLIENT socket type talks to one or more SERVER peers. If connected to multiple peers, it scatters sent
+     * messages among these peers in a round-robin fashion. On reading, it reads fairly, from each peer in turn. It is
+     * reliable, insofar as it does not drop messages in normal cases.</p>
+     *
+     * <p>If the CLIENT socket has established a connection, send operations will accept messages, queue them, and send
+     * them as rapidly as the network allows. The outgoing buffer limit is defined by the high water mark for the
+     * socket. If the outgoing buffer is full, or if there is no connected peer, send operations will block, by default.
+     * The CLIENT socket will not drop messages.</p>
+     *
+     * <table border="1">
+     * <tr>
+     *     <th colspan="2">Summary of socket characteristics</th>
+     * </tr>
+     * <tr>
+     *     <td>Compatible peer sockets</td><td>SERVER</td>
+     * </tr>
+     * <tr>
+     *     <td>Direction</td><td>Bidirectional</td>
+     * </tr>
+     * <tr>
+     *     <td>Send/receive pattern</td><td>Unrestricted</td>
+     * </tr>
+     * <tr>
+     *     <td>Outgoing routing strategy</td><td>Round Robin</td>
+     * </tr>
+     * <tr>
+     *     <td>Incoming routing strategy</td><td>Fair-queued</td>
+     * </tr>
+     * <tr>
+     *     <td>Action in mute state</td><td>Block</td>
+     * </tr>
+     * </table>
+     */
     CLIENT(zmq.ZMQ.ZMQ_CLIENT),
+
+    /**
+     * <p>Flag to specify SERVER socket.</p>
+     *
+     * <p>The SERVER socket type talks to zero or more CLIENT peers. Each outgoing message is sent to a specific peer
+     * CLIENT. A SERVER socket can only reply to an incoming message: the CLIENT peer must always initiate a
+     * conversation.</p>
+     *
+     * <p>Each received message has a routing_id that is a 32-bit unsigned integer. To send a message to a given CLIENT
+     * peer the application must set the peer’s routing_id on the message.</p>
+     *
+     * <table border="1">
+     * <tr>
+     *     <th colspan="2">Summary of socket characteristics</th>
+     * </tr>
+     * <tr>
+     *     <td>Compatible peer sockets</td><td>CLIENT</td>
+     * </tr>
+     * <tr>
+     *     <td>Direction</td><td>Bidirectional</td>
+     * </tr>
+     * <tr>
+     *     <td>Send/receive pattern</td><td>Unrestricted</td>
+     * </tr>
+     * <tr>
+     *     <td>Outgoing routing strategy</td><td>See text</td>
+     * </tr>
+     * <tr>
+     *     <td>Incoming routing strategy</td><td>Fair-queued</td>
+     * </tr>
+     * <tr>
+     *     <td>Action in mute state</td><td>Fail</td>
+     * </tr>
+     * </table>
+     */
     SERVER(zmq.ZMQ.ZMQ_SERVER);
 
     public final int type;
