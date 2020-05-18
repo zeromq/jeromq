@@ -121,7 +121,10 @@ public class ZContext implements Closeable
 
     /**
      * Creates a new managed socket within this ZContext instance.
-     * Use this to get automatic management of the socket at shutdown
+     * Use this to get automatic management of the socket at shutdown.
+     * <p>
+     * The newly created socket will inherited it's linger value from the one
+     * defined for this context.
      * @param type
      *          socket type
      * @return
@@ -133,6 +136,7 @@ public class ZContext implements Closeable
         Socket socket = new Socket(this, type);
         socket.setRcvHWM(this.rcvhwm);
         socket.setSndHWM(this.sndhwm);
+        socket.setLinger(this.linger);
         sockets.add(socket);
         return socket;
     }
@@ -156,7 +160,10 @@ public class ZContext implements Closeable
      * fast or emergency close as is set linger instead of using the
      * socket current value.
      * @param s {@link org.zeromq.ZMQ.Socket} object to destroy
+     * @deprecated Not to be used any more. {@link org.zeromq.ZMQ.Socket} handle
+     *             the close itself. It also override linger settings.
      */
+    @Deprecated
     public void destroySocket(Socket s)
     {
         if (s == null) {
@@ -286,7 +293,7 @@ public class ZContext implements Closeable
     }
 
     /**
-     * @return the linger
+     * @return the default linger for sockets.
      */
     public int getLinger()
     {
@@ -294,7 +301,7 @@ public class ZContext implements Closeable
     }
 
     /**
-     * @param linger the linger to set
+     * @param linger the linger that will inherited by created socket.
      */
     public void setLinger(int linger)
     {
