@@ -162,26 +162,6 @@ public class ZContext implements Closeable
         if (s == null) {
             return;
         }
-        s.setLinger(linger);
-        try {
-            s.internalClose();
-        }
-        finally {
-            sockets.remove(s);
-        }
-    }
-
-    /**
-     * Close managed socket within this context and remove from sockets list.
-     * There is no need to call this method as any {@link Socket} created by
-     * this context will call it on termination.
-     * @param s {@link org.zeromq.ZMQ.Socket} object to destroy
-     */
-    void closeSocket(Socket s)
-    {
-        if (s == null) {
-            return;
-        }
         try {
             s.internalClose();
         }
@@ -299,6 +279,9 @@ public class ZContext implements Closeable
     public void setLinger(int linger)
     {
         this.linger = linger;
+        for (Socket s : sockets) {
+            s.setLinger(linger, true);
+        }
     }
 
     /**

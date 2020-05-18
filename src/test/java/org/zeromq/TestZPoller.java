@@ -135,14 +135,12 @@ public class TestZPoller
     {
         final int port = Utils.findOpenPort();
 
-        final ZContext context = new ZContext();
-        final ZPoller poller = new ZPoller(context);
-        final ZMQ.Socket receiver = context.createSocket(SocketType.PULL);
-
-        final Server client = new Server(context, port);
-        client.start();
-
-        try {
+        try (ZContext context = new ZContext();
+             ZPoller poller = new ZPoller(context);
+             ZMQ.Socket receiver = context.createSocket(SocketType.PULL);) {
+            context.setLinger(5000);
+            final Server client = new Server(context, port);
+            client.start();
             receiver.connect("tcp://127.0.0.1:" + port);
 
             final AtomicReference<ZMsg> msg = new AtomicReference<>();
@@ -160,7 +158,7 @@ public class TestZPoller
                     }
                 }
             }, ZPoller.IN);
-            int maxAttempts = 100;
+            int maxAttempts = 5;
             while (!Thread.currentThread().isInterrupted() && maxAttempts-- > 0) {
                 int rc = poller.poll(1000);
                 if (rc < 0) {
@@ -170,11 +168,6 @@ public class TestZPoller
             client.join();
 
             assertThat("unable to receive msg after several cycles", msg, notNullValue());
-        }
-        finally {
-            receiver.close();
-            context.close();
-            poller.close();
         }
     }
 

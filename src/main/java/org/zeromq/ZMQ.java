@@ -898,6 +898,9 @@ public class ZMQ
         {
             this.zctx = zctx;
             base = context.ctx.createSocket(type);
+            if (zctx != null) {
+                base.setSocketOpt(zmq.ZMQ.ZMQ_LINGER, zctx.getLinger());
+            }
         }
 
         protected Socket(SocketBase base)
@@ -921,11 +924,12 @@ public class ZMQ
          * has been disposed of. If the socket was created from a org.zeromq.ZContext, it will remove
          * the reference to this socket from it.
          */
+        @SuppressWarnings("deprecation")
         @Override
         public void close()
         {
             if (zctx != null) {
-                zctx.closeSocket(this);
+                zctx.destroySocket(this);
             }
             else {
                 internalClose();
@@ -996,14 +1000,20 @@ public class ZMQ
          * The linger period determines how long pending messages which have yet to be sent to a peer
          * shall linger in memory after a socket is disconnected with disconnect or closed with close,
          * and further affects the termination of the socket's context with Ctx#term.
-         * The following outlines the different behaviours: A value of -1 specifies an infinite linger period.
+         * The following outlines the different behaviours:
+         * <p>
+         * A value of -1 specifies an infinite linger period.
          * Pending messages shall not be discarded after a call to disconnect() or close();
          * attempting to terminate the socket's context with Ctx#term() shall block until all pending messages have been sent to a peer.
+         * <p>
          * The value of 0 specifies no linger period. Pending messages shall be discarded immediately after a call to disconnect() or close().
+         * <p>
          * Positive values specify an upper bound for the linger period in milliseconds.
          * Pending messages shall not be discarded after a call to disconnect() or close();
          * attempting to terminate the socket's context with Ctx#term() shall block until either all pending messages have been sent to a peer,
          * or the linger period expires, after which any pending messages shall be discarded.
+         * <p>
+         * If this socket is from a {@link ZContext}, this value is ignored and the context's linger value will be used instead.
          *
          * @param value the linger period in milliseconds.
          * @return true if the option was set, otherwise false
@@ -1021,22 +1031,44 @@ public class ZMQ
          * The linger period determines how long pending messages which have yet to be sent to a peer
          * shall linger in memory after a socket is disconnected with disconnect or closed with close,
          * and further affects the termination of the socket's context with Ctx#term.
-         * The following outlines the different behaviours: A value of -1 specifies an infinite linger period.
+         * The following outlines the different behaviours:
+         * <p>
+         * A value of -1 specifies an infinite linger period.
          * Pending messages shall not be discarded after a call to disconnect() or close();
          * attempting to terminate the socket's context with Ctx#term() shall block until all pending messages have been sent to a peer.
+         * <p>
          * The value of 0 specifies no linger period. Pending messages shall be discarded immediately after a call to disconnect() or close().
+         * <p>
          * Positive values specify an upper bound for the linger period in milliseconds.
          * Pending messages shall not be discarded after a call to disconnect() or close();
          * attempting to terminate the socket's context with Ctx#term() shall block until either all pending messages have been sent to a peer,
          * or the linger period expires, after which any pending messages shall be discarded.
+         * <p>
+         * If this socket is from a {@link ZContext}, this value is ignored and the context's linger value will be used instead.
          *
          * @param value the linger period in milliseconds.
-         * @return true if the option was set, otherwise false
+         * @return true if the option was set, otherwise false in case of error
          * @see #getLinger()
          */
         public boolean setLinger(int value)
         {
-            return base.setSocketOpt(zmq.ZMQ.ZMQ_LINGER, value);
+            return setLinger(value, false);
+        }
+
+        /**
+         * Used internally for ZContext to propagate linger modification.
+         * @param value the linger period in milliseconds.
+         * @param force, always propage change to the socket if set to true
+         * @return true if the option was set, otherwise false
+         */
+        boolean setLinger(int value, boolean force)
+        {
+            if (zctx == null || force) {
+                return base.setSocketOpt(zmq.ZMQ.ZMQ_LINGER, value);
+            }
+            else {
+                return true;
+            }
         }
 
         /**
