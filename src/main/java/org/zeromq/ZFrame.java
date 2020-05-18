@@ -5,6 +5,8 @@ import java.util.Arrays;
 
 import org.zeromq.ZMQ.Socket;
 import org.zeromq.util.ZData;
+import zmq.Msg;
+import zmq.SocketBase;
 
 /**
  * ZFrame
@@ -24,8 +26,8 @@ public class ZFrame
     public static final int DONTWAIT = ZMQ.DONTWAIT;
 
     private boolean more;
-
     private byte[] data;
+    private int routingId;
 
     /**
      * Class Constructor
@@ -62,6 +64,38 @@ public class ZFrame
         }
     }
 
+    /**
+     * Class Constructor
+     * Uses internal Msg class to access routingId
+     * @param msg internal Msg class to copy into Zframe
+     */
+    protected ZFrame(zmq.Msg msg)
+    {
+        if (msg == null) {
+            return;
+        }
+        this.data = msg.data();
+        this.more = msg.hasMore();
+        this.routingId = msg.getRoutingId();
+    }
+
+    /**
+     * Return frame routing ID, if the frame came from a ZMQ_SERVER socket.
+     * Else returns zero.
+     * @return the routing ID
+     */
+    public int getRoutingId() {
+        return routingId;
+    }
+
+    /**
+     * Set routing ID on frame. This is used if/when the frame is sent to a
+     * ZMQ_SERVER socket.
+     * @param routingId the routing ID
+     */
+    public void setRoutingId(int routingId) {
+        this.routingId = routingId;
+    }
     /**
      * Destructor.
      */
@@ -133,7 +167,17 @@ public class ZFrame
     public boolean send(Socket socket, int flags)
     {
         Utils.checkArgument(socket != null, "socket parameter must be set");
-        return socket.send(data, flags);
+        final SocketBase base = socket.base();
+        final zmq.Msg msg = new Msg(data);
+
+        int sendFlags = (flags & ZFrame.MORE) == ZFrame.MORE ? zmq.ZMQ.ZMQ_SNDMORE : 0;
+        sendFlags |= (flags & ZFrame.DONTWAIT) == ZFrame.DONTWAIT ? zmq.ZMQ.ZMQ_DONTWAIT : 0;
+
+        // Only set the routerId if the socket is a ZMQ_Server
+        if(base instanceof zmq.socket.clientserver.Server) {
+            msg.setRoutingId(this.routingId);
+        }
+        return base.send(msg, sendFlags);
     }
 
     /**
@@ -341,16 +385,20 @@ public class ZFrame
      */
     public static ZFrame recvFrame(Socket socket, int flags)
     {
-        ZFrame f = new ZFrame();
-        byte[] data = f.recv(socket, flags);
-        if (data == null) {
+        final SocketBase base = socket.base();
+        zmq.Msg msg = base.recv(flags);
+        if(msg == null) {
+            // Check to see if there was an error in recv
+            socket.mayRaise();
             return null;
         }
-        return f;
+        ZFrame frame = new ZFrame(msg);
+        return frame;
     }
 
     public void print(String prefix)
     {
         ZData.print(System.out, prefix, getData(), size());
     }
+
 }
