@@ -33,18 +33,16 @@ public class TestZContext
         ctx.close();
     }
 
+    @SuppressWarnings("deprecation")
     @Test(timeout = 5000)
     public void testZContextLinger()
     {
-        ZContext ctx = new ZContext();
-        int linger = ctx.getLinger();
-        assertThat(linger, is(0));
-
-        final int newLinger = 1000;
-        ctx.setLinger(newLinger);
-        linger = ctx.getLinger();
-        assertThat(linger, is(newLinger));
-        ctx.close();
+        try (ZContext ctx = new ZContext()) {
+            ctx.setLinger(125);
+            Socket s = ctx.createSocket(SocketType.PUSH);
+            assertThat(ctx.getLinger(), is(125));
+            assertThat(s.getLinger(), is(125));
+        }
     }
 
     @Test(timeout = 5000)
