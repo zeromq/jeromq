@@ -296,7 +296,7 @@ public class ZBeacon
         this.beacon.set(Arrays.copyOf(beacon, beacon.length));
     }
 
-    public synchronized byte[] getBeacon()
+    public byte[] getBeacon()
     {
         byte[] beaconBuffer = beacon.get();
         return Arrays.copyOf(beaconBuffer, beaconBuffer.length);
@@ -307,12 +307,12 @@ public class ZBeacon
      * @param prefix
      */
     @Deprecated
-    public synchronized void setPrefix(byte[] prefix)
+    public void setPrefix(byte[] prefix)
     {
         this.prefix.set(Arrays.copyOf(prefix, prefix.length));
     }
 
-    public synchronized byte[] getPrefix()
+    public byte[] getPrefix()
     {
         byte[] prefixBuffer = prefix.get();
         return Arrays.copyOf(prefixBuffer, prefixBuffer.length);
