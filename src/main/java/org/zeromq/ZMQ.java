@@ -3628,7 +3628,7 @@ public class ZMQ
             return base.monitor(addr, events);
         }
 
-        private void mayRaise()
+        protected void mayRaise()
         {
             int errno = base.errno();
             if (errno != 0 && errno != zmq.ZError.EAGAIN) {

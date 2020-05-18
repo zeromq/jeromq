@@ -6,6 +6,7 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
 
+import org.junit.Assert;
 import org.junit.Test;
 import org.zeromq.ZMQ.Socket;
 
@@ -127,5 +128,48 @@ public class ZFrameTest
         assertThat(f2, is(f1));
 
         ctx.close();
+    }
+
+    @Test
+    public void testZMQClientServer()
+    {
+        try(ZContext ctx = new ZContext();
+            Socket client = ctx.createSocket(SocketType.CLIENT);
+            Socket server = ctx.createSocket(SocketType.SERVER);
+        ) {
+            server.bind("inproc://zframe-test.routing");
+            client.connect("inproc://zframe-test.routing");
+
+            // Send request from CLIENT to SERVER
+            ZFrame request = new ZFrame("Hello");
+            boolean rc = request.send(client, 0);
+            Assert.assertTrue(rc);
+
+            // Read request and send reply
+            request = ZFrame.recvFrame(server);
+            int routingId = request.getRoutingId();
+            String data = new String(request.getData());
+            Assert.assertEquals("Hello", data);
+            Assert.assertNotEquals(0, routingId);
+
+            ZFrame reply = new ZFrame("World");
+            reply.setRoutingId(routingId);
+            rc = reply.send(server, 0);
+            Assert.assertTrue(rc);
+
+            // Read reply
+            reply = ZFrame.recvFrame(client);
+            data = new String(reply.getData());
+            Assert.assertEquals("World", data);
+            Assert.assertEquals(0, reply.getRoutingId());
+
+            // Client Server Disallow Multipart
+            ZFrame frame = new ZFrame("Hello");
+            rc = frame.send(client, ZFrame.MORE);
+            Assert.assertEquals(false, rc);
+
+            rc = frame.send(server,ZFrame.MORE);
+            Assert.assertEquals(false, rc);
+        }
     }
 }

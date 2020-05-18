@@ -341,7 +341,9 @@ public enum SocketType
      * <tr><td>Action in mute state</td><td>EAGAIN</td></tr>
      * </table>
      */
-    STREAM(ZMQ.STREAM);
+    STREAM(ZMQ.STREAM),
+    CLIENT(zmq.ZMQ.ZMQ_CLIENT),
+    SERVER(zmq.ZMQ.ZMQ_SERVER);
 
     public final int type;
 
