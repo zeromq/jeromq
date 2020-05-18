@@ -3,18 +3,22 @@ package zmq.proxy;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 
-import java.io.IOException;
 import java.nio.channels.Selector;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.TimeoutException;
 
 import org.junit.Test;
 
@@ -40,25 +44,24 @@ import zmq.util.Utils;
 // run several client tasks in parallel, each with a different random ID.
 public class ProxyTest
 {
-    private final class Client implements Runnable
+    private final class Client implements Callable<Boolean>
     {
-        private final int     idx;
         private final String  host;
-        private final String  control;
+        private final String  controlEndpoint;
         private final boolean verbose;
+        private final CountDownLatch started;
 
-        private final AtomicBoolean done = new AtomicBoolean();
-
-        Client(int idx, String host, String control, boolean verbose)
+        Client(String host, String controlEndpoint, boolean verbose)
         {
-            this.idx = idx;
             this.host = host;
-            this.control = control;
+            this.controlEndpoint = controlEndpoint;
             this.verbose = verbose;
+            this.started = new CountDownLatch(1);
         }
 
+        @SuppressWarnings("deprecation")
         @Override
-        public void run()
+        public Boolean call()
         {
             Ctx ctx = ZMQ.createContext();
             SocketBase client = ZMQ.socket(ctx, ZMQ.ZMQ_DEALER);
@@ -71,7 +74,7 @@ public class ProxyTest
             boolean rc = ZMQ.setSocketOption(control, ZMQ.ZMQ_SUBSCRIBE, ZMQ.SUBSCRIPTION_ALL);
             assertThat(rc, is(true));
 
-            rc = ZMQ.connect(control, this.control);
+            rc = ZMQ.connect(control, this.controlEndpoint);
             assertThat(rc, is(true));
 
             String identity = UUID.randomUUID().toString();
@@ -89,16 +92,16 @@ public class ProxyTest
             boolean run = true;
 
             Selector selector = ctx.createSelector();
-            Msg msg = null;
-            while (run) {
+            started.countDown();
+            while (run && ! Thread.currentThread().isInterrupted()) {
                 // Tick once per 200 ms, pulling in arriving messages
                 for (int centitick = 0; centitick < 20; centitick++) {
-                    ZMQ.poll(selector, items, 10);
-
+                    int count = ZMQ.poll(selector, items, 10);
                     if (items[0].isReadable()) {
-                        msg = ZMQ.recv(client, 0);
+                        count--;
+                        Msg msgrsp = ZMQ.recv(client, 0);
 
-                        String payload = new String(msg.data(), ZMQ.CHARSET);
+                        String payload = new String(msgrsp.data(), ZMQ.CHARSET);
                         if (verbose) {
                             System.out.println(String.format("%1$s Client received %2$s", identity, payload));
                         }
@@ -110,53 +113,53 @@ public class ProxyTest
                         assertThat(more, is(0));
                     }
                     if (items[1].isReadable()) {
-                        msg = ZMQ.recv(control, 0);
-                        if (Arrays.equals(msg.data(), ZMQ.PROXY_TERMINATE)) {
+                        count--;
+                        Msg msgin = ZMQ.recv(control, 0);
+                        if (Arrays.equals(msgin.data(), ZMQ.PROXY_TERMINATE)) {
                             run = false;
                             break;
                         }
                     }
+                    assertThat(count, is(0));
                 }
                 String payload = String.format("%1$s Request #%2$s", identity, ++requestNbr);
-                msg = new Msg(payload.getBytes(ZMQ.CHARSET));
-                int sent = ZMQ.send(client, msg, 0);
-                assertThat(sent, is(msg.size()));
+                Msg msgout = new Msg(payload.getBytes(ZMQ.CHARSET));
+                int sent = ZMQ.send(client, msgout, 0);
+                assertThat(sent, is(msgout.size()));
                 if (verbose) {
                     System.out.println(String.format("%1$s Sent payload %2$s", identity, payload));
                 }
-
             }
             ctx.closeSelector(selector);
 
-            done.set(true);
-
             ZMQ.close(control);
             ZMQ.close(client);
-
             ZMQ.term(ctx);
-            System.out.printf("Client %s done%n", idx);
+
+            return true;
         }
     }
 
     private static final String BACKEND = "inproc://backend";
 
-    private final class Server implements Runnable
+    private final class Server implements Callable<Boolean>
     {
         private final String  host;
-        private final String  control;
+        private final String  controlEndpoint;
         private final boolean verbose;
+        private final CountDownLatch started;
 
-        private final AtomicBoolean done = new AtomicBoolean();
-
-        Server(String host, String control, boolean verbose)
+        Server(String host, String controlEndpoint, boolean verbose)
         {
             this.host = host;
-            this.control = control;
+            this.controlEndpoint = controlEndpoint;
             this.verbose = verbose;
+            this.started = new CountDownLatch(1);
         }
 
+        @SuppressWarnings("deprecation")
         @Override
-        public void run()
+        public Boolean call() throws InterruptedException, ExecutionException, TimeoutException
         {
             Ctx ctx = ZMQ.createContext();
             // Frontend socket talks to clients over TCP
@@ -180,41 +183,52 @@ public class ProxyTest
             rc = ZMQ.setSocketOption(control, ZMQ.ZMQ_SUBSCRIBE, ZMQ.SUBSCRIPTION_ALL);
             assertThat(rc, is(true));
 
-            rc = ZMQ.connect(control, this.control);
+            rc = ZMQ.connect(control, this.controlEndpoint);
             assertThat(rc, is(true));
 
             // Launch pool of worker threads, precise number is not critical
             int count = 5;
             ExecutorService executor = Executors.newFixedThreadPool(count);
+            List<Future<Boolean>> workers = new ArrayList<>(count);
             for (int idx = 0; idx < count; ++idx) {
-                executor.submit(new Worker(ctx, idx, this.control, verbose));
+                Worker w = new Worker(ctx, idx, controlEndpoint, verbose);
+                workers.add(executor.submit(w));
+                w.started.await();
             }
 
+            started.countDown();
             // Connect backend to frontend via a proxy
             ZMQ.proxy(frontend, backend, null, control);
 
             executor.shutdown();
-
-            done.set(true);
+            if (!executor.awaitTermination(3, TimeUnit.SECONDS)) {
+                executor.shutdownNow();
+                fail("Hanged tasks");
+            }
 
             ZMQ.close(frontend);
             ZMQ.close(backend);
             ZMQ.close(control);
 
             ZMQ.term(ctx);
-            System.out.println("Server done");
-        }
+            boolean completed = true;
+            for (Future<Boolean> f: workers) {
+                completed &= f.get(3, TimeUnit.SECONDS);
+            }
+            return completed;
+       }
     }
 
     // Each worker task works on one request at a time and sends a random number
     // of replies back, with random delays between replies:
     // The comments in the first column, if suppressed, makes it a poller version
-    private final class Worker implements Runnable
+    private final class Worker implements Callable<Boolean>
     {
         private final boolean verbose;
         private final int     idx;
         private final String  control;
         private final Ctx     ctx;
+        private final CountDownLatch started;
 
         public Worker(Ctx ctx, int idx, String control, boolean verbose)
         {
@@ -222,10 +236,12 @@ public class ProxyTest
             this.idx = idx;
             this.control = control;
             this.verbose = verbose;
-        }
+            this.started = new CountDownLatch(1);
+       }
 
+        @SuppressWarnings("deprecation")
         @Override
-        public void run()
+        public Boolean call()
         {
             SocketBase worker = ZMQ.socket(ctx, ZMQ.ZMQ_DEALER);
             assertThat(worker, notNullValue());
@@ -247,6 +263,7 @@ public class ProxyTest
             Random random = new Random();
 
             Msg msg = null;
+            started.countDown();
             while (run) {
                 msg = ZMQ.recv(control, ZMQ.ZMQ_DONTWAIT);
                 if (control.errno() == ZError.ETERM) {
@@ -286,12 +303,13 @@ public class ProxyTest
 
             ZMQ.close(control);
             ZMQ.close(worker);
-            System.out.printf("Worker %s done%n", idx);
+            return true;
         }
     }
 
-    @Test
-    public void testProxy() throws IOException, InterruptedException
+    @SuppressWarnings("deprecation")
+    @Test(timeout = 10000)
+    public void testProxy() throws Throwable
     {
         // The main thread simply starts several clients and a server, and then
         // waits for the server to finish.
@@ -306,44 +324,53 @@ public class ProxyTest
         boolean rc = ZMQ.bind(control, controlEndpoint);
         assertThat(rc, is(true));
 
-        ZMQ.msleep(1000);
-
         String host = "tcp://127.0.0.1:" + Utils.findOpenPort();
         int count = 5;
         ExecutorService executor = Executors.newFixedThreadPool(count + 1);
-        List<Client> clients = new ArrayList<>();
-        for (int idx = 0; idx < count; ++idx) {
-            Client client = new Client(idx, host, controlEndpoint, false);
-            clients.add(client);
-            executor.submit(client);
-        }
+
         Server server = new Server(host, controlEndpoint, false);
-        executor.submit(server);
+        Future<Boolean> fserver = executor.submit(server);
+        server.started.await();
 
-        ZMQ.msleep(1000);
-
-        int sent = ZMQ.send(control, "TERMINATE", 0);
+        List<Future<Boolean>> clientsf = new ArrayList<>(count);
+        for (int idx = 0; idx < count; ++idx) {
+            Client client = new Client(host, controlEndpoint, false);
+            clientsf.add(executor.submit(client));
+            client.started.await();
+        }
+        
+        Thread.sleep(100);
+        int sent = ZMQ.send(control, ZMQ.PROXY_TERMINATE, 0);
         assertThat(sent, is(9));
+        checkClients(clientsf);
 
         ZMQ.close(control);
 
         executor.shutdown();
-        executor.awaitTermination(40, TimeUnit.SECONDS);
+        if (! executor.awaitTermination(4, TimeUnit.SECONDS)) {
+            executor.shutdownNow();
+            checkClients(clientsf);
+            fail("Hanged tasks");
+       }
 
         ZMQ.term(ctx);
 
-        assertThat(server.done.get(), is(true));
-        for (Client client : clients) {
-            assertThat(client.done.get(), is(true));
+        try {
+            assertThat(fserver.get(), is(true));
+        } catch (ExecutionException e) {
+            throw e.getCause();
         }
     }
 
-    public void testRepeated() throws Exception
-    {
-        for (int idx = 0; idx < 470; ++idx) {
-            System.out.println("---------- " + idx);
-            testProxy();
-            ZMQ.sleep(1);
+    @SuppressWarnings("deprecation")
+    private void checkClients(List<Future<Boolean>> clients) throws Throwable {
+        for (Future<Boolean> client : clients) {
+            try {
+                assertThat(client.get(), is(true));
+            } catch (ExecutionException e) {
+                e.getCause().printStackTrace();
+                throw e.getCause();
+            }
         }
     }
 }
