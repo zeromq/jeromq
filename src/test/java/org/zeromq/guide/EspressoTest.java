@@ -193,7 +193,7 @@ public class EspressoTest
         final int frontend = Utils.findOpenPort();
         final int backend = Utils.findOpenPort();
         try (
-             final ZContext ctx = new ZContext()) {
+            final ZContext ctx = new ZContext()) {
             ZActor publisher = new ZActor(ctx, new Publisher(frontend), "motdelafin");
             ZActor subscriber = new ZActor(ctx, new Subscriber(backend), "motdelafin");
             ZActor listener = new ZActor(ctx, new Listener(), "motdelafin");

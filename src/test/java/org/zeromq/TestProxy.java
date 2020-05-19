@@ -30,6 +30,7 @@ public class TestProxy
             this.frontend = frontend;
         }
 
+        @SuppressWarnings("deprecation")
         @Override
         public void run()
         {

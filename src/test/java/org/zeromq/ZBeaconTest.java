@@ -2,6 +2,7 @@ package org.zeromq;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -59,7 +60,8 @@ public class ZBeaconTest
         }
 
         //Ensure that the real interval is almost the required interval
-        assertThat(((beacon2.get() - beacon1.get()) / 10), is(interval / 10));
+        long delta = beacon2.get() - beacon1.get();
+        assertTrue(String.format("expected %d, got %d",  interval, delta), (delta > interval - 10) && (delta < interval + 10));
         assertThat(receivedBeacon.get(), is(beacondata));
 
     }

@@ -17,7 +17,8 @@ public class TestPairIpc
 {
     //  Create REQ/ROUTER wiring.
 
-    @Test
+    @SuppressWarnings("deprecation")
+    @Test(timeout = 5000)
     public void testPairIpc()
     {
         Ctx ctx = ZMQ.init(1);
