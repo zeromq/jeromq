@@ -356,6 +356,7 @@ public enum SocketType
      * The CLIENT socket will not drop messages.</p>
      *
      * <table border="1">
+     * <caption> </caption>
      * <tr>
      *     <th colspan="2">Summary of socket characteristics</th>
      * </tr>
@@ -392,6 +393,7 @@ public enum SocketType
      * peer the application must set the peer’s routing_id on the message.</p>
      *
      * <table border="1">
+     * <caption> </caption>
      * <tr>
      *     <th colspan="2">Summary of socket characteristics</th>
      * </tr>
