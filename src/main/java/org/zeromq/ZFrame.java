@@ -84,7 +84,8 @@ public class ZFrame
      * Else returns zero.
      * @return the routing ID
      */
-    public int getRoutingId() {
+    public int getRoutingId()
+    {
         return routingId;
     }
 
@@ -93,7 +94,8 @@ public class ZFrame
      * ZMQ_SERVER socket.
      * @param routingId the routing ID
      */
-    public void setRoutingId(int routingId) {
+    public void setRoutingId(int routingId)
+    {
         this.routingId = routingId;
     }
     /**
@@ -174,7 +176,7 @@ public class ZFrame
         sendFlags |= (flags & ZFrame.DONTWAIT) == ZFrame.DONTWAIT ? zmq.ZMQ.ZMQ_DONTWAIT : 0;
 
         // Only set the routerId if the socket is a ZMQ_Server
-        if(base instanceof zmq.socket.clientserver.Server) {
+        if (base instanceof zmq.socket.clientserver.Server) {
             msg.setRoutingId(this.routingId);
         }
         return base.send(msg, sendFlags);
@@ -387,7 +389,7 @@ public class ZFrame
     {
         final SocketBase base = socket.base();
         zmq.Msg msg = base.recv(flags);
-        if(msg == null) {
+        if (msg == null) {
             // Check to see if there was an error in recv
             socket.mayRaise();
             return null;
@@ -400,5 +402,4 @@ public class ZFrame
     {
         ZData.print(System.out, prefix, getData(), size());
     }
-
 }
