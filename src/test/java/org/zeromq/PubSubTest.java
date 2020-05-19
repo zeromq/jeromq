@@ -90,6 +90,7 @@ public class PubSubTest
         context.close();
     }
 
+    @SuppressWarnings("deprecation")
     @Test
     @Ignore
     public void testPubConnectSubBindIssue289and342() throws IOException
@@ -122,36 +123,38 @@ public class PubSubTest
         context.term();
     }
 
+    @SuppressWarnings("deprecation")
     @Test
     public void testUnsubscribeIssue554() throws Exception
     {
         final int port = Utils.findOpenPort();
         final ExecutorService service = Executors.newFixedThreadPool(2);
 
-        final Runnable pub = new Runnable()
+        final Callable<Boolean> pub = new Callable<Boolean>()
         {
             @Override
-            public void run()
+            public Boolean call()
             {
                 final ZMQ.Context ctx = ZMQ.context(1);
                 assertThat(ctx, notNullValue());
-                final ZMQ.Socket pub = ctx.socket(SocketType.PUB);
-                assertThat(pub, notNullValue());
+                final ZMQ.Socket pubsocket = ctx.socket(SocketType.PUB);
+                assertThat(pubsocket, notNullValue());
 
-                boolean rc = pub.bind("tcp://*:" + port);
+                boolean rc = pubsocket.bind("tcp://*:" + port);
                 assertThat(rc, is(true));
 
                 for (int idx = 1; idx <= 15; ++idx) {
-                    rc = pub.sendMore("test/");
+                    rc = pubsocket.sendMore("test/");
                     assertThat(rc, is(true));
-                    rc = pub.send("data" + idx);
+                    rc = pubsocket.send("data" + idx);
                     assertThat(rc, is(true));
 
                     System.out.printf("Send-%d/", idx);
-                    ZMQ.sleep(1);
+                    ZMQ.msleep(100);
                 }
-                pub.close();
+                pubsocket.close();
                 ctx.close();
+                return true;
             }
         };
         final Callable<Integer> sub = new Callable<Integer>()
@@ -206,11 +209,12 @@ public class PubSubTest
             }
         };
         final Future<Integer> rc = service.submit(sub);
-        service.submit(pub);
+        final Future<Boolean> pubf = service.submit(pub);
         service.shutdown();
         service.awaitTermination(60, TimeUnit.SECONDS);
 
         final int receivedAfterUnsubscription = rc.get();
         assertThat(receivedAfterUnsubscription, is(0));
+        assertThat(pubf.get(), is(true));
     }
 }
