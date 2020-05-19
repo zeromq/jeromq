@@ -212,7 +212,7 @@ public class ProxyTest
 
             ZMQ.term(ctx);
             boolean completed = true;
-            for (Future<Boolean> f: workers) {
+            for (Future<Boolean> f : workers) {
                 completed &= f.get(3, TimeUnit.SECONDS);
             }
             return completed;
@@ -350,7 +350,8 @@ public class ProxyTest
         for (Future<Boolean> client : clientsf) {
             try {
                 assertThat(client.get(), is(true));
-            } catch (ExecutionException e) {
+            }
+            catch (ExecutionException e) {
                 e.getCause().printStackTrace();
                 throw e.getCause();
             }
@@ -368,7 +369,8 @@ public class ProxyTest
 
         try {
             assertThat(fserver.get(), is(true));
-        } catch (ExecutionException e) {
+        }
+        catch (ExecutionException e) {
             throw e.getCause();
         }
     }
