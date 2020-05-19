@@ -133,7 +133,7 @@ public class ZFrameTest
     @Test
     public void testZMQClientServer()
     {
-        try(ZContext ctx = new ZContext();
+        try (ZContext ctx = new ZContext();
             Socket client = ctx.createSocket(SocketType.CLIENT);
             Socket server = ctx.createSocket(SocketType.SERVER);
         ) {
@@ -168,7 +168,7 @@ public class ZFrameTest
             rc = frame.send(client, ZFrame.MORE);
             Assert.assertEquals(false, rc);
 
-            rc = frame.send(server,ZFrame.MORE);
+            rc = frame.send(server, ZFrame.MORE);
             Assert.assertEquals(false, rc);
         }
     }

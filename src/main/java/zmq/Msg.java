@@ -235,7 +235,8 @@ public class Msg
                 // Else use it to make an efficient copy.
                 return Arrays.copyOfRange(array, offset, offset + size);
             }
-        } else {
+        }
+        else {
             // No backing array -> use ByteBuffer#get().
             byte[] array = new byte[size];
             ByteBuffer dup = buf.duplicate();
