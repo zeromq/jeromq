@@ -44,6 +44,7 @@ public class TestPoller
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Test(timeout = 5000)
     public void testPollerPollout() throws Exception
     {
@@ -86,6 +87,7 @@ public class TestPoller
         context.term();
     }
 
+    @SuppressWarnings("deprecation")
     @Test(timeout = 5000)
     public void testExitPollerIssue580() throws InterruptedException, ExecutionException
     {

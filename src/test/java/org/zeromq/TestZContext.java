@@ -9,6 +9,7 @@ import org.zeromq.ZMQ.Socket;
 
 public class TestZContext
 {
+    @SuppressWarnings("deprecation")
     @Test(timeout = 5000)
     public void testZContext()
     {
@@ -94,6 +95,7 @@ public class TestZContext
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Test(timeout = 5000)
     public void testRemovingSockets() throws ZMQException
     {
@@ -129,6 +131,7 @@ public class TestZContext
         ctx.close();
     }
 
+    @SuppressWarnings("deprecation")
     @Test(timeout = 5000)
     public void testSeveralPendingInprocSocketsAreClosedIssue595()
     {
