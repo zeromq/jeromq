@@ -41,7 +41,8 @@ public class TestPoller
             received.set(true);
             try {
                 ready.await();
-            } catch (InterruptedException e) {
+            }
+            catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
 
@@ -80,12 +81,14 @@ public class TestPoller
                     assertThat(rc, is(true));
                     System.out.println("Sender: wrote message");
                     break;
-                } else {
+                }
+                else {
                     System.out.println("Sender: not writable");
                     executor.submit(client);
                 }
-            } 
-        } finally {
+            }
+        }
+        finally {
             client.ready.countDown();
         }
         executor.shutdown();
