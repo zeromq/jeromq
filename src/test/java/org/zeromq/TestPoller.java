@@ -44,7 +44,7 @@ public class TestPoller
         }
     }
 
-    @Test
+    @Test(timeout = 5000)
     public void testPollerPollout() throws Exception
     {
         int port = Utils.findOpenPort();
@@ -86,7 +86,7 @@ public class TestPoller
         context.term();
     }
 
-    @Test
+    @Test(timeout = 5000)
     public void testExitPollerIssue580() throws InterruptedException, ExecutionException
     {
         Future<Integer> future = null;

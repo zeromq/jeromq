@@ -30,7 +30,7 @@ public class PollTest
         R apply(ByteBuffer bb) throws IOException;
     }
 
-    @Test
+    @Test(timeout = 1000)
     public void testPollTcp() throws IOException
     {
         ServerSocketChannel server = ServerSocketChannel.open();
@@ -61,7 +61,7 @@ public class PollTest
         }
     }
 
-    @Test
+    @Test(timeout = 1000)
     public void testPollPipe() throws IOException
     {
         Pipe pipe = Pipe.open();
@@ -85,7 +85,7 @@ public class PollTest
 
     }
 
-    @Test
+    @Test(timeout = 1000)
     public void testPollUdp() throws IOException
     {
         DatagramChannel in = DatagramChannel.open();
@@ -154,7 +154,7 @@ public class PollTest
     }
 
     @Ignore
-    @Test
+    @Test(timeout = 1000)
     public void testRepeated() throws IOException
     {
         for (int idx = 0; idx < 10_000_000; ++idx) {
