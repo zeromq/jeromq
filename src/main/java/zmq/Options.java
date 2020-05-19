@@ -192,8 +192,7 @@ public class Options
         maxMsgSize = -1;
         recvTimeout = -1;
         sendTimeout = -1;
-        ipv6 = "false".equals(System.getProperty("java.net.preferIPv4Stack", null)) ||
-               "true".equals(System.getProperty("java.net.preferIPv6Addresses", null));
+        ipv6 = ZMQ.PREFER_IPV6;
         immediate = true;
         filter = false;
         recvIdentity = false;

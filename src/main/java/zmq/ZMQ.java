@@ -204,6 +204,18 @@ public class ZMQ
     public static final byte[] PROXY_RESUME    = "RESUME".getBytes(ZMQ.CHARSET);
     public static final byte[] PROXY_TERMINATE = "TERMINATE".getBytes(ZMQ.CHARSET);
 
+    public static final boolean PREFER_IPV6;
+    static {
+        String preferIPv4Stack = System.getProperty("java.net.preferIPv4Stack");
+        String preferIPv6Addresses = System.getProperty("java.net.preferIPv6Addresses");
+        if ("false".equalsIgnoreCase(preferIPv4Stack) || "true".equalsIgnoreCase(preferIPv6Addresses)) {
+            PREFER_IPV6 = true;
+        }
+        else {
+            PREFER_IPV6 = false;
+        }
+    }
+
     public static class Event
     {
         private static final int VALUE_INTEGER = 1;

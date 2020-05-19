@@ -45,6 +45,12 @@ public class TcpAddress implements Address.IZAddress
         }
     }
 
+    protected TcpAddress(InetSocketAddress address)
+    {
+        this.address = address;
+        sourceAddress = null;
+    }
+
     @Override
     public ProtocolFamily family()
     {
