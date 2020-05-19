@@ -338,18 +338,29 @@ public class ProxyTest
             clientsf.add(executor.submit(client));
             client.started.await();
         }
-        
-        Thread.sleep(100);
-        int sent = ZMQ.send(control, ZMQ.PROXY_TERMINATE, 0);
-        assertThat(sent, is(9));
-        checkClients(clientsf);
+
+        while (true) {
+            Thread.sleep(100);
+            int sent = ZMQ.send(control, ZMQ.PROXY_TERMINATE, 0);
+            assertThat(sent, is(9));
+            if (clientsf.get(4).isDone()) {
+                break;
+            }
+        }
+        for (Future<Boolean> client : clientsf) {
+            try {
+                assertThat(client.get(), is(true));
+            } catch (ExecutionException e) {
+                e.getCause().printStackTrace();
+                throw e.getCause();
+            }
+        }
 
         ZMQ.close(control);
 
         executor.shutdown();
         if (! executor.awaitTermination(4, TimeUnit.SECONDS)) {
             executor.shutdownNow();
-            checkClients(clientsf);
             fail("Hanged tasks");
        }
 
@@ -359,18 +370,6 @@ public class ProxyTest
             assertThat(fserver.get(), is(true));
         } catch (ExecutionException e) {
             throw e.getCause();
-        }
-    }
-
-    @SuppressWarnings("deprecation")
-    private void checkClients(List<Future<Boolean>> clients) throws Throwable {
-        for (Future<Boolean> client : clients) {
-            try {
-                assertThat(client.get(), is(true));
-            } catch (ExecutionException e) {
-                e.getCause().printStackTrace();
-                throw e.getCause();
-            }
         }
     }
 }
