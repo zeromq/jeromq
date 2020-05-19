@@ -46,6 +46,7 @@ public class TestZContext
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Test(timeout = 5000)
     public void testConstruction()
     {
@@ -77,6 +78,7 @@ public class TestZContext
         assertThat(ctx1.getContext(), notNullValue());
     }
 
+    @SuppressWarnings("deprecation")
     @Test(timeout = 5000)
     public void testAddingSockets() throws ZMQException
     {
