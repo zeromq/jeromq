@@ -9,6 +9,7 @@ import java.net.SocketAddress;
 import java.net.SocketException;
 import java.util.Enumeration;
 
+import zmq.ZMQ;
 import zmq.io.net.Address;
 import zmq.io.net.ProtocolFamily;
 import zmq.io.net.StandardProtocolFamily;
@@ -30,18 +31,6 @@ public class IpcAddress implements Address.IZAddress
         }
     }
 
-    private static final boolean DEFAULTIPV6;
-    static {
-        String preferIPv4Stack = System.getProperty("java.net.preferIPv4Stack", "");
-        String preferIPv6Addresses = System.getProperty("java.net.preferIPv6Addresses", "");
-        if (!"true".equalsIgnoreCase(preferIPv4Stack) && "true".equalsIgnoreCase(preferIPv6Addresses)) {
-            DEFAULTIPV6 = true;
-        }
-        else {
-            DEFAULTIPV6 = false;
-        }
-    }
-
     private String                  name;
     private final InetSocketAddress address;
     private final SocketAddress     sourceAddress;
@@ -50,9 +39,9 @@ public class IpcAddress implements Address.IZAddress
     {
         String[] strings = addr.split(";");
 
-        address = resolve(strings[0], DEFAULTIPV6, true);
+        address = resolve(strings[0], ZMQ.PREFER_IPV6, true);
         if (strings.length == 2 && !"".equals(strings[1])) {
-            sourceAddress = resolve(strings[1], DEFAULTIPV6, true);
+            sourceAddress = resolve(strings[1], ZMQ.PREFER_IPV6, true);
         }
         else {
             sourceAddress = null;
