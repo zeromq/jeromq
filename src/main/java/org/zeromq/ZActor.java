@@ -240,8 +240,7 @@ public class ZActor extends ZStar
         @Override
         public String premiere(final Socket pipe)
         {
-            // do nothing
-            return "?";
+            return null;
         }
 
         @Override
