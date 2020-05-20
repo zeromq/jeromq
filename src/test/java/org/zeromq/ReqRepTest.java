@@ -3,17 +3,22 @@ package org.zeromq;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
 import org.zeromq.ZMQ.Socket;
+
 import zmq.util.AndroidProblematic;
 
 public class ReqRepTest
@@ -36,7 +41,7 @@ public class ReqRepTest
         }
     }
 
-    private static class Server303 implements Runnable
+    private static class Server303 implements Callable<Boolean>
     {
         private final String  address;
         private final int     threadCount;
@@ -51,8 +56,9 @@ public class ReqRepTest
             this.loopCount = loopCount;
         }
 
+        @SuppressWarnings("deprecation")
         @Override
-        public void run()
+        public Boolean call()
         {
             int currentServCount = 0;
             try (
@@ -81,6 +87,7 @@ public class ReqRepTest
 
                 }
             }
+            return true;
         }
 
         protected boolean send(int currentServCount, ZMQ.Socket responder, String incomingMessage)
@@ -94,7 +101,7 @@ public class ReqRepTest
         }
     }
 
-    private static final class Client303 implements Runnable
+    private static final class Client303 implements Callable<Boolean>
     {
         private final int     loopCount;
         private final String  address;
@@ -107,8 +114,9 @@ public class ReqRepTest
             this.verbose = verbose;
         }
 
+        @SuppressWarnings("deprecation")
         @Override
-        public void run()
+        public Boolean call()
         {
             try (
                  ZMQ.Context context = ZMQ.context(10);
@@ -133,11 +141,12 @@ public class ReqRepTest
                     }
                 }
             }
+            return true;
         }
     }
 
-    @Test
-    public void testIssue532() throws IOException, InterruptedException
+    @Test(timeout = 5000)
+    public void testIssue532() throws IOException, InterruptedException, ExecutionException
     {
         final int threads = 1;
         final int port = Utils.findOpenPort();
@@ -152,10 +161,11 @@ public class ReqRepTest
         for (int idx = 0; idx < threads; ++idx) {
             executor.submit(new Client303(address, messages, verbose));
         }
-        executor.submit(new Server532(address, messages, threads, verbose));
-
+        Future<Boolean> resultf = executor.submit(new Server532(address, messages, threads, verbose));
         executor.shutdown();
-        executor.awaitTermination(60, TimeUnit.SECONDS);
+        executor.awaitTermination(4, TimeUnit.SECONDS);
+        assertTrue(resultf.get());
+
         long end = System.currentTimeMillis();
         System.out.println(
                            String.format(
@@ -165,8 +175,8 @@ public class ReqRepTest
                                          (end - start)));
     }
 
-    @Test
-    public void testWaitForeverOnSignalerIssue303() throws IOException, InterruptedException
+    @Test(timeout = 5000)
+    public void testWaitForeverOnSignalerIssue303() throws IOException, InterruptedException, ExecutionException
     {
         final int threads = 2;
         final int port = Utils.findOpenPort();
@@ -181,10 +191,11 @@ public class ReqRepTest
         for (int idx = 0; idx < threads; ++idx) {
             executor.submit(new Client303(address, messages, verbose));
         }
-        executor.submit(new Server303(address, messages, threads, verbose));
+        Future<Boolean> resultf = executor.submit(new Server303(address, messages, threads, verbose));
 
         executor.shutdown();
-        executor.awaitTermination(60, TimeUnit.SECONDS);
+        executor.awaitTermination(4, TimeUnit.SECONDS);
+        assertTrue(resultf.get());
         long end = System.currentTimeMillis();
         System.out.println(
                            String.format(
@@ -194,7 +205,8 @@ public class ReqRepTest
                                          (end - start)));
     }
 
-    @Test
+    @SuppressWarnings("deprecation")
+    @Test(timeout = 5000)
     @AndroidProblematic // triggers OutofMemoryError on Android
     public void testDisconnectOnLargeMessageIssue334() throws Exception
     {

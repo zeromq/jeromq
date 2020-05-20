@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.CountDownLatch;
 
 import org.junit.Test;
 import org.zeromq.SocketType;
@@ -25,18 +26,22 @@ import org.zeromq.ZProxy.Plug;
 //  This shows how to capture data using a pub-sub proxy
 public class EspressoTest
 {
+
     //  The subscriber thread requests messages starting with
     //  A and B, then reads and counts incoming messages.
     private static class Subscriber extends ZActor.SimpleActor
     {
         private final int port;
         private int       count;
+        private final CountDownLatch wait;
 
-        public Subscriber(int port)
+        public Subscriber(int port, CountDownLatch wait)
         {
             this.port = port;
+            this.wait = wait;
         }
 
+        @SuppressWarnings("deprecation")
         @Override
         public List<Socket> createSockets(ZContext ctx, Object... args)
         {
@@ -45,6 +50,7 @@ public class EspressoTest
             return Collections.singletonList(sub);
         }
 
+        @SuppressWarnings("deprecation")
         @Override
         public void start(Socket pipe, List<Socket> sockets, ZPoller poller)
         {
@@ -57,6 +63,12 @@ public class EspressoTest
             assertThat(rc, is(true));
             rc = poller.register(subscriber, ZPoller.IN);
             assertThat(rc, is(true));
+        }
+
+        @Override
+        public String premiere(Socket pipe) {
+            wait.countDown();
+            return "Subscriber";
         }
 
         @Override
@@ -74,12 +86,15 @@ public class EspressoTest
         private final Random rand = new Random(System.currentTimeMillis());
         private final int    port;
         private int          count;
+        private final CountDownLatch wait;
 
-        public Publisher(int port)
+        public Publisher(int port, CountDownLatch wait)
         {
             this.port = port;
+            this.wait = wait;
         }
 
+        @SuppressWarnings("deprecation")
         @Override
         public List<Socket> createSockets(ZContext ctx, Object... args)
         {
@@ -88,6 +103,7 @@ public class EspressoTest
             return Collections.singletonList(pub);
         }
 
+        @SuppressWarnings("deprecation")
         @Override
         public void start(Socket pipe, List<Socket> sockets, ZPoller poller)
         {
@@ -96,6 +112,12 @@ public class EspressoTest
             assertThat(rc, is(true));
             rc = poller.register(publisher, ZPoller.OUT);
             assertThat(rc, is(true));
+        }
+
+        @Override
+        public String premiere(Socket pipe) {
+            wait.countDown();
+            return "Publisher";
         }
 
         @Override
@@ -113,6 +135,13 @@ public class EspressoTest
     //  attached child threads. In other languages your mileage may vary:
     private static class Listener extends ZActor.SimpleActor
     {
+        private final CountDownLatch wait;
+
+        public Listener(CountDownLatch wait) {
+            this.wait = wait;
+        }
+
+        @SuppressWarnings("deprecation")
         @Override
         public List<Socket> createSockets(ZContext ctx, Object... args)
         {
@@ -121,6 +150,7 @@ public class EspressoTest
             return Collections.singletonList(pull);
         }
 
+        @SuppressWarnings("deprecation")
         @Override
         public void start(Socket pipe, List<Socket> sockets, ZPoller poller)
         {
@@ -129,8 +159,16 @@ public class EspressoTest
             assertThat(rc, is(true));
             rc = poller.register(subscriber, ZPoller.IN);
             assertThat(rc, is(true));
+            wait.countDown();
         }
 
+        @Override
+        public String premiere(Socket pipe) {
+            wait.countDown();
+            return "Listener";
+        }
+
+        @SuppressWarnings("deprecation")
         @Override
         public boolean stage(Socket socket, Socket pipe, ZPoller poller, int events)
         {
@@ -187,22 +225,23 @@ public class EspressoTest
     //  .split main thread
     //  The main task starts the subscriber and publisher, and then sets
     //  itself up as a listening proxy. The listener runs as a child thread:
-    @Test
-    public void testEspresso() throws IOException
+    @SuppressWarnings("deprecation")
+    @Test(timeout = 5000)
+    public void testEspresso() throws IOException, InterruptedException
     {
         final int frontend = Utils.findOpenPort();
         final int backend = Utils.findOpenPort();
-        try (
-            final ZContext ctx = new ZContext()) {
-            ZActor publisher = new ZActor(ctx, new Publisher(frontend), "motdelafin");
-            ZActor subscriber = new ZActor(ctx, new Subscriber(backend), "motdelafin");
-            ZActor listener = new ZActor(ctx, new Listener(), "motdelafin");
+        final CountDownLatch wait = new CountDownLatch(3);
+        try (final ZContext ctx = new ZContext()) {
+            ZActor publisher = new ZActor(ctx, new Publisher(frontend, wait), "motdelafin");
+            ZActor subscriber = new ZActor(ctx, new Subscriber(backend, wait), "motdelafin");
+            ZActor listener = new ZActor(ctx, new Listener(wait), "motdelafin");
 
             ZProxy proxy = ZProxy.newZProxy(ctx, "Proxy", new Proxy(frontend, backend), "motdelafin");
             String status = proxy.start(true);
             assertThat(status, is(ZProxy.STARTED));
 
-            ZMQ.sleep(10);
+            wait.await();
 
             boolean rc = publisher.send("anything-sent-will-end-the-actor");
             assertThat(rc, is(true));
@@ -213,10 +252,12 @@ public class EspressoTest
             status = proxy.exit();
             assertThat(status, is(ZProxy.EXITED));
 
-            publisher.exit().awaitSilent();
-            subscriber.exit().awaitSilent();
-            listener.exit().awaitSilent();
-            System.out.println("Espresso Finished");
+            boolean rcsub = subscriber.send("anything-sent-will-end-the-actor");
+            assertThat(rcsub, is(true));
+
+            publisher.exit().await();
+            subscriber.exit().await();
+            listener.exit().await();
         }
     }
 }
