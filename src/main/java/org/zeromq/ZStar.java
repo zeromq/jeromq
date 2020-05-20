@@ -502,13 +502,7 @@ public class ZStar implements ZAgent
 
                     if (tell && gossip != null) {
                         // inform the Corbeille side of the future closing of the plateau and the vanishing of the star
-                        try {
-                            mic.send(gossip);
-                        }
-                        catch (Exception e) {
-                            // really ?
-                            e.printStackTrace();
-                        }
+                        mic.send(gossip);
                     }
 
                     // we are not in a hurry at this point when cleaning up the remains of a good show ...

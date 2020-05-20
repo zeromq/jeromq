@@ -269,7 +269,7 @@ public class Ctx
             //  Wait till reaper thread closes all the sockets.
             Command cmd = termMailbox.recv(WAIT_FOREVER);
             if (cmd == null) {
-                throw new IllegalStateException(ZError.toString(errno.get()));
+                throw new ZMQException(errno.get());
             }
             assert (cmd.type == Command.Type.DONE) : cmd;
 
@@ -287,7 +287,7 @@ public class Ctx
             destroy();
         }
         catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new ZError.IOException(e);
         }
     }
 
