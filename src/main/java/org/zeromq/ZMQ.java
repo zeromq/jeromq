@@ -931,10 +931,13 @@ public class ZMQ
          * The linger period determines how long pending messages which have yet to be sent to a peer
          * shall linger in memory after a socket is disconnected with disconnect or closed with close,
          * and further affects the termination of the socket's context with Ctx#term.
-         * The following outlines the different behaviours: A value of -1 specifies an infinite linger period.
+         * The following outlines the different behaviours:
+         * <p>A value of -1 specifies an infinite linger period.
          * Pending messages shall not be discarded after a call to disconnect() or close();
          * attempting to terminate the socket's context with Ctx#term() shall block until all pending messages have been sent to a peer.
+         * <p>
          * The value of 0 specifies no linger period. Pending messages shall be discarded immediately after a call to disconnect() or close().
+         * <p>
          * Positive values specify an upper bound for the linger period in milliseconds.
          * Pending messages shall not be discarded after a call to disconnect() or close();
          * attempting to terminate the socket's context with Ctx#term() shall block until either all pending messages have been sent to a peer,
@@ -956,10 +959,13 @@ public class ZMQ
          * The linger period determines how long pending messages which have yet to be sent to a peer
          * shall linger in memory after a socket is disconnected with disconnect or closed with close,
          * and further affects the termination of the socket's context with Ctx#term.
-         * The following outlines the different behaviours: A value of -1 specifies an infinite linger period.
+         * The following outlines the different behaviours:
+         * <p>A value of -1 specifies an infinite linger period.
          * Pending messages shall not be discarded after a call to disconnect() or close();
          * attempting to terminate the socket's context with Ctx#term() shall block until all pending messages have been sent to a peer.
+         * <p>
          * The value of 0 specifies no linger period. Pending messages shall be discarded immediately after a call to disconnect() or close().
+         * <p>
          * Positive values specify an upper bound for the linger period in milliseconds.
          * Pending messages shall not be discarded after a call to disconnect() or close();
          * attempting to terminate the socket's context with Ctx#term() shall block until either all pending messages have been sent to a peer,

@@ -126,10 +126,12 @@ public class ZActor extends ZStar
         /**
          * This is the grand premiere!
          * Called before the creation of the first double and the sockets
-         * 2nd in the order call of the global acting.
+         * 2nd in the order call of the global acting. It return the name
+         * that will be used for the thread. If it's null, a default one
+         * will be picked by ZActor.
          *
          * @param pipe   the backstage control pipe
-         * @return the name of the upcoming performance
+         * @return the name of the upcoming performance.
          */
         String premiere(Socket pipe);
 
