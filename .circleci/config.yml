@@ -68,7 +68,7 @@ jobs:
                 command: |
                     # If no symbolic name, it's a PR, will run sonar
                     if [ -n "$(git symbolic-ref HEAD 2>/dev/null )" ] ; then
-                        SONAR="jacoco:report sonar:sonar -Psonar"
+                        SONAR="jacoco:report sonar:sonar -Psonar,coverage"
                         echo "Doing sonar"
                     else
                         SONAR=""
