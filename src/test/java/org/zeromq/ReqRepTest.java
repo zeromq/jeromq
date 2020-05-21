@@ -2,19 +2,21 @@ package org.zeromq;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.Test;
 import org.zeromq.ZMQ.Socket;
@@ -23,13 +25,18 @@ import zmq.util.AndroidProblematic;
 
 public class ReqRepTest
 {
+    private interface GetServer
+    {
+        Server303 get(String address, AtomicBoolean keepRunning, boolean verbose);
+    }
+
     private static final class Server532 extends Server303
     {
         private final byte[] repMsg = new byte[1024 * 1024];
 
-        private Server532(String address, int loopCount, int threadCount, boolean verbose)
+        private Server532(String address, AtomicBoolean keepRunning, boolean verbose)
         {
-            super(address, loopCount, threadCount, verbose);
+            super(address, keepRunning, verbose);
             Arrays.fill(repMsg, (byte) 'e');
         }
 
@@ -41,24 +48,22 @@ public class ReqRepTest
         }
     }
 
-    private static class Server303 implements Callable<Boolean>
+    private static class Server303 implements Callable<Integer>
     {
         private final String  address;
-        private final int     threadCount;
         private final boolean verbose;
-        private final int     loopCount;
+        private final AtomicBoolean keepRunning;
 
-        private Server303(String address, int loopCount, int threadCount, boolean verbose)
+        private Server303(String address, AtomicBoolean keepRunning, boolean verbose)
         {
             this.address = address;
-            this.threadCount = threadCount;
             this.verbose = verbose;
-            this.loopCount = loopCount;
+            this.keepRunning = keepRunning;
         }
 
         @SuppressWarnings("deprecation")
         @Override
-        public Boolean call()
+        public Integer call()
         {
             int currentServCount = 0;
             try (
@@ -67,8 +72,8 @@ public class ReqRepTest
                 assertThat(responder, notNullValue());
                 boolean rc = responder.bind(address);
                 assertThat(rc, is(true));
-                int count = loopCount * threadCount;
-                while (count-- > 0) {
+                int count;
+                for (count = 0; keepRunning.get(); count++) {
                     try {
                         String incomingMessage = responder.recvStr();
                         assertThat(incomingMessage, notNullValue());
@@ -76,18 +81,21 @@ public class ReqRepTest
                         assertThat(rc, is(true));
                         currentServCount++;
 
-                        if (currentServCount % 1000 == 0 && verbose) {
+                        if (verbose && currentServCount % 1000 == 0) {
                             System.out.println("Served " + currentServCount);
                         }
                     }
-                    catch (Exception e) {
-                        e.printStackTrace();
-                        fail("Got exception " + e.getMessage());
+                    catch (ZMQException ex) {
+                        if (ex.getErrorCode() == ZMQ.Error.EINTR.getCode()) {
+                            continue;
+                        }
+                        else {
+                            throw ex;
+                        }
                     }
-
                 }
+                return count;
             }
-            return true;
         }
 
         protected boolean send(int currentServCount, ZMQ.Socket responder, String incomingMessage)
@@ -101,29 +109,30 @@ public class ReqRepTest
         }
     }
 
-    private static final class Client303 implements Callable<Boolean>
+    private static final class Client303 implements Callable<Integer>
     {
-        private final int     loopCount;
+        private final AtomicBoolean keepRunning;
         private final String  address;
         private final boolean verbose;
 
-        private Client303(String address, int loopCount, boolean verbose)
+        private Client303(String address, AtomicBoolean keepRunning, boolean verbose)
         {
-            this.loopCount = loopCount;
+            this.keepRunning = keepRunning;
             this.address = address;
             this.verbose = verbose;
         }
 
         @SuppressWarnings("deprecation")
         @Override
-        public Boolean call()
+        public Integer call()
         {
             try (
                  ZMQ.Context context = ZMQ.context(10);
                  ZMQ.Socket socket = context.socket(SocketType.REQ);) {
                 boolean rc = socket.connect(address);
                 assertThat(rc, is(true));
-                for (int idx = 0; idx < loopCount; idx++) {
+                int idx;
+                for (idx = 0; keepRunning.get(); idx++) {
                     long tid = Thread.currentThread().getId();
                     String msg = "hello-" + idx;
                     if (verbose) {
@@ -140,69 +149,48 @@ public class ReqRepTest
                         System.out.println(tid + " client received [" + s + "]");
                     }
                 }
+                return idx;
             }
-            return true;
         }
     }
 
-    @Test(timeout = 5000)
-    public void testIssue532() throws IOException, InterruptedException, ExecutionException
+    private void runTest(GetServer getter) throws IOException, InterruptedException, ExecutionException
     {
         final int threads = 1;
         final int port = Utils.findOpenPort();
         final String address = "tcp://localhost:" + port;
 
-        final int messages = 20000;
+        final AtomicBoolean keepRunning = new AtomicBoolean(true);
         final boolean verbose = false;
 
         ExecutorService executor = Executors.newFixedThreadPool(1 + threads);
 
-        long start = System.currentTimeMillis();
+        Set<Future<Integer>> clientsf = new HashSet<>(threads);
         for (int idx = 0; idx < threads; ++idx) {
-            executor.submit(new Client303(address, messages, verbose));
+            clientsf.add(executor.submit(new Client303(address, keepRunning, verbose)));
         }
-        Future<Boolean> resultf = executor.submit(new Server532(address, messages, threads, verbose));
+        Future<Integer> resultf = executor.submit(getter.get(address, keepRunning, verbose));
         executor.shutdown();
-        executor.awaitTermination(4, TimeUnit.SECONDS);
-        assertTrue(resultf.get());
+        ZMQ.sleep(4);
+        keepRunning.set(false);
+        int clientMessage = 0;
+        for (Future<Integer> c : clientsf) {
+            clientMessage += c.get();
+        }
+        executor.shutdownNow();
+        assertEquals(clientMessage, resultf.get().intValue());
+    }
 
-        long end = System.currentTimeMillis();
-        System.out.println(
-                           String.format(
-                                         "Req/Rep with %1$s threads for %2$s messages in %3$s millis.",
-                                         threads,
-                                         messages,
-                                         (end - start)));
+    @Test(timeout = 5000)
+    public void testIssue532() throws IOException, InterruptedException, ExecutionException
+    {
+        runTest(Server532::new);
     }
 
     @Test(timeout = 5000)
     public void testWaitForeverOnSignalerIssue303() throws IOException, InterruptedException, ExecutionException
     {
-        final int threads = 2;
-        final int port = Utils.findOpenPort();
-        final String address = "tcp://localhost:" + port;
-
-        final int messages = 50000;
-        final boolean verbose = false;
-
-        ExecutorService executor = Executors.newFixedThreadPool(1 + threads);
-
-        long start = System.currentTimeMillis();
-        for (int idx = 0; idx < threads; ++idx) {
-            executor.submit(new Client303(address, messages, verbose));
-        }
-        Future<Boolean> resultf = executor.submit(new Server303(address, messages, threads, verbose));
-
-        executor.shutdown();
-        executor.awaitTermination(4, TimeUnit.SECONDS);
-        assertTrue(resultf.get());
-        long end = System.currentTimeMillis();
-        System.out.println(
-                           String.format(
-                                         "Req/Rep with %1$s threads for %2$s messages in %3$s millis.",
-                                         threads,
-                                         messages,
-                                         (end - start)));
+        runTest(Server303::new);
     }
 
     @SuppressWarnings("deprecation")
@@ -228,11 +216,11 @@ public class ReqRepTest
 
         final CountDownLatch latch = new CountDownLatch(1);
         final ExecutorService executorService = Executors.newSingleThreadExecutor();
-        executorService.submit(new Runnable()
+        final Future<Boolean> senderf = executorService.submit(new Callable<Boolean>()
         {
             @Override
             // simulates a server reply
-            public void run()
+            public Boolean call()
             {
                 final ZMQ.Socket rep = context.socket(SocketType.REP);
                 rep.bind(addr);
@@ -244,15 +232,14 @@ public class ReqRepTest
                 // shut down the socket to cause a disconnect while REQ socket receives the msg
                 rep.close();
                 // btw.: setting linger time did not change the result
+                return true;
             }
-
         });
 
         executorService.shutdown();
 
         // wait till server socket is bound
-        latch.await(1, TimeUnit.SECONDS);
-        final long start = System.currentTimeMillis();
+        latch.await();
         try (
              final ZMQ.Socket req = context.socket(SocketType.REQ);) {
             req.connect(addr);
@@ -260,10 +247,9 @@ public class ReqRepTest
             final ZMsg response = ZMsg.recvMsg(req);
             // the messages should be equal
             assertThat(Arrays.equals(response.getLast().getData(), payloadBytes), is(true));
+            assertTrue(senderf.get());
         }
         finally {
-            long end = System.currentTimeMillis();
-            System.out.println("Large Message received in  " + (end - start) + " millis.");
             context.close();
         }
     }
