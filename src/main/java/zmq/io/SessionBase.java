@@ -593,6 +593,11 @@ public class SessionBase extends Own implements Pipe.IPipeEvents, IPollEvents
         }
     }
 
+    public String getEndpoint()
+    {
+        return engine.getEndPoint();
+    }
+
     @Override
     public String toString()
     {

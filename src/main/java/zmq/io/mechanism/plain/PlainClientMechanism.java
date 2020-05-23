@@ -157,17 +157,10 @@ public class PlainClientMechanism extends Mechanism
     private int processError(Msg msg)
     {
         if (state != State.WAITING_FOR_WELCOME && state != State.WAITING_FOR_READY) {
-            return ZError.EPROTO;
-        }
-        if (msg.size() < 7) {
-            return ZError.EPROTO;
-        }
-        byte errorReasonLength = msg.get(6);
-        if (errorReasonLength > msg.size() - 7) {
+            session.getSocket().eventHandshakeFailedProtocol(session.getEndpoint(), ZMQ.ZMQ_PROTOCOL_ERROR_ZMTP_UNEXPECTED_COMMAND);
             return ZError.EPROTO;
         }
         state = State.ERROR_COMMAND_RECEIVED;
-
-        return 0;
+        return parseErrorMessage(msg);
     }
 }

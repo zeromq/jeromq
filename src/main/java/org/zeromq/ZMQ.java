@@ -283,6 +283,28 @@ public class ZMQ
      */
     public static final int EVENT_ALL                = zmq.ZMQ.ZMQ_EVENT_ALL;
 
+    /**
+     * Unspecified system errors during handshake. Event value is an errno.
+     */
+    public static final int HANDSHAKE_FAILED_NO_DETAIL   = zmq.ZMQ.ZMQ_EVENT_HANDSHAKE_FAILED_NO_DETAIL;
+
+    /**
+     * Handshake complete successfully with successful authentication (if
+     *  enabled). Event value is unused.
+     */
+    public static final int HANDSHAKE_SUCCEEDED      = zmq.ZMQ.ZMQ_EVENT_HANDSHAKE_SUCCEEDED;
+
+    /**
+     *   Protocol errors between ZMTP peers or between server and ZAP handler.
+     *  Event value is one of ZMQ_PROTOCOL_ERROR_*
+     */
+    public static final int HANDSHAKE_FAILED_PROTOCOL = zmq.ZMQ.ZMQ_EVENT_HANDSHAKE_FAILED_PROTOCOL;
+    /**
+     *   Failed authentication requests. Event value is the numeric ZAP status
+     *  code, i.e. 300, 400 or 500.
+     */
+    public static final int HANDSHAKE_FAILED_AUTH     = zmq.ZMQ.ZMQ_EVENT_HANDSHAKE_FAILED_AUTH;
+
     public static final byte[] MESSAGE_SEPARATOR = zmq.ZMQ.MESSAGE_SEPARATOR;
 
     public static final byte[] SUBSCRIPTION_ALL = zmq.ZMQ.SUBSCRIPTION_ALL;

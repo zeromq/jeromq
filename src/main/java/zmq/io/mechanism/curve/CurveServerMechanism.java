@@ -115,6 +115,7 @@ public class CurveServerMechanism extends Mechanism
             rc = processInitiate(msg);
             break;
         default:
+            session.getSocket().eventHandshakeFailedProtocol(session.getEndpoint(), ZMQ.ZMQ_PROTOCOL_ERROR_ZMTP_UNSPECIFIED);
             rc = ZError.EPROTO;
             break;
 
@@ -165,12 +166,14 @@ public class CurveServerMechanism extends Mechanism
     {
         assert (state == State.CONNECTED);
 
-        if (msg.size() < 33) {
+        if (!compare(msg, "MESSAGE", true)) {
+            session.getSocket().eventHandshakeFailedProtocol(session.getEndpoint(), ZMQ.ZMQ_PROTOCOL_ERROR_ZMTP_UNEXPECTED_COMMAND);
             errno.set(ZError.EPROTO);
             return null;
         }
 
-        if (!compare(msg, "MESSAGE", true)) {
+        if (msg.size() < 33) {
+            session.getSocket().eventHandshakeFailedProtocol(session.getEndpoint(), ZMQ.ZMQ_PROTOCOL_ERROR_ZMTP_MALFORMED_COMMAND_MESSAGE);
             errno.set(ZError.EPROTO);
             return null;
         }
@@ -182,6 +185,7 @@ public class CurveServerMechanism extends Mechanism
         long nonce = msg.getLong(8);
 
         if (nonce <= cnPeerNonce) {
+            session.getSocket().eventHandshakeFailedProtocol(session.getEndpoint(), ZMQ.ZMQ_PROTOCOL_ERROR_ZMTP_INVALID_SEQUENCE);
             errno.set(ZError.EPROTO);
             return null;
         }
@@ -212,6 +216,7 @@ public class CurveServerMechanism extends Mechanism
             return decoded;
         }
         else {
+            session.getSocket().eventHandshakeFailedProtocol(session.getEndpoint(), ZMQ.ZMQ_PROTOCOL_ERROR_ZMTP_CRYPTOGRAPHIC);
             errno.set(ZError.EPROTO);
             return null;
         }
@@ -247,11 +252,13 @@ public class CurveServerMechanism extends Mechanism
 
     private int processHello(Msg msg)
     {
-        if (msg.size() != 200) {
+        if (!compare(msg, "HELLO", true)) {
+            session.getSocket().eventHandshakeFailedProtocol(session.getEndpoint(), ZMQ.ZMQ_PROTOCOL_ERROR_ZMTP_UNEXPECTED_COMMAND);
             return ZError.EPROTO;
         }
 
-        if (!compare(msg, "HELLO", true)) {
+        if (msg.size() != 200) {
+            session.getSocket().eventHandshakeFailedProtocol(session.getEndpoint(), ZMQ.ZMQ_PROTOCOL_ERROR_ZMTP_MALFORMED_COMMAND_HELLO);
             return ZError.EPROTO;
         }
 
@@ -259,6 +266,7 @@ public class CurveServerMechanism extends Mechanism
         byte minor = msg.get(7);
 
         if (major != 1 || minor != 0) {
+            session.getSocket().eventHandshakeFailedProtocol(session.getEndpoint(), ZMQ.ZMQ_PROTOCOL_ERROR_ZMTP_MALFORMED_COMMAND_HELLO);
             return ZError.EPROTO;
         }
 
@@ -279,7 +287,10 @@ public class CurveServerMechanism extends Mechanism
         //  Open Box [64 * %x0](C'->S)
         int rc = cryptoBox.open(helloPlaintext, helloBox, helloBox.capacity(), helloNonce, cnClient, secretKey);
         if (rc != 0) {
-            return ZError.EPROTO;
+            session.getSocket().eventHandshakeFailedProtocol(session.getEndpoint(), ZMQ.ZMQ_PROTOCOL_ERROR_ZMTP_CRYPTOGRAPHIC);
+            state = State.SEND_ERROR;
+            statusCode = "999";
+            return 0;
         }
 
         state = State.SEND_WELCOME;
@@ -347,13 +358,16 @@ public class CurveServerMechanism extends Mechanism
 
     private int processInitiate(Msg msg)
     {
-        if (msg.size() < 257) {
+        if (!compare(msg, "INITIATE", true)) {
+            session.getSocket().eventHandshakeFailedProtocol(session.getEndpoint(), ZMQ.ZMQ_PROTOCOL_ERROR_ZMTP_UNEXPECTED_COMMAND);
             return ZError.EPROTO;
         }
 
-        if (!compare(msg, "INITIATE", true)) {
+        if (msg.size() < 257) {
+            session.getSocket().eventHandshakeFailedProtocol(session.getEndpoint(), ZMQ.ZMQ_PROTOCOL_ERROR_ZMTP_MALFORMED_COMMAND_INITIATE);
             return ZError.EPROTO;
         }
+
         ByteBuffer cookieNonce = ByteBuffer.allocate(Curve.Size.NONCE.bytes());
         ByteBuffer cookiePlaintext = ByteBuffer.allocate(Curve.Size.ZERO.bytes() + 64);
         ByteBuffer cookieBox = ByteBuffer.allocate(Curve.Size.BOXZERO.bytes() + 80);
@@ -367,12 +381,14 @@ public class CurveServerMechanism extends Mechanism
 
         int rc = cryptoBox.secretboxOpen(cookiePlaintext, cookieBox, cookieBox.capacity(), cookieNonce, cookieKey);
         if (rc != 0) {
+            session.getSocket().eventHandshakeFailedProtocol(session.getEndpoint(), ZMQ.ZMQ_PROTOCOL_ERROR_ZMTP_CRYPTOGRAPHIC);
             return ZError.EPROTO;
         }
 
         //  Check cookie plain text is as expected [C' + s']
         if (!compare(cookiePlaintext, cnClient, Curve.Size.ZERO.bytes(), 32)
                 || !compare(cookiePlaintext, cnSecret, Curve.Size.ZERO.bytes() + 32, 32)) {
+            session.getSocket().eventHandshakeFailedProtocol(session.getEndpoint(), ZMQ.ZMQ_PROTOCOL_ERROR_ZMTP_CRYPTOGRAPHIC);
             return ZError.EPROTO;
         }
 
@@ -393,6 +409,7 @@ public class CurveServerMechanism extends Mechanism
 
         rc = cryptoBox.open(initiatePlaintext, initiateBox, clen, initiateNonce, cnClient, cnSecret);
         if (rc != 0) {
+            session.getSocket().eventHandshakeFailedProtocol(session.getEndpoint(), ZMQ.ZMQ_PROTOCOL_ERROR_ZMTP_CRYPTOGRAPHIC);
             return ZError.EPROTO;
         }
 
@@ -415,11 +432,13 @@ public class CurveServerMechanism extends Mechanism
 
         rc = cryptoBox.open(vouchPlaintext, vouchBox, vouchBox.capacity(), vouchNonce, clientKey, cnSecret);
         if (rc != 0) {
+            session.getSocket().eventHandshakeFailedProtocol(session.getEndpoint(), ZMQ.ZMQ_PROTOCOL_ERROR_ZMTP_CRYPTOGRAPHIC);
             return ZError.EPROTO;
         }
 
         //  What we decrypted must be the client's short-term public key
         if (!compare(vouchPlaintext, cnClient, Curve.Size.ZERO.bytes(), 32)) {
+            session.getSocket().eventHandshakeFailedProtocol(session.getEndpoint(), ZMQ.ZMQ_PROTOCOL_ERROR_ZMTP_KEY_EXCHANGE);
             return ZError.EPROTO;
         }
 
@@ -491,7 +510,9 @@ public class CurveServerMechanism extends Mechanism
         assert (statusCode != null && statusCode.length() == 3);
 
         msg.putShortString("ERROR");
-        msg.putShortString(statusCode);
+        if (! "999".equals(statusCode)) {
+            msg.putShortString(statusCode);
+        }
 
         return 0;
     }

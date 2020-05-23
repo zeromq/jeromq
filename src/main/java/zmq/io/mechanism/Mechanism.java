@@ -5,6 +5,7 @@ import static zmq.io.Metadata.SOCKET_TYPE;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import zmq.Msg;
@@ -213,6 +214,60 @@ public abstract class Mechanism
 
     public abstract int nextHandshakeCommand(Msg msg);
 
+    protected int parseErrorMessage(Msg msg)
+    {
+        if (msg.size() < 7 && msg.size() != 6) {
+            session.getSocket().eventHandshakeFailedProtocol(session.getEndpoint(), ZMQ.ZMQ_PROTOCOL_ERROR_ZMTP_MALFORMED_COMMAND_ERROR);
+            return ZError.EPROTO;
+        }
+        if (msg.size() >= 7) {
+            byte errorReasonLength = msg.get(6);
+            if (errorReasonLength > msg.size() - 7) {
+                session.getSocket().eventHandshakeFailedProtocol(session.getEndpoint(), ZMQ.ZMQ_PROTOCOL_ERROR_ZMTP_MALFORMED_COMMAND_ERROR);
+                return ZError.EPROTO;
+            }
+            // triple digit status code
+            if (msg.size() == 10) {
+                byte[] statusBuffer = Arrays.copyOfRange(msg.data(), 7, 10);
+                String statusCode = new String(statusBuffer, ZMQ.CHARSET);
+                if (handleErrorReason(statusCode) < 0) {
+                    return ZError.EPROTO;
+                }
+            }
+
+        }
+        return 0;
+    }
+
+    protected int handleErrorReason(String reason)
+    {
+        int rc = -1;
+        if (reason.length() == 3
+                        && reason.charAt(1) == '0'
+                        && reason.charAt(2) == '0'
+                        && reason.charAt(0) >= '3'
+                        && reason.charAt(0) <= '5') {
+            try {
+                int statusCode = Integer.parseInt(reason);
+                if (session != null) {
+                    session.getSocket().eventHandshakeFailedAuth(session.getEndpoint(), statusCode);
+                }
+                rc = 0;
+            }
+            catch (NumberFormatException e) {
+                if (session != null) {
+                    session.getSocket().eventHandshakeFailedProtocol(session.getEndpoint(), ZMQ.ZMQ_PROTOCOL_ERROR_ZAP_MALFORMED_REPLY);
+                }
+            }
+        }
+        else {
+            if (session != null) {
+                session.getSocket().eventHandshakeFailedProtocol(session.getEndpoint(), ZMQ.ZMQ_PROTOCOL_ERROR_ZAP_MALFORMED_REPLY);
+            }
+        }
+        return rc;
+    }
+
     protected final void sendZapRequest(Mechanisms mechanism, boolean more)
     {
         assert (session != null);
@@ -285,6 +340,7 @@ public abstract class Mechanism
                 return session.errno.get();
             }
             if ((msg.flags() & Msg.MORE) == (idx < 6 ? 0 : Msg.MORE)) {
+                session.getSocket().eventHandshakeFailedProtocol(session.getEndpoint(), ZMQ.ZMQ_PROTOCOL_ERROR_ZAP_MALFORMED_REPLY);
                 return ZError.EPROTO;
             }
             msgs.add(msg);
@@ -292,21 +348,25 @@ public abstract class Mechanism
 
         //  Address delimiter frame
         if (msgs.get(0).size() > 0) {
+            session.getSocket().eventHandshakeFailedProtocol(session.getEndpoint(), ZMQ.ZMQ_PROTOCOL_ERROR_ZAP_UNSPECIFIED);
             return ZError.EPROTO;
         }
 
         //  Version frame
         if (msgs.get(1).size() != 3 || !compare(msgs.get(1), "1.0", false)) {
+            session.getSocket().eventHandshakeFailedProtocol(session.getEndpoint(), ZMQ.ZMQ_PROTOCOL_ERROR_ZAP_BAD_VERSION);
             return ZError.EPROTO;
         }
 
         //  Request id frame
         if (msgs.get(2).size() != 1 || !compare(msgs.get(2), "1", false)) {
+            session.getSocket().eventHandshakeFailedProtocol(session.getEndpoint(), ZMQ.ZMQ_PROTOCOL_ERROR_ZAP_BAD_REQUEST_ID);
             return ZError.EPROTO;
         }
 
         //  Status code frame
         if (msgs.get(3).size() != 3) {
+            session.getSocket().eventHandshakeFailedProtocol(session.getEndpoint(), ZMQ.ZMQ_PROTOCOL_ERROR_ZAP_INVALID_STATUS_CODE);
             return ZError.EPROTO;
         }
 

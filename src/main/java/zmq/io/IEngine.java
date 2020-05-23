@@ -19,4 +19,6 @@ public interface IEngine
     void restartOutput();
 
     void zapMsgAvailable();
+
+    String getEndPoint();
 }

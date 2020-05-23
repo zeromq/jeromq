@@ -1287,6 +1287,12 @@ public class StreamEngine implements IEngine, IPollEvents
     }
 
     @Override
+    public String getEndPoint()
+    {
+        return endpoint;
+    }
+
+    @Override
     public String toString()
     {
         return getClass().getSimpleName() + socket + "-" + zmtpVersion;

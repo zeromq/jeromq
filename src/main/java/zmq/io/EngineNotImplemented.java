@@ -31,4 +31,10 @@ public class EngineNotImplemented implements IEngine
     public void zapMsgAvailable()
     {
     }
+
+    @Override
+    public String getEndPoint()
+    {
+        return null;
+    }
 }

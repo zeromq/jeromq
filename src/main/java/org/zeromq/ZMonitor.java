@@ -3,10 +3,13 @@ package org.zeromq;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.zeromq.ZMQ.Socket;
+import org.zeromq.proto.ZNeedle;
 
 import zmq.util.Objects;
 
@@ -46,11 +49,14 @@ public class ZMonitor implements Closeable
         private ZEvent(ZMsg msg)
         {
             assert (msg != null);
-            assert (msg.size() == 3 || msg.size() == 4) : msg.size();
+            assert (msg.size() == 1 || msg.size() == 2) : msg.size();
 
-            type = Event.valueOf(msg.popString());
-            code = Integer.valueOf(msg.popString());
-            address = msg.popString();
+            final ZFrame frame = msg.pop();
+            final ZNeedle needle = new ZNeedle(frame);
+
+            type = Event.values()[needle.getNumber1()];
+            code = needle.getNumber4();
+            address = needle.getLongString();
 
             if (msg.isEmpty()) {
                 value = null;
@@ -83,8 +89,19 @@ public class ZMonitor implements Closeable
         CLOSE_FAILED(ZMQ.EVENT_CLOSE_FAILED),
         DISCONNECTED(ZMQ.EVENT_DISCONNECTED),
         MONITOR_STOPPED(ZMQ.EVENT_MONITOR_STOPPED),
+        HANDSHAKE_FAILED_NO_DETAIL(ZMQ.HANDSHAKE_FAILED_NO_DETAIL),
+        HANDSHAKE_SUCCEEDED(ZMQ.HANDSHAKE_SUCCEEDED),
+        HANDSHAKE_FAILED_PROTOCOL(ZMQ.HANDSHAKE_FAILED_PROTOCOL),
+        HANDSHAKE_FAILED_AUTH(ZMQ.HANDSHAKE_FAILED_AUTH),
         HANDSHAKE_PROTOCOL(ZMQ.EVENT_HANDSHAKE_PROTOCOL),
         ALL(ZMQ.EVENT_ALL);
+
+        private static final Map<Integer, Event> map = new HashMap<>(Event.values().length);
+        static {
+            for (Event e : Event.values()) {
+                map.put(e.events, e);
+            }
+        }
 
         private final int events;
 
@@ -97,6 +114,7 @@ public class ZMonitor implements Closeable
         {
             for (Event candidate : Event.values()) {
                 if ((candidate.events & event) != 0) {
+                    assert (candidate.events & ~event) == 0 : "a mask, not a value";
                     return candidate;
                 }
             }
@@ -327,12 +345,15 @@ public class ZMonitor implements Closeable
             assert (address != null);
             final Event type = Event.find(code);
             assert (type != null);
-
             final ZMsg msg = new ZMsg();
 
-            msg.add(type.name());
-            msg.add(Integer.toString(code));
-            msg.add(address);
+            final ZFrame frame = new ZFrame(new byte[1 + 4 + address.length() + 4]);
+            final ZNeedle needle = new ZNeedle(frame);
+            needle.putNumber1(type.ordinal());
+            needle.putNumber4(code);
+            needle.putLongString(address);
+
+            msg.add(frame);
 
             final Object value = event.getValue();
             if (value != null) {

@@ -181,6 +181,42 @@ public class ZMQ
     public static final int ZMQ_EVENT_MONITOR_STOPPED    = 1 << 10;
     public static final int ZMQ_EVENT_HANDSHAKE_PROTOCOL = 1 << 15;
     public static final int ZMQ_EVENT_ALL                = 0xffff;
+    /*  Unspecified system errors during handshake. Event value is an errno.      */
+    public static final int ZMQ_EVENT_HANDSHAKE_FAILED_NO_DETAIL   = 1 << 11;
+
+    /*  Handshake complete successfully with successful authentication (if        *
+     *  enabled). Event value is unused.                                          */
+    public static final int ZMQ_EVENT_HANDSHAKE_SUCCEEDED           = 1 << 12;
+
+    /*  Protocol errors between ZMTP peers or between server and ZAP handler.     *
+     *  Event value is one of ZMQ_PROTOCOL_ERROR_*                                */
+    public static final int ZMQ_EVENT_HANDSHAKE_FAILED_PROTOCOL     = 1 << 13;
+    /*  Failed authentication requests. Event value is the numeric ZAP status     *
+     *  code, i.e. 300, 400 or 500.                                               */
+    public static final int ZMQ_EVENT_HANDSHAKE_FAILED_AUTH         = 1 << 14;
+
+    public static final int ZMQ_PROTOCOL_ERROR_ZMTP_UNSPECIFIED                   = 0x10000000;
+    public static final int ZMQ_PROTOCOL_ERROR_ZMTP_UNEXPECTED_COMMAND            = 0x10000001;
+    public static final int ZMQ_PROTOCOL_ERROR_ZMTP_INVALID_SEQUENCE              = 0x10000002;
+    public static final int ZMQ_PROTOCOL_ERROR_ZMTP_KEY_EXCHANGE                  = 0x10000003;
+    public static final int ZMQ_PROTOCOL_ERROR_ZMTP_MALFORMED_COMMAND_UNSPECIFIED = 0x10000011;
+    public static final int ZMQ_PROTOCOL_ERROR_ZMTP_MALFORMED_COMMAND_MESSAGE     = 0x10000012;
+    public static final int ZMQ_PROTOCOL_ERROR_ZMTP_MALFORMED_COMMAND_HELLO       = 0x10000013;
+    public static final int ZMQ_PROTOCOL_ERROR_ZMTP_MALFORMED_COMMAND_INITIATE    = 0x10000014;
+    public static final int ZMQ_PROTOCOL_ERROR_ZMTP_MALFORMED_COMMAND_ERROR       = 0x10000015;
+    public static final int ZMQ_PROTOCOL_ERROR_ZMTP_MALFORMED_COMMAND_READY       = 0x10000016;
+    public static final int ZMQ_PROTOCOL_ERROR_ZMTP_MALFORMED_COMMAND_WELCOME     = 0x10000017;
+    public static final int ZMQ_PROTOCOL_ERROR_ZMTP_INVALID_METADATA              = 0x10000018;
+    // the following two may be due to erroneous configuration of a peer
+    public static final int ZMQ_PROTOCOL_ERROR_ZMTP_CRYPTOGRAPHIC                 = 0x11000001;
+    public static final int ZMQ_PROTOCOL_ERROR_ZMTP_MECHANISM_MISMATCH            = 0x11000002;
+    public static final int ZMQ_PROTOCOL_ERROR_ZAP_UNSPECIFIED                    = 0x20000000;
+    public static final int ZMQ_PROTOCOL_ERROR_ZAP_MALFORMED_REPLY                = 0x20000001;
+    public static final int ZMQ_PROTOCOL_ERROR_ZAP_BAD_REQUEST_ID                 = 0x20000002;
+    public static final int ZMQ_PROTOCOL_ERROR_ZAP_BAD_VERSION                    = 0x20000003;
+    public static final int ZMQ_PROTOCOL_ERROR_ZAP_INVALID_STATUS_CODE            = 0x20000004;
+    public static final int ZMQ_PROTOCOL_ERROR_ZAP_INVALID_METADATA               = 0x20000005;
+    public static final int ZMQ_PROTOCOL_ERROR_WS_UNSPECIFIED                     = 0x30000000;
 
     public static final int ZMQ_POLLIN  = 1;
     public static final int ZMQ_POLLOUT = 2;

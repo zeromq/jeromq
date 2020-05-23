@@ -1385,6 +1385,26 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
         event(addr, ch, ZMQ.ZMQ_EVENT_DISCONNECTED);
     }
 
+    public final void eventHandshakeFailedNoDetail(String addr, int errno)
+    {
+        event(addr, errno, ZMQ.ZMQ_EVENT_HANDSHAKE_FAILED_NO_DETAIL);
+    }
+
+    public final void eventHandshakeFailedProtocol(String addr, int errno)
+    {
+        event(addr, errno, ZMQ.ZMQ_EVENT_HANDSHAKE_FAILED_PROTOCOL);
+    }
+
+    public final void eventHandshakeFailedAuth(String addr, int errno)
+    {
+        event(addr, errno, ZMQ.ZMQ_EVENT_HANDSHAKE_FAILED_AUTH);
+    }
+
+    public final void eventHandshakeSucceeded(String addr, int errno)
+    {
+        event(addr, errno, ZMQ.ZMQ_EVENT_HANDSHAKE_SUCCEEDED);
+    }
+
     private void event(String addr, Object arg, int event)
     {
         try {

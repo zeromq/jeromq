@@ -87,6 +87,7 @@ class NullMechanism extends Mechanism
     public int processHandshakeCommand(Msg msg)
     {
         if (readyCommandReceived || errorCommandReceived) {
+            session.getSocket().eventHandshakeFailedProtocol(session.getEndpoint(), ZMQ.ZMQ_PROTOCOL_ERROR_ZMTP_UNEXPECTED_COMMAND);
             return ZError.EPROTO;
         }
         int dataSize = msg.size();
@@ -99,6 +100,7 @@ class NullMechanism extends Mechanism
             rc = processErrorCommand(msg);
         }
         else {
+            session.getSocket().eventHandshakeFailedProtocol(session.getEndpoint(), ZMQ.ZMQ_PROTOCOL_ERROR_ZMTP_UNEXPECTED_COMMAND);
             return ZError.EPROTO;
         }
         return rc;
@@ -112,15 +114,8 @@ class NullMechanism extends Mechanism
 
     private int processErrorCommand(Msg msg)
     {
-        if (msg.size() < 7) {
-            return ZError.EPROTO;
-        }
-        byte errorReasonLength = msg.get(6);
-        if (errorReasonLength > msg.size() - 7) {
-            return ZError.EPROTO;
-        }
         errorCommandReceived = true;
-        return 0;
+        return parseErrorMessage(msg);
     }
 
     @Override

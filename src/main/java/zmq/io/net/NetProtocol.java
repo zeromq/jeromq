@@ -102,7 +102,7 @@ public enum NetProtocol
 
     /**
      * @param protocol name
-     * @throws {@link IllegalArgumentException} if the protocol name can be matched to an actual supported protocol
+     * @throws IllegalArgumentException if the protocol name can be matched to an actual supported protocol
      * @return
      */
     public static NetProtocol getProtocol(String protocol)

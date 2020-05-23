@@ -26,7 +26,7 @@ public class Address
     /**
      * @param protocol
      * @param address
-     * @throws {@link IllegalArgumentException} if the protocol name can be matched to an actual supported protocol
+     * @throws IllegalArgumentException if the protocol name can be matched to an actual supported protocol
      */
     @Deprecated
     public Address(final String protocol, final String address)
