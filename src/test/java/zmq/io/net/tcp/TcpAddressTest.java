@@ -24,7 +24,7 @@ public class TcpAddressTest
     {
         String addressString = "2000::a1";
         int port = Utils.findOpenPort();
-        Address addr = new Address(NetProtocol.tcp.name(), addressString + ":" + port);
+        Address addr = new Address(NetProtocol.tcp, addressString + ":" + port);
         addr.resolve(true);
         InetSocketAddress expected = new InetSocketAddress(addressString, port);
         Address.IZAddress resolved = addr.resolved();
@@ -39,7 +39,7 @@ public class TcpAddressTest
     {
         String addressString = "2000::a1";
         int port = Utils.findOpenPort();
-        Address addr = new Address(NetProtocol.tcp.name(), "[" + addressString + "]:" + port);
+        Address addr = new Address(NetProtocol.tcp, "[" + addressString + "]:" + port);
         addr.resolve(true);
         InetSocketAddress expected = new InetSocketAddress(addressString, port);
         Address.IZAddress resolved = addr.resolved();
@@ -55,7 +55,7 @@ public class TcpAddressTest
         try {
             String addressString = "2000::a1";
             int port = Utils.findOpenPort();
-            Address addr = new Address(NetProtocol.tcp.name(),
+            Address addr = new Address(NetProtocol.tcp,
                                        addressString + ":" + port);
             addr.resolve(false);
             InetSocketAddress expected = new InetSocketAddress(addressString,
@@ -77,7 +77,7 @@ public class TcpAddressTest
     @Test
     public void testGoodIPv6Google()
     {
-        Address addr = new Address(NetProtocol.tcp.name(), "www.google.com:80");
+        Address addr = new Address(NetProtocol.tcp, "www.google.com:80");
         addr.resolve(true);
         Address.IZAddress resolved = addr.resolved();
         InetSocketAddress sa = (InetSocketAddress) resolved.address();
@@ -88,7 +88,7 @@ public class TcpAddressTest
     @Test
     public void testGoodIP46Google()
     {
-        Address addr = new Address(NetProtocol.tcp.name(), "www.google.com:80");
+        Address addr = new Address(NetProtocol.tcp, "www.google.com:80");
         addr.resolve(false);
         Address.IZAddress resolved = addr.resolved();
         InetSocketAddress sa = (InetSocketAddress) resolved.address();
@@ -100,7 +100,7 @@ public class TcpAddressTest
     public void testBad()
     {
         try {
-            Address addr = new Address(NetProtocol.tcp.name(), "ggglocalhostxxx.google.com:80");
+            Address addr = new Address(NetProtocol.tcp, "ggglocalhostxxx.google.com:80");
             addr.resolve(true);
             addr.resolved();
             Assert.fail();
@@ -115,7 +115,7 @@ public class TcpAddressTest
     public void testUnspecifiedIPv6DoubleColon() throws IOException
     {
         int port = Utils.findOpenPort();
-        Address addr = new Address(NetProtocol.tcp.name(), ":::" + port);
+        Address addr = new Address(NetProtocol.tcp, ":::" + port);
         addr.resolve(true);
         Address.IZAddress resolved = addr.resolved();
         InetSocketAddress sa = (InetSocketAddress) resolved.address();
@@ -129,7 +129,7 @@ public class TcpAddressTest
     public void testUnspecifiedIPv6Star() throws IOException
     {
         int port = Utils.findOpenPort();
-        Address addr = new Address(NetProtocol.tcp.name(), "*:" + port);
+        Address addr = new Address(NetProtocol.tcp, "*:" + port);
         addr.resolve(true);
         Address.IZAddress resolved = addr.resolved();
         InetSocketAddress sa = (InetSocketAddress) resolved.address();
@@ -143,7 +143,7 @@ public class TcpAddressTest
     public void testUnspecifiedIPv4() throws IOException
     {
         int port = Utils.findOpenPort();
-        Address addr = new Address(NetProtocol.tcp.name(), "*:" + port);
+        Address addr = new Address(NetProtocol.tcp, "*:" + port);
         addr.resolve(false);
         Address.IZAddress resolved = addr.resolved();
         InetSocketAddress sa = (InetSocketAddress) resolved.address();

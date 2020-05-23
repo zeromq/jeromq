@@ -7,7 +7,6 @@ import java.nio.channels.SocketChannel;
 import java.util.Locale;
 
 import zmq.Options;
-import zmq.Own;
 import zmq.SocketBase;
 import zmq.ZError;
 import zmq.io.IOObject;
@@ -15,14 +14,14 @@ import zmq.io.IOThread;
 import zmq.io.SessionBase;
 import zmq.io.StreamEngine;
 import zmq.io.net.Address.IZAddress;
+import zmq.io.net.Listener;
 import zmq.io.net.StandardProtocolFamily;
-import zmq.poll.IPollEvents;
 import zmq.poll.Poller;
 import zmq.socket.Sockets;
 
-public class TcpListener extends Own implements IPollEvents
+public class TcpListener extends Listener
 {
-    private static boolean isWindows;
+    private static final boolean isWindows;
     static {
         String os = System.getProperty("os.name").toLowerCase(Locale.ENGLISH);
         isWindows = os.contains("win");
@@ -35,9 +34,6 @@ public class TcpListener extends Own implements IPollEvents
     private ServerSocketChannel fd;
     private Poller.Handle       handle;
 
-    //  Socket the listerner belongs to.
-    private SocketBase socket;
-
     // String representation of endpoint to bind to
     private String endpoint;
 
@@ -45,11 +41,10 @@ public class TcpListener extends Own implements IPollEvents
 
     public TcpListener(IOThread ioThread, SocketBase socket, final Options options)
     {
-        super(ioThread, options);
+        super(ioThread, socket, options);
 
         ioObject = new IOObject(ioThread, this);
         fd = null;
-        this.socket = socket;
     }
 
     @Override

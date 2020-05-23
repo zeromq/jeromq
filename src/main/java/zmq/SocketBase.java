@@ -12,11 +12,9 @@ import java.util.concurrent.locks.ReentrantLock;
 import zmq.io.IOThread;
 import zmq.io.SessionBase;
 import zmq.io.net.Address;
+import zmq.io.net.Address.IZAddress;
+import zmq.io.net.Listener;
 import zmq.io.net.NetProtocol;
-import zmq.io.net.ipc.IpcListener;
-import zmq.io.net.tcp.TcpAddress;
-import zmq.io.net.tcp.TcpListener;
-import zmq.io.net.tipc.TipcListener;
 import zmq.pipe.Pipe;
 import zmq.poll.IPollEvents;
 import zmq.poll.Poller;
@@ -204,22 +202,28 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
     //  bind, is available and compatible with the socket type.
     private NetProtocol checkProtocol(String protocol)
     {
-        //  First check out whether the protcol is something we are aware of.
-        NetProtocol proto = NetProtocol.getProtocol(protocol);
-        if (proto == null || !proto.valid) {
-            errno.set(ZError.EPROTONOSUPPORT);
+        try {
+            //  First check out whether the protcol is something we are aware of.
+            NetProtocol proto = NetProtocol.getProtocol(protocol);
+            if (!proto.valid) {
+                errno.set(ZError.EPROTONOSUPPORT);
+                return proto;
+            }
+
+            //  Check whether socket type and transport protocol match.
+            //  Specifically, multicast protocols can't be combined with
+            //  bi-directional messaging patterns (socket types).
+            if (!proto.compatible(options.type)) {
+                errno.set(ZError.ENOCOMPATPROTO);
+                return null;
+            }
+            //  Protocol is available.
             return proto;
         }
-
-        //  Check whether socket type and transport protocol match.
-        //  Specifically, multicast protocols can't be combined with
-        //  bi-directional messaging patterns (socket types).
-        if (!proto.compatible(options.type)) {
-            errno.set(ZError.ENOCOMPATPROTO);
+        catch (IllegalArgumentException e) {
+            errno.set(ZError.EPROTONOSUPPORT);
             return null;
         }
-        //  Protocol is available.
-        return proto;
     }
 
     //  Register the pipe with this socket.
@@ -379,15 +383,15 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
             }
 
             SimpleURI uri = SimpleURI.create(addr);
-            String protocolName = uri.getProtocol();
             String address = uri.getAddress();
 
-            NetProtocol protocol = checkProtocol(protocolName);
-            if (protocol == null || !protocol.valid) {
+            NetProtocol protocol = checkProtocol(uri.getProtocol());
+            if (protocol == null) {
                 return false;
             }
 
-            if (NetProtocol.inproc.equals(protocol)) {
+            switch(protocol) {
+            case inproc: {
                 Ctx.Endpoint endpoint = new Ctx.Endpoint(this, options);
                 boolean rc = registerEndpoint(addr, endpoint);
                 if (rc) {
@@ -400,24 +404,28 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
                 }
                 return rc;
             }
-
-            if (NetProtocol.pgm.equals(protocol) || NetProtocol.epgm.equals(protocol)
-                    || NetProtocol.norm.equals(protocol)) {
+            case pgm:
+                // continue
+            case epgm:
+                // continue
+            case norm:
                 //  For convenience's sake, bind can be used interchangeable with
                 //  connect for PGM, EPGM and NORM transports.
                 return connect(addr);
-            }
+            case tcp:
+                // continue
+            case ipc:
+                // continue
+            case tipc: {
+                //  Remaining transports require to be run in an I/O thread, so at this
+                //  point we'll choose one.
+                IOThread ioThread = chooseIoThread(options.affinity);
+                if (ioThread == null) {
+                    errno.set(ZError.EMTHREAD);
+                    return false;
+                }
 
-            //  Remaining transports require to be run in an I/O thread, so at this
-            //  point we'll choose one.
-            IOThread ioThread = chooseIoThread(options.affinity);
-            if (ioThread == null) {
-                errno.set(ZError.EMTHREAD);
-                return false;
-            }
-
-            if (NetProtocol.tcp.equals(protocol)) {
-                TcpListener listener = new TcpListener(ioThread, this, options);
+                Listener listener = protocol.getListener(ioThread, this, options);
                 boolean rc = listener.setAddress(address);
                 if (!rc) {
                     listener.destroy();
@@ -431,40 +439,9 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
                 addEndpoint(options.lastEndpoint, listener, null);
                 return true;
             }
-
-            if (NetProtocol.ipc.equals(protocol)) {
-                IpcListener listener = new IpcListener(ioThread, this, options);
-                boolean rc = listener.setAddress(address);
-                if (!rc) {
-                    listener.destroy();
-                    eventBindFailed(address, errno.get());
-                    return false;
-                }
-
-                // Save last endpoint URI
-                options.lastEndpoint = listener.getAddress();
-
-                addEndpoint(options.lastEndpoint, listener, null);
-                return true;
+            default:
+                throw new IllegalArgumentException(addr);
             }
-
-            if (NetProtocol.tipc.equals(protocol)) {
-                TipcListener listener = new TipcListener(ioThread, this, options);
-                boolean rc = listener.setAddress(address);
-                if (!rc) {
-                    listener.destroy();
-                    eventBindFailed(address, errno.get());
-                    return false;
-                }
-
-                // Save last endpoint URI
-                options.lastEndpoint = listener.getAddress();
-
-                addEndpoint(addr, listener, null);
-                return true;
-            }
-
-            throw new IllegalArgumentException(addr);
         }
         finally {
             unlock();
@@ -490,15 +467,14 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
             }
 
             SimpleURI uri = SimpleURI.create(addr);
-            String protocolName = uri.getProtocol();
             String address = uri.getAddress();
 
-            NetProtocol protocol = checkProtocol(protocolName);
+            NetProtocol protocol = checkProtocol(uri.getProtocol());
             if (protocol == null || !protocol.valid) {
                 return false;
             }
 
-            if (NetProtocol.inproc.equals(protocol)) {
+            if (protocol == NetProtocol.inproc) {
                 //  TODO: inproc connect is specific with respect to creating pipes
                 //  as there's no 'reconnect' functionality implemented. Once that
                 //  is in place we should follow generic pipe creation algorithm.
@@ -624,17 +600,10 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
                 errno.set(ZError.EMTHREAD);
                 return false;
             }
-            Address paddr = new Address(protocolName, address);
+            Address paddr = new Address(protocol, address);
 
             //  Resolve address (if needed by the protocol)
-            if (NetProtocol.tcp.equals(protocol) || NetProtocol.ipc.equals(protocol) || NetProtocol.tipc.equals(protocol)) {
-                paddr.resolve(options.ipv6);
-            }
-            // TODO - Should we check address for ZMQ_HAVE_NORM???
-
-            if (NetProtocol.pgm.equals(protocol) || NetProtocol.epgm.equals(protocol)) {
-                // TODO V4 init address for pgm & epgm
-            }
+            protocol.resolve(paddr, options.ipv6);
 
             //  Create session.
             SessionBase session = Sockets.createSession(ioThread, true, this, options, paddr);
@@ -642,8 +611,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
 
             //  PGM does not support subscription forwarding; ask for all data to be
             //  sent to this pipe. (same for NORM, currently?)
-            boolean subscribe2all = NetProtocol.pgm.equals(protocol) || NetProtocol.epgm.equals(protocol)
-                    || NetProtocol.norm.equals(protocol);
+            boolean subscribe2all = protocol.subscribe2all;
 
             Pipe newpipe = null;
 
@@ -709,11 +677,11 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
 
             SimpleURI uri = SimpleURI.create(addr);
             NetProtocol protocol = checkProtocol(uri.getProtocol());
-            if (protocol == null || !protocol.valid) {
+            if (protocol == null) {
                 return false;
             }
             // Disconnect an inproc socket
-            if (NetProtocol.inproc.equals(protocol)) {
+            if (protocol == NetProtocol.inproc) {
                 if (unregisterEndpoint(addr, this)) {
                     return true;
                 }
@@ -738,11 +706,11 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
             // IPv4-in-IPv6 mapping (EG: tcp://[::ffff:127.0.0.1]:9999), so try to
             // resolve before giving up. Given at this stage we don't know whether a
             // socket is connected or bound, try with both.
-            if (NetProtocol.tcp.equals(protocol)) {
+            if (protocol == NetProtocol.tcp) {
                 boolean endpoint = endpoints.hasValues(resolvedAddress);
                 if (!endpoint) {
                     // TODO V4 resolve TCP address when unbinding
-                    TcpAddress address = new TcpAddress(uri.getAddress(), options.ipv6);
+                    IZAddress address = protocol.zresolve(uri.getAddress(), options.ipv6);
                     resolvedAddress = address.address().toString();
                     endpoint = endpoints.hasValues(resolvedAddress);
                     if (!endpoint) {
@@ -1311,12 +1279,12 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
             SimpleURI uri = SimpleURI.create(addr);
 
             NetProtocol protocol = checkProtocol(uri.getProtocol());
-            if (protocol == null || !protocol.valid) {
+            if (protocol == null) {
                 return false;
             }
 
             // Event notification only supported over inproc://
-            if (!NetProtocol.inproc.equals(protocol)) {
+            if (protocol != NetProtocol.inproc) {
                 errno.set(ZError.EPROTONOSUPPORT);
                 return false;
             }
