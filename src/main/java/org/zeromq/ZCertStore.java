@@ -1,5 +1,8 @@
 package org.zeromq;
 
+import org.zeromq.util.ZDigest;
+import org.zeromq.util.ZMetadata;
+
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -11,9 +14,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import org.zeromq.util.ZDigest;
-import org.zeromq.util.ZMetadata;
 
 /**
  *
@@ -36,20 +36,19 @@ public class ZCertStore
 
     public static final class Timestamper implements Fingerprinter
     {
-        private final byte[] buf = new byte[Long.SIZE / Byte.SIZE];
-
         @Override
         public byte[] print(File path)
         {
+            final byte[] buf = new byte[8];
             final long value = path.lastModified();
             buf[0] = (byte) ((value >>> 56) & 0xff);
-            buf[0] = (byte) ((value >>> 48) & 0xff);
-            buf[0] = (byte) ((value >>> 40) & 0xff);
-            buf[0] = (byte) ((value >>> 32) & 0xff);
-            buf[0] = (byte) ((value >>> 24) & 0xff);
-            buf[0] = (byte) ((value >>> 16) & 0xff);
-            buf[0] = (byte) ((value >>> 8) & 0xff);
-            buf[0] = (byte) ((value) & 0xff);
+            buf[1] = (byte) ((value >>> 48) & 0xff);
+            buf[2] = (byte) ((value >>> 40) & 0xff);
+            buf[3] = (byte) ((value >>> 32) & 0xff);
+            buf[4] = (byte) ((value >>> 24) & 0xff);
+            buf[5] = (byte) ((value >>> 16) & 0xff);
+            buf[6] = (byte) ((value >>> 8) & 0xff);
+            buf[7] = (byte) ((value) & 0xff);
             return buf;
         }
     }
@@ -160,7 +159,10 @@ public class ZCertStore
                 }
             }
             else if (file.isDirectory()) {
-                return traverseDirectory(file, visitor);
+                boolean rc = traverseDirectory(file, visitor);
+                if (rc) {
+                    return true;
+                }
             }
             else {
                 System.out.printf(

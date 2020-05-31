@@ -1,18 +1,16 @@
 package org.zeromq;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.zeromq.auth.TestUtils;
 
 import java.io.File;
 import java.io.IOException;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.zeromq.auth.TestUtils;
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
 
-@Ignore // FIXME tests are passing on local machine but not on Travis
 public class ZCertStoreTest
 {
     private ZCertStore certStore;
@@ -25,7 +23,7 @@ public class ZCertStoreTest
         // first cleanup test-directory if still present
         TestUtils.cleanupDir(CERTSTORE_LOCATION);
 
-        certStore = new ZCertStore(CERTSTORE_LOCATION, new ZCertStore.Hasher());
+        certStore = new ZCertStore(CERTSTORE_LOCATION, new ZCertStore.Timestamper());
         File store = new File(CERTSTORE_LOCATION);
 
         // check if the certstore location was created by the certstore
