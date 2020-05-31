@@ -116,6 +116,7 @@ public class CurveClientMechanism extends Mechanism
             rc = processError(msg);
         }
         else {
+            session.getSocket().eventHandshakeFailedProtocol(session.getEndpoint(), ZMQ.ZMQ_PROTOCOL_ERROR_ZMTP_UNEXPECTED_COMMAND);
             rc = ZError.EPROTO;
         }
         return rc;
@@ -165,12 +166,14 @@ public class CurveClientMechanism extends Mechanism
     {
         assert (state == State.CONNECTED);
 
-        if (msg.size() < 33) {
+        if (!compare(msg, "MESSAGE", true)) {
+            session.getSocket().eventHandshakeFailedProtocol(session.getEndpoint(), ZMQ.ZMQ_PROTOCOL_ERROR_ZMTP_UNEXPECTED_COMMAND);
             errno.set(ZError.EPROTO);
             return null;
         }
 
-        if (!compare(msg, "MESSAGE", true)) {
+        if (msg.size() < 33) {
+            session.getSocket().eventHandshakeFailedProtocol(session.getEndpoint(), ZMQ.ZMQ_PROTOCOL_ERROR_ZMTP_MALFORMED_COMMAND_MESSAGE);
             errno.set(ZError.EPROTO);
             return null;
         }
@@ -182,6 +185,7 @@ public class CurveClientMechanism extends Mechanism
         long nonce = msg.getLong(8);
 
         if (nonce <= cnPeerNonce) {
+            session.getSocket().eventHandshakeFailedProtocol(session.getEndpoint(), ZMQ.ZMQ_PROTOCOL_ERROR_ZMTP_CRYPTOGRAPHIC);
             errno.set(ZError.EPROTO);
             return null;
         }
@@ -212,6 +216,7 @@ public class CurveClientMechanism extends Mechanism
             return decoded;
         }
         else {
+            session.getSocket().eventHandshakeFailedProtocol(session.getEndpoint(), ZMQ.ZMQ_PROTOCOL_ERROR_ZMTP_CRYPTOGRAPHIC);
             errno.set(ZError.EPROTO);
             return null;
         }
@@ -250,6 +255,7 @@ public class CurveClientMechanism extends Mechanism
         //  Create Box [64 * %x0](C'->S)
         int rc = cryptoBox.box(helloBox, helloPlaintext, helloPlaintext.capacity(), helloNonce, serverKey, cnSecret);
         if (rc != 0) {
+            session.getSocket().eventHandshakeFailedProtocol(session.getEndpoint(), ZMQ.ZMQ_PROTOCOL_ERROR_ZMTP_CRYPTOGRAPHIC);
             return -1;
         }
         msg.putShortString("HELLO");
@@ -274,6 +280,7 @@ public class CurveClientMechanism extends Mechanism
     private int processWelcome(Msg msg)
     {
         if (msg.size() != 168) {
+            session.getSocket().eventHandshakeFailedProtocol(session.getEndpoint(), ZMQ.ZMQ_PROTOCOL_ERROR_ZMTP_MALFORMED_COMMAND_READY);
             return ZError.EPROTO;
         }
 
@@ -290,6 +297,7 @@ public class CurveClientMechanism extends Mechanism
 
         int rc = cryptoBox.open(welcomePlaintext, welcomeBox, welcomeBox.capacity(), welcomeNonce, serverKey, cnSecret);
         if (rc != 0) {
+            session.getSocket().eventHandshakeFailedProtocol(session.getEndpoint(), ZMQ.ZMQ_PROTOCOL_ERROR_ZMTP_CRYPTOGRAPHIC);
             return ZError.EPROTO;
         }
 
@@ -322,6 +330,7 @@ public class CurveClientMechanism extends Mechanism
 
         int rc = cryptoBox.box(vouchBox, vouchPlaintext, vouchPlaintext.capacity(), vouchNonce, cnServer, secretKey);
         if (rc == -1) {
+            session.getSocket().eventHandshakeFailedProtocol(session.getEndpoint(), ZMQ.ZMQ_PROTOCOL_ERROR_ZMTP_CRYPTOGRAPHIC);
             return -1;
         }
 
@@ -356,6 +365,7 @@ public class CurveClientMechanism extends Mechanism
 
         rc = cryptoBox.box(initiateBox, initiatePlaintext, mlen, initiateNonce, cnServer, cnSecret);
         if (rc == -1) {
+            session.getSocket().eventHandshakeFailedProtocol(session.getEndpoint(), ZMQ.ZMQ_PROTOCOL_ERROR_ZMTP_CRYPTOGRAPHIC);
             return -1;
         }
 
@@ -376,6 +386,7 @@ public class CurveClientMechanism extends Mechanism
     private int processReady(Msg msg)
     {
         if (msg.size() < 30) {
+            session.getSocket().eventHandshakeFailedProtocol(session.getEndpoint(), ZMQ.ZMQ_PROTOCOL_ERROR_ZMTP_MALFORMED_COMMAND_READY);
             return ZError.EPROTO;
         }
         int clen = Curve.Size.BOXZERO.bytes() + msg.size() - 14;
@@ -393,6 +404,7 @@ public class CurveClientMechanism extends Mechanism
 
         int rc = cryptoBox.openAfternm(readyPlaintext, readyBox, clen, readyNonce, cnPrecom);
         if (rc != 0) {
+            session.getSocket().eventHandshakeFailedProtocol(session.getEndpoint(), ZMQ.ZMQ_PROTOCOL_ERROR_ZMTP_CRYPTOGRAPHIC);
             return ZError.EPROTO;
         }
 
@@ -408,17 +420,10 @@ public class CurveClientMechanism extends Mechanism
     private int processError(Msg msg)
     {
         if (state != State.EXPECT_WELCOME && state != State.EXPECT_READY) {
-            return ZError.EPROTO;
-        }
-        if (msg.size() < 7) {
-            return ZError.EPROTO;
-        }
-        byte errorReasonLength = msg.get(6);
-        if (errorReasonLength > msg.size() - 7) {
+            session.getSocket().eventHandshakeFailedProtocol(session.getEndpoint(), ZMQ.ZMQ_PROTOCOL_ERROR_ZMTP_UNEXPECTED_COMMAND);
             return ZError.EPROTO;
         }
         state = State.ERROR_RECEIVED;
-
-        return 0;
+        return parseErrorMessage(msg);
     }
 }
