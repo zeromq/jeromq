@@ -56,7 +56,7 @@ public enum Mechanisms
                 return new PlainServerMechanism(session, peerAddress, options);
             }
             else {
-                return new PlainClientMechanism(options);
+                return new PlainClientMechanism(session, options);
             }
         }
     },
@@ -85,7 +85,7 @@ public enum Mechanisms
                 return new CurveServerMechanism(session, peerAddress, options);
             }
             else {
-                return new CurveClientMechanism(options);
+                return new CurveClientMechanism(session, options);
             }
         }
     },
@@ -102,7 +102,7 @@ public enum Mechanisms
                 return new GssapiServerMechanism(session, peerAddress, options);
             }
             else {
-                return new GssapiClientMechanism(options);
+                return new GssapiClientMechanism(session, options);
             }
         }
     };

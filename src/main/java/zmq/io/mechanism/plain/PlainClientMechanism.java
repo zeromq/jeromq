@@ -7,6 +7,7 @@ import zmq.Msg;
 import zmq.Options;
 import zmq.ZError;
 import zmq.ZMQ;
+import zmq.io.SessionBase;
 import zmq.io.mechanism.Mechanism;
 
 public class PlainClientMechanism extends Mechanism
@@ -23,9 +24,9 @@ public class PlainClientMechanism extends Mechanism
 
     private State state;
 
-    public PlainClientMechanism(Options options)
+    public PlainClientMechanism(SessionBase session, Options options)
     {
-        super(null, null, options);
+        super(session, null, options);
         this.state = State.SENDING_HELLO;
     }
 
