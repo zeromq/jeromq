@@ -9,6 +9,7 @@ import zmq.Msg;
 import zmq.Options;
 import zmq.ZError;
 import zmq.ZMQ;
+import zmq.io.SessionBase;
 import zmq.io.mechanism.Mechanism;
 import zmq.util.Errno;
 import zmq.util.Wire;
@@ -51,9 +52,9 @@ public class CurveClientMechanism extends Mechanism
 
     private final Errno errno;
 
-    public CurveClientMechanism(Options options)
+    public CurveClientMechanism(SessionBase session, Options options)
     {
-        super(null, null, options);
+        super(session, null, options);
         this.state = State.SEND_HELLO;
         cnNonce = 1;
         cnPeerNonce = 1;

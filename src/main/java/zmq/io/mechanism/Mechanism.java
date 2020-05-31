@@ -249,21 +249,15 @@ public abstract class Mechanism
                         && reason.charAt(0) <= '5') {
             try {
                 int statusCode = Integer.parseInt(reason);
-                if (session != null) {
-                    session.getSocket().eventHandshakeFailedAuth(session.getEndpoint(), statusCode);
-                }
+                session.getSocket().eventHandshakeFailedAuth(session.getEndpoint(), statusCode);
                 rc = 0;
             }
             catch (NumberFormatException e) {
-                if (session != null) {
-                    session.getSocket().eventHandshakeFailedProtocol(session.getEndpoint(), ZMQ.ZMQ_PROTOCOL_ERROR_ZAP_MALFORMED_REPLY);
-                }
+                session.getSocket().eventHandshakeFailedProtocol(session.getEndpoint(), ZMQ.ZMQ_PROTOCOL_ERROR_ZAP_MALFORMED_REPLY);
             }
         }
         else {
-            if (session != null) {
-                session.getSocket().eventHandshakeFailedProtocol(session.getEndpoint(), ZMQ.ZMQ_PROTOCOL_ERROR_ZAP_MALFORMED_REPLY);
-            }
+            session.getSocket().eventHandshakeFailedProtocol(session.getEndpoint(), ZMQ.ZMQ_PROTOCOL_ERROR_ZAP_MALFORMED_REPLY);
         }
         return rc;
     }

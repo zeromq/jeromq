@@ -289,7 +289,7 @@ public class CurveServerMechanism extends Mechanism
         if (rc != 0) {
             session.getSocket().eventHandshakeFailedProtocol(session.getEndpoint(), ZMQ.ZMQ_PROTOCOL_ERROR_ZMTP_CRYPTOGRAPHIC);
             state = State.SEND_ERROR;
-            statusCode = "999";
+            statusCode = null;
             return 0;
         }
 
@@ -507,10 +507,10 @@ public class CurveServerMechanism extends Mechanism
 
     private int produceError(Msg msg)
     {
-        assert (statusCode != null && statusCode.length() == 3);
+        assert (statusCode == null || statusCode.length() == 3);
 
         msg.putShortString("ERROR");
-        if (! "999".equals(statusCode)) {
+        if (statusCode != null) {
             msg.putShortString(statusCode);
         }
 

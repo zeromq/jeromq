@@ -2,14 +2,15 @@ package zmq.io.mechanism.gssapi;
 
 import zmq.Msg;
 import zmq.Options;
+import zmq.io.SessionBase;
 import zmq.io.mechanism.Mechanism;
 
 // TODO V4 implement GSSAPI
 public class GssapiClientMechanism extends Mechanism
 {
-    public GssapiClientMechanism(Options options)
+    public GssapiClientMechanism(SessionBase session, Options options)
     {
-        super(null, null, options);
+        super(session, null, options);
         throw new UnsupportedOperationException("GSSAPI mechanism is not yet implemented");
     }
 
