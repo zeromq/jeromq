@@ -176,14 +176,13 @@ public class TcpConnecter extends Own implements IPollEvents
         try {
             boolean rc = open();
 
+            handle = ioObject.addFd(fd);
             //  Connect may succeed in synchronous manner.
             if (rc) {
-                handle = ioObject.addFd(fd);
                 connectEvent();
             }
             //  Connection establishment may be delayed. Poll for its completion.
             else {
-                handle = ioObject.addFd(fd);
                 ioObject.setPollConnect(handle);
                 socket.eventConnectDelayed(addr.toString(), -1);
             }
@@ -295,10 +294,7 @@ public class TcpConnecter extends Own implements IPollEvents
         boolean rc;
         try {
             rc = fd.connect(sa);
-            if (rc) {
-                //  Connect was successful immediately.
-            }
-            else {
+            if (! rc) {
                 //  Translate error codes indicating asynchronous connect has been
                 //  launched to a uniform EINPROGRESS.
                 errno.set(ZError.EINPROGRESS);

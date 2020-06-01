@@ -28,7 +28,7 @@ import zmq.socket.Sockets;
 public enum NetProtocol
 {
     inproc(false, false),
-    ipc(false, false)
+    tcp(false, false)
     {
         @Override
         public void resolve(Address paddr, boolean ipv6)
@@ -36,7 +36,7 @@ public enum NetProtocol
             paddr.resolve(ipv6);
         }
     },
-    tcp(false, false)
+    udp(true, true)
     {
         @Override
         public void resolve(Address paddr, boolean ipv6)
@@ -48,6 +48,17 @@ public enum NetProtocol
     //  sent to this pipe. (same for NORM, currently?)
     pgm(true, true, Sockets.PUB, Sockets.SUB, Sockets.XPUB, Sockets.XPUB),
     epgm(true, true, Sockets.PUB, Sockets.SUB, Sockets.XPUB, Sockets.XPUB),
+    norm(true, true),
+    ws(true, true),
+    wss(true, true),
+    ipc(false, false)
+    {
+        @Override
+        public void resolve(Address paddr, boolean ipv6)
+        {
+            paddr.resolve(ipv6);
+        }
+    },
     tipc(false, false)
     {
         @Override
@@ -56,7 +67,7 @@ public enum NetProtocol
             paddr.resolve(ipv6);
         }
     },
-    norm(true, true),
+    vmci(true, true),
     ;
 
     private static final Map<NetProtocol,NetworkProtocolProvider > providers;
@@ -75,13 +86,13 @@ public enum NetProtocol
     public final boolean  isMulticast;
     private final Set<Integer> compatibles;
 
-    private NetProtocol(boolean subscribe2all, boolean isMulticast, Sockets... compatibles)
+    NetProtocol(boolean subscribe2all, boolean isMulticast, Sockets... compatibles)
     {
         this.compatibles = Arrays.stream(compatibles).map(Sockets::ordinal).collect(Collectors.toSet());
         this.subscribe2all = subscribe2all;
         this.isMulticast = isMulticast;
     }
-    
+
     public boolean isValid() {
         return providers.containsKey(this) && providers.get(this).isValid();
     }

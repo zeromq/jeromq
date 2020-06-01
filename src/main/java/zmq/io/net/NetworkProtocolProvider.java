@@ -13,11 +13,10 @@ import zmq.io.net.Address.IZAddress;
 
 public interface NetworkProtocolProvider {
     boolean handleProtocol(NetProtocol protocol);
-    public Listener getListener(IOThread ioThread, SocketBase socket,
-                                Options options);
-    public IZAddress zresolve(String addr, boolean ipv6);
-    public abstract void startConnecting(Options options, IOThread ioThread, SessionBase session, Address addr,
-                                         boolean delayedStart, Consumer<Own> launchChild, BiConsumer<SessionBase, IEngine> sendAttach);
+    Listener getListener(IOThread ioThread, SocketBase socket, Options options);
+    IZAddress zresolve(String addr, boolean ipv6);
+    void startConnecting(Options options, IOThread ioThread, SessionBase session, Address addr, boolean delayedStart,
+            Consumer<Own> launchChild, BiConsumer<SessionBase, IEngine> sendAttach);
     boolean isValid();
 
 }
