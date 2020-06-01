@@ -41,6 +41,11 @@ public class ZContext implements Closeable
     private final Set<Selector> selectors;
 
     /**
+     * List of ZContext in the shadows
+     */
+    private final Set<ZContext> shadows;
+
+    /**
      * Number of io threads allocated to this context, default 1
      */
     private final int ioThreads;
@@ -81,17 +86,26 @@ public class ZContext implements Closeable
 
     public ZContext(int ioThreads)
     {
-        this(ZMQ.context(ioThreads), true, ioThreads);
+        this(null, ioThreads);
     }
 
-    private ZContext(Context context, boolean main, int ioThreads)
+    private ZContext(ZContext parent, int ioThreads)
     {
+        if (parent == null) {
+            this.main = true;
+            this.context = ZMQ.context(ioThreads);
+            this.shadows = Collections.newSetFromMap(new ConcurrentHashMap<>());
+        }
+        else {
+            this.main = false;
+            this.context = parent.context;
+            this.shadows = parent.shadows;
+            this.shadows.add(this);
+        }
         // Android compatibility: not using ConcurrentHashMap.newKeySet()
         this.sockets = Collections.newSetFromMap(new ConcurrentHashMap<>());
         this.selectors = Collections.newSetFromMap(new ConcurrentHashMap<>());
-        this.context = context;
         this.ioThreads = ioThreads;
-        this.main = main;
         this.linger = 0;
         this.pipehwm = 1000;
         this.sndhwm = 1000;
@@ -115,7 +129,13 @@ public class ZContext implements Closeable
 
         // Only terminate context if we are on the main thread
         if (isMain()) {
+            for (ZContext child : shadows) {
+                child.close();
+            }
             context.term();
+        }
+        else {
+            shadows.remove(this);
         }
     }
 
@@ -248,14 +268,30 @@ public class ZContext implements Closeable
      * of managed sockets, io thread count etc.
      * @param ctx   Original ZContext to create shadow of
      * @return  New ZContext
+     * @deprecated use the instance method directly
      */
+    @Deprecated
     public static ZContext shadow(ZContext ctx)
     {
-        ZContext context = new ZContext(ctx.context, false, ctx.ioThreads);
-        context.linger = ctx.linger;
-        context.sndhwm = ctx.sndhwm;
-        context.rcvhwm = ctx.rcvhwm;
-        context.pipehwm = ctx.pipehwm;
+        return ctx.shadow();
+    }
+
+    /**
+     * Creates new shadow context.
+     * Shares same underlying org.zeromq.Context instance but has own list
+     * of managed sockets, io thread count etc.
+     * @return  New ZContext
+     */
+    public ZContext shadow()
+    {
+        if (! main) {
+            throw new IllegalStateException("Shadow contexts don't cast shadows");
+        }
+        ZContext context = new ZContext(this, ioThreads);
+        context.linger = linger;
+        context.sndhwm = sndhwm;
+        context.rcvhwm = rcvhwm;
+        context.pipehwm = pipehwm;
         return context;
     }
 
@@ -336,6 +372,14 @@ public class ZContext implements Closeable
     public boolean isMain()
     {
         return main;
+    }
+
+    /**
+     * @return true if no shadow context, no sockets and no selectors are alive.
+     */
+    public boolean isEmpty()
+    {
+        return shadows.size() == 0 && sockets.size() == 0 && selectors.size() == 0;
     }
 
     /**
