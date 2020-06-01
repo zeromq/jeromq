@@ -211,7 +211,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
         try {
             //  First check out whether the protcol is something we are aware of.
             NetProtocol proto = NetProtocol.getProtocol(protocol);
-            if (!proto.valid) {
+            if (!proto.isValid()) {
                 errno.set(ZError.EPROTONOSUPPORT);
                 return proto;
             }
@@ -507,7 +507,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
         String address = uri.getAddress();
 
         NetProtocol protocol = checkProtocol(uri.getProtocol());
-        if (protocol == null || !protocol.valid) {
+        if (protocol == null || !protocol.isValid()) {
             return false;
         }
 
@@ -539,7 +539,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
             ZObject[] parents = {this, peer.socket == null ? this : peer.socket};
 
             boolean conflate = options.conflate && (options.type == ZMQ.ZMQ_DEALER || options.type == ZMQ.ZMQ_PULL
-                    || options.type == ZMQ.ZMQ_PUSH || options.type == ZMQ.ZMQ_PUB || options.type == ZMQ.ZMQ_SUB);
+                                                            || options.type == ZMQ.ZMQ_PUSH || options.type == ZMQ.ZMQ_PUB || options.type == ZMQ.ZMQ_SUB);
 
             int[] hwms = {conflate ? -1 : sndhwm, conflate ? -1 : rcvhwm};
             boolean[] conflates = {conflate, conflate};
@@ -624,7 +624,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
         }
 
         boolean isSingleConnect = options.type == ZMQ.ZMQ_DEALER || options.type == ZMQ.ZMQ_SUB
-                || options.type == ZMQ.ZMQ_REQ;
+                                          || options.type == ZMQ.ZMQ_REQ;
 
         if (isSingleConnect) {
             if (endpoints.hasValues(addr)) {
@@ -660,7 +660,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
             //  Create a bi-directional pipe.
             ZObject[] parents = {this, session};
             boolean conflate = options.conflate && (options.type == ZMQ.ZMQ_DEALER || options.type == ZMQ.ZMQ_PULL
-                    || options.type == ZMQ.ZMQ_PUSH || options.type == ZMQ.ZMQ_PUB || options.type == ZMQ.ZMQ_SUB);
+                                                            || options.type == ZMQ.ZMQ_PUSH || options.type == ZMQ.ZMQ_PUB || options.type == ZMQ.ZMQ_SUB);
 
             int[] hwms = {conflate ? -1 : options.sendHwm, conflate ? -1 : options.recvHwm};
             boolean[] conflates = {conflate, conflate};
