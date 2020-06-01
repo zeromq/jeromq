@@ -4,6 +4,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertThat;
 
+import org.junit.Assert;
 import org.junit.Test;
 import org.zeromq.ZMQ.Socket;
 
@@ -112,25 +113,28 @@ public class TestZContext
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Test(timeout = 5000)
     public void testShadow()
     {
         ZContext ctx = new ZContext();
-        Socket s = ctx.createSocket(SocketType.PUB);
-        assertThat(s, notNullValue());
-        assertThat(ctx.getSockets().size(), is(1));
-
-        ZContext shadowCtx = ZContext.shadow(ctx);
-        shadowCtx.setMain(false);
-        assertThat(shadowCtx.getSockets().size(), is(0));
+        // A socket that will be forgotten at the parent
+        Socket s = ctx.createSocket(SocketType.SUB);
+        Assert.assertNotNull(s);
+        Assert.assertEquals(1, ctx.getSockets().size());
+        // A shadow that will be forgotten
+        ZContext shadowCtx0 = ctx.shadow();
+        // A socket that will be forgotten in a shadow
         @SuppressWarnings("unused")
-        Socket s1 = shadowCtx.createSocket(SocketType.SUB);
-        assertThat(shadowCtx.getSockets().size(), is(1));
-        assertThat(ctx.getSockets().size(), is(1));
-
-        shadowCtx.close();
+        Socket s0 = shadowCtx0.createSocket(SocketType.PUB);
+        try (ZContext shadowCtx1 = ctx.shadow()) {
+            Assert.assertEquals(0, shadowCtx1.getSockets().size());
+            try (Socket s1 = shadowCtx1.createSocket(SocketType.PUB)) {
+                Assert.assertEquals(1, ctx.getSockets().size());
+                Assert.assertEquals(1, shadowCtx1.getSockets().size());
+            }
+        }
         ctx.close();
+        Assert.assertTrue(ctx.isEmpty());
     }
 
     @SuppressWarnings("deprecation")

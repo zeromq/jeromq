@@ -98,7 +98,7 @@ public class ZThread
         }
 
         //  Connect child pipe to our pipe
-        ZContext ccontext = ZContext.shadow(ctx);
+        ZContext ccontext = ctx.shadow();
         Socket cpipe = ccontext.createSocket(SocketType.PAIR);
         if (cpipe == null) {
             return null;
