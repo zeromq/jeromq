@@ -1259,6 +1259,14 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
         rcvmore = msg.hasMore();
     }
 
+    /**
+     * Register the address for a monitor. It must be a inproc PAIR.
+     * @param addr or null for unregister.
+     * @param events an event mask to monitor.
+     * @return true if creation succeeded.
+     * @throws IllegalStateException if a previous monitor was already
+     *         registered.
+     */
     public final boolean monitor(final String addr, int events)
     {
         try {
@@ -1274,6 +1282,9 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
             if (addr == null) {
                 stopMonitor();
                 return true;
+            }
+            if (monitorSocket != null) {
+                throw new IllegalStateException("Monitor registred twice");
             }
 
             SimpleURI uri = SimpleURI.create(addr);
@@ -1298,9 +1309,8 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
             }
 
             // Never block context termination on pending event messages
-            int linger = 0;
             try {
-                monitorSocket.setSocketOpt(ZMQ.ZMQ_LINGER, linger);
+                monitorSocket.setSocketOpt(ZMQ.ZMQ_LINGER, 0);
             }
             catch (IllegalArgumentException e) {
                 stopMonitor();
