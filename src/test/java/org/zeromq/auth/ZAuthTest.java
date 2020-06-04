@@ -1,12 +1,5 @@
 package org.zeromq.auth;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.nullValue;
-import static org.junit.Assert.assertThat;
-
-import java.io.FileWriter;
-import java.io.IOException;
-
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -17,6 +10,13 @@ import org.zeromq.ZCert;
 import org.zeromq.ZCertStore;
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
+
+import java.io.FileWriter;
+import java.io.IOException;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Test are basically the java-ports based on <a href="http://hintjens.com/blog:49">Using ZeroMQ Security (part 2)</a>
@@ -44,7 +44,6 @@ public class ZAuthTest
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Test(timeout = 5000)
     public void testNull() throws IOException
     {
@@ -58,16 +57,19 @@ public class ZAuthTest
             //  Create and bind server socket
             ZMQ.Socket server = ctx.createSocket(SocketType.PUSH);
             server.setZapDomain("test");
-            final int port = server.bindToRandomPort("tcp://*");
+            boolean rc = server.bind("tcp://localhost:*");
+            assertThat(rc, is(true));
 
             //  Create and connect client socket
             ZMQ.Socket client = ctx.createSocket(SocketType.PULL);
-            boolean rc = client.connect("tcp://127.0.0.1:" + port);
+            rc = client.connect(server.getLastEndpoint());
             assertThat(rc, is(true));
 
-            //  Send a single message from server to client
-            rc = server.send("Hello");
+            //  By default PUSH sockets block if there's no peer
+            rc = server.setSendTimeOut(200);
             assertThat(rc, is(true));
+            //  Send a single message from server to client
+            server.send("Hello");
 
             ZAuth.ZapReply reply = auth.nextReply();
             assertThat(reply.statusCode, is(200));
@@ -78,7 +80,6 @@ public class ZAuthTest
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Test(timeout = 5000)
     public void testNullAllowed() throws IOException
     {
@@ -93,16 +94,19 @@ public class ZAuthTest
             //  Create and bind server socket
             ZMQ.Socket server = ctx.createSocket(SocketType.PUSH);
             server.setZapDomain("test");
-            final int port = server.bindToRandomPort("tcp://*");
+            boolean rc = server.bind("tcp://localhost:*");
+            assertThat(rc, is(true));
 
             //  Create and connect client socket
             ZMQ.Socket client = ctx.createSocket(SocketType.PULL);
-            boolean rc = client.connect("tcp://127.0.0.1:" + port);
+            rc = client.connect(server.getLastEndpoint());
             assertThat(rc, is(true));
 
-            //  Send a single message from server to client
-            rc = server.send("Hello");
+            //  By default PUSH sockets block if there's no peer
+            rc = server.setSendTimeOut(200);
             assertThat(rc, is(true));
+            //  Send a single message from server to client
+            server.send("Hello");
 
             ZAuth.ZapReply reply = auth.nextReply();
             assertThat(reply.statusCode, is(200));
@@ -113,7 +117,6 @@ public class ZAuthTest
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Test(timeout = 5000)
     public void testNullWithNoDomain() throws IOException
     {
@@ -127,16 +130,19 @@ public class ZAuthTest
 
             //  Create and bind server socket
             ZMQ.Socket server = ctx.createSocket(SocketType.PUSH);
-            final int port = server.bindToRandomPort("tcp://*");
+            boolean rc = server.bind("tcp://localhost:*");
+            assertThat(rc, is(true));
 
             //  Create and connect client socket
             ZMQ.Socket client = ctx.createSocket(SocketType.PULL);
-            boolean rc = client.connect("tcp://127.0.0.1:" + port);
+            rc = client.connect(server.getLastEndpoint());
             assertThat(rc, is(true));
 
-            //  Send a single message from server to client
-            rc = server.send("Hello");
+            //  By default PUSH sockets block if there's no peer
+            rc = server.setSendTimeOut(200);
             assertThat(rc, is(true));
+            //  Send a single message from server to client
+            server.send("Hello");
 
             ZAuth.ZapReply reply = auth.nextReply(1000);
             assertThat(reply, nullValue());
@@ -147,12 +153,11 @@ public class ZAuthTest
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Test(timeout = 5000)
     public void testPlainWithPassword() throws IOException
     {
         try (ZContext ctx = new ZContext();
-             ZAuth auth = new ZAuth(ctx);) {
+             ZAuth auth = new ZAuth(ctx)) {
             //  Start an authentication engine for this context. This engine
             //  allows or denies incoming connections (talking to the libzmq
             //  core over a protocol called ZAP).
@@ -167,18 +172,21 @@ public class ZAuthTest
             ZMQ.Socket server = ctx.createSocket(SocketType.PUSH);
             server.setPlainServer(true);
             server.setZapDomain("global".getBytes());
-            final int port = server.bindToRandomPort("tcp://*");
+            boolean rc = server.bind("tcp://localhost:*");
+            assertThat(rc, is(true));
 
             //  Create and connect client socket
             ZMQ.Socket client = ctx.createSocket(SocketType.PULL);
             client.setPlainUsername("admin".getBytes());
             client.setPlainPassword("secret".getBytes());
-            boolean rc = client.connect("tcp://127.0.0.1:" + port);
+            rc = client.connect(server.getLastEndpoint());
             assertThat(rc, is(true));
 
-            //  Send a single message from server to client
-            rc = server.send("Hello");
+            //  By default PUSH sockets block if there's no peer
+            rc = server.setSendTimeOut(200);
             assertThat(rc, is(true));
+            //  Send a single message from server to client
+            server.send("Hello");
 
             ZAuth.ZapReply reply = auth.nextReply();
             assertThat(reply.statusCode, is(200));
@@ -190,14 +198,13 @@ public class ZAuthTest
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Test(timeout = 5000)
     public void testPlainWithPasswordDenied() throws IOException
     {
         try (ZContext ctx = new ZContext();
              ZAuth auth = new ZAuth(ctx);
              ZMQ.Socket server = ctx.createSocket(SocketType.PUSH);
-             ZMQ.Socket client = ctx.createSocket(SocketType.PULL);) {
+             ZMQ.Socket client = ctx.createSocket(SocketType.PULL)) {
             //  Start an authentication engine for this context. This engine
             //  allows or denies incoming connections (talking to the libzmq
             //  core over a protocol called ZAP).
@@ -210,24 +217,28 @@ public class ZAuthTest
             //  Create and bind server socket
             server.setPlainServer(true);
             server.setZapDomain("global".getBytes());
-            final int port = server.bindToRandomPort("tcp://*");
+            boolean rc = server.bind("tcp://localhost:*");
+            assertThat(rc, is(true));
 
             //  Create and connect client socket
             client.setPlainUsername("admin".getBytes());
             client.setPlainPassword("wrong".getBytes());
-            boolean rc = client.connect("tcp://127.0.0.1:" + port);
+
+            //  Create and connect client socket
+            rc = client.connect(server.getLastEndpoint());
             assertThat(rc, is(true));
 
-            //  Send a single message from server to client
-            rc = server.send("Hello");
+            //  By default PUSH sockets block if there's no peer
+            rc = server.setSendTimeOut(200);
             assertThat(rc, is(true));
+            //  Send a single message from server to client
+            server.send("Hello");
 
             ZAuth.ZapReply reply = auth.nextReply();
             assertThat(reply.statusCode, is(400));
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Test(timeout = 5000)
     public void testCurveAnyClient() throws IOException
     {
@@ -235,7 +246,7 @@ public class ZAuthTest
         try (ZContext ctx = new ZContext();
              ZAuth auth = new ZAuth(ctx, new ZCertStore.Hasher());
              ZMQ.Socket server = ctx.createSocket(SocketType.PUSH);
-             ZMQ.Socket client = ctx.createSocket(SocketType.PULL);) {
+             ZMQ.Socket client = ctx.createSocket(SocketType.PULL)) {
             //  Get some indication of what the authenticator is deciding
             auth.setVerbose(VERBOSE_MODE);
             // auth send the replies
@@ -253,17 +264,20 @@ public class ZAuthTest
             server.setZapDomain("global".getBytes());
             server.setCurveServer(true);
             serverCert.apply(server);
-            final int port = server.bindToRandomPort("tcp://*");
+            boolean rc = server.bind("tcp://localhost:*");
+            assertThat(rc, is(true));
 
             //  Create and connect client socket
             clientCert.apply(client);
             client.setCurveServerKey(serverCert.getPublicKey());
-            boolean rc = client.connect("tcp://127.0.0.1:" + port);
+            rc = client.connect(server.getLastEndpoint());
             assertThat(rc, is(true));
 
-            //  Send a single message from server to client
-            rc = server.send("Hello");
+            //  By default PUSH sockets block if there's no peer
+            rc = server.setSendTimeOut(200);
             assertThat(rc, is(true));
+            //  Send a single message from server to client
+            server.send("Hello");
 
             ZAuth.ZapReply reply = auth.nextReply();
             assertThat(reply.statusCode, is(200));
@@ -277,14 +291,13 @@ public class ZAuthTest
 
     }
 
-    @SuppressWarnings("deprecation")
     @Test(timeout = 5000)
     public void testCurveSuccessful() throws IOException
     {
         try (ZContext ctx = new ZContext();
              ZAuth auth = new ZAuth(ctx, new ZCertStore.Hasher());
              ZMQ.Socket server = ctx.createSocket(SocketType.PUSH);
-             ZMQ.Socket client = ctx.createSocket(SocketType.PULL);) {
+             ZMQ.Socket client = ctx.createSocket(SocketType.PULL)) {
             //  Start an authentication engine for this context. This engine
             //  allows or denies incoming connections (talking to the libzmq
             //  core over a protocol called ZAP).
@@ -315,18 +328,21 @@ public class ZAuthTest
             server.setCurveServer(true);
             server.setCurvePublicKey(serverCert.getPublicKey());
             server.setCurveSecretKey(serverCert.getSecretKey());
-            final int port = server.bindToRandomPort("tcp://*");
+            boolean rc = server.bind("tcp://localhost:*");
+            assertThat(rc, is(true));
 
             //  Create and connect client socket
             client.setCurvePublicKey(clientCert.getPublicKey());
             client.setCurveSecretKey(clientCert.getSecretKey());
             client.setCurveServerKey(serverCert.getPublicKey());
-            boolean rc = client.connect("tcp://127.0.0.1:" + port);
+            rc = client.connect(server.getLastEndpoint());
             assertThat(rc, is(true));
 
-            //  Send a single message from server to client
-            rc = server.send("Hello");
+            //  By default PUSH sockets block if there's no peer
+            rc = server.setSendTimeOut(200);
             assertThat(rc, is(true));
+            //  Send a single message from server to client
+            server.send("Hello");
 
             ZAuth.ZapReply reply = auth.nextReply(true);
             assertThat(reply.statusCode, is(200));
@@ -337,14 +353,13 @@ public class ZAuthTest
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Test(timeout = 5000)
     public void testBlacklistDenied() throws IOException
     {
         try (ZContext ctx = new ZContext();
              ZAuth auth = new ZAuth(ctx, new ZCertStore.Timestamper());
              ZMQ.Socket server = ctx.createSocket(SocketType.PUSH);
-             ZMQ.Socket client = ctx.createSocket(SocketType.PULL);) {
+             ZMQ.Socket client = ctx.createSocket(SocketType.PULL)) {
             //  Start an authentication engine for this context. This engine
             //  allows or denies incoming connections (talking to the libzmq
             //  core over a protocol called ZAP).
@@ -359,15 +374,18 @@ public class ZAuthTest
 
             //  Create and bind server socket
             server.setZapDomain("global".getBytes());
-            final int port = server.bindToRandomPort("tcp://*");
+            boolean rc = server.bind("tcp://localhost:*");
+            assertThat(rc, is(true));
 
             //  Create and connect client socket
-            boolean rc = client.connect("tcp://127.0.0.1:" + port);
+            rc = client.connect(server.getLastEndpoint());
             assertThat(rc, is(true));
 
-            //  Send a single message from server to client
-            rc = server.send("Hello");
+            //  By default PUSH sockets block if there's no peer
+            rc = server.setSendTimeOut(200);
             assertThat(rc, is(true));
+            //  Send a single message from server to client
+            server.send("Hello");
 
             ZAuth.ZapReply reply = auth.nextReply(true);
             assertThat(reply.statusCode, is(400));
@@ -375,14 +393,13 @@ public class ZAuthTest
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Test(timeout = 5000)
     public void testBlacklistAllowed() throws IOException
     {
         try (ZContext ctx = new ZContext();
              ZAuth auth = new ZAuth(ctx, new ZCertStore.Hasher());
              ZMQ.Socket server = ctx.createSocket(SocketType.PUSH);
-             ZMQ.Socket client = ctx.createSocket(SocketType.PULL);) {
+             ZMQ.Socket client = ctx.createSocket(SocketType.PULL)) {
             //  Start an authentication engine for this context. This engine
             //  allows or denies incoming connections (talking to the libzmq
             //  core over a protocol called ZAP).
@@ -397,15 +414,18 @@ public class ZAuthTest
 
             //  Create and bind server socket
             server.setZapDomain("global".getBytes());
-            final int port = server.bindToRandomPort("tcp://*");
+            boolean rc = server.bind("tcp://localhost:*");
+            assertThat(rc, is(true));
 
             //  Create and connect client socket
-            boolean rc = client.connect("tcp://127.0.0.1:" + port);
+            rc = client.connect(server.getLastEndpoint());
             assertThat(rc, is(true));
 
-            //  Send a single message from server to client
-            rc = server.send("Hello");
+            //  By default PUSH sockets block if there's no peer
+            rc = server.setSendTimeOut(200);
             assertThat(rc, is(true));
+            //  Send a single message from server to client
+            server.send("Hello");
 
             ZAuth.ZapReply reply = auth.nextReply(true);
             assertThat(reply.statusCode, is(200));
@@ -413,7 +433,6 @@ public class ZAuthTest
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Test(timeout = 5000)
     public void testWhitelistDenied() throws IOException
     {
@@ -435,15 +454,18 @@ public class ZAuthTest
 
             //  Create and bind server socket
             server.setZapDomain("global".getBytes());
-            final int port = server.bindToRandomPort("tcp://*");
+            boolean rc = server.bind("tcp://localhost:*");
+            assertThat(rc, is(true));
 
             //  Create and connect client socket
-            boolean rc = client.connect("tcp://127.0.0.1:" + port);
+            rc = client.connect(server.getLastEndpoint());
             assertThat(rc, is(true));
 
-            //  Send a single message from server to client
-            rc = server.send("Hello");
+            //  By default PUSH sockets block if there's no peer
+            rc = server.setSendTimeOut(200);
             assertThat(rc, is(true));
+            //  Send a single message from server to client
+            server.send("Hello");
 
             ZAuth.ZapReply reply = auth.nextReply(true);
             assertThat(reply.statusCode, is(400));
@@ -451,14 +473,13 @@ public class ZAuthTest
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Test(timeout = 5000)
     public void testWhitelistAllowed() throws IOException
     {
         try (ZContext ctx = new ZContext();
              ZAuth auth = new ZAuth(ctx, new ZCertStore.Hasher());
              ZMQ.Socket server = ctx.createSocket(SocketType.PUSH);
-             ZMQ.Socket client = ctx.createSocket(SocketType.PULL);) {
+             ZMQ.Socket client = ctx.createSocket(SocketType.PULL)) {
             //  Start an authentication engine for this context. This engine
             //  allows or denies incoming connections (talking to the libzmq
             //  core over a protocol called ZAP).
@@ -473,15 +494,18 @@ public class ZAuthTest
 
             //  Create and bind server socket
             server.setZapDomain("global".getBytes());
-            final int port = server.bindToRandomPort("tcp://*");
+            boolean rc = server.bind("tcp://localhost:*");
+            assertThat(rc, is(true));
 
             //  Create and connect client socket
-            boolean rc = client.connect("tcp://127.0.0.1:" + port);
+            rc = client.connect(server.getLastEndpoint());
             assertThat(rc, is(true));
 
-            //  Send a single message from server to client
-            rc = server.send("Hello");
+            //  By default PUSH sockets block if there's no peer
+            rc = server.setSendTimeOut(200);
             assertThat(rc, is(true));
+            //  Send a single message from server to client
+            server.send("Hello");
 
             ZAuth.ZapReply reply = auth.nextReply(true);
             assertThat(reply.statusCode, is(200));
@@ -489,7 +513,6 @@ public class ZAuthTest
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Test(timeout = 5000)
     public void testCurveFail() throws IOException
     {
@@ -497,7 +520,7 @@ public class ZAuthTest
         try (ZContext ctx = new ZContext();
              ZAuth auth = new ZAuth(ctx, new ZCertStore.Timestamper());
              ZMQ.Socket server = ctx.createSocket(SocketType.PUSH);
-             ZMQ.Socket client = ctx.createSocket(SocketType.PULL);) {
+             ZMQ.Socket client = ctx.createSocket(SocketType.PULL)) {
             //  Get some indication of what the authenticator is deciding
             auth.setVerbose(VERBOSE_MODE);
             // auth send the replies
@@ -521,21 +544,24 @@ public class ZAuthTest
             server.setZapDomain("global".getBytes());
             server.setCurveServer(true);
             serverCert.apply(server);
-            final int port = server.bindToRandomPort("tcp://*");
+            boolean rc = server.bind("tcp://localhost:*");
+            assertThat(rc, is(true));
 
             //  Create and connect client socket
             clientCert.apply(client);
             client.setCurveServerKey(serverCert.getPublicKey());
-            boolean rc = client.connect("tcp://127.0.0.1:" + port);
+            rc = client.connect(server.getLastEndpoint());
             assertThat(rc, is(true));
 
             // add a timeout so that the client won't wait forever (since it is not connected)
             rc = client.setReceiveTimeOut(100);
             assertThat(rc, is(true));
 
-            //  Send a single message from server to client
-            rc = server.send("Hello");
+            //  By default PUSH sockets block if there's no peer
+            rc = server.setSendTimeOut(200);
             assertThat(rc, is(true));
+            //  Send a single message from server to client
+            server.send("Hello");
 
             ZAuth.ZapReply reply = auth.nextReply(true);
             assertThat(reply.statusCode, is(400));
@@ -546,12 +572,11 @@ public class ZAuthTest
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Test(timeout = 5000)
     public void testNoReplies() throws IOException
     {
         try (ZContext ctx = new ZContext();
-             ZAuth auth = new ZAuth(ctx, new ZCertStore.Hasher());) {
+             ZAuth auth = new ZAuth(ctx, new ZCertStore.Hasher())) {
             //  Start an authentication engine for this context. This engine
             //  allows or denies incoming connections (talking to the libzmq
             //  core over a protocol called ZAP).
