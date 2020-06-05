@@ -1,14 +1,13 @@
 package org.zeromq;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import org.junit.Test;
+import org.zeromq.ZMQ.Socket;
+import zmq.util.AndroidProblematic;
 
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
@@ -18,25 +17,24 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.junit.Test;
-import org.zeromq.ZMQ.Socket;
-
-import zmq.util.AndroidProblematic;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class ReqRepTest
 {
     private interface GetServer
     {
-        Server303 get(String address, AtomicBoolean keepRunning, boolean verbose);
+        Server303 get(String address, boolean verbose);
     }
 
     private static final class Server532 extends Server303
     {
         private final byte[] repMsg = new byte[1024 * 1024];
 
-        private Server532(String address, AtomicBoolean keepRunning, boolean verbose)
+        private Server532(String address, boolean verbose)
         {
-            super(address, keepRunning, verbose);
+            super(address, verbose);
             Arrays.fill(repMsg, (byte) 'e');
         }
 
@@ -52,44 +50,42 @@ public class ReqRepTest
     {
         private final String  address;
         private final boolean verbose;
-        private final AtomicBoolean keepRunning;
 
-        private Server303(String address, AtomicBoolean keepRunning, boolean verbose)
+        private Server303(String address, boolean verbose)
         {
             this.address = address;
             this.verbose = verbose;
-            this.keepRunning = keepRunning;
         }
 
-        @SuppressWarnings("deprecation")
         @Override
         public Integer call()
         {
-            int currentServCount = 0;
+            int messagesReplied = 0;
             try (
                  ZMQ.Context context = ZMQ.context(1);
-                 ZMQ.Socket responder = context.socket(SocketType.REP);) {
+                 ZMQ.Socket responder = context.socket(SocketType.REP)) {
                 assertThat(responder, notNullValue());
                 boolean rc = responder.bind(address);
                 assertThat(rc, is(true));
                 int count;
-                for (count = 0; keepRunning.get(); count++) {
+                for (count = 0; /* Server stops when receiving poison pill */; count++) {
                     try {
                         String incomingMessage = responder.recvStr();
                         assertThat(incomingMessage, notNullValue());
-                        rc = send(currentServCount, responder, incomingMessage);
+                        if ("end".equals(incomingMessage)) {
+                            // one client sent us poison pill, swallow it
+                            break;
+                        }
+                        rc = send(messagesReplied, responder, incomingMessage);
                         assertThat(rc, is(true));
-                        currentServCount++;
+                        messagesReplied++;
 
-                        if (verbose && currentServCount % 1000 == 0) {
-                            System.out.println("Served " + currentServCount);
+                        if (verbose && messagesReplied % 1000 == 0) {
+                            System.out.println("Served " + messagesReplied);
                         }
                     }
                     catch (ZMQException ex) {
-                        if (ex.getErrorCode() == ZMQ.Error.EINTR.getCode()) {
-                            continue;
-                        }
-                        else {
+                        if (ex.getErrorCode() != ZMQ.Error.EINTR.getCode()) {
                             throw ex;
                         }
                     }
@@ -122,13 +118,12 @@ public class ReqRepTest
             this.verbose = verbose;
         }
 
-        @SuppressWarnings("deprecation")
         @Override
         public Integer call()
         {
             try (
                  ZMQ.Context context = ZMQ.context(10);
-                 ZMQ.Socket socket = context.socket(SocketType.REQ);) {
+                 ZMQ.Socket socket = context.socket(SocketType.REQ)) {
                 boolean rc = socket.connect(address);
                 assertThat(rc, is(true));
                 int idx;
@@ -149,6 +144,10 @@ public class ReqRepTest
                         System.out.println(tid + " client received [" + s + "]");
                     }
                 }
+                // send the poison pill to the server
+                rc = socket.send("end");
+                assertThat(rc, is(true));
+
                 return idx;
             }
         }
@@ -165,20 +164,22 @@ public class ReqRepTest
 
         ExecutorService executor = Executors.newFixedThreadPool(1 + threads);
 
-        Set<Future<Integer>> clientsf = new HashSet<>(threads);
+        Set<Future<Integer>> clientsMessages = new HashSet<>(threads);
         for (int idx = 0; idx < threads; ++idx) {
-            clientsf.add(executor.submit(new Client303(address, keepRunning, verbose)));
+            clientsMessages.add(executor.submit(new Client303(address, keepRunning, verbose)));
         }
-        Future<Integer> resultf = executor.submit(getter.get(address, keepRunning, verbose));
-        executor.shutdown();
+        Future<Integer> serverMessages = executor.submit(getter.get(address, verbose));
+        // let messages flow for some time...
         ZMQ.sleep(4);
+
         keepRunning.set(false);
-        int clientMessage = 0;
-        for (Future<Integer> c : clientsf) {
-            clientMessage += c.get();
+        int totalClientsMessages = 0;
+        for (Future<Integer> c : clientsMessages) {
+            totalClientsMessages += c.get();
         }
-        executor.shutdownNow();
-        assertEquals(clientMessage, resultf.get().intValue());
+        assertThat(totalClientsMessages, is(serverMessages.get()));
+        List<Runnable> runnables = executor.shutdownNow();
+        assertThat(runnables.size(), is(0));
     }
 
     @Test(timeout = 5000)
@@ -193,7 +194,6 @@ public class ReqRepTest
         runTest(Server303::new);
     }
 
-    @SuppressWarnings("deprecation")
     @Test(timeout = 5000)
     @AndroidProblematic // triggers OutofMemoryError on Android
     public void testDisconnectOnLargeMessageIssue334() throws Exception
@@ -216,24 +216,19 @@ public class ReqRepTest
 
         final CountDownLatch latch = new CountDownLatch(1);
         final ExecutorService executorService = Executors.newSingleThreadExecutor();
-        final Future<Boolean> senderf = executorService.submit(new Callable<Boolean>()
-        {
-            @Override
-            // simulates a server reply
-            public Boolean call()
-            {
-                final ZMQ.Socket rep = context.socket(SocketType.REP);
-                rep.bind(addr);
-                latch.countDown();
+        // simulates a server reply
+        final Future<Boolean> senderf = executorService.submit(() -> {
+            final Socket rep = context.socket(SocketType.REP);
+            rep.bind(addr);
+            latch.countDown();
 
-                // just send the message back...
-                final ZMsg msg = ZMsg.recvMsg(rep);
-                msg.send(rep);
-                // shut down the socket to cause a disconnect while REQ socket receives the msg
-                rep.close();
-                // btw.: setting linger time did not change the result
-                return true;
-            }
+            // just send the message back...
+            final ZMsg msg = ZMsg.recvMsg(rep);
+            msg.send(rep);
+            // shut down the socket to cause a disconnect while REQ socket receives the msg
+            rep.close();
+            // btw.: setting linger time did not change the result
+            return true;
         });
 
         executorService.shutdown();
@@ -241,13 +236,13 @@ public class ReqRepTest
         // wait till server socket is bound
         latch.await();
         try (
-             final ZMQ.Socket req = context.socket(SocketType.REQ);) {
+             final ZMQ.Socket req = context.socket(SocketType.REQ)) {
             req.connect(addr);
             request.send(req);
             final ZMsg response = ZMsg.recvMsg(req);
             // the messages should be equal
             assertThat(Arrays.equals(response.getLast().getData(), payloadBytes), is(true));
-            assertTrue(senderf.get());
+            assertThat(senderf.get(), is(true));
         }
         finally {
             context.close();
