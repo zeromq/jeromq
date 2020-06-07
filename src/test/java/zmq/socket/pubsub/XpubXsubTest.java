@@ -1,29 +1,27 @@
 package zmq.socket.pubsub;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.CoreMatchers.nullValue;
-import static org.junit.Assert.assertThat;
+import org.junit.Test;
+import zmq.Ctx;
+import zmq.Msg;
+import zmq.SocketBase;
+import zmq.ZMQ;
 
-import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import org.junit.Test;
-
-import zmq.Ctx;
-import zmq.Msg;
-import zmq.SocketBase;
-import zmq.ZMQ;
-import zmq.util.Utils;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class XpubXsubTest
 {
     @Test(timeout = 5000)
-    public void testXpubSub() throws InterruptedException, IOException, ExecutionException
+    public void testXPubSub()
     {
+        System.out.println("XPub - Sub");
         final Ctx ctx = zmq.ZMQ.createContext();
         assertThat(ctx, notNullValue());
 
@@ -36,7 +34,7 @@ public class XpubXsubTest
         assertThat(rc, is(true));
 
         SocketBase pub = zmq.ZMQ.socket(ctx, zmq.ZMQ.ZMQ_XPUB);
-        rc = zmq.ZMQ.bind(pub, "tcp://127.0.0.1:*");
+        rc = zmq.ZMQ.bind(pub, "inproc://1");
         assertThat(rc, is(true));
 
         String endpoint = (String) ZMQ.getSocketOptionExt(pub, ZMQ.ZMQ_LAST_ENDPOINT);
@@ -44,8 +42,6 @@ public class XpubXsubTest
 
         rc = zmq.ZMQ.connect(sub, endpoint);
         assertThat(rc, is(true));
-
-        zmq.ZMQ.msleep(1000);
 
         System.out.print("Send.");
 
@@ -58,9 +54,11 @@ public class XpubXsubTest
         System.out.print("Recv.");
 
         Msg msg = sub.recv(0);
+        assertThat(msg, notNullValue());
         assertThat(msg.size(), is(5));
 
         msg = sub.recv(0);
+        assertThat(msg, notNullValue());
         assertThat(msg.size(), is(3));
 
         rc = zmq.ZMQ.setSocketOption(sub, zmq.ZMQ.ZMQ_UNSUBSCRIBE, "topix");
@@ -94,16 +92,16 @@ public class XpubXsubTest
     }
 
     @Test(timeout = 5000)
-    public void testXpubXSub() throws InterruptedException, IOException, ExecutionException
+    public void testXPubXSub()
     {
+        System.out.println("XPub - XSub");
         final Ctx ctx = zmq.ZMQ.createContext();
         assertThat(ctx, notNullValue());
 
         boolean rc;
-        Msg msg;
 
         SocketBase pub = zmq.ZMQ.socket(ctx, zmq.ZMQ.ZMQ_XPUB);
-        rc = zmq.ZMQ.bind(pub, "tcp://127.0.0.1:*");
+        rc = zmq.ZMQ.bind(pub, "inproc://1");
         assertThat(rc, is(true));
 
         String endpoint = (String) ZMQ.getSocketOptionExt(pub, ZMQ.ZMQ_LAST_ENDPOINT);
@@ -113,14 +111,10 @@ public class XpubXsubTest
         rc = zmq.ZMQ.connect(sub, endpoint);
         assertThat(rc, is(true));
 
-        zmq.ZMQ.msleep(300);
-
         System.out.print("Send.");
 
         rc = sub.send(new Msg("\1topic".getBytes(ZMQ.CHARSET)), 0);
         assertThat(rc, is(true));
-
-        zmq.ZMQ.msleep(300);
 
         rc = pub.send(new Msg("topic".getBytes(ZMQ.CHARSET)), 0);
         assertThat(rc, is(true));
@@ -151,23 +145,23 @@ public class XpubXsubTest
         zmq.ZMQ.close(sub);
         zmq.ZMQ.close(pub);
         zmq.ZMQ.term(ctx);
+        System.out.println("Done.");
     }
 
     @Test(timeout = 5000)
-    public void testIssue476() throws InterruptedException, IOException, ExecutionException
+    public void testIssue476() throws InterruptedException, ExecutionException
     {
-        final int front = Utils.findOpenPort();
-        final int back = Utils.findOpenPort();
+        System.out.println("Issue 476");
 
         final Ctx ctx = zmq.ZMQ.createContext();
         assertThat(ctx, notNullValue());
 
         boolean rc;
         final SocketBase proxyPub = zmq.ZMQ.socket(ctx, zmq.ZMQ.ZMQ_XPUB);
-        rc = proxyPub.bind("tcp://127.0.0.1:" + back);
+        rc = proxyPub.bind("inproc://1");
         assertThat(rc, is(true));
         final SocketBase proxySub = zmq.ZMQ.socket(ctx, zmq.ZMQ.ZMQ_XSUB);
-        rc = proxySub.bind("tcp://127.0.0.1:" + front);
+        rc = proxySub.bind("inproc://2");
         assertThat(rc, is(true));
 
         final SocketBase ctrl = zmq.ZMQ.socket(ctx, zmq.ZMQ.ZMQ_PAIR);
@@ -176,29 +170,24 @@ public class XpubXsubTest
 
         ExecutorService service = Executors.newFixedThreadPool(1);
 
-        Future<?> proxy = service.submit(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                zmq.ZMQ.proxy(proxySub, proxyPub, null, ctrl);
-            }
+        Future<?> proxy = service.submit(() -> {
+            ZMQ.proxy(proxySub, proxyPub, null, ctrl);
         });
         SocketBase sub = zmq.ZMQ.socket(ctx, zmq.ZMQ.ZMQ_SUB);
         rc = zmq.ZMQ.setSocketOption(sub, zmq.ZMQ.ZMQ_SUBSCRIBE, "topic");
         assertThat(rc, is(true));
 
-        rc = zmq.ZMQ.connect(sub, "tcp://127.0.0.1:" + back);
+        rc = zmq.ZMQ.connect(sub, "inproc://1");
         assertThat(rc, is(true));
 
         SocketBase pub = zmq.ZMQ.socket(ctx, zmq.ZMQ.ZMQ_XPUB);
 
-        rc = zmq.ZMQ.connect(pub, "tcp://127.0.0.1:" + front);
+        rc = zmq.ZMQ.connect(pub, "inproc://2");
         assertThat(rc, is(true));
 
-        sub.recv(ZMQ.ZMQ_DONTWAIT);
-
-        zmq.ZMQ.msleep(1000);
+        rc = zmq.ZMQ.setSocketOption(sub, ZMQ.ZMQ_RCVTIMEO, 100);
+        assertThat(rc, is(true));
+        sub.recv(0);
 
         System.out.print("Send.");
 
@@ -211,9 +200,11 @@ public class XpubXsubTest
         System.out.print("Recv.");
 
         Msg msg = sub.recv(0);
+        assertThat(msg, notNullValue());
         assertThat(msg.size(), is(5));
 
         msg = sub.recv(0);
+        assertThat(msg, notNullValue());
         assertThat(msg.size(), is(3));
 
         System.out.print("End.");
