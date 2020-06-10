@@ -1,8 +1,9 @@
 package org.zeromq;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.nullValue;
-import static org.junit.Assert.assertThat;
+import org.junit.Test;
+import org.zeromq.ZMQ.Socket;
+import org.zeromq.ZProxy.Plug;
+import zmq.util.Utils;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -12,15 +13,12 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.junit.Test;
-import org.zeromq.ZMQ.Socket;
-import org.zeromq.ZProxy.Plug;
-
-import zmq.util.Utils;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class XpubXsubZTest
 {
@@ -30,50 +28,36 @@ public class XpubXsubZTest
     {
         final AtomicInteger numberReceived = new AtomicInteger(0);
 
-        Future<?> subscriber = service.submit(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                Thread.currentThread().setName("Subscriber");
-                final ZContext ctx = new ZContext();
-                try {
-                    final ZMQ.Socket requester = ctx.createSocket(SocketType.SUB);
-                    requester.connect("tcp://localhost:" + back);
-                    requester.subscribe("hello".getBytes(ZMQ.CHARSET));
+        Future<?> subscriber = service.submit(() -> {
+            Thread.currentThread().setName("Subscriber");
+            try (ZContext ctx1 = new ZContext()) {
+                final Socket requester = ctx1.createSocket(SocketType.SUB);
+                requester.connect("tcp://localhost:" + back);
+                requester.subscribe("hello".getBytes(ZMQ.CHARSET));
 
-                    while (numberReceived.get() < max) {
-                        ZMsg.recvMsg(requester);
-                        numberReceived.incrementAndGet();
-                    }
-                }
-                finally {
-                    ctx.close();
+                while (numberReceived.get() < max) {
+                    ZMsg.recvMsg(requester);
+                    numberReceived.incrementAndGet();
                 }
             }
         });
 
         final AtomicReference<Throwable> error = new AtomicReference<>();
-        service.submit(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                Thread.currentThread().setName("Publisher");
-                try {
-                    ZMQ.Socket pub = ctx.createSocket(SocketType.PUB);
-                    pub.connect("tcp://localhost:" + front);
-                    while (numberReceived.get() < max) {
-                        ZMsg message = ZMsg.newStringMsg("hello", "world");
-                        boolean rc = message.send(pub);
-                        assertThat(rc, is(true));
-                        ZMQ.msleep(5);
-                    }
+        service.submit(() -> {
+            Thread.currentThread().setName("Publisher");
+            try {
+                Socket pub = ctx.createSocket(SocketType.PUB);
+                pub.connect("tcp://localhost:" + front);
+                while (numberReceived.get() < max) {
+                    ZMsg message = ZMsg.newStringMsg("hello", "world");
+                    boolean rc = message.send(pub);
+                    assertThat(rc, is(true));
+                    ZMQ.msleep(5);
                 }
-                catch (Throwable ex) {
-                    error.set(ex);
-                    ex.printStackTrace();
-                }
+            }
+            catch (Throwable ex) {
+                error.set(ex);
+                ex.printStackTrace();
             }
         });
 
@@ -98,37 +82,31 @@ public class XpubXsubZTest
         final int front = Utils.findOpenPort();
         final int back = Utils.findOpenPort();
 
-        final int max = 10;
+        final int max = 20;
 
         ExecutorService service = Executors.newFixedThreadPool(3);
-        final ZContext ctx = new ZContext();
-        service.submit(new Runnable()
-        {
-            @Override
-            public void run()
-            {
+        try (final ZContext ctx = new ZContext()) {
+            service.submit(() -> {
                 Thread.currentThread().setName("Proxy");
-                ZMQ.Socket xpub = ctx.createSocket(SocketType.XPUB);
+                Socket xpub = ctx.createSocket(SocketType.XPUB);
                 xpub.bind("tcp://*:" + back);
-                ZMQ.Socket xsub = ctx.createSocket(SocketType.XSUB);
+                Socket xsub = ctx.createSocket(SocketType.XSUB);
                 xsub.bind("tcp://*:" + front);
-                ZMQ.Socket ctrl = ctx.createSocket(SocketType.PAIR);
+                Socket ctrl = ctx.createSocket(SocketType.PAIR);
                 ctrl.bind("inproc://ctrl-proxy");
                 ZMQ.proxy(xpub, xsub, null, ctrl);
-            }
-        });
-        final AtomicReference<Throwable> error = testIssue476(front, back, max, service, ctx);
-        ZMQ.Socket ctrl = ctx.createSocket(SocketType.PAIR);
-        ctrl.connect("inproc://ctrl-proxy");
-        ctrl.send(ZMQ.PROXY_TERMINATE);
-        ctrl.close();
+            });
+            final AtomicReference<Throwable> error = testIssue476(front, back, max, service, ctx);
+            ZMQ.Socket ctrl = ctx.createSocket(SocketType.PAIR);
+            ctrl.connect("inproc://ctrl-proxy");
+            ctrl.send(ZMQ.PROXY_TERMINATE);
+            ctrl.close();
 
-        service.shutdown();
-        service.awaitTermination(2, TimeUnit.SECONDS);
+            service.shutdown();
+            service.awaitTermination(2, TimeUnit.SECONDS);
 
-        assertThat(error.get(), nullValue());
-
-        ctx.close();
+            assertThat(error.get(), nullValue());
+        }
     }
 
     @SuppressWarnings("deprecation")
@@ -161,7 +139,7 @@ public class XpubXsubZTest
             }
 
             @Override
-            public boolean configure(Socket socket, Plug place, Object... args) throws IOException
+            public boolean configure(Socket socket, Plug place, Object... args)
             {
                 if (place == Plug.FRONT) {
                     return socket.bind("tcp://*:" + front);
@@ -196,48 +174,46 @@ public class XpubXsubZTest
         final int max = 10;
 
         ExecutorService service = Executors.newFixedThreadPool(3);
-        final ZContext ctx = new ZContext();
-
-        ZProxy.Proxy actor = new ZProxy.Proxy.SimpleProxy()
-        {
-            @Override
-            public Socket create(ZContext ctx, Plug place, Object... args)
+        try (final ZContext ctx = new ZContext()) {
+            ZProxy.Proxy actor = new ZProxy.Proxy.SimpleProxy()
             {
-                if (place == Plug.FRONT) {
-                    return ctx.createSocket(SocketType.XSUB);
+                @Override
+                public Socket create(ZContext ctx, Plug place, Object... args)
+                {
+                    if (place == Plug.FRONT) {
+                        return ctx.createSocket(SocketType.XSUB);
+                    }
+                    if (place == Plug.BACK) {
+                        return ctx.createSocket(SocketType.XPUB);
+                    }
+                    if (place == Plug.CAPTURE) {
+                        return ctx.createSocket(SocketType.PUB);
+                    }
+                    return null;
                 }
-                if (place == Plug.BACK) {
-                    return ctx.createSocket(SocketType.XPUB);
+
+                @Override
+                public boolean configure(Socket socket, Plug place, Object... args)
+                {
+                    if (place == Plug.FRONT) {
+                        return socket.bind("tcp://*:" + front);
+                    }
+                    if (place == Plug.BACK) {
+                        return socket.bind("tcp://*:" + back);
+                    }
+                    return true;
                 }
-                if (place == Plug.CAPTURE) {
-                    return ctx.createSocket(SocketType.PUB);
-                }
-                return null;
-            }
+            };
+            ZProxy proxy = ZProxy.newProxy(ctx, "XPub-XSub", actor, UUID.randomUUID().toString());
+            proxy.start(true);
 
-            @Override
-            public boolean configure(Socket socket, Plug place, Object... args) throws IOException
-            {
-                if (place == Plug.FRONT) {
-                    return socket.bind("tcp://*:" + front);
-                }
-                if (place == Plug.BACK) {
-                    return socket.bind("tcp://*:" + back);
-                }
-                return true;
-            }
-        };
-        ZProxy proxy = ZProxy.newProxy(ctx, "XPub-XSub", actor, UUID.randomUUID().toString());
-        proxy.start(true);
+            final AtomicReference<Throwable> error = testIssue476(front, back, max, service, ctx);
+            proxy.exit(false);
 
-        final AtomicReference<Throwable> error = testIssue476(front, back, max, service, ctx);
-        proxy.exit(false);
+            service.shutdown();
+            service.awaitTermination(2, TimeUnit.SECONDS);
 
-        service.shutdown();
-        service.awaitTermination(2, TimeUnit.SECONDS);
-
-        assertThat(error.get(), nullValue());
-
-        ctx.close();
+            assertThat(error.get(), nullValue());
+        }
     }
 }
