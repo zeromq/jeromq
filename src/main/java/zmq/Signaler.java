@@ -3,6 +3,7 @@ package zmq;
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.channels.ClosedByInterruptException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.Pipe;
@@ -20,6 +21,11 @@ import zmq.util.Utils;
 //  one will result in undefined behaviour.
 final class Signaler implements Closeable
 {
+    private interface IoOperation<O>
+    {
+        O call() throws IOException;
+    }
+
     //  Underlying write & read file descriptor.
     private final Pipe.SinkChannel   w;
     private final Pipe.SourceChannel r;
@@ -59,25 +65,56 @@ final class Signaler implements Closeable
         }
     }
 
+    private <O> O maksInterrupt(IoOperation<O> operation) throws IOException
+    {
+        // This loop try to protect the current thread from external interruption.
+        // If it happens, it mangle current context internal state.
+        // So it keep trying until it succeed.
+        // This must only be called on internal IO (using Pipe)
+        boolean interrupted = Thread.interrupted();
+        while (true) {
+            try {
+                return operation.call();
+            }
+            catch (ClosedByInterruptException e) {
+                interrupted = true;
+            }
+            finally {
+                if (interrupted) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+        }
+    }
+
     @Override
     public void close() throws IOException
     {
         IOException exception = null;
-        try {
+        IoOperation<Object> op1 = () -> {
             r.close();
-        }
-        catch (IOException e) {
-            e.printStackTrace();
-            exception = e;
-        }
-        try {
+            return null;
+        };
+        IoOperation<Object> op2 = () -> {
             w.close();
+            return null;
+        };
+        IoOperation<Object> op3 = () -> {
+            ctx.closeSelector(selector);
+            return null;
+        };
+
+        for (IoOperation<?> op : new IoOperation<?>[] {op1, op2, op3}) {
+            try {
+                maksInterrupt(op);
+            }
+            catch (IOException e) {
+                if (exception != null) {
+                    e.addSuppressed(exception);
+                }
+                exception = e;
+            }
         }
-        catch (IOException e) {
-            e.printStackTrace();
-            exception = e;
-        }
-        ctx.closeSelector(selector);
         if (exception != null) {
             throw exception;
         }
@@ -90,27 +127,27 @@ final class Signaler implements Closeable
 
     void send()
     {
-        int nbytes;
+        int nbytes = 0;
 
-        while (true) {
+        while (nbytes == 0) {
             try {
                 wdummy.clear();
-                nbytes = w.write(wdummy);
+                nbytes = maksInterrupt(() -> w.write(wdummy));
             }
             catch (IOException e) {
                 throw new ZError.IOException(e);
             }
-            if (nbytes == 0) {
-                continue;
-            }
-            assert (nbytes == 1);
-            wcursor.incrementAndGet();
-            break;
         }
+        wcursor.incrementAndGet();
     }
 
     boolean waitEvent(long timeout)
     {
+        // Transform a interrupt signal in an errno EINTR
+        if (Thread.interrupted()) {
+            errno.set(ZError.EINTR);
+            return false;
+        }
         int rc;
         boolean brc = (rcursor < wcursor.get());
         if (brc) {
@@ -141,7 +178,7 @@ final class Signaler implements Closeable
             return false;
         }
 
-        if (rc == 0 && timeout < 0 && ! selector.keys().isEmpty()) {
+        if (Thread.interrupted() || (rc == 0 && timeout <= 0 && ! selector.keys().isEmpty())) {
             errno.set(ZError.EINTR);
             return false;
         }
@@ -162,7 +199,7 @@ final class Signaler implements Closeable
         while (nbytes == 0) {
             try {
                 rdummy.clear();
-                nbytes = r.read(rdummy);
+                nbytes = maksInterrupt(() -> r.read(rdummy));
             }
             catch (ClosedChannelException e) {
                 errno.set(ZError.EINTR);

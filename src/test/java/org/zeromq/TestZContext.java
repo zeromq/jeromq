@@ -2,7 +2,7 @@ package org.zeromq;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -10,7 +10,6 @@ import org.zeromq.ZMQ.Socket;
 
 public class TestZContext
 {
-    @SuppressWarnings("deprecation")
     @Test(timeout = 5000)
     public void testZContext()
     {
@@ -35,7 +34,6 @@ public class TestZContext
         ctx.close();
     }
 
-    @SuppressWarnings("deprecation")
     @Test(timeout = 5000)
     public void testZContextLinger()
     {
@@ -47,7 +45,6 @@ public class TestZContext
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Test(timeout = 5000)
     public void testConstruction()
     {
@@ -79,7 +76,6 @@ public class TestZContext
         assertThat(ctx1.getContext(), notNullValue());
     }
 
-    @SuppressWarnings("deprecation")
     @Test(timeout = 5000)
     public void testAddingSockets() throws ZMQException
     {
@@ -98,7 +94,6 @@ public class TestZContext
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Test(timeout = 5000)
     public void testRemovingSockets() throws ZMQException
     {
@@ -137,7 +132,6 @@ public class TestZContext
         Assert.assertTrue(ctx.isEmpty());
     }
 
-    @SuppressWarnings("deprecation")
     @Test(timeout = 5000)
     public void testSeveralPendingInprocSocketsAreClosedIssue595()
     {
@@ -154,5 +148,19 @@ public class TestZContext
         ctx.close();
 
         assertThat(ctx.isClosed(), is(true));
+    }
+
+    @Test(timeout = 1000)
+    public void testInterruptedClose() throws Throwable
+    {
+        ZContext ctx = new ZContext();
+        Socket s = ctx.createSocket(SocketType.PULL);
+        int port = Utils.findOpenPort();
+        s.bind("tcp://*:" + port);
+        Thread.currentThread().interrupt();
+        s.close();
+        ZMQException ex = Assert.assertThrows(ZMQException.class, ctx::close);
+        assertThat(ex.getErrorCode(), is(4));
+        assertThat(Thread.interrupted(), is(false));
     }
 }
