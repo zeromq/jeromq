@@ -7,7 +7,7 @@ import java.util.List;
 import zmq.Msg;
 import zmq.pipe.Pipe;
 
-class Dist
+public class Dist
 {
     //  List of outbound pipes.
     private final List<Pipe> pipes;

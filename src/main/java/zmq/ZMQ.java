@@ -56,6 +56,8 @@ public class ZMQ
     public static final int ZMQ_STREAM = 11;
     public static final int ZMQ_SERVER = 12;
     public static final int ZMQ_CLIENT = 13;
+    public static final int ZMQ_RADIO  = 14;
+    public static final int ZMQ_DISH   = 15;
 
     /*  Deprecated aliases                                                        */
     @Deprecated
@@ -606,6 +608,18 @@ public class ZMQ
         return s.recv(flags);
     }
 
+    public static boolean join(SocketBase s, String group)
+    {
+        checkSocket(s);
+        return s.join(group);
+    }
+
+    public static boolean leave(SocketBase s, String group)
+    {
+        checkSocket(s);
+        return s.leave(group);
+    }
+
     public static Msg msgInit()
     {
         return new Msg();
@@ -652,6 +666,16 @@ public class ZMQ
     public int getMessageRoutingId(Msg msg)
     {
         return msg.getRoutingId();
+    }
+
+    public boolean setMessageGroup(Msg msg, String group)
+    {
+        return msg.setGroup(group);
+    }
+
+    public String getMessageGroup(Msg msg)
+    {
+        return msg.getGroup();
     }
 
     public static void sleep(long seconds)
