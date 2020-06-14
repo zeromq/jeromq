@@ -478,7 +478,7 @@ public class CurveServerMechanism extends Mechanism
         //  Create Box [metadata](S'->C')
         readyPlaintext.position(Curve.Size.ZERO.bytes());
         //  Add socket type property
-        String socketType = socketType(options.type);
+        String socketType = socketType();
         addProperty(readyPlaintext, SOCKET_TYPE, socketType);
 
         //  Add identity property

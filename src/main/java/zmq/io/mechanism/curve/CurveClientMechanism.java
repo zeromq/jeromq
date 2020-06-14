@@ -351,7 +351,7 @@ public class CurveClientMechanism extends Mechanism
         //  Metadata starts after vouch
 
         //  Add socket type property
-        String socketType = socketType(options.type);
+        String socketType = socketType();
         addProperty(initiatePlaintext, SOCKET_TYPE, socketType);
 
         //  Add identity property

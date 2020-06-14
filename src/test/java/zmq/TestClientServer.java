@@ -179,4 +179,60 @@ public class TestClientServer
         ZMQ.close(server);
         ZMQ.term(context);
     }
+
+    @Test
+    public void testAsRouterType() throws Exception
+    {
+        System.out.println("Scenario 2");
+
+        int port = Utils.findOpenPort();
+
+        Ctx context = ZMQ.createContext();
+        assertThat(context, notNullValue());
+
+        // Create a server
+        SocketBase server = ZMQ.socket(context, ZMQ.ZMQ_SERVER);
+        assertThat(server, notNullValue());
+
+        //  Make wire type of the socket as ROUTER
+        boolean rc = server.setSocketOpt(ZMQ.ZMQ_AS_TYPE, ZMQ.ZMQ_ROUTER);
+        assertThat(rc, is(true));
+
+        // bind server
+        rc = ZMQ.bind(server, "tcp://*:" + port);
+        assertThat(rc, is(true));
+
+        // create a dealer
+        SocketBase dealer = ZMQ.socket(context, ZMQ.ZMQ_DEALER);
+        assertThat(dealer, notNullValue());
+        rc = ZMQ.connect(dealer, "tcp://localhost:" + port);
+        assertThat(rc, is(true));
+
+        // Send a message from dealer
+        Msg msg = new Msg("X".getBytes());
+        int size = ZMQ.send(dealer, msg, 0);
+        assertThat(size, is(1));
+
+        // Recv message on the server side
+        msg = ZMQ.recv(server, 0);
+        assertThat(msg, notNullValue());
+        assertThat(new String(msg.data()), is("X"));
+        int routingId = msg.getRoutingId();
+        assertThat(routingId, not(0));
+
+        // Send message back to dealer using routing id
+        msg = new Msg("HELLO".getBytes());
+        msg.setRoutingId(routingId);
+        size = ZMQ.send(server, msg, 0);
+        assertThat(size, is(5));
+
+        // Dealer recv message from server
+        msg = ZMQ.recv(dealer, 0);
+        assertThat(msg, notNullValue());
+        assertThat(new String(msg.data()), is("HELLO"));
+
+        ZMQ.close(dealer);
+        ZMQ.close(server);
+        ZMQ.term(context);
+    }
 }

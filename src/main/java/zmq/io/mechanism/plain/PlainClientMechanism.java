@@ -131,7 +131,7 @@ public class PlainClientMechanism extends Mechanism
         msg.putShortString("INITIATE");
 
         //  Add socket type property
-        String socketType = socketType(options.type);
+        String socketType = socketType();
         addProperty(msg, SOCKET_TYPE, socketType);
 
         //  Add identity property

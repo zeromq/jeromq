@@ -200,7 +200,7 @@ public class PlainServerMechanism extends Mechanism
         msg.putShortString("READY");
 
         //  Add socket type property
-        String socketType = socketType(options.type);
+        String socketType = socketType();
         addProperty(msg, SOCKET_TYPE, socketType);
 
         //  Add identity property
