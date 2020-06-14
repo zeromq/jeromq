@@ -1,5 +1,9 @@
 package zmq.socket.radiodish;
 
+import java.nio.charset.StandardCharsets;
+import java.util.HashSet;
+import java.util.Set;
+
 import zmq.Ctx;
 import zmq.Msg;
 import zmq.Options;
@@ -12,12 +16,6 @@ import zmq.io.net.Address;
 import zmq.pipe.Pipe;
 import zmq.socket.FQ;
 import zmq.socket.pubsub.Dist;
-import zmq.util.Blob;
-
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.util.HashSet;
-import java.util.Set;
 
 public class Dish extends SocketBase
 {
@@ -242,42 +240,41 @@ public class Dish extends SocketBase
         @Override
         public boolean pushMsg(Msg msg)
         {
-            switch (state)
-            {
-                case GROUP:
-                    if (!msg.hasMore()) {
-                        errno.set(ZError.EFAULT);
-                        return false;
-                    }
+            switch (state) {
+            case GROUP:
+                if (!msg.hasMore()) {
+                    errno.set(ZError.EFAULT);
+                    return false;
+                }
 
-                    if (msg.size() > Msg.MAX_GROUP_LENGTH) {
-                        errno.set(ZError.EFAULT);
-                        return false;
-                    }
+                if (msg.size() > Msg.MAX_GROUP_LENGTH) {
+                    errno.set(ZError.EFAULT);
+                    return false;
+                }
 
-                    group = new String(msg.data(), StandardCharsets.US_ASCII);
-                    state = State.BODY;
+                group = new String(msg.data(), StandardCharsets.US_ASCII);
+                state = State.BODY;
 
-                    return true;
-                case BODY:
-                    //  Set the message group
-                    msg.setGroup(group);
+                return true;
+            case BODY:
+                //  Set the message group
+                msg.setGroup(group);
 
-                    //  Thread safe socket doesn't support multipart messages
-                    if (msg.hasMore()) {
-                        errno.set(ZError.EFAULT);
-                        return false;
-                    }
+                //  Thread safe socket doesn't support multipart messages
+                if (msg.hasMore()) {
+                    errno.set(ZError.EFAULT);
+                    return false;
+                }
 
-                    //  Push message to dish socket
-                    boolean rc = super.pushMsg(msg);
-                    if (rc) {
-                        state = State.GROUP;
-                    }
+                //  Push message to dish socket
+                boolean rc = super.pushMsg(msg);
+                if (rc) {
+                    state = State.GROUP;
+                }
 
-                    return rc;
-                default:
-                    throw new IllegalStateException();
+                return rc;
+            default:
+                throw new IllegalStateException();
             }
         }
 
@@ -285,8 +282,9 @@ public class Dish extends SocketBase
         protected Msg pullMsg()
         {
             Msg msg = super.pullMsg();
-            if (msg == null)
+            if (msg == null) {
                 return null;
+            }
 
             if (!msg.isJoin() && !msg.isLeave()) {
                 return msg;

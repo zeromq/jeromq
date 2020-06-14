@@ -179,7 +179,8 @@ public abstract class Mechanism
     {
         if (options.asType != -1) {
             return Sockets.name(options.asType);
-        } else {
+        }
+        else {
             return Sockets.name(options.type);
         }
     }
