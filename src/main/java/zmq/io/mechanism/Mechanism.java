@@ -146,11 +146,13 @@ public abstract class Mechanism
             @Override
             public int parsed(String name, byte[] value, String valueAsString)
             {
+                int type = options.asType != -1 ? options.asType : options.type;
+
                 if (IDENTITY.equals(name) && options.recvIdentity) {
                     setPeerIdentity(value);
                 }
                 else if (SOCKET_TYPE.equals(name)) {
-                    if (!Sockets.compatible(options.type, valueAsString)) {
+                    if (!Sockets.compatible(type, valueAsString)) {
                         return ZError.EINVAL;
                     }
                 }
@@ -173,9 +175,13 @@ public abstract class Mechanism
         return 0;
     }
 
-    protected final String socketType(int socketType)
+    protected final String socketType()
     {
-        return Sockets.name(options.type);
+        if (options.asType != -1) {
+            return Sockets.name(options.asType);
+        } else {
+            return Sockets.name(options.type);
+        }
     }
 
     protected boolean compare(Msg msg, String data, boolean includeLength)

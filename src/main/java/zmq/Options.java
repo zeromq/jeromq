@@ -170,6 +170,9 @@ public class Options
     public Msg helloMsg;
     public boolean canSendHelloMsg;
 
+    //  As Socket type on the network.
+    public int asType;
+
     public final Errno errno = new Errno();
 
     public Options()
@@ -226,6 +229,8 @@ public class Options
 
         canSendHelloMsg = false;
         helloMsg = null;
+
+        asType = -1;
     }
 
     @SuppressWarnings("deprecation")
@@ -564,6 +569,10 @@ public class Options
             }
             return true;
 
+        case ZMQ.ZMQ_AS_TYPE:
+            this.asType = (Integer) optval;
+            return true;
+
         default:
             throw new IllegalArgumentException("Unknown Option " + option);
         }
@@ -811,6 +820,9 @@ public class Options
 
         case ZMQ.ZMQ_SELECTOR_PROVIDERCHOOSER:
             return selectorChooser;
+
+        case ZMQ.ZMQ_AS_TYPE:
+            return asType;
 
         default:
             throw new IllegalArgumentException("option=" + option);
