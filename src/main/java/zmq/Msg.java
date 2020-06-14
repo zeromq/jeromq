@@ -88,6 +88,8 @@ public class Msg
     enum Type
     {
         DATA,
+        JOIN,
+        LEAVE,
         DELIMITER
     }
 
@@ -96,6 +98,9 @@ public class Msg
     public static final int CREDENTIAL = 32;
     public static final int IDENTITY   = 64;
     public static final int SHARED     = 128;
+
+    /// The maximum length of a group (Radio/Dish)
+    public static final int MAX_GROUP_LENGTH = 255;
 
     private Metadata metadata;
     private int      flags;
@@ -112,6 +117,7 @@ public class Msg
     private int readIndex = 0;
 
     private int routingId;
+    private String group;
 
     public Msg()
     {
@@ -176,6 +182,16 @@ public class Msg
         return type == Type.DELIMITER;
     }
 
+    public boolean isJoin()
+    {
+        return type == Type.JOIN;
+    }
+
+    public boolean isLeave()
+    {
+        return type == Type.LEAVE;
+    }
+
     public boolean check()
     {
         return true; // type >= TYPE_MIN && type <= TYPE_MAX;
@@ -209,6 +225,20 @@ public class Msg
     public void initDelimiter()
     {
         type = Type.DELIMITER;
+        metadata = null;
+        flags = 0;
+    }
+
+    public void initJoin()
+    {
+        type = Type.JOIN;
+        metadata = null;
+        flags = 0;
+    }
+
+    public void initLeave()
+    {
+        type = Type.LEAVE;
         metadata = null;
         flags = 0;
     }
@@ -463,6 +493,29 @@ public class Msg
         }
 
         return false;
+    }
+
+    /**
+     * Retrieve the group for RADIO/DISH sockets
+     * @return the group.
+     */
+    public String getGroup()
+    {
+        return group;
+    }
+
+    /**
+     * Set the group for RADIO/DISH sockets
+     * @param group
+     * @return true if successfully set the group.
+     */
+    public boolean setGroup(String group)
+    {
+        if (group.length() > MAX_GROUP_LENGTH)
+            return false;
+
+        this.group = group;
+        return true;
     }
 
     public void resetRoutingId()

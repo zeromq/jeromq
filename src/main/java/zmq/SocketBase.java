@@ -933,6 +933,30 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
         }
     }
 
+    public final boolean join(String group)
+    {
+        lock();
+
+        try {
+            return xjoin(group);
+        }
+        finally {
+            unlock();
+        }
+    }
+
+    public final boolean leave(String group)
+    {
+        lock();
+
+        try {
+            return xleave(group);
+        }
+        finally {
+            unlock();
+        }
+    }
+
     public final void close()
     {
         lock();
@@ -1155,6 +1179,16 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
     }
 
     protected void xhiccuped(Pipe pipe)
+    {
+        throw new UnsupportedOperationException("Must override");
+    }
+
+    protected boolean xjoin(String group)
+    {
+        throw new UnsupportedOperationException("Must override");
+    }
+
+    protected boolean xleave(String group)
     {
         throw new UnsupportedOperationException("Must override");
     }

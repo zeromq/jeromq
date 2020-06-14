@@ -16,6 +16,8 @@ import zmq.socket.pubsub.Pub;
 import zmq.socket.pubsub.Sub;
 import zmq.socket.pubsub.XPub;
 import zmq.socket.pubsub.XSub;
+import zmq.socket.radiodish.Dish;
+import zmq.socket.radiodish.Radio;
 import zmq.socket.reqrep.Dealer;
 import zmq.socket.reqrep.Rep;
 import zmq.socket.reqrep.Req;
@@ -127,6 +129,32 @@ public enum Sockets
         SocketBase create(Ctx parent, int tid, int sid)
         {
             return new Client(parent, tid, sid);
+        }
+    },
+    RADIO("DISH") {
+        @Override
+        SocketBase create(Ctx parent, int tid, int sid)
+        {
+            return new Radio(parent, tid, sid);
+        }
+
+        @Override
+        public SessionBase create(IOThread ioThread, boolean connect, SocketBase socket, Options options, Address addr)
+        {
+            return new Radio.RadioSession(ioThread, connect, socket, options, addr);
+        }
+    },
+    DISH("RADIO") {
+        @Override
+        SocketBase create(Ctx parent, int tid, int sid)
+        {
+            return new Dish(parent, tid, sid);
+        }
+
+        @Override
+        public SessionBase create(IOThread ioThread, boolean connect, SocketBase socket, Options options, Address addr)
+        {
+            return new Dish.DishSession(ioThread, connect, socket, options, addr);
         }
     };
 
