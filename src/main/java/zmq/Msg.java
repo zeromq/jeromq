@@ -511,8 +511,9 @@ public class Msg
      */
     public boolean setGroup(String group)
     {
-        if (group.length() > MAX_GROUP_LENGTH)
+        if (group.length() > MAX_GROUP_LENGTH) {
             return false;
+        }
 
         this.group = group;
         return true;
