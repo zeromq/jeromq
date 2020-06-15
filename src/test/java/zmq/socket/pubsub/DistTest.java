@@ -2,12 +2,13 @@ package zmq.socket.pubsub;
 
 import org.junit.Before;
 import org.junit.Test;
+
 import zmq.Msg;
 import zmq.ZObject;
 import zmq.pipe.Pipe;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class DistTest
 {

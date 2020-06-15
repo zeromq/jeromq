@@ -2,7 +2,7 @@ package zmq.socket.pair;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.util.UUID;
 
@@ -17,7 +17,6 @@ public class TestPairIpc
 {
     //  Create REQ/ROUTER wiring.
 
-    @SuppressWarnings("deprecation")
     @Test(timeout = 5000)
     public void testPairIpc()
     {

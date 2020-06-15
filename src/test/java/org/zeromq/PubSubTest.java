@@ -2,7 +2,7 @@ package org.zeromq;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.io.IOException;
 import java.lang.Thread.UncaughtExceptionHandler;
@@ -90,7 +90,6 @@ public class PubSubTest
         context.close();
     }
 
-    @SuppressWarnings("deprecation")
     @Test
     @Ignore
     public void testPubConnectSubBindIssue289and342() throws IOException
@@ -123,7 +122,6 @@ public class PubSubTest
         context.term();
     }
 
-    @SuppressWarnings("deprecation")
     @Test
     public void testUnsubscribeIssue554() throws Exception
     {
