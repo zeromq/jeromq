@@ -163,6 +163,13 @@ public enum Sockets
         {
             return new Channel(parent, tid, sid);
         }
+    },
+    PEER("PEER") {
+        @Override
+        SocketBase create(Ctx parent, int tid, int sid)
+        {
+            return new Peer(parent, tid, sid);
+        }
     };
 
     private final List<String> compatible;

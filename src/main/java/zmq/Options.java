@@ -173,6 +173,9 @@ public class Options
     //  As Socket type on the network.
     public int asType;
 
+    //  Last connected routing id for PEER socket
+    public int peerLastRoutingId;
+
     public final Errno errno = new Errno();
 
     public Options()
@@ -231,6 +234,8 @@ public class Options
         helloMsg = null;
 
         asType = -1;
+
+        peerLastRoutingId = 0;
     }
 
     @SuppressWarnings("deprecation")

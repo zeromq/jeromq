@@ -59,6 +59,7 @@ public class ZMQ
     public static final int ZMQ_RADIO   = 14;
     public static final int ZMQ_DISH    = 15;
     public static final int ZMQ_CHANNEL = 16;
+    public static final int ZMQ_PEER    = 17;
 
     /*  Deprecated aliases                                                        */
     @Deprecated
@@ -440,6 +441,12 @@ public class ZMQ
     {
         checkSocket(s);
         return s.connect(addr);
+    }
+
+    public static int connectPeer(SocketBase s, String addr)
+    {
+        checkSocket(s);
+        return s.connectPeer(addr);
     }
 
     public static boolean unbind(SocketBase s, String addr)
