@@ -42,22 +42,23 @@ public class ZMQ
     /******************************************************************************/
 
     /*  Socket types.                                                             */
-    public static final int ZMQ_PAIR   = 0;
-    public static final int ZMQ_PUB    = 1;
-    public static final int ZMQ_SUB    = 2;
-    public static final int ZMQ_REQ    = 3;
-    public static final int ZMQ_REP    = 4;
-    public static final int ZMQ_DEALER = 5;
-    public static final int ZMQ_ROUTER = 6;
-    public static final int ZMQ_PULL   = 7;
-    public static final int ZMQ_PUSH   = 8;
-    public static final int ZMQ_XPUB   = 9;
-    public static final int ZMQ_XSUB   = 10;
-    public static final int ZMQ_STREAM = 11;
-    public static final int ZMQ_SERVER = 12;
-    public static final int ZMQ_CLIENT = 13;
-    public static final int ZMQ_RADIO  = 14;
-    public static final int ZMQ_DISH   = 15;
+    public static final int ZMQ_PAIR    = 0;
+    public static final int ZMQ_PUB     = 1;
+    public static final int ZMQ_SUB     = 2;
+    public static final int ZMQ_REQ     = 3;
+    public static final int ZMQ_REP     = 4;
+    public static final int ZMQ_DEALER  = 5;
+    public static final int ZMQ_ROUTER  = 6;
+    public static final int ZMQ_PULL    = 7;
+    public static final int ZMQ_PUSH    = 8;
+    public static final int ZMQ_XPUB    = 9;
+    public static final int ZMQ_XSUB    = 10;
+    public static final int ZMQ_STREAM  = 11;
+    public static final int ZMQ_SERVER  = 12;
+    public static final int ZMQ_CLIENT  = 13;
+    public static final int ZMQ_RADIO   = 14;
+    public static final int ZMQ_DISH    = 15;
+    public static final int ZMQ_CHANNEL = 16;
 
     /*  Deprecated aliases                                                        */
     @Deprecated

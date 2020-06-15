@@ -156,6 +156,13 @@ public enum Sockets
         {
             return new Dish.DishSession(ioThread, connect, socket, options, addr);
         }
+    },
+    CHANNEL("CHANNEL") {
+        @Override
+        SocketBase create(Ctx parent, int tid, int sid)
+        {
+            return new Channel(parent, tid, sid);
+        }
     };
 
     private final List<String> compatible;
