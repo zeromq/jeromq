@@ -61,6 +61,8 @@ public class ZMQ
     public static final int ZMQ_CHANNEL = 16;
     public static final int ZMQ_PEER    = 17;
     public static final int ZMQ_RAW     = 18;
+    public static final int ZMQ_SCATTER = 19;
+    public static final int ZMQ_GATHER  = 20;
 
     /*  Deprecated aliases                                                        */
     @Deprecated
