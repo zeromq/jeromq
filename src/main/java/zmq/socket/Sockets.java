@@ -24,6 +24,8 @@ import zmq.socket.reqrep.Req;
 import zmq.socket.reqrep.Router;
 import zmq.socket.clientserver.Server;
 import zmq.socket.clientserver.Client;
+import zmq.socket.scattergather.Gather;
+import zmq.socket.scattergather.Scatter;
 
 public enum Sockets
 {
@@ -155,6 +157,41 @@ public enum Sockets
         public SessionBase create(IOThread ioThread, boolean connect, SocketBase socket, Options options, Address addr)
         {
             return new Dish.DishSession(ioThread, connect, socket, options, addr);
+        }
+    },
+    CHANNEL("CHANNEL") {
+        @Override
+        SocketBase create(Ctx parent, int tid, int sid)
+        {
+            return new Channel(parent, tid, sid);
+        }
+    },
+    PEER("PEER") {
+        @Override
+        SocketBase create(Ctx parent, int tid, int sid)
+        {
+            return new Peer(parent, tid, sid);
+        }
+    },
+    RAW {
+        @Override
+        SocketBase create(Ctx parent, int tid, int sid)
+        {
+            return new Raw(parent, tid, sid);
+        }
+    },
+    SCATTER("GATHER") {
+        @Override
+        SocketBase create(Ctx parent, int tid, int sid)
+        {
+            return new Scatter(parent, tid, sid);
+        }
+    },
+    GATHER("SCATTER") {
+        @Override
+        SocketBase create(Ctx parent, int tid, int sid)
+        {
+            return new Gather(parent, tid, sid);
         }
     };
 
