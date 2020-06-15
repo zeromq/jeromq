@@ -3406,7 +3406,10 @@ public class ZMQ
 
         /**
          * Receives a message.
-         *
+         * <p>
+         * If possible, a reference to the data is returned, without copy.
+         * Otherwise a new byte array will be allocated and the data will be copied.
+         * <p>
          * @param flags either:
          *              <ul>
          *              <li>{@link org.zeromq.ZMQ#DONTWAIT DONTWAIT}:
@@ -4134,6 +4137,81 @@ public class ZMQ
         public String getAddress()
         {
             return address;
+        }
+
+        /**
+         * Used to check if the event is an error.
+         * <p>
+         * Generally, any event that define the errno is
+         * considered as an error.
+         * @return true if the evant was an error
+         */
+        public boolean isError()
+        {
+            switch (event) {
+            case EVENT_CLOSE_FAILED:
+            case EVENT_ACCEPT_FAILED:
+            case EVENT_BIND_FAILED:
+            case HANDSHAKE_FAILED_PROTOCOL:
+            case HANDSHAKE_FAILED_NO_DETAIL:
+                return true;
+            default:
+                return false;
+            }
+        }
+
+        /**
+         * Used to check if the event is a warning.
+         * <p>
+         * Generally, any event that return an authentication failure is
+         * considered as a warning.
+         * @return
+         */
+        public boolean isWarn()
+        {
+            switch (event) {
+            case HANDSHAKE_FAILED_AUTH:
+                return true;
+            default:
+                return false;
+            }
+        }
+
+        /**
+         * Return the argument as an integer or a Enum of the appropriate type if available.
+         *
+         * It return objects of type:
+         * <ul>
+         * <li> {@link org.zeromq.ZMonitor.ProtocolCode} for a handshake protocol error.</li>
+         * <li> {@link org.zeromq.ZMQ.Error} for any other error.</li>
+         * <li> {@link java.lang.Integer} when available.</li>
+         * <li> null when no relevant value available.</li>
+         * </ul>
+         * @param <M> The expected type of the returned object
+         * @return
+         */
+        @SuppressWarnings("unchecked")
+        public <M> M resolveValue()
+        {
+            switch (event) {
+            case zmq.ZMQ.ZMQ_EVENT_HANDSHAKE_FAILED_PROTOCOL:
+                return (M) ZMonitor.ProtocolCode.findByCode((Integer) value);
+            case zmq.ZMQ.ZMQ_EVENT_CLOSE_FAILED:
+            case zmq.ZMQ.ZMQ_EVENT_ACCEPT_FAILED:
+            case zmq.ZMQ.ZMQ_EVENT_BIND_FAILED:
+                return (M) Error.findByCode((Integer) value);
+            case zmq.ZMQ.ZMQ_EVENT_HANDSHAKE_FAILED_AUTH:
+            case zmq.ZMQ.ZMQ_EVENT_DISCONNECTED:
+            case zmq.ZMQ.ZMQ_EVENT_CLOSED:
+            case zmq.ZMQ.ZMQ_EVENT_LISTENING:
+            case zmq.ZMQ.ZMQ_EVENT_HANDSHAKE_PROTOCOL:
+            case zmq.ZMQ.ZMQ_EVENT_CONNECT_RETRIED:
+                return (M) value;
+            case zmq.ZMQ.ZMQ_EVENT_CONNECT_DELAYED:
+                // eventConnectDelayed take an in argument, but it's always -1
+            default:
+                return null;
+            }
         }
     }
 
