@@ -465,7 +465,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
         lock();
 
         try {
-            if (options.type != ZMQ.ZMQ_PEER) {
+            if (options.type != ZMQ.ZMQ_PEER && options.type != ZMQ.ZMQ_RAW) {
                 errno.set(ZError.ENOTSUP);
                 return 0;
             }

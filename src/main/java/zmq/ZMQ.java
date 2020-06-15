@@ -60,6 +60,7 @@ public class ZMQ
     public static final int ZMQ_DISH    = 15;
     public static final int ZMQ_CHANNEL = 16;
     public static final int ZMQ_PEER    = 17;
+    public static final int ZMQ_RAW     = 18;
 
     /*  Deprecated aliases                                                        */
     @Deprecated

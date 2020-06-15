@@ -170,6 +170,13 @@ public enum Sockets
         {
             return new Peer(parent, tid, sid);
         }
+    },
+    RAW {
+        @Override
+        SocketBase create(Ctx parent, int tid, int sid)
+        {
+            return new Raw(parent, tid, sid);
+        }
     };
 
     private final List<String> compatible;
