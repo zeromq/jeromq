@@ -1408,17 +1408,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
 
     public final void eventConnectRetried(String addr, int interval)
     {
-        try {
-            monitorSync.lock();
-            if ((monitorEvents & ZMQ.ZMQ_EVENT_CONNECT_RETRIED) == 0) {
-                return;
-            }
-
-            monitorEvent(new ZMQ.Event(ZMQ.ZMQ_EVENT_CONNECT_RETRIED, addr, interval));
-        }
-        finally {
-            monitorSync.unlock();
-        }
+        event(addr, interval, ZMQ.ZMQ_EVENT_CONNECT_RETRIED);
     }
 
     public final void eventListening(String addr, SelectableChannel ch)
