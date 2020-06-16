@@ -129,7 +129,7 @@ public class ZMonitor implements Closeable
 
         /**
          * Find the {@link Event} associated with the numerical event code.
-         * @param numerical event code
+         * @param event the numerical event code
          * @return the found {@link Event}
          */
         public static Event findByCode(int event)
@@ -188,7 +188,7 @@ public class ZMonitor implements Closeable
 
         /**
          * Find the {@link ProtocolCode} associated with the numerical error code send with <code>eventHandshakeXXX</code>.
-         * @param numerical error code
+         * @param code the numerical error code
          * @return the found {@link ProtocolCode}
          */
         public static ProtocolCode findByCode(int code)

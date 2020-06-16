@@ -4188,7 +4188,7 @@ public class ZMQ
          * <li> null when no relevant value available.</li>
          * </ul>
          * @param <M> The expected type of the returned object
-         * @return
+         * @return The resolved value.
          */
         @SuppressWarnings("unchecked")
         public <M> M resolveValue()
