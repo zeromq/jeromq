@@ -3406,7 +3406,10 @@ public class ZMQ
 
         /**
          * Receives a message.
-         *
+         * <p>
+         * If possible, a reference to the data is returned, without copy.
+         * Otherwise a new byte array will be allocated and the data will be copied.
+         * <p>
          * @param flags either:
          *              <ul>
          *              <li>{@link org.zeromq.ZMQ#DONTWAIT DONTWAIT}:
@@ -4177,14 +4180,14 @@ public class ZMQ
         /**
          * Return the argument as an integer or a Enum of the appropriate type if available.
          *
-         * Actually it return object of type:
+         * It return objects of type:
          * <ul>
-         * <li> {@link org.zeromq.ZMonitor.ProtocolCode} for a handshake protocol error.
-         * <li> {@link Error} for any other error.
-         * <li> {@link java.lang.Integer} when available.
-         * <li> null when no relevant value available.
-         * <ul>
-         * @param <M>
+         * <li> {@link org.zeromq.ZMonitor.ProtocolCode} for a handshake protocol error.</li>
+         * <li> {@link org.zeromq.ZMQ.Error} for any other error.</li>
+         * <li> {@link java.lang.Integer} when available.</li>
+         * <li> null when no relevant value available.</li>
+         * </ul>
+         * @param <M> The expected type of the returned object
          * @return
          */
         @SuppressWarnings("unchecked")
