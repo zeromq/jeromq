@@ -1470,7 +1470,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
     {
         try {
             monitorSync.lock();
-            if ((monitorEvents & event) == 0) {
+            if ((monitorEvents & event) == 0 || monitorSocket == null) {
                 return;
             }
 

@@ -4087,7 +4087,10 @@ public class ZMQ
     public static class Event
     {
         private final int    event;
+        // To keep backward compatibility, the old value field only store integer
+        // The resolved value (Error, channel or other) is stored in resolvedValue field.
         private final Object value;
+        private final Object resolvedValue;
         private final String address;
 
         public Event(int event, Object value, String address)
@@ -4095,6 +4098,15 @@ public class ZMQ
             this.event = event;
             this.value = value;
             this.address = address;
+            this.resolvedValue = value;
+        }
+
+        private Event(int event, Object value, Object resolvedValue, String address)
+        {
+            this.event = event;
+            this.value = value;
+            this.address = address;
+            this.resolvedValue = resolvedValue;
         }
 
         /**
@@ -4108,7 +4120,32 @@ public class ZMQ
         public static Event recv(Socket socket, int flags)
         {
             zmq.ZMQ.Event e = zmq.ZMQ.Event.read(socket.base, flags);
-            return e != null ? new Event(e.event, e.arg, e.addr) : null;
+            Object resolvedValue;
+            switch (e.event) {
+            case zmq.ZMQ.ZMQ_EVENT_HANDSHAKE_FAILED_PROTOCOL:
+                resolvedValue = ZMonitor.ProtocolCode.findByCode((Integer) e.arg);
+                break;
+            case zmq.ZMQ.ZMQ_EVENT_CLOSE_FAILED:
+            case zmq.ZMQ.ZMQ_EVENT_ACCEPT_FAILED:
+            case zmq.ZMQ.ZMQ_EVENT_BIND_FAILED:
+            case zmq.ZMQ.ZMQ_EVENT_HANDSHAKE_FAILED_NO_DETAIL:
+                resolvedValue = Error.findByCode((Integer) e.arg);
+                break;
+            case zmq.ZMQ.ZMQ_EVENT_CONNECTED:
+            case zmq.ZMQ.ZMQ_EVENT_LISTENING:
+            case zmq.ZMQ.ZMQ_EVENT_ACCEPTED:
+            case zmq.ZMQ.ZMQ_EVENT_CLOSED:
+            case zmq.ZMQ.ZMQ_EVENT_DISCONNECTED:
+                resolvedValue = e.getChannel(socket.base);
+                break;
+            case zmq.ZMQ.ZMQ_EVENT_CONNECT_DELAYED:
+            case zmq.ZMQ.ZMQ_EVENT_HANDSHAKE_SUCCEEDED:
+                resolvedValue = null;
+                break;
+            default:
+                resolvedValue = e.arg;
+            }
+            return new Event(e.event, e.arg, resolvedValue, e.addr);
         }
 
         /**
@@ -4193,25 +4230,7 @@ public class ZMQ
         @SuppressWarnings("unchecked")
         public <M> M resolveValue()
         {
-            switch (event) {
-            case zmq.ZMQ.ZMQ_EVENT_HANDSHAKE_FAILED_PROTOCOL:
-                return (M) ZMonitor.ProtocolCode.findByCode((Integer) value);
-            case zmq.ZMQ.ZMQ_EVENT_CLOSE_FAILED:
-            case zmq.ZMQ.ZMQ_EVENT_ACCEPT_FAILED:
-            case zmq.ZMQ.ZMQ_EVENT_BIND_FAILED:
-                return (M) Error.findByCode((Integer) value);
-            case zmq.ZMQ.ZMQ_EVENT_HANDSHAKE_FAILED_AUTH:
-            case zmq.ZMQ.ZMQ_EVENT_DISCONNECTED:
-            case zmq.ZMQ.ZMQ_EVENT_CLOSED:
-            case zmq.ZMQ.ZMQ_EVENT_LISTENING:
-            case zmq.ZMQ.ZMQ_EVENT_HANDSHAKE_PROTOCOL:
-            case zmq.ZMQ.ZMQ_EVENT_CONNECT_RETRIED:
-                return (M) value;
-            case zmq.ZMQ.ZMQ_EVENT_CONNECT_DELAYED:
-                // eventConnectDelayed take an in argument, but it's always -1
-            default:
-                return null;
-            }
+            return (M) resolvedValue;
         }
     }
 

@@ -12,7 +12,6 @@ import org.junit.Test;
 import org.zeromq.ZMQ.Error;
 import org.zeromq.ZMonitor.ProtocolCode;
 
-import zmq.Ctx;
 import zmq.SocketBase;
 
 public class TestEventResolution
@@ -24,16 +23,14 @@ public class TestEventResolution
 
     public ZMQ.Event make(SendEvent sender, int eventFilter)
     {
-        Ctx ctx = new Ctx();
-        @SuppressWarnings("deprecation")
-        SocketBase s = ctx.createSocket(ZMQ.PUB);
-        @SuppressWarnings("deprecation")
-        SocketBase m = ctx.createSocket(ZMQ.PAIR);
-        m.connect("inproc://TestEventResolution");
-        s.monitor("inproc://TestEventResolution", eventFilter);
-        sender.send(s, "tcp://127.0.0.1:8000");
-        zmq.ZMQ.Event ev = zmq.ZMQ.Event.read(m);
-        return new ZMQ.Event(ev.event, ev.arg, ev.addr);
+        try (ZMQ.Context zctx = new ZMQ.Context(1);
+            ZMQ.Socket s = zctx.socket(SocketType.PUB);
+            ZMQ.Socket m = zctx.socket(SocketType.PAIR)) {
+            s.monitor("inproc://TestEventResolution", eventFilter);
+            m.connect("inproc://TestEventResolution");
+            sender.send(s.base(), "tcp://127.0.0.1:8000");
+            return ZMQ.Event.recv(m);
+        }
     }
 
     @Test(timeout = 1000)
@@ -62,7 +59,7 @@ public class TestEventResolution
         SelectableChannel sc = SocketChannel.open();
         ZMQ.Event ev = make((s, a) -> s.eventDisconnected(a, sc), zmq.ZMQ.ZMQ_EVENT_DISCONNECTED);
         Object value = ev.resolveValue();
-        assertThat(value, nullValue());
+        assertThat(value, is(sc));
         assertThat(ev.isError(), is(false));
         assertThat(ev.isWarn(), is(false));
     }
@@ -73,7 +70,7 @@ public class TestEventResolution
         SelectableChannel sc = SocketChannel.open();
         ZMQ.Event ev = make((s, a) -> s.eventClosed(a, sc), zmq.ZMQ.ZMQ_EVENT_CLOSED);
         Object value = ev.resolveValue();
-        assertThat(value, nullValue());
+        assertThat(value, is(sc));
         assertThat(ev.isError(), is(false));
         assertThat(ev.isWarn(), is(false));
     }
@@ -84,7 +81,7 @@ public class TestEventResolution
         SelectableChannel sc = SocketChannel.open();
         ZMQ.Event ev = make((s, a) -> s.eventListening(a, sc), zmq.ZMQ.ZMQ_EVENT_LISTENING);
         Object value = ev.resolveValue();
-        assertThat(value, nullValue());
+        assertThat(value, is(sc));
         assertThat(ev.isError(), is(false));
         assertThat(ev.isWarn(), is(false));
     }
@@ -95,7 +92,7 @@ public class TestEventResolution
         SelectableChannel sc = SocketChannel.open();
         ZMQ.Event ev = make((s, a) -> s.eventConnected(a, sc), zmq.ZMQ.ZMQ_EVENT_CONNECTED);
         Object value = ev.resolveValue();
-        assertThat(value, nullValue());
+        assertThat(value, is(sc));
         assertThat(ev.isError(), is(false));
         assertThat(ev.isWarn(), is(false));
     }
@@ -106,7 +103,7 @@ public class TestEventResolution
         SelectableChannel sc = SocketChannel.open();
         ZMQ.Event ev = make((s, a) -> s.eventAccepted(a, sc), zmq.ZMQ.ZMQ_EVENT_ACCEPTED);
         Object value = ev.resolveValue();
-        assertThat(value, nullValue());
+        assertThat(value, is(sc));
         assertThat(ev.isError(), is(false));
         assertThat(ev.isWarn(), is(false));
     }
@@ -184,9 +181,9 @@ public class TestEventResolution
     @Test(timeout = 1000)
     public void testEventHandshakeFailedNoDetail()
     {
-        ZMQ.Event ev = make((s, a) -> s.eventHandshakeFailedNoDetail(a, 0), zmq.ZMQ.ZMQ_EVENT_HANDSHAKE_FAILED_NO_DETAIL);
-        Object value = ev.resolveValue();
-        assertThat(value, nullValue());
+        ZMQ.Event ev = make((s, a) -> s.eventHandshakeFailedNoDetail(a, Error.EFAULT.getCode()), zmq.ZMQ.ZMQ_EVENT_HANDSHAKE_FAILED_NO_DETAIL);
+        Error err = ev.resolveValue();
+        assertThat(err, is(Error.EFAULT));
         assertThat(ev.isError(), is(true));
         assertThat(ev.isWarn(), is(false));
     }
