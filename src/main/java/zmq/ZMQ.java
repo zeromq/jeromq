@@ -286,10 +286,18 @@ public class ZMQ
             }
         }
 
+        private Event(int event, String addr, Object arg, int flag)
+        {
+            this.event = event;
+            this.addr = addr;
+            this.arg = arg;
+            this.flag = flag;
+        }
+
         public boolean write(SocketBase s)
         {
             int size = 4 + 1 + addr.length() + 1; // event + len(addr) + addr + flag
-            if (flag == VALUE_INTEGER) {
+            if (flag == VALUE_INTEGER || flag == VALUE_CHANNEL) {
                 size += 4;
             }
 
@@ -301,10 +309,35 @@ public class ZMQ
             if (flag == VALUE_INTEGER) {
                 buffer.putInt((Integer) arg);
             }
+            else if (flag == VALUE_CHANNEL) {
+                int channeldId = s.getCtx().forwardChannel((SelectableChannel) arg);
+                buffer.putInt(channeldId);
+            }
             buffer.flip();
 
             Msg msg = new Msg(buffer);
             return s.send(msg, 0);
+        }
+
+        /**
+         * Resolve the channel that was associated with this event.
+         * Implementation note: to be backward compatible, {@link #arg} only store Integer value, so
+         * the channel is resolved using this call.
+         * <p>
+         * Internally socket are kept using weak values, so it's better to retrieve the channel as early
+         * as possible, otherwise it might get lost.
+         *
+         * @param socket the socket that send the event
+         * @return the channel in the event, or null if was not a channel event.
+         */
+        public SelectableChannel getChannel(SocketBase socket)
+        {
+            if (flag == VALUE_CHANNEL) {
+                return socket.getCtx().getForwardedChannel((Integer) arg);
+            }
+            else {
+                return null;
+            }
         }
 
         public static Event read(SocketBase s, int flags)
@@ -323,11 +356,11 @@ public class ZMQ
             int flag = buffer.get();
             Object arg = null;
 
-            if (flag == VALUE_INTEGER) {
+            if (flag == VALUE_INTEGER || flag == VALUE_CHANNEL) {
                 arg = buffer.getInt();
             }
 
-            return new Event(event, new String(addr, CHARSET), arg);
+            return new Event(event, new String(addr, CHARSET), arg, flag);
         }
 
         public static Event read(SocketBase s)

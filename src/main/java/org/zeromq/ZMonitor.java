@@ -74,7 +74,7 @@ public class ZMonitor implements Closeable
             code = event.getEvent();
             address = event.getAddress();
             type = Event.findByCode(code);
-            Object tryValue = event.getValue();
+            Object tryValue = event.resolveValue();
             if (tryValue != null) {
                 value = tryValue.toString();
             }
