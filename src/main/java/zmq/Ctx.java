@@ -15,6 +15,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
@@ -159,9 +160,10 @@ public class Ctx
      */
     private static class ChannelForwardHolder
     {
-        private final Map<Integer, WeakReference<SelectableChannel>> map = new HashMap<>();
+        private final AtomicInteger handleSource = new AtomicInteger(0);
+        private final Map<Integer, WeakReference<SelectableChannel>> map = new ConcurrentHashMap<>();
         // The WeakReference is empty when the reference is empty, so keep a reverse empty to clean the direct map.
-        private final Map<WeakReference<SelectableChannel>, Integer> reversemap = new HashMap<>();
+        private final Map<WeakReference<SelectableChannel>, Integer> reversemap = new ConcurrentHashMap<>();
         private final ReferenceQueue<SelectableChannel> queue = new ReferenceQueue<>();
     }
 
@@ -767,46 +769,40 @@ public class Ctx
     }
 
     /**
-     * A channel that will forward a channel in a monitor socket.
-     * It will be referenced by it's {@link Object#hashCode()} that can
-     * serialized as an integer.
-     * @param ch a channel to forward
-     * @return the id of the channel to be forwarded
+     * Forward a channel in a monitor socket.
+     * @param channel a channel to forward
+     * @return the handle of the channel to be forwarded, used to retrieve it in {@link #getForwardedChannel(Integer)}
      */
-    int forwardChannel(SelectableChannel ch)
+    int forwardChannel(SelectableChannel channel)
     {
         synchronized (ChannelForwardHolder.class) {
             if (forwardHolder == null) {
                 forwardHolder = new ChannelForwardHolder();
             }
         }
-        WeakReference<SelectableChannel> ref = new WeakReference<SelectableChannel>(ch, forwardHolder.queue);
-        forwardHolder.map.put(ch.hashCode(), ref);
-        forwardHolder.reversemap.put(ref, ch.hashCode());
+        WeakReference<SelectableChannel> ref = new WeakReference<SelectableChannel>(channel, forwardHolder.queue);
+        int handle = forwardHolder.handleSource.getAndIncrement();
+        forwardHolder.map.put(handle, ref);
+        forwardHolder.reversemap.put(ref, handle);
         cleanForwarded();
-        return ch.hashCode();
+        return handle;
     }
 
     /**
-     * Retrieve a channel, given it's hash value. As WeakReference are used, if the channel was discarded
+     * Retrieve a channel, using the handle returned by {@link #forwardChannel(SelectableChannel)}. As WeakReference are used, if the channel was discarded
      * and a GC ran, it will not be found and this method will return null.
-     * @param id
+     * @param handle
      * @return
      */
-    SelectableChannel getForwardedChannel(Integer id)
+    SelectableChannel getForwardedChannel(Integer handle)
     {
-        try {
-            WeakReference<SelectableChannel> ref = forwardHolder.map.get(id);
-            if (ref != null) {
-                return ref.get();
-            }
-            else {
-                return null;
-            }
+        cleanForwarded();
+        WeakReference<SelectableChannel> ref = forwardHolder.map.remove(handle);
+        if (ref != null) {
+            return ref.get();
         }
-        finally {
-            // Done after, to avoid removing the candidate channel
-            cleanForwarded();
+        else {
+            return null;
         }
     }
 
@@ -817,8 +813,8 @@ public class Ctx
     {
         Reference<? extends SelectableChannel> ref;
         while ((ref = forwardHolder.queue.poll()) != null) {
-            Integer channeldId = forwardHolder.reversemap.remove(ref);
-            forwardHolder.map.remove(channeldId);
+            Integer handle = forwardHolder.reversemap.remove(ref);
+            forwardHolder.map.remove(handle);
         }
     }
 }
