@@ -107,6 +107,8 @@ public class MailboxSafe implements IMailbox
                 }
             }
             catch (InterruptedException e) {
+                // Restore interrupted state...
+                Thread.currentThread().interrupt();
                 errno.set(ZError.EINTR);
                 return null;
             }

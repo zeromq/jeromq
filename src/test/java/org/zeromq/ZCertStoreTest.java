@@ -153,21 +153,4 @@ public class ZCertStoreTest
     {
         TestUtils.cleanupDir(CERTSTORE_LOCATION);
     }
-
-//    @Test
-    public void testRepeated() throws IOException
-    {
-        for (int idx = 0; idx < 1000; ++idx) {
-            System.out.println("+++++++ " + idx);
-            init();
-            testAddCertificates();
-            cleanup();
-            init();
-            testcheckForCertificateChanges();
-            cleanup();
-            init();
-            testRemoveCertificates();
-            cleanup();
-        }
-    }
 }

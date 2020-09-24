@@ -1,9 +1,9 @@
 package org.zeromq;
 
-import java.util.Locale;
-
 import org.zeromq.ZMQ.Error;
 import org.zeromq.ZMQ.Socket;
+
+import java.util.Locale;
 
 public class ZThread
 {
@@ -89,20 +89,13 @@ public class ZThread
     public static Socket fork(ZContext ctx, IAttachedRunnable runnable, Object... args)
     {
         Socket pipe = ctx.createSocket(SocketType.PAIR);
-
-        if (pipe != null) {
-            pipe.bind(String.format(Locale.ENGLISH, "inproc://zctx-pipe-%d", pipe.hashCode()));
-        }
-        else {
-            return null;
-        }
+        assert (pipe != null);
+        pipe.bind(String.format(Locale.ENGLISH, "inproc://zctx-pipe-%d", pipe.hashCode()));
 
         //  Connect child pipe to our pipe
         ZContext ccontext = ctx.shadow();
         Socket cpipe = ccontext.createSocket(SocketType.PAIR);
-        if (cpipe == null) {
-            return null;
-        }
+        assert (cpipe != null);
         cpipe.connect(String.format(Locale.ENGLISH, "inproc://zctx-pipe-%d", pipe.hashCode()));
 
         //  Prepare child thread

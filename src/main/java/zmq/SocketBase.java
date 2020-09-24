@@ -483,7 +483,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
         }
     }
 
-    private final boolean connectInternal(String addr)
+    private boolean connectInternal(String addr)
     {
         if (ctxTerminated) {
             errno.set(ZError.ETERM);
