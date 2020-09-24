@@ -8,7 +8,6 @@ import org.zeromq.ZMQ;
 import org.zeromq.ZMQ.Socket;
 import org.zeromq.ZMQException;
 import org.zeromq.ZMsg;
-
 import zmq.ZError;
 import zmq.util.Draft;
 
@@ -30,8 +29,9 @@ public class ZPicture
      *
      * @param picture The picture argument is a string that defines the
      *                type of each argument. Supports these argument types:
-     *                <table>
-     *                <caption> </caption>
+     * <p>
+     *                <table border="1">
+     *                <caption><strong>Types of arguments</strong></caption>
      *                <tr><th style="text-align:left">pattern</th><th style="text-align:left">java type</th><th style="text-align:left">zproto type</th></tr>
      *                <tr><td>1</td><td>int</td><td>type = "number" size = "1"</td></tr>
      *                <tr><td>2</td><td>int</td><td>type = "number" size = "2"</td></tr>
@@ -253,8 +253,9 @@ public class ZPicture
      *                one call. The picture can contain any of these characters,
      *                each corresponding to zero or one arguments:
      *
-     *                <table>
-     *                <caption> </caption>
+     * <p>
+     *                <table border="1">
+     *                <caption><strong>Types of arguments</strong></caption>
      *                <tr><td>i = int  (stores signed integer)</td></tr>
      *                <tr><td>1 = byte (stores 8-bit unsigned integer)</td></tr>
      *                <tr><td>2 = int  (stores 16-bit unsigned integer)</td></tr>
@@ -348,8 +349,9 @@ public class ZPicture
      *                one call. The picture can contain any of these characters,
      *                each corresponding to zero or one elements in the result:
      *
-     *                <table>
-     *               <caption> </caption>
+     * <p>
+     *                <table border="1">
+     *                <caption><strong>Types of arguments</strong></caption>
      *                <tr><td>i = int (stores signed integer)</td></tr>
      *                <tr><td>1 = int (stores 8-bit unsigned integer)</td></tr>
      *                <tr><td>2 = int (stores 16-bit unsigned integer)</td></tr>

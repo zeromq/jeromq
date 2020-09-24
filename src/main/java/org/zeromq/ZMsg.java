@@ -11,7 +11,6 @@ import java.util.Deque;
 import java.util.Iterator;
 
 import org.zeromq.ZMQ.Socket;
-
 import zmq.util.Draft;
 import zmq.util.function.Consumer;
 
@@ -170,10 +169,6 @@ public class ZMsg implements Iterable<ZFrame>, Deque<ZFrame>
     {
         if (socket == null) {
             throw new IllegalArgumentException("socket is null");
-        }
-
-        if (frames == null) {
-            throw new IllegalArgumentException("destroyed message");
         }
 
         if (frames.size() == 0) {

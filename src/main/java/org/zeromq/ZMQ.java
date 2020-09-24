@@ -5,17 +5,17 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.Selector;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.ArrayList;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.zeromq.proto.ZPicture;
-
 import zmq.Ctx;
 import zmq.Options;
 import zmq.SocketBase;
@@ -728,8 +728,7 @@ public class ZMQ
          * </ul>
          * </li>
          * </ul>
-         * <p>
-         * <h4>Warning</h4>
+         * <strong>Warning</strong>
          * <br>
          * As ZMQ_LINGER defaults to "infinite", by default this method will block indefinitely if there are any pending connects or sends.
          * We strongly recommend to
@@ -2182,6 +2181,28 @@ public class ZMQ
         }
 
         /**
+         * Joins a group.
+         * Opposite action is {@link Socket#leave(String)}
+         * @param group the name of the group to join. Limited to 16 characters.
+         * @return true if the group was no already joined, otherwise false.
+         */
+        public boolean join(String group) {
+            assert ("DISH".equals(base.typeString())): "Only DISH sockets can join a group";
+            return base.join(group);
+        }
+
+        /**
+         * Leaves a group.
+         * Opposite action is {@link Socket#join(String)}
+         * @param group the name of the group to leave. Limited to 16 characters.
+         * @return false if the group was not joined before, otherwise true.
+         */
+        public boolean leave(String group) {
+            assert ("DISH".equals(base.typeString())): "Only DISH sockets can leave a group";
+            return base.leave(group);
+        }
+
+        /**
          * Set custom Encoder
          *
          * @param cls
@@ -3075,7 +3096,7 @@ public class ZMQ
         public int bindToRandomPort(String addr, int min, int max)
         {
             int port;
-            Random rand = new Random();
+            final Random rand = ThreadLocalRandom.current();
             //            int port = min;
             //            while (port <= max) {
             for (int i = 0; i < 100; i++) { // hardcoded to 100 tries. should this be parametrised
@@ -3156,6 +3177,17 @@ public class ZMQ
         public boolean unbind(String addr)
         {
             return base.termEndpoint(addr);
+        }
+
+        /**
+         * create outgoing connection from socket and return the connection routing id in thread-safe and atomic way.
+         * The function is supported only on the {@link SocketType#PEER} or {@link SocketType#RAW} socket types
+         * and would return `0` with 'errno' set to 'ENOTSUP' otherwise.
+         * @param addr the endpoint of the remote socket.
+         * @return the endpoint routing ID.
+         */
+        public int connectPeer(String addr) {
+            return base.connectPeer(addr);
         }
 
         /**
@@ -3362,9 +3394,8 @@ public class ZMQ
          *                This makes it easy to send a complex multiframe message in
          *                one call. The picture can contain any of these characters,
          *                each corresponding to zero or one arguments:
-         *
-         *                <table>
-         *                <caption> </caption>
+         *                <table border="1">
+         *                <caption><strong>Type of arguments</strong></caption>
          *                <tr><td>i = int  (stores signed integer)</td></tr>
          *                <tr><td>1 = byte (stores 8-bit unsigned integer)</td></tr>
          *                <tr><td>2 = int  (stores 16-bit unsigned integer)</td></tr>
@@ -3400,8 +3431,9 @@ public class ZMQ
          *
          * @param picture The picture argument is a string that defines the
          *                type of each argument. Supports these argument types:
-         *                <table>
-         *                <caption> </caption>
+         * <p>
+         *                <table border="1">
+         *                <caption><strong>Type of arguments</strong></caption>
          *                <tr><th style="text-align:left">pattern</th><th style="text-align:left">java type</th><th style="text-align:left">zproto type</th></tr>
          *                <tr><td>1</td><td>int</td><td>type = "number" size = "1"</td></tr>
          *                <tr><td>2</td><td>int</td><td>type = "number" size = "2"</td></tr>
@@ -3595,8 +3627,9 @@ public class ZMQ
          *                one call. The picture can contain any of these characters,
          *                each corresponding to zero or one elements in the result:
          *
-         *                <table>
-         *               <caption> </caption>
+         * <p>
+         *                <table border="1">
+         *                <caption><strong>Type of arguments</strong></caption>
          *                <tr><td>i = int (stores signed integer)</td></tr>
          *                <tr><td>1 = int (stores 8-bit unsigned integer)</td></tr>
          *                <tr><td>2 = int (stores 16-bit unsigned integer)</td></tr>
