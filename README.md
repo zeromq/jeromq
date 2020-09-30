@@ -93,6 +93,7 @@ Here is how you might implement a server that prints the messages it receives
 and responds to them with "Hello, world!":
 
 ```java
+import org.zeromq.SocketType;
 import org.zeromq.ZMQ;
 import org.zeromq.ZContext;
 
@@ -102,7 +103,7 @@ public class hwserver
     {
         try (ZContext context = new ZContext()) {
             // Socket to talk to clients
-            ZMQ.Socket socket = context.createSocket(ZMQ.REP);
+            ZMQ.Socket socket = context.createSocket(SocketType.REP);
             socket.bind("tcp://*:5555");
 
             while (!Thread.currentThread().isInterrupted()) {
