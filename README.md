@@ -129,10 +129,6 @@ public class hwserver
 The JeroMQ [translations of the zguide examples](src/test/java/guide) are a good
 reference for recommended usage.
 
-(Note that the Java examples in the [zguide](http://zguide.zeromq.org) itself
-are out of date and do not necessarily reflect current recommended practices
-with JeroMQ.)
-
 ### Documentation
 
 For API-level documentation, see the
