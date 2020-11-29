@@ -7,6 +7,7 @@ import java.nio.channels.SocketChannel;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 
 import zmq.io.IOThread;
@@ -295,7 +296,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
                 return rcvmore ? 1 : 0;
             }
             if (option == ZMQ.ZMQ_EVENTS) {
-                boolean rc = processCommands(0, false);
+                boolean rc = processCommands(0, false, null);
                 if (!rc && (errno.get() == ZError.ETERM || errno.get() == ZError.EINTR)) {
                     return -1;
                 }
@@ -345,7 +346,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
         }
 
         if (option == ZMQ.ZMQ_EVENTS) {
-            boolean rc = processCommands(0, false);
+            boolean rc = processCommands(0, false, null);
             if (!rc && (errno.get() == ZError.ETERM || errno.get() == ZError.EINTR)) {
                 return -1;
             }
@@ -377,7 +378,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
             options.mechanism.check(options);
 
             //  Process pending commands, if any.
-            boolean brc = processCommands(0, false);
+            boolean brc = processCommands(0, false, null);
             if (!brc) {
                 return false;
             }
@@ -492,7 +493,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
         options.mechanism.check(options);
 
         //  Process pending commands, if any.
-        boolean brc = processCommands(0, false);
+        boolean brc = processCommands(0, false, null);
         if (!brc) {
             return false;
         }
@@ -697,7 +698,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
 
             //  Process pending commands, if any, since there could be pending unprocessed processOwn()'s
             //  (from launchChild() for example) we're asked to terminate now.
-            boolean rc = processCommands(0, false);
+            boolean rc = processCommands(0, false, null);
             if (!rc) {
                 return false;
             }
@@ -773,6 +774,11 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
 
     public final boolean send(Msg msg, int flags)
     {
+        return send(msg, flags, null);
+    }
+
+    public final boolean send(Msg msg, int flags, AtomicBoolean canceled)
+    {
         lock();
 
         try {
@@ -789,7 +795,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
             }
 
             //  Process pending commands, if any.
-            boolean brc = processCommands(0, true);
+            boolean brc = processCommands(0, true, canceled);
             if (!brc) {
                 return false;
             }
@@ -830,7 +836,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
             //  command, process it and try to send the message again.
             //  If timeout is reached in the meantime, return EAGAIN.
             while (true) {
-                if (!processCommands(timeout, false)) {
+                if (!processCommands(timeout, false, canceled)) {
                     return false;
                 }
 
@@ -860,6 +866,11 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
 
     public final Msg recv(int flags)
     {
+        return recv(flags, null);
+    }
+
+    public final Msg recv(int flags, AtomicBoolean canceled)
+    {
         lock();
 
         try {
@@ -880,7 +891,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
             //  described above) from the one used by 'send'. This is because counting
             //  ticks is more efficient than doing RDTSC all the time.
             if (++ticks == Config.INBOUND_POLL_RATE.getValue()) {
-                if (!processCommands(0, false)) {
+                if (!processCommands(0, false, canceled)) {
                     return null;
                 }
                 ticks = 0;
@@ -906,7 +917,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
             //  activate_reader command already waiting in a command pipe.
             //  If it's not, return EAGAIN.
             if ((flags & ZMQ.ZMQ_DONTWAIT) > 0 || options.recvTimeout == 0) {
-                if (!processCommands(0, false)) {
+                if (!processCommands(0, false, canceled)) {
                     return null;
                 }
                 ticks = 0;
@@ -928,7 +939,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
             //  we are able to fetch a message.
             boolean block = (ticks != 0);
             while (true) {
-                if (!processCommands(block ? timeout : 0, false)) {
+                if (!processCommands(block ? timeout : 0, false, canceled)) {
                     return null;
                 }
                 msg = xrecv();
@@ -982,6 +993,12 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
         finally {
             unlock();
         }
+    }
+
+    public final void cancel(AtomicBoolean canceled)
+    {
+        canceled.set(true);
+        sendCancel();
     }
 
     public final void close()
@@ -1058,7 +1075,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
     //  returns only after at least one command was processed.
     //  If throttle argument is true, commands are processed at most once
     //  in a predefined time period.
-    private boolean processCommands(int timeout, boolean throttle)
+    private boolean processCommands(int timeout, boolean throttle, AtomicBoolean canceled)
     {
         Command cmd;
         if (timeout != 0) {
@@ -1099,6 +1116,11 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
         }
 
         if (errno.get() == ZError.EINTR) {
+            return false;
+        }
+
+        if (canceled != null && canceled.get()) {
+            errno.set(ZError.ECANCELED);
             return false;
         }
 
@@ -1236,7 +1258,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
                 reaperSignaler.recv();
             }
 
-            processCommands(0, false);
+            processCommands(0, false, null);
 
         }
         finally {
