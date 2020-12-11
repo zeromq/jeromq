@@ -115,6 +115,10 @@ public abstract class ZObject
             processSeqnum();
             break;
 
+        case CANCEL:
+            processCancel();
+            break;
+
         case DONE:
         default:
             throw new IllegalArgumentException();
@@ -294,6 +298,12 @@ public abstract class ZObject
         ctx.sendCommand(Ctx.TERM_TID, cmd);
     }
 
+    protected final void sendCancel()
+    {
+        Command cmd = new Command(this, Command.Type.CANCEL);
+        sendCommand(cmd);
+    }
+
     protected void processStop()
     {
         throw new UnsupportedOperationException();
@@ -375,6 +385,10 @@ public abstract class ZObject
     protected void processSeqnum()
     {
         throw new UnsupportedOperationException();
+    }
+
+    protected void processCancel()
+    {
     }
 
     private void sendCommand(Command cmd)

@@ -3263,6 +3263,36 @@ public class ZMQ
         }
 
         /**
+         * Queues a message created from data, so it can be sent, the call be canceled by calling cancellationToken {@link CancellationToken@cancel()}.
+         * If the operation is canceled a ZMQException is thrown with error code set to {@link ZError#ECANCELED}.
+         * @param data  the data to send.
+         * @param flags a combination (with + or |) of the flags defined below:
+         *              <ul>
+         *              <li>{@link org.zeromq.ZMQ#DONTWAIT DONTWAIT}:
+         *              For socket types ({@link org.zeromq.ZMQ#DEALER DEALER}, {@link org.zeromq.ZMQ#PUSH PUSH})
+         *              that block when there are no available peers (or all peers have full high-water mark),
+         *              specifies that the operation should be performed in non-blocking mode.
+         *              If the message cannot be queued on the socket, the method shall fail with errno set to EAGAIN.</li>
+         *              <li>{@link org.zeromq.ZMQ#SNDMORE SNDMORE}:
+         *              Specifies that the message being sent is a multi-part message,
+         *              and that further message parts are to follow.</li>
+         *              <li>0 : blocking send of a single-part message or the last of a multi-part message</li>
+         *              </ul>
+         * @return true when it has been queued on the socket and ØMQ has assumed responsibility for the message.
+         * This does not indicate that the message has been transmitted to the network.
+         */
+        public boolean send(byte[] data, int flags, CancellationToken cancellationToken)
+        {
+            zmq.Msg msg = new zmq.Msg(data);
+            if (base.send(msg, flags, cancellationToken.canceled)) {
+                return true;
+            }
+
+            mayRaise();
+            return false;
+        }
+
+        /**
          * Queues a message created from data, so it can be sent.
          *
          * @param data   the data to send.
@@ -3424,6 +3454,38 @@ public class ZMQ
         public byte[] recv(int flags)
         {
             zmq.Msg msg = base.recv(flags);
+
+            if (msg != null) {
+                return msg.data();
+            }
+
+            mayRaise();
+            return null;
+        }
+
+        /**
+         * Receives a message, the call be canceled by calling cancellationToken {@link CancellationToken@cancel()}.
+         * If the operation is canceled a ZMQException is thrown with error code set to {@link ZError#ECANCELED}.
+         * <p>
+         * If possible, a reference to the data is returned, without copy.
+         * Otherwise a new byte array will be allocated and the data will be copied.
+         * <p>
+         * @param flags either:
+         *              <ul>
+         *              <li>{@link org.zeromq.ZMQ#DONTWAIT DONTWAIT}:
+         *              Specifies that the operation should be performed in non-blocking mode.
+         *              If there are no messages available on the specified socket,
+         *              the method shall fail with errno set to EAGAIN and return null.</li>
+         *              <li>0 : receive operation blocks until one message is successfully retrieved,
+         *              or stops when timeout set by {@link #setReceiveTimeOut(int)} expires.</li>
+         *              </ul>
+         * @param cancellationToken token to control cancellation of the receive operation.
+         *                          The token can be created by calling {@link #createCancellationToken() }.
+         * @return the message received, as an array of bytes; null on error.
+         */
+        public byte[] recv(int flags, CancellationToken cancellationToken)
+        {
+            zmq.Msg msg = base.recv(flags, cancellationToken.canceled);
 
             if (msg != null) {
                 return msg.data();
@@ -3636,6 +3698,15 @@ public class ZMQ
                 }
                 return null;
             }
+        }
+
+        /**
+         * Create a {@link CancellationToken} to cancel send/receive operations for this socket.
+         * @return a new cancellation token associated with this socket.
+         */
+        public CancellationToken createCancellationToken()
+        {
+            return new CancellationToken(base);
         }
     }
 
@@ -4359,6 +4430,46 @@ public class ZMQ
                 this.publicKey = publicKey;
                 this.secretKey = secretKey;
             }
+        }
+    }
+
+
+    /**
+     * A cancellation token that allows canceling ongoing Socket send/receive operations.
+     * When calling send/receive you can provide the cancellation token as an additional parameter.
+     * To create a cancellation token call {@link Socket#createCancellationToken()}.
+     *
+     */
+    public static class CancellationToken
+    {
+        protected AtomicBoolean canceled;
+        SocketBase socket;
+
+        protected CancellationToken(SocketBase socket)
+        {
+            this.socket = socket;
+            canceled = new AtomicBoolean(false);
+        }
+
+        public boolean isCancellationRequested()
+        {
+            return canceled.get();
+        }
+
+        /**
+         * Reset the cancellation token in order to reuse the token with another send/receive call.
+         */
+        public void reset()
+        {
+            canceled.set(false);
+        }
+
+        /**
+         * Cancel a pending the send/receive operation.
+         */
+        public void cancel()
+        {
+            socket.cancel(canceled);
         }
     }
 }
