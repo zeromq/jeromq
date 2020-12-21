@@ -14,7 +14,7 @@ jobs:
                 key: jeromq-mavendep
             - run: mkdir -p /home/circleci/.sonar/cache /home/circleci/.m2/repository
             - run:
-                command: "mvn -B dependency:resolve dependency:resolve-plugins -Psonar,versions -s .circleci/settings.xml"
+                command: "mvn -B dependency:resolve dependency:resolve-plugins -s .circleci/settings.xml"
                 environment:
                     JAVA_HOME: /usr/local/openjdk-15
                     MAVEN_OPTS: "-Xmx1024m"
