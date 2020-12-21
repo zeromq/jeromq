@@ -4433,7 +4433,6 @@ public class ZMQ
         }
     }
 
-
     /**
      * A cancellation token that allows canceling ongoing Socket send/receive operations.
      * When calling send/receive you can provide the cancellation token as an additional parameter.

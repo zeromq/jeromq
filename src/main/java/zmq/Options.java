@@ -358,7 +358,8 @@ public class Options
             if (TcpUtils.WITH_EXTENDED_KEEPALIVE) {
                 tcpKeepAliveCnt = ((Number) optval).intValue();
                 return true;
-            } else {
+            }
+            else {
                 return false;
             }
 
@@ -366,7 +367,8 @@ public class Options
             if (TcpUtils.WITH_EXTENDED_KEEPALIVE) {
                 tcpKeepAliveIdle = ((Number) optval).intValue();
                 return true;
-            } else {
+            }
+            else {
                 return false;
             }
 
@@ -374,7 +376,8 @@ public class Options
             if (TcpUtils.WITH_EXTENDED_KEEPALIVE) {
                 tcpKeepAliveIntvl = ((Number) optval).intValue();
                 return true;
-            } else {
+            }
+            else {
                 return false;
             }
 

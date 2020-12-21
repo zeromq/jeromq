@@ -7,7 +7,6 @@ import zmq.ZError;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-
 public class TestZCancellationToken
 {
     @Test
@@ -57,7 +56,7 @@ public class TestZCancellationToken
             t.start();
 
             try {
-                socket.send(new byte[1],0, cancellationToken);
+                socket.send(new byte[1], 0, cancellationToken);
                 Assert.fail();
             }
             catch (ZMQException ex) {
@@ -113,7 +112,7 @@ public class TestZCancellationToken
             t.start();
 
             try {
-                socket.send(new byte[1],0, cancellationToken);
+                socket.send(new byte[1], 0, cancellationToken);
                 Assert.fail();
             }
             catch (ZMQException ex) {
