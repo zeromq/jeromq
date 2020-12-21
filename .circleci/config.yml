@@ -247,7 +247,7 @@ workflows:
               - testsj8
               - testsj11
               - testsj13
-              - testsj15
+              #- testsj15 -- fails until https://issues.apache.org/jira/browse/FELIX-6259 is closed
               - testsandroid
       - savecache:
           requires:
