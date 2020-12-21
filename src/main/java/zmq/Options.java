@@ -11,6 +11,7 @@ import zmq.io.net.SelectorProviderChooser;
 import zmq.io.net.ipc.IpcAddress;
 import zmq.io.net.tcp.TcpAddress;
 import zmq.io.net.tcp.TcpAddress.TcpAddressMask;
+import zmq.io.net.tcp.TcpUtils;
 import zmq.msg.MsgAllocator;
 import zmq.msg.MsgAllocatorThreshold;
 import zmq.util.Errno;
@@ -354,10 +355,28 @@ public class Options
             return true;
 
         case ZMQ.ZMQ_TCP_KEEPALIVE_CNT:
+            if (TcpUtils.WITH_EXTENDED_KEEPALIVE) {
+                tcpKeepAliveCnt = ((Number) optval).intValue();
+                return true;
+            } else {
+                return false;
+            }
+
         case ZMQ.ZMQ_TCP_KEEPALIVE_IDLE:
+            if (TcpUtils.WITH_EXTENDED_KEEPALIVE) {
+                tcpKeepAliveIdle = ((Number) optval).intValue();
+                return true;
+            } else {
+                return false;
+            }
+
         case ZMQ.ZMQ_TCP_KEEPALIVE_INTVL:
-            // not supported
-            return false;
+            if (TcpUtils.WITH_EXTENDED_KEEPALIVE) {
+                tcpKeepAliveIntvl = ((Number) optval).intValue();
+                return true;
+            } else {
+                return false;
+            }
 
         case ZMQ.ZMQ_IMMEDIATE:
             immediate = parseBoolean(option, optval);
@@ -747,10 +766,13 @@ public class Options
             return socksProxyAddress;
 
         case ZMQ.ZMQ_TCP_KEEPALIVE_CNT:
+            return tcpKeepAliveCnt;
+
         case ZMQ.ZMQ_TCP_KEEPALIVE_IDLE:
+            return tcpKeepAliveIdle;
+
         case ZMQ.ZMQ_TCP_KEEPALIVE_INTVL:
-            // not supported
-            return 0;
+            return tcpKeepAliveIntvl;
 
         case ZMQ.ZMQ_MECHANISM:
             return mechanism;
