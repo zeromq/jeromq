@@ -3263,7 +3263,7 @@ public class ZMQ
         }
 
         /**
-         * Queues a message created from data, so it can be sent, the call be canceled by calling cancellationToken {@link CancellationToken@cancel()}.
+         * Queues a message created from data, so it can be sent, the call be canceled by calling cancellationToken {@link CancellationToken#cancel()}.
          * If the operation is canceled a ZMQException is thrown with error code set to {@link ZError#ECANCELED}.
          * @param data  the data to send.
          * @param flags a combination (with + or |) of the flags defined below:
@@ -3464,7 +3464,7 @@ public class ZMQ
         }
 
         /**
-         * Receives a message, the call be canceled by calling cancellationToken {@link CancellationToken@cancel()}.
+         * Receives a message, the call be canceled by calling cancellationToken {@link CancellationToken#cancel()}.
          * If the operation is canceled a ZMQException is thrown with error code set to {@link ZError#ECANCELED}.
          * <p>
          * If possible, a reference to the data is returned, without copy.
