@@ -641,8 +641,7 @@ public enum SocketType
      * NOTE: SCATTER is still in draft phase.
      */
     @Draft
-    GATHER(zmq.ZMQ.ZMQ_GATHER),
-    ;
+    GATHER(zmq.ZMQ.ZMQ_GATHER);
 
     public final int type;
 

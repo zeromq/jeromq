@@ -2186,8 +2186,9 @@ public class ZMQ
          * @param group the name of the group to join. Limited to 16 characters.
          * @return true if the group was no already joined, otherwise false.
          */
-        public boolean join(String group) {
-            assert ("DISH".equals(base.typeString())): "Only DISH sockets can join a group";
+        public boolean join(String group)
+        {
+            assert ("DISH".equals(base.typeString())) : "Only DISH sockets can join a group";
             return base.join(group);
         }
 
@@ -2197,8 +2198,9 @@ public class ZMQ
          * @param group the name of the group to leave. Limited to 16 characters.
          * @return false if the group was not joined before, otherwise true.
          */
-        public boolean leave(String group) {
-            assert ("DISH".equals(base.typeString())): "Only DISH sockets can leave a group";
+        public boolean leave(String group)
+        {
+            assert ("DISH".equals(base.typeString())) : "Only DISH sockets can leave a group";
             return base.leave(group);
         }
 
@@ -3186,7 +3188,8 @@ public class ZMQ
          * @param addr the endpoint of the remote socket.
          * @return the endpoint routing ID.
          */
-        public int connectPeer(String addr) {
+        public int connectPeer(String addr)
+        {
             return base.connectPeer(addr);
         }
 
