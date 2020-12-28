@@ -104,7 +104,8 @@ public class ZFrame
      * Gets the group used for RADIO/DISH sockets.
      * @return the group name, or null.
      */
-    public String getGroup() {
+    public String getGroup()
+    {
         return group;
     }
 
@@ -112,7 +113,8 @@ public class ZFrame
      * Sets the group used for RADIO/DISH sockets.
      * @param group the group name, or null to unset it.
      */
-    public void setGroup(String group) {
+    public void setGroup(String group)
+    {
         this.group = group;
     }
 
