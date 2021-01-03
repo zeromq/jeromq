@@ -5,7 +5,7 @@ version: 2.1
 jobs:
     checkout:
         docker:
-            - image: circleci/openjdk:15-jdk-buster
+            - image: circleci/openjdk:13-jdk-buster
         steps:
             - checkout
             - restore_cache:
@@ -14,9 +14,9 @@ jobs:
                 key: jeromq-mavendep
             - run: mkdir -p /home/circleci/.sonar/cache /home/circleci/.m2/repository
             - run:
-                command: "mvn -B dependency:resolve dependency:resolve-plugins -s .circleci/settings.xml"
+                command: "mvn -B dependency:resolve dependency:resolve-plugins -Psonar,versions -s .circleci/settings.xml"
                 environment:
-                    JAVA_HOME: /usr/local/openjdk-15
+                    JAVA_HOME: /usr/java/openjdk-13
                     MAVEN_OPTS: "-Xmx1024m"
             - persist_to_workspace:
                 root: /
@@ -34,7 +34,7 @@ jobs:
                     - openjdk-8
     build:
         docker:
-            - image: circleci/openjdk:15-jdk-buster
+            - image: circleci/openjdk:14-jdk-buster
         steps:
             - attach_workspace:
                 at: /tmp/ws
@@ -46,7 +46,7 @@ jobs:
             - run:
                 command: mvn -B clean compile -Pcheckstyle,javadoc -Djdk.compile.home=/tmp/ws/openjdk-8 -s .circleci/settings.xml
                 environment:
-                    JAVA_HOME: /usr/local/openjdk-15
+                    JAVA_HOME: /usr/java/openjdk-14
                     MAVEN_OPTS: "-Xmx2048m"
             - persist_to_workspace:
                 root: /
@@ -84,27 +84,6 @@ jobs:
                 paths:
                     - home/circleci/.m2/repository
                     - home/circleci/.sonar/cache
-    testsj15:
-        docker:
-            - image: circleci/openjdk:15-jdk-buster
-        steps:
-            - attach_workspace:
-                at: /tmp/ws
-            - run:
-                command: |
-                    mv -n /tmp/ws/home/circleci/.m2 /home/circleci/
-                    mv -n /tmp/ws/home/circleci/.sonar /home/circleci/
-                    mv -n /tmp/ws/home/circleci/project/* /home/circleci/project/
-                    mv -n /tmp/ws/home/circleci/project/.??* /home/circleci/project/
-            - run:
-                command: |
-                    mvn -B test -Pskip -Darg.line="-Xmx2048m" -s .circleci/settings.xml
-                environment:
-                    JAVA_HOME: /usr/local/openjdk-15
-                    MAVEN_OPTS: "-Xmx512m"
-            - store_test_results:
-                path: target/surefire-reports
-            #don't persist_to_workspace, can't be done in parallel with testsj13
     testsj11:
         docker:
             - image: circleci/openjdk:11-buster
@@ -233,9 +212,6 @@ workflows:
       - testsj11:
           requires:
               - build
-      - testsj15:
-          requires:
-              - build
       - testsj13:
           requires:
               - build
@@ -247,7 +223,6 @@ workflows:
               - testsj8
               - testsj11
               - testsj13
-              #- testsj15 -- fails until https://issues.apache.org/jira/browse/FELIX-6259 is closed
               - testsandroid
       - savecache:
           requires:

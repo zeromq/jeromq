@@ -28,7 +28,6 @@ public class ZFrame
     private boolean more;
     private byte[] data;
     private int routingId;
-    private String group;
 
     /**
      * Class Constructor
@@ -99,25 +98,6 @@ public class ZFrame
     {
         this.routingId = routingId;
     }
-
-    /**
-     * Gets the group used for RADIO/DISH sockets.
-     * @return the group name, or null.
-     */
-    public String getGroup()
-    {
-        return group;
-    }
-
-    /**
-     * Sets the group used for RADIO/DISH sockets.
-     * @param group the group name, or null to unset it.
-     */
-    public void setGroup(String group)
-    {
-        this.group = group;
-    }
-
     /**
      * Destructor.
      */
@@ -192,9 +172,6 @@ public class ZFrame
         final SocketBase base = socket.base();
         final zmq.Msg msg = new Msg(data);
 
-        if (group != null) {
-            msg.setGroup(group);
-        }
         int sendFlags = (flags & ZFrame.MORE) == ZFrame.MORE ? zmq.ZMQ.ZMQ_SNDMORE : 0;
         sendFlags |= (flags & ZFrame.DONTWAIT) == ZFrame.DONTWAIT ? zmq.ZMQ.ZMQ_DONTWAIT : 0;
 
@@ -368,6 +345,22 @@ public class ZFrame
     }
 
     /**
+     * Internal method to call recv on the socket.
+     * Does not trap any ZMQExceptions but expects caling routine to handle them.
+     * @param socket
+     *          0MQ socket to read from
+     * @return
+     *          byte[] data
+     */
+    private byte[] recv(Socket socket, int flags)
+    {
+        Utils.checkArgument(socket != null, "socket parameter must not be null");
+        data = socket.recv(flags);
+        more = socket.hasReceiveMore();
+        return data;
+    }
+
+    /**
      * Receives single frame from socket, returns the received frame object, or null if the recv
      * was interrupted. Does a blocking recv, if you want to not block then use
      * recvFrame(socket, ZMQ.DONTWAIT);
@@ -402,7 +395,6 @@ public class ZFrame
             return null;
         }
         ZFrame frame = new ZFrame(msg);
-        frame.setGroup(msg.getGroup());
         return frame;
     }
 

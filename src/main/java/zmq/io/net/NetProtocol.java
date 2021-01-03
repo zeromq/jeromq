@@ -1,103 +1,102 @@
 package zmq.io.net;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 import zmq.Options;
+import zmq.Own;
 import zmq.SocketBase;
+import zmq.io.IEngine;
 import zmq.io.IOThread;
+import zmq.io.SessionBase;
 import zmq.io.net.Address.IZAddress;
-import zmq.io.net.ipc.IpcAddress;
-import zmq.io.net.ipc.IpcListener;
-import zmq.io.net.tcp.TcpAddress;
-import zmq.io.net.tcp.TcpListener;
-import zmq.io.net.tipc.TipcListener;
+import zmq.io.net.inproc.InprocNetworkProtocolProvider;
+import zmq.io.net.ipc.IpcNetworkProtocolProvider;
+import zmq.io.net.norm.NormNetworkProtocolProvider;
+import zmq.io.net.pgm.EpgmNetworkProtocolProvider;
+import zmq.io.net.pgm.PgmNetworkProtocolProvider;
+import zmq.io.net.tcp.TcpNetworkProtocolProvider;
+import zmq.io.net.tipc.TipcNetworkProtocolProvider;
 import zmq.socket.Sockets;
 
 public enum NetProtocol
 {
-    inproc(true, false, false),
-    ipc(true, false, false)
+    inproc(false, false),
+    tcp(false, false)
     {
-        @Override
-        public Listener getListener(IOThread ioThread, SocketBase socket,
-                                    Options options)
-        {
-            return new IpcListener(ioThread, socket, options);
-        }
-
         @Override
         public void resolve(Address paddr, boolean ipv6)
         {
             paddr.resolve(ipv6);
         }
-
-        @Override
-        public IZAddress zresolve(String addr, boolean ipv6)
-        {
-            return new IpcAddress(addr);
-        }
-
     },
-    tcp(true, false, false)
+    udp(true, true)
     {
-        @Override
-        public Listener getListener(IOThread ioThread, SocketBase socket,
-                                    Options options)
-        {
-            return new TcpListener(ioThread, socket, options);
-        }
-
         @Override
         public void resolve(Address paddr, boolean ipv6)
         {
             paddr.resolve(ipv6);
         }
-
-        @Override
-        public IZAddress zresolve(String addr, boolean ipv6)
-        {
-            return  new TcpAddress(addr, ipv6);
-        }
-
     },
     //  PGM does not support subscription forwarding; ask for all data to be
     //  sent to this pipe. (same for NORM, currently?)
-    pgm(false, true, true, Sockets.PUB, Sockets.SUB, Sockets.XPUB, Sockets.XPUB),
-    epgm(false, true, true, Sockets.PUB, Sockets.SUB, Sockets.XPUB, Sockets.XPUB),
-    tipc(false, false, false)
+    pgm(true, true, Sockets.PUB, Sockets.SUB, Sockets.XPUB, Sockets.XPUB),
+    epgm(true, true, Sockets.PUB, Sockets.SUB, Sockets.XPUB, Sockets.XPUB),
+    norm(true, true),
+    ws(true, true),
+    wss(true, true),
+    ipc(false, false)
     {
-        @Override
-        public Listener getListener(IOThread ioThread, SocketBase socket,
-                                    Options options)
-        {
-            return new TipcListener(ioThread, socket, options);
-        }
-
         @Override
         public void resolve(Address paddr, boolean ipv6)
         {
             paddr.resolve(ipv6);
         }
-
     },
-    norm(false, true, true);
+    tipc(false, false)
+    {
+        @Override
+        public void resolve(Address paddr, boolean ipv6)
+        {
+            paddr.resolve(ipv6);
+        }
+    },
+    vmci(true, true),
+    ;
 
-    public final boolean  valid;
+    private static final Map<NetProtocol,NetworkProtocolProvider > providers;
+    static {
+        providers = new HashMap<>(NetProtocol.values().length);
+        providers.put(NetProtocol.tcp, new TcpNetworkProtocolProvider());
+        providers.put(NetProtocol.ipc, new IpcNetworkProtocolProvider());
+        providers.put(NetProtocol.tipc, new TipcNetworkProtocolProvider());
+        providers.put(NetProtocol.norm, new NormNetworkProtocolProvider());
+        providers.put(NetProtocol.inproc, new InprocNetworkProtocolProvider());
+        providers.put(NetProtocol.pgm, new PgmNetworkProtocolProvider());
+        providers.put(NetProtocol.epgm, new EpgmNetworkProtocolProvider());
+    }
+
     public final boolean  subscribe2all;
     public final boolean  isMulticast;
     private Set<Integer> compatibles;
 
-    NetProtocol(boolean implemented, boolean subscribe2all, boolean isMulticast, Sockets... compatibles)
+    private NetProtocol(boolean subscribe2all, boolean isMulticast, Sockets... compatibles)
     {
-        valid = implemented;
         this.compatibles = new HashSet<>(compatibles.length);
         for (Sockets s : compatibles) {
             this.compatibles.add(s.ordinal());
         }
         this.subscribe2all = subscribe2all;
         this.isMulticast = isMulticast;
+    }
+
+    public boolean isValid() {
+        return providers.containsKey(this) && providers.get(this).isValid();
     }
 
     /**
@@ -122,7 +121,7 @@ public enum NetProtocol
 
     public Listener getListener(IOThread ioThread, SocketBase socket, Options options)
     {
-        return null;
+        return providers.get(this).getListener(ioThread, socket, options);
     }
 
     public void resolve(Address paddr, boolean ipv6)
@@ -132,6 +131,11 @@ public enum NetProtocol
 
     public IZAddress zresolve(String addr, boolean ipv6)
     {
-        return null;
+        return providers.get(this).zresolve(addr, ipv6);
+    }
+
+    public void startConnecting(Options options, IOThread ioThread, SessionBase session, Address addr,
+                                         boolean delayedStart, Consumer<Own> launchChild, BiConsumer<SessionBase, IEngine> sendAttach) {
+        providers.get(this).startConnecting(options, ioThread, session, addr, delayedStart, launchChild, sendAttach);
     }
 }

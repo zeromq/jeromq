@@ -2,7 +2,7 @@ package zmq.proxy;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
 import java.nio.channels.Selector;
@@ -59,6 +59,7 @@ public class ProxyTest
             this.started = new CountDownLatch(1);
         }
 
+        @SuppressWarnings("deprecation")
         @Override
         public Boolean call()
         {
@@ -156,6 +157,7 @@ public class ProxyTest
             this.started = new CountDownLatch(1);
         }
 
+        @SuppressWarnings("deprecation")
         @Override
         public Boolean call() throws InterruptedException, ExecutionException, TimeoutException
         {
@@ -237,6 +239,7 @@ public class ProxyTest
             this.started = new CountDownLatch(1);
        }
 
+        @SuppressWarnings("deprecation")
         @Override
         public Boolean call()
         {
@@ -304,6 +307,7 @@ public class ProxyTest
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Test(timeout = 10000)
     public void testProxy() throws Throwable
     {

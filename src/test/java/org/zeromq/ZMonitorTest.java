@@ -1,7 +1,7 @@
 package org.zeromq;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertThat;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -43,6 +43,7 @@ public class ZMonitorTest
         ctx.close();
     }
 
+    @SuppressWarnings("deprecation")
     @Test
     public void testZMonitor() throws IOException
     {

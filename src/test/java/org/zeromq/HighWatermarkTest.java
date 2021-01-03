@@ -1,7 +1,7 @@
 package org.zeromq;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertThat;
 
 import java.io.IOException;
 import java.security.SecureRandom;
@@ -12,7 +12,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.LockSupport;
 
 import org.junit.Test;
-
 import zmq.util.AndroidProblematic;
 
 public class HighWatermarkTest

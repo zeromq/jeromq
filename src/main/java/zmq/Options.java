@@ -11,7 +11,6 @@ import zmq.io.net.SelectorProviderChooser;
 import zmq.io.net.ipc.IpcAddress;
 import zmq.io.net.tcp.TcpAddress;
 import zmq.io.net.tcp.TcpAddress.TcpAddressMask;
-import zmq.io.net.tcp.TcpUtils;
 import zmq.msg.MsgAllocator;
 import zmq.msg.MsgAllocatorThreshold;
 import zmq.util.Errno;
@@ -174,9 +173,6 @@ public class Options
     //  As Socket type on the network.
     public int asType;
 
-    //  Last connected routing id for PEER socket
-    public int peerLastRoutingId;
-
     public final Errno errno = new Errno();
 
     public Options()
@@ -235,8 +231,6 @@ public class Options
         helloMsg = null;
 
         asType = -1;
-
-        peerLastRoutingId = 0;
     }
 
     @SuppressWarnings("deprecation")
@@ -355,31 +349,10 @@ public class Options
             return true;
 
         case ZMQ.ZMQ_TCP_KEEPALIVE_CNT:
-            if (TcpUtils.WITH_EXTENDED_KEEPALIVE) {
-                tcpKeepAliveCnt = ((Number) optval).intValue();
-                return true;
-            }
-            else {
-                return false;
-            }
-
         case ZMQ.ZMQ_TCP_KEEPALIVE_IDLE:
-            if (TcpUtils.WITH_EXTENDED_KEEPALIVE) {
-                tcpKeepAliveIdle = ((Number) optval).intValue();
-                return true;
-            }
-            else {
-                return false;
-            }
-
         case ZMQ.ZMQ_TCP_KEEPALIVE_INTVL:
-            if (TcpUtils.WITH_EXTENDED_KEEPALIVE) {
-                tcpKeepAliveIntvl = ((Number) optval).intValue();
-                return true;
-            }
-            else {
-                return false;
-            }
+            // not supported
+            return false;
 
         case ZMQ.ZMQ_IMMEDIATE:
             immediate = parseBoolean(option, optval);
@@ -769,13 +742,10 @@ public class Options
             return socksProxyAddress;
 
         case ZMQ.ZMQ_TCP_KEEPALIVE_CNT:
-            return tcpKeepAliveCnt;
-
         case ZMQ.ZMQ_TCP_KEEPALIVE_IDLE:
-            return tcpKeepAliveIdle;
-
         case ZMQ.ZMQ_TCP_KEEPALIVE_INTVL:
-            return tcpKeepAliveIntvl;
+            // not supported
+            return 0;
 
         case ZMQ.ZMQ_MECHANISM:
             return mechanism;

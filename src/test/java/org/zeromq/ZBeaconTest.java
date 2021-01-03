@@ -1,7 +1,7 @@
 package org.zeromq;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
@@ -17,6 +17,7 @@ import org.zeromq.ZBeacon.Listener;
 
 public class ZBeaconTest
 {
+    @SuppressWarnings("deprecation")
     @Test(timeout = 2000)
     public void testUseBuilder() throws InterruptedException, IOException
     {

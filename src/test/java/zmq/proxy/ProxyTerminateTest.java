@@ -2,7 +2,7 @@ package zmq.proxy;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertThat;
 
 import java.io.IOException;
 import java.lang.Thread.UncaughtExceptionHandler;
@@ -33,6 +33,7 @@ public class ProxyTerminateTest
             this.resultHander = resultHander;
         }
 
+        @SuppressWarnings("deprecation")
         @Override
         public void run()
         {
@@ -74,6 +75,7 @@ public class ProxyTerminateTest
 
     }
 
+    @SuppressWarnings("deprecation")
     @Test(timeout = 5000)
     public void testProxyTerminate() throws IOException, InterruptedException, ExecutionException
     {

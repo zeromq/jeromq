@@ -93,7 +93,6 @@ Here is how you might implement a server that prints the messages it receives
 and responds to them with "Hello, world!":
 
 ```java
-import org.zeromq.SocketType;
 import org.zeromq.ZMQ;
 import org.zeromq.ZContext;
 
@@ -103,7 +102,7 @@ public class hwserver
     {
         try (ZContext context = new ZContext()) {
             // Socket to talk to clients
-            ZMQ.Socket socket = context.createSocket(SocketType.REP);
+            ZMQ.Socket socket = context.createSocket(ZMQ.REP);
             socket.bind("tcp://*:5555");
 
             while (!Thread.currentThread().isInterrupted()) {
@@ -128,6 +127,10 @@ public class hwserver
 
 The JeroMQ [translations of the zguide examples](src/test/java/guide) are a good
 reference for recommended usage.
+
+(Note that the Java examples in the [zguide](http://zguide.zeromq.org) itself
+are out of date and do not necessarily reflect current recommended practices
+with JeroMQ.)
 
 ### Documentation
 

@@ -69,7 +69,6 @@ public class ZError
     public static final int ENOTCONN        = 57;
     public static final int ECONNREFUSED    = 61;
     public static final int EHOSTUNREACH    = 65;
-    public static final int ECANCELED       = 125;
 
     private static final int ZMQ_HAUSNUMERO = 156384712;
 

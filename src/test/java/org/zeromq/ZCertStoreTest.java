@@ -9,7 +9,7 @@ import java.io.File;
 import java.io.IOException;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertThat;
 
 public class ZCertStoreTest
 {
@@ -152,5 +152,22 @@ public class ZCertStoreTest
     public void cleanup()
     {
         TestUtils.cleanupDir(CERTSTORE_LOCATION);
+    }
+
+//    @Test
+    public void testRepeated() throws IOException
+    {
+        for (int idx = 0; idx < 1000; ++idx) {
+            System.out.println("+++++++ " + idx);
+            init();
+            testAddCertificates();
+            cleanup();
+            init();
+            testcheckForCertificateChanges();
+            cleanup();
+            init();
+            testRemoveCertificates();
+            cleanup();
+        }
     }
 }

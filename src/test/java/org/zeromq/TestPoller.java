@@ -2,7 +2,7 @@ package org.zeromq;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertThat;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -52,6 +52,7 @@ public class TestPoller
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Test(timeout = 5000)
     public void testPollerPollout() throws Exception
     {
@@ -99,6 +100,7 @@ public class TestPoller
         context.term();
     }
 
+    @SuppressWarnings("deprecation")
     @Test(timeout = 5000)
     public void testExitPollerIssue580() throws InterruptedException, ExecutionException
     {

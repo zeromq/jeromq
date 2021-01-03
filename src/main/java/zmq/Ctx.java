@@ -1,10 +1,6 @@
 package zmq;
 
 import java.io.IOException;
-import java.lang.ref.Reference;
-import java.lang.ref.ReferenceQueue;
-import java.lang.ref.WeakReference;
-import java.nio.channels.SelectableChannel;
 import java.nio.channels.Selector;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -15,7 +11,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
@@ -148,26 +143,6 @@ public class Ctx
     private boolean ipv6;
 
     private final Errno errno = new Errno();
-
-    /**
-     * A class that holds the informations needed to forward channel in monitor sockets.
-     * Of course, it only works with inproc sockets.
-     * <p>
-     * It uses WeakReference to avoid holding references to channel if the monitor event is
-     * lost.
-     * <p>
-     * A class is used as a lock in lazy allocation of the needed objects.
-     */
-    private static class ChannelForwardHolder
-    {
-        private final AtomicInteger handleSource = new AtomicInteger(0);
-        private final Map<Integer, WeakReference<SelectableChannel>> map = new ConcurrentHashMap<>();
-        // The WeakReference is empty when the reference is empty, so keep a reverse empty to clean the direct map.
-        private final Map<WeakReference<SelectableChannel>, Integer> reversemap = new ConcurrentHashMap<>();
-        private final ReferenceQueue<SelectableChannel> queue = new ReferenceQueue<>();
-    }
-
-    private ChannelForwardHolder forwardHolder = null;
 
     public Ctx()
     {
@@ -766,55 +741,5 @@ public class Ctx
     public Errno errno()
     {
         return errno;
-    }
-
-    /**
-     * Forward a channel in a monitor socket.
-     * @param channel a channel to forward
-     * @return the handle of the channel to be forwarded, used to retrieve it in {@link #getForwardedChannel(Integer)}
-     */
-    int forwardChannel(SelectableChannel channel)
-    {
-        synchronized (ChannelForwardHolder.class) {
-            if (forwardHolder == null) {
-                forwardHolder = new ChannelForwardHolder();
-            }
-        }
-        WeakReference<SelectableChannel> ref = new WeakReference<SelectableChannel>(channel, forwardHolder.queue);
-        int handle = forwardHolder.handleSource.getAndIncrement();
-        forwardHolder.map.put(handle, ref);
-        forwardHolder.reversemap.put(ref, handle);
-        cleanForwarded();
-        return handle;
-    }
-
-    /**
-     * Retrieve a channel, using the handle returned by {@link #forwardChannel(SelectableChannel)}. As WeakReference are used, if the channel was discarded
-     * and a GC ran, it will not be found and this method will return null.
-     * @param handle
-     * @return
-     */
-    SelectableChannel getForwardedChannel(Integer handle)
-    {
-        cleanForwarded();
-        WeakReference<SelectableChannel> ref = forwardHolder.map.remove(handle);
-        if (ref != null) {
-            return ref.get();
-        }
-        else {
-            return null;
-        }
-    }
-
-    /**
-     * Clean all empty references
-     */
-    private void cleanForwarded()
-    {
-        Reference<? extends SelectableChannel> ref;
-        while ((ref = forwardHolder.queue.poll()) != null) {
-            Integer handle = forwardHolder.reversemap.remove(ref);
-            forwardHolder.map.remove(handle);
-        }
     }
 }

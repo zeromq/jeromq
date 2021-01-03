@@ -42,27 +42,22 @@ public class ZMQ
     /******************************************************************************/
 
     /*  Socket types.                                                             */
-    public static final int ZMQ_PAIR    = 0;
-    public static final int ZMQ_PUB     = 1;
-    public static final int ZMQ_SUB     = 2;
-    public static final int ZMQ_REQ     = 3;
-    public static final int ZMQ_REP     = 4;
-    public static final int ZMQ_DEALER  = 5;
-    public static final int ZMQ_ROUTER  = 6;
-    public static final int ZMQ_PULL    = 7;
-    public static final int ZMQ_PUSH    = 8;
-    public static final int ZMQ_XPUB    = 9;
-    public static final int ZMQ_XSUB    = 10;
-    public static final int ZMQ_STREAM  = 11;
-    public static final int ZMQ_SERVER  = 12;
-    public static final int ZMQ_CLIENT  = 13;
-    public static final int ZMQ_RADIO   = 14;
-    public static final int ZMQ_DISH    = 15;
-    public static final int ZMQ_CHANNEL = 16;
-    public static final int ZMQ_PEER    = 17;
-    public static final int ZMQ_RAW     = 18;
-    public static final int ZMQ_SCATTER = 19;
-    public static final int ZMQ_GATHER  = 20;
+    public static final int ZMQ_PAIR   = 0;
+    public static final int ZMQ_PUB    = 1;
+    public static final int ZMQ_SUB    = 2;
+    public static final int ZMQ_REQ    = 3;
+    public static final int ZMQ_REP    = 4;
+    public static final int ZMQ_DEALER = 5;
+    public static final int ZMQ_ROUTER = 6;
+    public static final int ZMQ_PULL   = 7;
+    public static final int ZMQ_PUSH   = 8;
+    public static final int ZMQ_XPUB   = 9;
+    public static final int ZMQ_XSUB   = 10;
+    public static final int ZMQ_STREAM = 11;
+    public static final int ZMQ_SERVER = 12;
+    public static final int ZMQ_CLIENT = 13;
+    public static final int ZMQ_RADIO  = 14;
+    public static final int ZMQ_DISH   = 15;
 
     /*  Deprecated aliases                                                        */
     @Deprecated
@@ -286,18 +281,10 @@ public class ZMQ
             }
         }
 
-        private Event(int event, String addr, Object arg, int flag)
-        {
-            this.event = event;
-            this.addr = addr;
-            this.arg = arg;
-            this.flag = flag;
-        }
-
         public boolean write(SocketBase s)
         {
             int size = 4 + 1 + addr.length() + 1; // event + len(addr) + addr + flag
-            if (flag == VALUE_INTEGER || flag == VALUE_CHANNEL) {
+            if (flag == VALUE_INTEGER) {
                 size += 4;
             }
 
@@ -309,35 +296,10 @@ public class ZMQ
             if (flag == VALUE_INTEGER) {
                 buffer.putInt((Integer) arg);
             }
-            else if (flag == VALUE_CHANNEL) {
-                int channeldId = s.getCtx().forwardChannel((SelectableChannel) arg);
-                buffer.putInt(channeldId);
-            }
             buffer.flip();
 
             Msg msg = new Msg(buffer);
             return s.send(msg, 0);
-        }
-
-        /**
-         * Resolve the channel that was associated with this event.
-         * Implementation note: to be backward compatible, {@link #arg} only store Integer value, so
-         * the channel is resolved using this call.
-         * <p>
-         * Internally socket are kept using weak values, so it's better to retrieve the channel as early
-         * as possible, otherwise it might get lost.
-         *
-         * @param socket the socket that send the event
-         * @return the channel in the event, or null if was not a channel event.
-         */
-        public SelectableChannel getChannel(SocketBase socket)
-        {
-            if (flag == VALUE_CHANNEL) {
-                return socket.getCtx().getForwardedChannel((Integer) arg);
-            }
-            else {
-                return null;
-            }
         }
 
         public static Event read(SocketBase s, int flags)
@@ -356,11 +318,11 @@ public class ZMQ
             int flag = buffer.get();
             Object arg = null;
 
-            if (flag == VALUE_INTEGER || flag == VALUE_CHANNEL) {
+            if (flag == VALUE_INTEGER) {
                 arg = buffer.getInt();
             }
 
-            return new Event(event, new String(addr, CHARSET), arg, flag);
+            return new Event(event, new String(addr, CHARSET), arg);
         }
 
         public static Event read(SocketBase s)
@@ -477,12 +439,6 @@ public class ZMQ
     {
         checkSocket(s);
         return s.connect(addr);
-    }
-
-    public static int connectPeer(SocketBase s, String addr)
-    {
-        checkSocket(s);
-        return s.connectPeer(addr);
     }
 
     public static boolean unbind(SocketBase s, String addr)

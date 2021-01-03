@@ -55,9 +55,7 @@ public class Command
         INPROC_CONNECTED,
         //  Sent by reaper thread to the term thread when all the sockets
         //  are successfully deallocated.
-        DONE,
-        //  Cancel a single pending I/O call
-        CANCEL
+        DONE
     }
 
     Command(ZObject destination, Type type)

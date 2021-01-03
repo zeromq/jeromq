@@ -5,17 +5,17 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.Selector;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.zeromq.proto.ZPicture;
+
 import zmq.Ctx;
 import zmq.Options;
 import zmq.SocketBase;
@@ -728,7 +728,8 @@ public class ZMQ
          * </ul>
          * </li>
          * </ul>
-         * <strong>Warning</strong>
+         * <p>
+         * <h4>Warning</h4>
          * <br>
          * As ZMQ_LINGER defaults to "infinite", by default this method will block indefinitely if there are any pending connects or sends.
          * We strongly recommend to
@@ -2181,30 +2182,6 @@ public class ZMQ
         }
 
         /**
-         * Joins a group.
-         * Opposite action is {@link Socket#leave(String)}
-         * @param group the name of the group to join. Limited to 16 characters.
-         * @return true if the group was no already joined, otherwise false.
-         */
-        public boolean join(String group)
-        {
-            assert ("DISH".equals(base.typeString())) : "Only DISH sockets can join a group";
-            return base.join(group);
-        }
-
-        /**
-         * Leaves a group.
-         * Opposite action is {@link Socket#join(String)}
-         * @param group the name of the group to leave. Limited to 16 characters.
-         * @return false if the group was not joined before, otherwise true.
-         */
-        public boolean leave(String group)
-        {
-            assert ("DISH".equals(base.typeString())) : "Only DISH sockets can leave a group";
-            return base.leave(group);
-        }
-
-        /**
          * Set custom Encoder
          *
          * @param cls
@@ -3098,7 +3075,7 @@ public class ZMQ
         public int bindToRandomPort(String addr, int min, int max)
         {
             int port;
-            final Random rand = ThreadLocalRandom.current();
+            Random rand = new Random();
             //            int port = min;
             //            while (port <= max) {
             for (int i = 0; i < 100; i++) { // hardcoded to 100 tries. should this be parametrised
@@ -3179,18 +3156,6 @@ public class ZMQ
         public boolean unbind(String addr)
         {
             return base.termEndpoint(addr);
-        }
-
-        /**
-         * create outgoing connection from socket and return the connection routing id in thread-safe and atomic way.
-         * The function is supported only on the {@link SocketType#PEER} or {@link SocketType#RAW} socket types
-         * and would return `0` with 'errno' set to 'ENOTSUP' otherwise.
-         * @param addr the endpoint of the remote socket.
-         * @return the endpoint routing ID.
-         */
-        public int connectPeer(String addr)
-        {
-            return base.connectPeer(addr);
         }
 
         /**
@@ -3298,36 +3263,6 @@ public class ZMQ
         }
 
         /**
-         * Queues a message created from data, so it can be sent, the call be canceled by calling cancellationToken {@link CancellationToken#cancel()}.
-         * If the operation is canceled a ZMQException is thrown with error code set to {@link ZError#ECANCELED}.
-         * @param data  the data to send.
-         * @param flags a combination (with + or |) of the flags defined below:
-         *              <ul>
-         *              <li>{@link org.zeromq.ZMQ#DONTWAIT DONTWAIT}:
-         *              For socket types ({@link org.zeromq.ZMQ#DEALER DEALER}, {@link org.zeromq.ZMQ#PUSH PUSH})
-         *              that block when there are no available peers (or all peers have full high-water mark),
-         *              specifies that the operation should be performed in non-blocking mode.
-         *              If the message cannot be queued on the socket, the method shall fail with errno set to EAGAIN.</li>
-         *              <li>{@link org.zeromq.ZMQ#SNDMORE SNDMORE}:
-         *              Specifies that the message being sent is a multi-part message,
-         *              and that further message parts are to follow.</li>
-         *              <li>0 : blocking send of a single-part message or the last of a multi-part message</li>
-         *              </ul>
-         * @return true when it has been queued on the socket and ØMQ has assumed responsibility for the message.
-         * This does not indicate that the message has been transmitted to the network.
-         */
-        public boolean send(byte[] data, int flags, CancellationToken cancellationToken)
-        {
-            zmq.Msg msg = new zmq.Msg(data);
-            if (base.send(msg, flags, cancellationToken.canceled)) {
-                return true;
-            }
-
-            mayRaise();
-            return false;
-        }
-
-        /**
          * Queues a message created from data, so it can be sent.
          *
          * @param data   the data to send.
@@ -3397,8 +3332,9 @@ public class ZMQ
          *                This makes it easy to send a complex multiframe message in
          *                one call. The picture can contain any of these characters,
          *                each corresponding to zero or one arguments:
-         *                <table border="1">
-         *                <caption><strong>Type of arguments</strong></caption>
+         *
+         *                <table>
+         *                <caption> </caption>
          *                <tr><td>i = int  (stores signed integer)</td></tr>
          *                <tr><td>1 = byte (stores 8-bit unsigned integer)</td></tr>
          *                <tr><td>2 = int  (stores 16-bit unsigned integer)</td></tr>
@@ -3434,9 +3370,8 @@ public class ZMQ
          *
          * @param picture The picture argument is a string that defines the
          *                type of each argument. Supports these argument types:
-         * <p>
-         *                <table border="1">
-         *                <caption><strong>Type of arguments</strong></caption>
+         *                <table>
+         *                <caption> </caption>
          *                <tr><th style="text-align:left">pattern</th><th style="text-align:left">java type</th><th style="text-align:left">zproto type</th></tr>
          *                <tr><td>1</td><td>int</td><td>type = "number" size = "1"</td></tr>
          *                <tr><td>2</td><td>int</td><td>type = "number" size = "2"</td></tr>
@@ -3471,10 +3406,7 @@ public class ZMQ
 
         /**
          * Receives a message.
-         * <p>
-         * If possible, a reference to the data is returned, without copy.
-         * Otherwise a new byte array will be allocated and the data will be copied.
-         * <p>
+         *
          * @param flags either:
          *              <ul>
          *              <li>{@link org.zeromq.ZMQ#DONTWAIT DONTWAIT}:
@@ -3489,38 +3421,6 @@ public class ZMQ
         public byte[] recv(int flags)
         {
             zmq.Msg msg = base.recv(flags);
-
-            if (msg != null) {
-                return msg.data();
-            }
-
-            mayRaise();
-            return null;
-        }
-
-        /**
-         * Receives a message, the call be canceled by calling cancellationToken {@link CancellationToken#cancel()}.
-         * If the operation is canceled a ZMQException is thrown with error code set to {@link ZError#ECANCELED}.
-         * <p>
-         * If possible, a reference to the data is returned, without copy.
-         * Otherwise a new byte array will be allocated and the data will be copied.
-         * <p>
-         * @param flags either:
-         *              <ul>
-         *              <li>{@link org.zeromq.ZMQ#DONTWAIT DONTWAIT}:
-         *              Specifies that the operation should be performed in non-blocking mode.
-         *              If there are no messages available on the specified socket,
-         *              the method shall fail with errno set to EAGAIN and return null.</li>
-         *              <li>0 : receive operation blocks until one message is successfully retrieved,
-         *              or stops when timeout set by {@link #setReceiveTimeOut(int)} expires.</li>
-         *              </ul>
-         * @param cancellationToken token to control cancellation of the receive operation.
-         *                          The token can be created by calling {@link #createCancellationToken() }.
-         * @return the message received, as an array of bytes; null on error.
-         */
-        public byte[] recv(int flags, CancellationToken cancellationToken)
-        {
-            zmq.Msg msg = base.recv(flags, cancellationToken.canceled);
 
             if (msg != null) {
                 return msg.data();
@@ -3630,9 +3530,8 @@ public class ZMQ
          *                one call. The picture can contain any of these characters,
          *                each corresponding to zero or one elements in the result:
          *
-         * <p>
-         *                <table border="1">
-         *                <caption><strong>Type of arguments</strong></caption>
+         *                <table>
+         *               <caption> </caption>
          *                <tr><td>i = int (stores signed integer)</td></tr>
          *                <tr><td>1 = int (stores 8-bit unsigned integer)</td></tr>
          *                <tr><td>2 = int (stores 16-bit unsigned integer)</td></tr>
@@ -3734,15 +3633,6 @@ public class ZMQ
                 }
                 return null;
             }
-        }
-
-        /**
-         * Create a {@link CancellationToken} to cancel send/receive operations for this socket.
-         * @return a new cancellation token associated with this socket.
-         */
-        public CancellationToken createCancellationToken()
-        {
-            return new CancellationToken(base);
         }
     }
 
@@ -4194,10 +4084,7 @@ public class ZMQ
     public static class Event
     {
         private final int    event;
-        // To keep backward compatibility, the old value field only store integer
-        // The resolved value (Error, channel or other) is stored in resolvedValue field.
         private final Object value;
-        private final Object resolvedValue;
         private final String address;
 
         public Event(int event, Object value, String address)
@@ -4205,15 +4092,6 @@ public class ZMQ
             this.event = event;
             this.value = value;
             this.address = address;
-            this.resolvedValue = value;
-        }
-
-        private Event(int event, Object value, Object resolvedValue, String address)
-        {
-            this.event = event;
-            this.value = value;
-            this.address = address;
-            this.resolvedValue = resolvedValue;
         }
 
         /**
@@ -4227,32 +4105,7 @@ public class ZMQ
         public static Event recv(Socket socket, int flags)
         {
             zmq.ZMQ.Event e = zmq.ZMQ.Event.read(socket.base, flags);
-            Object resolvedValue;
-            switch (e.event) {
-            case zmq.ZMQ.ZMQ_EVENT_HANDSHAKE_FAILED_PROTOCOL:
-                resolvedValue = ZMonitor.ProtocolCode.findByCode((Integer) e.arg);
-                break;
-            case zmq.ZMQ.ZMQ_EVENT_CLOSE_FAILED:
-            case zmq.ZMQ.ZMQ_EVENT_ACCEPT_FAILED:
-            case zmq.ZMQ.ZMQ_EVENT_BIND_FAILED:
-            case zmq.ZMQ.ZMQ_EVENT_HANDSHAKE_FAILED_NO_DETAIL:
-                resolvedValue = Error.findByCode((Integer) e.arg);
-                break;
-            case zmq.ZMQ.ZMQ_EVENT_CONNECTED:
-            case zmq.ZMQ.ZMQ_EVENT_LISTENING:
-            case zmq.ZMQ.ZMQ_EVENT_ACCEPTED:
-            case zmq.ZMQ.ZMQ_EVENT_CLOSED:
-            case zmq.ZMQ.ZMQ_EVENT_DISCONNECTED:
-                resolvedValue = e.getChannel(socket.base);
-                break;
-            case zmq.ZMQ.ZMQ_EVENT_CONNECT_DELAYED:
-            case zmq.ZMQ.ZMQ_EVENT_HANDSHAKE_SUCCEEDED:
-                resolvedValue = null;
-                break;
-            default:
-                resolvedValue = e.arg;
-            }
-            return new Event(e.event, e.arg, resolvedValue, e.addr);
+            return e != null ? new Event(e.event, e.arg, e.addr) : null;
         }
 
         /**
@@ -4281,63 +4134,6 @@ public class ZMQ
         public String getAddress()
         {
             return address;
-        }
-
-        /**
-         * Used to check if the event is an error.
-         * <p>
-         * Generally, any event that define the errno is
-         * considered as an error.
-         * @return true if the evant was an error
-         */
-        public boolean isError()
-        {
-            switch (event) {
-            case EVENT_CLOSE_FAILED:
-            case EVENT_ACCEPT_FAILED:
-            case EVENT_BIND_FAILED:
-            case HANDSHAKE_FAILED_PROTOCOL:
-            case HANDSHAKE_FAILED_NO_DETAIL:
-                return true;
-            default:
-                return false;
-            }
-        }
-
-        /**
-         * Used to check if the event is a warning.
-         * <p>
-         * Generally, any event that return an authentication failure is
-         * considered as a warning.
-         * @return
-         */
-        public boolean isWarn()
-        {
-            switch (event) {
-            case HANDSHAKE_FAILED_AUTH:
-                return true;
-            default:
-                return false;
-            }
-        }
-
-        /**
-         * Return the argument as an integer or a Enum of the appropriate type if available.
-         *
-         * It return objects of type:
-         * <ul>
-         * <li> {@link org.zeromq.ZMonitor.ProtocolCode} for a handshake protocol error.</li>
-         * <li> {@link org.zeromq.ZMQ.Error} for any other error.</li>
-         * <li> {@link java.lang.Integer} when available.</li>
-         * <li> null when no relevant value available.</li>
-         * </ul>
-         * @param <M> The expected type of the returned object
-         * @return The resolved value.
-         */
-        @SuppressWarnings("unchecked")
-        public <M> M resolveValue()
-        {
-            return (M) resolvedValue;
         }
     }
 
@@ -4466,45 +4262,6 @@ public class ZMQ
                 this.publicKey = publicKey;
                 this.secretKey = secretKey;
             }
-        }
-    }
-
-    /**
-     * A cancellation token that allows canceling ongoing Socket send/receive operations.
-     * When calling send/receive you can provide the cancellation token as an additional parameter.
-     * To create a cancellation token call {@link Socket#createCancellationToken()}.
-     *
-     */
-    public static class CancellationToken
-    {
-        protected AtomicBoolean canceled;
-        SocketBase socket;
-
-        protected CancellationToken(SocketBase socket)
-        {
-            this.socket = socket;
-            canceled = new AtomicBoolean(false);
-        }
-
-        public boolean isCancellationRequested()
-        {
-            return canceled.get();
-        }
-
-        /**
-         * Reset the cancellation token in order to reuse the token with another send/receive call.
-         */
-        public void reset()
-        {
-            canceled.set(false);
-        }
-
-        /**
-         * Cancel a pending the send/receive operation.
-         */
-        public void cancel()
-        {
-            socket.cancel(canceled);
         }
     }
 }

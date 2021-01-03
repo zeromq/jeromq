@@ -6,7 +6,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -38,6 +38,7 @@ public class TestZPoller
             this.count = count;
         }
 
+        @SuppressWarnings("deprecation")
         @Override
         public Boolean apply(SelectableChannel channel, Integer events)
         {
@@ -130,6 +131,7 @@ public class TestZPoller
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Test(timeout = 5000)
     public void testPollerPollout() throws IOException, InterruptedException
     {
@@ -171,6 +173,7 @@ public class TestZPoller
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Test(timeout = 5000)
     public void testUseNull() throws IOException
     {
@@ -236,6 +239,7 @@ public class TestZPoller
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Test(timeout = 5000)
     public void testGlobalHandler() throws IOException
     {
@@ -253,6 +257,7 @@ public class TestZPoller
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Test(timeout = 5000)
     public void testItemEqualsBasic() throws IOException
     {
@@ -276,6 +281,7 @@ public class TestZPoller
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Test(timeout = 5000)
     public void testItemEquals() throws IOException
     {
@@ -310,6 +316,7 @@ public class TestZPoller
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Test(timeout = 5000)
     public void testReadable() throws IOException
     {
@@ -334,6 +341,7 @@ public class TestZPoller
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Test(timeout = 5000)
     public void testWritable() throws IOException
     {
@@ -358,6 +366,7 @@ public class TestZPoller
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Test(timeout = 5000)
     public void testError() throws IOException
     {
@@ -382,6 +391,7 @@ public class TestZPoller
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Test(timeout = 5000)
     public void testRegister() throws IOException
     {
@@ -399,6 +409,7 @@ public class TestZPoller
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Test(timeout = 5000)
     public void testItems() throws IOException
     {
@@ -420,6 +431,7 @@ public class TestZPoller
         }
     }
 
+    @SuppressWarnings("deprecation")
     @Test(timeout = 5000)
     public void testMultipleRegistrations() throws IOException
     {
@@ -473,6 +485,7 @@ public class TestZPoller
         return pipe;
     }
 
+    @SuppressWarnings("deprecation")
     @Test(timeout = 5000)
     public void testIssue729() throws InterruptedException, IOException
     {

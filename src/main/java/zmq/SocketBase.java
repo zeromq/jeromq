@@ -7,7 +7,6 @@ import java.nio.channels.SocketChannel;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 
 import zmq.io.IOThread;
@@ -206,7 +205,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
         try {
             //  First check out whether the protcol is something we are aware of.
             NetProtocol proto = NetProtocol.getProtocol(protocol);
-            if (!proto.valid) {
+            if (!proto.isValid()) {
                 errno.set(ZError.EPROTONOSUPPORT);
                 return proto;
             }
@@ -296,7 +295,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
                 return rcvmore ? 1 : 0;
             }
             if (option == ZMQ.ZMQ_EVENTS) {
-                boolean rc = processCommands(0, false, null);
+                boolean rc = processCommands(0, false);
                 if (!rc && (errno.get() == ZError.ETERM || errno.get() == ZError.EINTR)) {
                     return -1;
                 }
@@ -346,7 +345,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
         }
 
         if (option == ZMQ.ZMQ_EVENTS) {
-            boolean rc = processCommands(0, false, null);
+            boolean rc = processCommands(0, false);
             if (!rc && (errno.get() == ZError.ETERM || errno.get() == ZError.EINTR)) {
                 return -1;
             }
@@ -378,7 +377,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
             options.mechanism.check(options);
 
             //  Process pending commands, if any.
-            boolean brc = processCommands(0, false, null);
+            boolean brc = processCommands(0, false);
             if (!brc) {
                 return false;
             }
@@ -454,221 +453,194 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
         lock();
 
         try {
-            return connectInternal(addr);
-        }
-        finally {
-            unlock();
-        }
-    }
-
-    public final int connectPeer(String addr)
-    {
-        lock();
-
-        try {
-            if (options.type != ZMQ.ZMQ_PEER && options.type != ZMQ.ZMQ_RAW) {
-                errno.set(ZError.ENOTSUP);
-                return 0;
+            if (ctxTerminated) {
+                errno.set(ZError.ETERM);
+                return false;
             }
 
-            boolean rc = connectInternal(addr);
-            if (!rc) {
-                return 0;
+            options.mechanism.check(options);
+
+            //  Process pending commands, if any.
+            boolean brc = processCommands(0, false);
+            if (!brc) {
+                return false;
             }
 
-            return options.peerLastRoutingId;
-        }
-        finally {
-            unlock();
-        }
-    }
+            SimpleURI uri = SimpleURI.create(addr);
+            String address = uri.getAddress();
 
-    private boolean connectInternal(String addr)
-    {
-        if (ctxTerminated) {
-            errno.set(ZError.ETERM);
-            return false;
-        }
-
-        options.mechanism.check(options);
-
-        //  Process pending commands, if any.
-        boolean brc = processCommands(0, false, null);
-        if (!brc) {
-            return false;
-        }
-
-        SimpleURI uri = SimpleURI.create(addr);
-        String address = uri.getAddress();
-
-        NetProtocol protocol = checkProtocol(uri.getProtocol());
-        if (protocol == null || !protocol.valid) {
-            return false;
-        }
-
-        if (protocol == NetProtocol.inproc) {
-            //  TODO: inproc connect is specific with respect to creating pipes
-            //  as there's no 'reconnect' functionality implemented. Once that
-            //  is in place we should follow generic pipe creation algorithm.
-
-            //  Find the peer endpoint.
-            Ctx.Endpoint peer = findEndpoint(addr);
-            // The total HWM for an inproc connection should be the sum of
-            // the binder's HWM and the connector's HWM.
-            int sndhwm = 0;
-            if (peer.socket == null) {
-                sndhwm = options.sendHwm;
-            }
-            else if (options.sendHwm != 0 && peer.options.recvHwm != 0) {
-                sndhwm = options.sendHwm + peer.options.recvHwm;
-            }
-            int rcvhwm = 0;
-            if (peer.socket == null) {
-                rcvhwm = options.recvHwm;
-            }
-            else if (options.recvHwm != 0 && peer.options.sendHwm != 0) {
-                rcvhwm = options.recvHwm + peer.options.sendHwm;
+            NetProtocol protocol = checkProtocol(uri.getProtocol());
+            if (protocol == null || !protocol.isValid()) {
+                return false;
             }
 
-            //  Create a bi-directional pipe to connect the peers.
-            ZObject[] parents = {this, peer.socket == null ? this : peer.socket};
+            if (protocol == NetProtocol.inproc) {
+                //  TODO: inproc connect is specific with respect to creating pipes
+                //  as there's no 'reconnect' functionality implemented. Once that
+                //  is in place we should follow generic pipe creation algorithm.
 
-            boolean conflate = options.conflate && (options.type == ZMQ.ZMQ_DEALER || options.type == ZMQ.ZMQ_PULL
-                    || options.type == ZMQ.ZMQ_PUSH || options.type == ZMQ.ZMQ_PUB || options.type == ZMQ.ZMQ_SUB);
-
-            int[] hwms = {conflate ? -1 : sndhwm, conflate ? -1 : rcvhwm};
-            boolean[] conflates = {conflate, conflate};
-            Pipe[] pipes = Pipe.pair(parents, hwms, conflates);
-
-            //  Attach local end of the pipe to this socket object.
-            attachPipe(pipes[0], true);
-
-            if (peer.socket == null) {
-                //  The peer doesn't exist yet so we don't know whether
-                //  to send the identity message or not. To resolve this,
-                //  we always send our identity and drop it later if
-                //  the peer doesn't expect it.
-                Msg id = new Msg(options.identitySize);
-                id.put(options.identity, 0, options.identitySize);
-                id.setFlags(Msg.IDENTITY);
-                boolean written = pipes[0].write(id);
-                assert (written);
-                pipes[0].flush();
-
-                //  If set, send the hello msg of the local socket to the peer.
-                if (options.canSendHelloMsg && options.helloMsg != null) {
-                    written = pipes[0].write(options.helloMsg);
-                    assert (written);
-                    pipes[0].flush();
+                //  Find the peer endpoint.
+                Ctx.Endpoint peer = findEndpoint(addr);
+                // The total HWM for an inproc connection should be the sum of
+                // the binder's HWM and the connector's HWM.
+                int sndhwm = 0;
+                if (peer.socket == null) {
+                    sndhwm = options.sendHwm;
+                }
+                else if (options.sendHwm != 0 && peer.options.recvHwm != 0) {
+                    sndhwm = options.sendHwm + peer.options.recvHwm;
+                }
+                int rcvhwm = 0;
+                if (peer.socket == null) {
+                    rcvhwm = options.recvHwm;
+                }
+                else if (options.recvHwm != 0 && peer.options.sendHwm != 0) {
+                    rcvhwm = options.recvHwm + peer.options.sendHwm;
                 }
 
-                pendConnection(addr, new Ctx.Endpoint(this, options), pipes);
-            }
-            else {
-                //  If required, send the identity of the peer to the local socket.
-                if (peer.options.recvIdentity) {
+                //  Create a bi-directional pipe to connect the peers.
+                ZObject[] parents = {this, peer.socket == null ? this : peer.socket};
+
+                boolean conflate = options.conflate && (options.type == ZMQ.ZMQ_DEALER || options.type == ZMQ.ZMQ_PULL
+                        || options.type == ZMQ.ZMQ_PUSH || options.type == ZMQ.ZMQ_PUB || options.type == ZMQ.ZMQ_SUB);
+
+                int[] hwms = {conflate ? -1 : sndhwm, conflate ? -1 : rcvhwm};
+                boolean[] conflates = {conflate, conflate};
+                Pipe[] pipes = Pipe.pair(parents, hwms, conflates);
+
+                //  Attach local end of the pipe to this socket object.
+                attachPipe(pipes[0], true);
+
+                if (peer.socket == null) {
+                    //  The peer doesn't exist yet so we don't know whether
+                    //  to send the identity message or not. To resolve this,
+                    //  we always send our identity and drop it later if
+                    //  the peer doesn't expect it.
                     Msg id = new Msg(options.identitySize);
                     id.put(options.identity, 0, options.identitySize);
                     id.setFlags(Msg.IDENTITY);
                     boolean written = pipes[0].write(id);
                     assert (written);
                     pipes[0].flush();
+
+                    //  If set, send the hello msg of the local socket to the peer.
+                    if (options.canSendHelloMsg && options.helloMsg != null) {
+                        written = pipes[0].write(options.helloMsg);
+                        assert (written);
+                        pipes[0].flush();
+                    }
+
+                    pendConnection(addr, new Ctx.Endpoint(this, options), pipes);
+                }
+                else {
+                    //  If required, send the identity of the peer to the local socket.
+                    if (peer.options.recvIdentity) {
+                        Msg id = new Msg(options.identitySize);
+                        id.put(options.identity, 0, options.identitySize);
+                        id.setFlags(Msg.IDENTITY);
+                        boolean written = pipes[0].write(id);
+                        assert (written);
+                        pipes[0].flush();
+                    }
+
+                    //  If required, send the identity of the local socket to the peer.
+                    if (options.recvIdentity) {
+                        Msg id = new Msg(peer.options.identitySize);
+                        id.put(peer.options.identity, 0, peer.options.identitySize);
+                        id.setFlags(Msg.IDENTITY);
+                        boolean written = pipes[1].write(id);
+                        assert (written);
+                        pipes[1].flush();
+                    }
+
+                    //  If set, send the hello msg of the local socket to the peer.
+                    if (options.canSendHelloMsg && options.helloMsg != null) {
+                        boolean written = pipes[0].write(options.helloMsg);
+                        assert (written);
+                        pipes[0].flush();
+                    }
+
+                    //  If set, send the hello msg of the peer to the local socket.
+                    if (peer.options.canSendHelloMsg && peer.options.helloMsg != null) {
+                        boolean written = pipes[1].write(peer.options.helloMsg);
+                        assert (written);
+                        pipes[1].flush();
+                    }
+
+                    //  Attach remote end of the pipe to the peer socket. Note that peer's
+                    //  seqnum was incremented in findEndpoint function. We don't need it
+                    //  increased here.
+                    sendBind(peer.socket, pipes[1], false);
                 }
 
-                //  If required, send the identity of the local socket to the peer.
-                if (options.recvIdentity) {
-                    Msg id = new Msg(peer.options.identitySize);
-                    id.put(peer.options.identity, 0, peer.options.identitySize);
-                    id.setFlags(Msg.IDENTITY);
-                    boolean written = pipes[1].write(id);
-                    assert (written);
-                    pipes[1].flush();
-                }
+                // Save last endpoint URI
+                options.lastEndpoint = addr;
 
-                //  If set, send the hello msg of the local socket to the peer.
-                if (options.canSendHelloMsg && options.helloMsg != null) {
-                    boolean written = pipes[0].write(options.helloMsg);
-                    assert (written);
-                    pipes[0].flush();
-                }
+                // remember inproc connections for disconnect
+                inprocs.insert(addr, pipes[0]);
 
-                //  If set, send the hello msg of the peer to the local socket.
-                if (peer.options.canSendHelloMsg && peer.options.helloMsg != null) {
-                    boolean written = pipes[1].write(peer.options.helloMsg);
-                    assert (written);
-                    pipes[1].flush();
-                }
+                return true;
+            }
 
-                //  Attach remote end of the pipe to the peer socket. Note that peer's
-                //  seqnum was incremented in findEndpoint function. We don't need it
-                //  increased here.
-                sendBind(peer.socket, pipes[1], false);
+            boolean isSingleConnect = options.type == ZMQ.ZMQ_DEALER || options.type == ZMQ.ZMQ_SUB
+                    || options.type == ZMQ.ZMQ_REQ;
+
+            if (isSingleConnect) {
+                if (endpoints.hasValues(addr)) {
+                    // There is no valid use for multiple connects for SUB-PUB nor
+                    // DEALER-ROUTER nor REQ-REP. Multiple connects produces
+                    // nonsensical results.
+                    return true;
+                }
+            }
+
+            //  Choose the I/O thread to run the session in.
+            IOThread ioThread = chooseIoThread(options.affinity);
+            if (ioThread == null) {
+                errno.set(ZError.EMTHREAD);
+                return false;
+            }
+            Address paddr = new Address(protocol, address);
+
+            //  Resolve address (if needed by the protocol)
+            protocol.resolve(paddr, options.ipv6);
+
+            //  Create session.
+            SessionBase session = Sockets.createSession(ioThread, true, this, options, paddr);
+            assert (session != null);
+
+            //  PGM does not support subscription forwarding; ask for all data to be
+            //  sent to this pipe. (same for NORM, currently?)
+            boolean subscribe2all = protocol.subscribe2all;
+
+            Pipe newpipe = null;
+
+            if (options.immediate || subscribe2all) {
+                //  Create a bi-directional pipe.
+                ZObject[] parents = {this, session};
+                boolean conflate = options.conflate && (options.type == ZMQ.ZMQ_DEALER || options.type == ZMQ.ZMQ_PULL
+                        || options.type == ZMQ.ZMQ_PUSH || options.type == ZMQ.ZMQ_PUB || options.type == ZMQ.ZMQ_SUB);
+
+                int[] hwms = {conflate ? -1 : options.sendHwm, conflate ? -1 : options.recvHwm};
+                boolean[] conflates = {conflate, conflate};
+                Pipe[] pipes = Pipe.pair(parents, hwms, conflates);
+
+                //  Attach local end of the pipe to the socket object.
+                attachPipe(pipes[0], subscribe2all, true);
+                newpipe = pipes[0];
+                //  Attach remote end of the pipe to the session object later on.
+                session.attachPipe(pipes[1]);
             }
 
             // Save last endpoint URI
-            options.lastEndpoint = addr;
+            options.lastEndpoint = paddr.toString();
 
-            // remember inproc connections for disconnect
-            inprocs.insert(addr, pipes[0]);
-
+            addEndpoint(addr, session, newpipe);
             return true;
         }
-
-        boolean isSingleConnect = options.type == ZMQ.ZMQ_DEALER || options.type == ZMQ.ZMQ_SUB
-                || options.type == ZMQ.ZMQ_REQ;
-
-        if (isSingleConnect) {
-            if (endpoints.hasValues(addr)) {
-                // There is no valid use for multiple connects for SUB-PUB nor
-                // DEALER-ROUTER nor REQ-REP. Multiple connects produces
-                // nonsensical results.
-                return true;
-            }
+        finally {
+            unlock();
         }
-
-        //  Choose the I/O thread to run the session in.
-        IOThread ioThread = chooseIoThread(options.affinity);
-        if (ioThread == null) {
-            errno.set(ZError.EMTHREAD);
-            return false;
-        }
-        Address paddr = new Address(protocol, address);
-
-        //  Resolve address (if needed by the protocol)
-        protocol.resolve(paddr, options.ipv6);
-
-        //  Create session.
-        SessionBase session = Sockets.createSession(ioThread, true, this, options, paddr);
-        assert (session != null);
-
-        //  PGM does not support subscription forwarding; ask for all data to be
-        //  sent to this pipe. (same for NORM, currently?)
-        boolean subscribe2all = protocol.subscribe2all;
-
-        Pipe newpipe = null;
-
-        if (options.immediate || subscribe2all) {
-            //  Create a bi-directional pipe.
-            ZObject[] parents = {this, session};
-            boolean conflate = options.conflate && (options.type == ZMQ.ZMQ_DEALER || options.type == ZMQ.ZMQ_PULL
-                    || options.type == ZMQ.ZMQ_PUSH || options.type == ZMQ.ZMQ_PUB || options.type == ZMQ.ZMQ_SUB);
-
-            int[] hwms = {conflate ? -1 : options.sendHwm, conflate ? -1 : options.recvHwm};
-            boolean[] conflates = {conflate, conflate};
-            Pipe[] pipes = Pipe.pair(parents, hwms, conflates);
-
-            //  Attach local end of the pipe to the socket object.
-            attachPipe(pipes[0], subscribe2all, true);
-            newpipe = pipes[0];
-            //  Attach remote end of the pipe to the session object later on.
-            session.attachPipe(pipes[1]);
-        }
-
-        // Save last endpoint URI
-        options.lastEndpoint = paddr.toString();
-
-        addEndpoint(addr, session, newpipe);
-        return true;
     }
 
     //  Creates new endpoint ID and adds the endpoint to the map.
@@ -698,7 +670,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
 
             //  Process pending commands, if any, since there could be pending unprocessed processOwn()'s
             //  (from launchChild() for example) we're asked to terminate now.
-            boolean rc = processCommands(0, false, null);
+            boolean rc = processCommands(0, false);
             if (!rc) {
                 return false;
             }
@@ -774,11 +746,6 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
 
     public final boolean send(Msg msg, int flags)
     {
-        return send(msg, flags, null);
-    }
-
-    public final boolean send(Msg msg, int flags, AtomicBoolean canceled)
-    {
         lock();
 
         try {
@@ -795,7 +762,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
             }
 
             //  Process pending commands, if any.
-            boolean brc = processCommands(0, true, canceled);
+            boolean brc = processCommands(0, true);
             if (!brc) {
                 return false;
             }
@@ -836,7 +803,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
             //  command, process it and try to send the message again.
             //  If timeout is reached in the meantime, return EAGAIN.
             while (true) {
-                if (!processCommands(timeout, false, canceled)) {
+                if (!processCommands(timeout, false)) {
                     return false;
                 }
 
@@ -866,11 +833,6 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
 
     public final Msg recv(int flags)
     {
-        return recv(flags, null);
-    }
-
-    public final Msg recv(int flags, AtomicBoolean canceled)
-    {
         lock();
 
         try {
@@ -891,7 +853,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
             //  described above) from the one used by 'send'. This is because counting
             //  ticks is more efficient than doing RDTSC all the time.
             if (++ticks == Config.INBOUND_POLL_RATE.getValue()) {
-                if (!processCommands(0, false, canceled)) {
+                if (!processCommands(0, false)) {
                     return null;
                 }
                 ticks = 0;
@@ -917,7 +879,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
             //  activate_reader command already waiting in a command pipe.
             //  If it's not, return EAGAIN.
             if ((flags & ZMQ.ZMQ_DONTWAIT) > 0 || options.recvTimeout == 0) {
-                if (!processCommands(0, false, canceled)) {
+                if (!processCommands(0, false)) {
                     return null;
                 }
                 ticks = 0;
@@ -939,7 +901,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
             //  we are able to fetch a message.
             boolean block = (ticks != 0);
             while (true) {
-                if (!processCommands(block ? timeout : 0, false, canceled)) {
+                if (!processCommands(block ? timeout : 0, false)) {
                     return null;
                 }
                 msg = xrecv();
@@ -993,12 +955,6 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
         finally {
             unlock();
         }
-    }
-
-    public final void cancel(AtomicBoolean canceled)
-    {
-        canceled.set(true);
-        sendCancel();
     }
 
     public final void close()
@@ -1075,7 +1031,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
     //  returns only after at least one command was processed.
     //  If throttle argument is true, commands are processed at most once
     //  in a predefined time period.
-    private boolean processCommands(int timeout, boolean throttle, AtomicBoolean canceled)
+    private boolean processCommands(int timeout, boolean throttle)
     {
         Command cmd;
         if (timeout != 0) {
@@ -1116,11 +1072,6 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
         }
 
         if (errno.get() == ZError.EINTR) {
-            return false;
-        }
-
-        if (canceled != null && canceled.get()) {
-            errno.set(ZError.ECANCELED);
             return false;
         }
 
@@ -1258,7 +1209,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
                 reaperSignaler.recv();
             }
 
-            processCommands(0, false, null);
+            processCommands(0, false);
 
         }
         finally {
@@ -1430,7 +1381,17 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
 
     public final void eventConnectRetried(String addr, int interval)
     {
-        event(addr, interval, ZMQ.ZMQ_EVENT_CONNECT_RETRIED);
+        try {
+            monitorSync.lock();
+            if ((monitorEvents & ZMQ.ZMQ_EVENT_CONNECT_RETRIED) == 0) {
+                return;
+            }
+
+            monitorEvent(new ZMQ.Event(ZMQ.ZMQ_EVENT_CONNECT_RETRIED, addr, interval));
+        }
+        finally {
+            monitorSync.unlock();
+        }
     }
 
     public final void eventListening(String addr, SelectableChannel ch)
@@ -1492,7 +1453,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
     {
         try {
             monitorSync.lock();
-            if ((monitorEvents & event) == 0 || monitorSocket == null) {
+            if ((monitorEvents & event) == 0) {
                 return;
             }
 

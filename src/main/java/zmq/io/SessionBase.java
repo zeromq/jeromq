@@ -15,13 +15,6 @@ import zmq.io.StreamEngine.ErrorReason;
 import zmq.io.mechanism.Mechanisms;
 import zmq.io.net.Address;
 import zmq.io.net.NetProtocol;
-import zmq.io.net.ipc.IpcConnecter;
-import zmq.io.net.norm.NormEngine;
-import zmq.io.net.pgm.PgmReceiver;
-import zmq.io.net.pgm.PgmSender;
-import zmq.io.net.tcp.SocksConnecter;
-import zmq.io.net.tcp.TcpConnecter;
-import zmq.io.net.tipc.TipcConnecter;
 import zmq.pipe.Pipe;
 import zmq.poll.IPollEvents;
 
@@ -512,85 +505,7 @@ public class SessionBase extends Own implements Pipe.IPipeEvents, IPollEvents
             errno.set(ZError.EPROTONOSUPPORT);
             return;
         }
-        switch (protocol) {
-        case tcp:
-            if (options.socksProxyAddress != null) {
-                Address proxyAddress = new Address(NetProtocol.tcp, options.socksProxyAddress);
-                SocksConnecter connecter = new SocksConnecter(ioThread, this, options, addr, proxyAddress, wait);
-                launchChild(connecter);
-            }
-            else {
-                TcpConnecter connecter = new TcpConnecter(ioThread, this, options, addr, wait);
-                launchChild(connecter);
-            }
-            break;
-        case ipc: {
-            IpcConnecter connecter = new IpcConnecter(ioThread, this, options, addr, wait);
-            launchChild(connecter);
-        }
-            break;
-
-        case tipc: {
-            TipcConnecter connecter = new TipcConnecter(ioThread, this, options, addr, wait);
-            launchChild(connecter);
-        }
-            break;
-
-        case pgm:
-        case epgm: {
-            assert (options.type == ZMQ.ZMQ_PUB || options.type == ZMQ.ZMQ_XPUB || options.type == ZMQ.ZMQ_SUB
-                    || options.type == ZMQ.ZMQ_XSUB);
-
-            //  For EPGM transport with UDP encapsulation of PGM is used.
-            boolean udpEncapsulation = protocol == NetProtocol.epgm;
-
-            //  At this point we'll create message pipes to the session straight
-            //  away. There's no point in delaying it as no concept of 'connect'
-            //  exists with PGM anyway.
-            if (options.type == ZMQ.ZMQ_PUB || options.type == ZMQ.ZMQ_XPUB) {
-                //  PGM sender.
-                PgmSender pgmSender = new PgmSender(ioThread, options);
-                boolean rc = pgmSender.init(udpEncapsulation, addr);
-                assert (rc);
-                sendAttach(this, pgmSender);
-            }
-            else {
-                //  PGM receiver.
-                PgmReceiver pgmReceiver = new PgmReceiver(ioThread, options);
-                boolean rc = pgmReceiver.init(udpEncapsulation, addr);
-                assert (rc);
-                sendAttach(this, pgmReceiver);
-
-            }
-        }
-            break;
-
-        case norm: {
-            //  At this point we'll create message pipes to the session straight
-            //  away. There's no point in delaying it as no concept of 'connect'
-            //  exists with NORM anyway.
-            if (options.type == ZMQ.ZMQ_PUB || options.type == ZMQ.ZMQ_XPUB) {
-                //  NORM sender.
-                NormEngine normSender = new NormEngine(ioThread, options);
-                boolean rc = normSender.init(addr, true, false);
-                assert (rc);
-                sendAttach(this, normSender);
-            }
-            else {
-                //  NORM receiver.
-                NormEngine normReceiver = new NormEngine(ioThread, options);
-                boolean rc = normReceiver.init(addr, false, true);
-                assert (rc);
-                sendAttach(this, normReceiver);
-
-            }
-        }
-            break;
-
-        default:
-            assert (false);
-            break;
-        }
+        protocol.startConnecting(options, ioThread, this, addr, wait, this::launchChild, null);
     }
 
     public String getEndpoint()

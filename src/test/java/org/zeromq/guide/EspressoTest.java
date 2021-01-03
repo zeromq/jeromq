@@ -2,7 +2,7 @@ package org.zeromq.guide;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertThat;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -41,6 +41,7 @@ public class EspressoTest
             this.wait = wait;
         }
 
+        @SuppressWarnings("deprecation")
         @Override
         public List<Socket> createSockets(ZContext ctx, Object... args)
         {
@@ -49,6 +50,7 @@ public class EspressoTest
             return Collections.singletonList(sub);
         }
 
+        @SuppressWarnings("deprecation")
         @Override
         public void start(Socket pipe, List<Socket> sockets, ZPoller poller)
         {
@@ -92,6 +94,7 @@ public class EspressoTest
             this.wait = wait;
         }
 
+        @SuppressWarnings("deprecation")
         @Override
         public List<Socket> createSockets(ZContext ctx, Object... args)
         {
@@ -100,6 +103,7 @@ public class EspressoTest
             return Collections.singletonList(pub);
         }
 
+        @SuppressWarnings("deprecation")
         @Override
         public void start(Socket pipe, List<Socket> sockets, ZPoller poller)
         {
@@ -137,6 +141,7 @@ public class EspressoTest
             this.wait = wait;
         }
 
+        @SuppressWarnings("deprecation")
         @Override
         public List<Socket> createSockets(ZContext ctx, Object... args)
         {
@@ -145,6 +150,7 @@ public class EspressoTest
             return Collections.singletonList(pull);
         }
 
+        @SuppressWarnings("deprecation")
         @Override
         public void start(Socket pipe, List<Socket> sockets, ZPoller poller)
         {
@@ -162,6 +168,7 @@ public class EspressoTest
             return "Listener";
         }
 
+        @SuppressWarnings("deprecation")
         @Override
         public boolean stage(Socket socket, Socket pipe, ZPoller poller, int events)
         {
@@ -218,6 +225,7 @@ public class EspressoTest
     //  .split main thread
     //  The main task starts the subscriber and publisher, and then sets
     //  itself up as a listening proxy. The listener runs as a child thread:
+    @SuppressWarnings("deprecation")
     @Test(timeout = 5000)
     public void testEspresso() throws IOException, InterruptedException
     {

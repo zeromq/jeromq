@@ -1,7 +1,7 @@
 package zmq;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertThat;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -144,6 +144,7 @@ public class Helper
 
     }
 
+    @SuppressWarnings("deprecation")
     public static void bounce(SocketBase sb, SocketBase sc)
     {
         byte[] content = "12345678ABCDEFGH12345678abcdefgh".getBytes(ZMQ.CHARSET);

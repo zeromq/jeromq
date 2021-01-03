@@ -1,7 +1,5 @@
 package org.zeromq;
 
-import zmq.util.Draft;
-
 /**
  * Socket Type enumeration
  *
@@ -20,9 +18,10 @@ public enum SocketType
      * When a PAIR socket enters the mute state due to having reached the high water mark for the connected peer,
      * or if no peer is connected, then any send() operations on the socket shall block until the peer becomes available for sending;
      * messages are not discarded.
-     * <p>
-     * <table border="1">
-     * <caption><strong>Summary of socket characteristics</strong></caption>
+     * <br>
+     * <table border="1" >
+     * <caption> </caption>
+     * <tr><th colspan="2">Summary of socket characteristics</th></tr>
      * <tr><td>Compatible peer sockets</td><td>PAIR</td></tr>
      * <tr><td>Direction</td><td>Bidirectional</td></tr>
      * <tr><td>Send/receive pattern</td><td>Unrestricted</td></tr>
@@ -50,9 +49,10 @@ public enum SocketType
      * then any messages that would be sent to the subscriber in question shall instead be dropped until the mute state ends.
      * <br>
      * The send methods shall never block for this socket type.
-     * <p>
+     * <br>
      * <table border="1">
-     * <caption><strong>Summary of socket characteristics</strong></caption>
+     * <caption> </caption>
+     * <tr><th colspan="2">Summary of socket characteristics</th></tr>
      * <tr><td>Compatible peer sockets</td><td>{@link org.zeromq.ZMQ#SUB}, {@link org.zeromq.ZMQ#XSUB}</td></tr>
      * <tr><td>Direction</td><td>Unidirectional</td></tr>
      * <tr><td>Send/receive pattern</td><td>Send only</td></tr>
@@ -72,9 +72,10 @@ public enum SocketType
      * use the {@link org.zeromq.ZMQ.Socket#subscribe(byte[])} option to specify which messages to subscribe to.
      * <br>
      * The send methods are not implemented for this socket type.
-     * <p>
+     * <br>
      * <table border="1">
-     * <caption><strong>Summary of socket characteristics</strong></caption>
+     * <caption> </caption>
+     * <tr><th colspan="2">Summary of socket characteristics</th></tr>
      * <tr><td>Compatible peer sockets</td><td>{@link org.zeromq.ZMQ#PUB}, {@link org.zeromq.ZMQ#XPUB}</td></tr>
      * <tr><td>Direction</td><td>Unidirectional</td></tr>
      * <tr><td>Send/receive pattern</td><td>Receive only</td></tr>
@@ -96,9 +97,10 @@ public enum SocketType
      * If no services are available, then any send operation on the socket shall block until at least one service becomes available.
      * <br>
      * The REQ socket shall not discard messages.
-     * <p>
+     * <br>
      * <table border="1">
-     * <caption><strong>Summary of socket characteristics</strong></caption>
+     * <caption> </caption>
+     * <tr><th colspan="2">Summary of socket characteristics</th></tr>
      * <tr><td>Compatible peer sockets</td><td>{@link org.zeromq.ZMQ#REP}, {@link org.zeromq.ZMQ#ROUTER}</td></tr>
      * <tr><td>Direction</td><td>Bidirectional</td></tr>
      * <tr><td>Send/receive pattern</td><td>Send, Receive, Send, Receive, ...</td></tr>
@@ -119,9 +121,10 @@ public enum SocketType
      * Each request received is fair-queued from among all clients, and each reply sent is routed to the client that issued the last request.
      * <br>
      * If the original requester does not exist any more the reply is silently discarded.
-     * <p>
+     * <br>
      * <table border="1">
-     * <caption><strong>Summary of socket characteristics</strong></caption>
+     * <caption> </caption>
+     * <tr><th colspan="2">Summary of socket characteristics</th></tr>
      * <tr><td>Compatible peer sockets</td><td>{@link org.zeromq.ZMQ#REQ}, {@link org.zeromq.ZMQ#DEALER}</td></tr>
      * <tr><td>Direction</td><td>Bidirectional</td></tr>
      * <tr><td>Send/receive pattern</td><td>Receive, Send, Receive, Send, ...</td></tr>
@@ -150,9 +153,10 @@ public enum SocketType
      * <br>
      * When a DEALER socket is connected to a {@link org.zeromq.ZMQ#REP} socket each message sent must consist of
      * an empty message part, the delimiter, followed by one or more body parts.
-     * <p>
+     * <br>
      * <table border="1">
-     * <caption><strong>Summary of socket characteristics</strong></caption>
+     * <caption> </caption>
+     * <tr><th colspan="2">Summary of socket characteristics</th></tr>
      * <tr><td>Compatible peer sockets</td><td>{@link org.zeromq.ZMQ#ROUTER}, {@link org.zeromq.ZMQ#REP}, {@link org.zeromq.ZMQ#DEALER}</td></tr>
      * <tr><td>Direction</td><td>Bidirectional</td></tr>
      * <tr><td>Send/receive pattern</td><td>Unrestricted</td></tr>
@@ -195,9 +199,10 @@ public enum SocketType
      * delimiter part, one or more body parts.
      * <br>
      * When sending replies to a REQ socket the application must include the delimiter part.
-     * <p>
+     * <br>
      * <table border="1">
-     * <caption><strong>Summary of socket characteristics</strong></caption>
+     * <caption> </caption>
+     * <tr><th colspan="2">Summary of socket characteristics</th></tr>
      * <tr><td>Compatible peer sockets</td><td>{@link org.zeromq.ZMQ#DEALER}, {@link org.zeromq.ZMQ#REQ}, {@link org.zeromq.ZMQ#ROUTER}</td></tr>
      * <tr><td>Direction</td><td>Bidirectional</td></tr>
      * <tr><td>Send/receive pattern</td><td>Unrestricted</td></tr>
@@ -216,9 +221,10 @@ public enum SocketType
      * Messages are fair-queued from among all connected upstream nodes.
      * <br>
      * The send() function is not implemented for this socket type.
-     * <p>
+     * <br>
      * <table border="1">
-     * <caption><strong>Summary of socket characteristics</strong></caption>
+     * <caption> </caption>
+     * <tr><th colspan="2">Summary of socket characteristics</th></tr>
      * <tr><td>Compatible peer sockets</td><td>{@link org.zeromq.ZMQ#PUSH}</td></tr>
      * <tr><td>Direction</td><td>Unidirectional</td></tr>
      * <tr><td>Send/receive pattern</td><td>Receive only</td></tr>
@@ -241,9 +247,10 @@ public enum SocketType
      * When a PUSH socket enters the mute state due to having reached the high water mark for all downstream nodes,
      * or if there are no downstream nodes at all, then any send() operations on the socket shall block until the mute state ends
      * or at least one downstream node becomes available for sending; messages are not discarded.
-     * <p>
+     * <br>
      * <table border="1">
-     * <caption><strong>Summary of socket characteristics</strong></caption>
+     * <caption> </caption>
+     * <tr><th colspan="2">Summary of socket characteristics</th></tr>
      * <tr><td>Compatible peer sockets</td><td>{@link org.zeromq.ZMQ#PULL}</td></tr>
      * <tr><td>Direction</td><td>Unidirectional</td></tr>
      * <tr><td>Send/receive pattern</td><td>Send only</td></tr>
@@ -265,9 +272,10 @@ public enum SocketType
      * Subscription message is a byte '1' (for subscriptions) or byte '0' (for unsubscriptions) followed by the subscription body.
      * <br>
      * Messages without a sub/unsub prefix are also received, but have no effect on subscription status.
-     * <p>
+     * <br>
      * <table border="1">
-     * <caption><strong>Summary of socket characteristics</strong></caption>
+     * <caption> </caption>
+     * <tr><th colspan="2">Summary of socket characteristics</th></tr>
      * <tr><td>Compatible peer sockets</td><td>{@link org.zeromq.ZMQ#SUB}, {@link org.zeromq.ZMQ#XSUB}</td></tr>
      * <tr><td>Direction</td><td>Unidirectional</td></tr>
      * <tr><td>Send/receive pattern</td><td>Send messages, receive subscriptions</td></tr>
@@ -286,9 +294,10 @@ public enum SocketType
      * Subscription message is a byte '1' (for subscriptions) or byte '0' (for unsubscriptions) followed by the subscription body.
      * <br>
      * Messages without a sub/unsub prefix may also be sent, but have no effect on subscription status.
-     * <p>
+     * <br>
      * <table border="1">
-     * <caption><strong>Summary of socket characteristics</strong></caption>
+     * <caption> </caption>
+     * <tr><th colspan="2">Summary of socket characteristics</th></tr>
      * <tr><td>Compatible peer sockets</td><td>{@link org.zeromq.ZMQ#PUB}, {@link org.zeromq.ZMQ#XPUB}</td></tr>
      * <tr><td>Direction</td><td>Unidirectional</td></tr>
      * <tr><td>Send/receive pattern</td><td>Receive messages, send subscriptions</td></tr>
@@ -320,9 +329,10 @@ public enum SocketType
      * The {@link org.zeromq.ZMQ#SNDMORE} flag is ignored on data frames. You must send one identity frame followed by one data frame.
      * <br>
      * Also, please note that omitting the SNDMORE flag will prevent sending further data (from any client) on the same socket.
-     * <p>
+     * <br>
      * <table border="1">
-     * <caption><strong>Summary of socket characteristics</strong></caption>
+     * <caption> </caption>
+     * <tr><th colspan="2">Summary of socket characteristics</th></tr>
      * <tr><td>Compatible peer sockets</td><td>none</td></tr>
      * <tr><td>Direction</td><td>Bidirectional</td></tr>
      * <tr><td>Send/receive pattern</td><td>Unrestricted</td></tr>
@@ -345,307 +355,73 @@ public enum SocketType
      * socket. If the outgoing buffer is full, or if there is no connected peer, send operations will block, by default.
      * The CLIENT socket will not drop messages.</p>
      *
-     * <p>
-     *  CLIENT sockets are threadsafe.
-     *  They do not accept the ZMQ_SNDMORE option on sends not ZMQ_RCVMORE on receives.
-     *  This limits them to single part data.
-     *  The intention is to extend the API to allow scatter/gather of multi-part data.
-     * <p>
      * <table border="1">
-     * <caption><strong>Summary of socket characteristics</strong></caption>
-     * <tr><td>Compatible peer sockets</td><td>{@link org.zeromq.SocketType#SERVER}</td></tr>
-     * <tr><td>Direction</td><td>Bidirectional</td></tr>
-     * <tr><td>Send/receive pattern</td><td>Unrestricted</td></tr>
-     * <tr><td>Outgoing routing strategy</td><td>Round Robin</td></tr>
-     * <tr><td>Incoming routing strategy</td><td>Fair-queued</td></tr>
-     * <tr><td>Action in mute state</td><td>Block</td></tr>
+     * <caption> </caption>
+     * <tr>
+     *     <th colspan="2">Summary of socket characteristics</th>
+     * </tr>
+     * <tr>
+     *     <td>Compatible peer sockets</td><td>SERVER</td>
+     * </tr>
+     * <tr>
+     *     <td>Direction</td><td>Bidirectional</td>
+     * </tr>
+     * <tr>
+     *     <td>Send/receive pattern</td><td>Unrestricted</td>
+     * </tr>
+     * <tr>
+     *     <td>Outgoing routing strategy</td><td>Round Robin</td>
+     * </tr>
+     * <tr>
+     *     <td>Incoming routing strategy</td><td>Fair-queued</td>
+     * </tr>
+     * <tr>
+     *     <td>Action in mute state</td><td>Block</td>
+     * </tr>
      * </table>
      */
     CLIENT(zmq.ZMQ.ZMQ_CLIENT),
 
     /**
-     * <p>
-     * Flag to specify SERVER socket.
-     * </p>
-     * <p>
-     * The SERVER socket type talks to zero or more CLIENT peers. Each outgoing message is sent to a specific peer
+     * <p>Flag to specify SERVER socket.</p>
+     *
+     * <p>The SERVER socket type talks to zero or more CLIENT peers. Each outgoing message is sent to a specific peer
      * CLIENT. A SERVER socket can only reply to an incoming message: the CLIENT peer must always initiate a
-     * conversation.
-     * </p>
-     * <p>
-     * Each received message has a routing_id that is a 32-bit unsigned integer. To send a message to a given CLIENT
-     * peer the application must set the peer’s routing_id on the message.
-     * </p>
-     * <p>
-     *  SERVER sockets are threadsafe.
-     *  They do not accept the ZMQ_SNDMORE option on sends not ZMQ_RCVMORE on receives.
-     *  This limits them to single part data.
-     *  The intention is to extend the API to allow scatter/gather of multi-part data.
-     * <p>
-     * <table border="1">
-     * <caption><strong>Summary of socket characteristics</strong></caption>
-     * <tr><td>Compatible peer sockets</td><td>{@link org.zeromq.SocketType#CLIENT}</td></tr>
-     * <tr><td>Direction</td><td>Bidirectional</td></tr>
-     * <tr><td>Send/receive pattern</td><td>Unrestricted</td></tr>
-     * <tr><td>Outgoing routing strategy</td><td>See text</td></tr>
-     * <tr><td>Incoming routing strategy</td><td>Fair-queued</td></tr>
-     * <tr><td>Action in mute state</td><td>Fail</td></tr>
-     * </table>
-     */
-    SERVER(zmq.ZMQ.ZMQ_SERVER),
-
-    /**
-     * <p>Flag to specify RADIO socket.</p>
-     * <p>
-     * The radio-dish pattern is used for one-to-many distribution of data from a single publisher to multiple subscribers in a fan out fashion.
-     * Radio-dish is using groups (vs Pub-sub topics), Dish sockets can join a group and each message sent by Radio sockets belong to a group.
-     * </p>
-     * <p>
-     * Groups are strings limited to 16 chars length (including null).
-     * The intention is to increase the length to 40 chars (including null).
-     * The encoding of groups shall be UTF8.
-     * Groups are matched using exact matching (vs prefix matching of PubSub).
-     * </p>
-     * <p>A socket of type RADIO is used by a publisher to distribute data.
-     * Each message belong to a group, a group is specified with {@link ZFrame#setGroup(String)}.
-     * Messages are distributed to all members of a group.
-     * The {@link ZMQ.Socket#recv(int)} function is not implemented for this socket type.
-     * </p>
-     * <p>When a RADIO socket enters the mute state due to having reached the high water mark for a subscriber,
-     * then any messages that would be sent to the subscriber in question shall instead be dropped
-     * until the mute state ends. The {@link ZMQ.Socket#send(byte[], int)} function shall never block for this socket type.
-     * </p>
-     * <p>
-     * NOTE: RADIO sockets are threadsafe.
-     * They do not accept the ZMQ_SNDMORE option on sends.
-     * This limits them to single part data.
-     * <p>
-     * <table border="1">
-     * <caption><strong>Summary of socket characteristics</strong></caption>
-     * <tr><td>Compatible peer sockets</td><td>{@link org.zeromq.SocketType#DISH}</td></tr>
-     * <tr><td>Direction</td><td>Unidirectional</td></tr>
-     * <tr><td>Send/receive pattern</td><td>Send only</td></tr>
-     * <tr><td>Outgoing routing strategy</td><td>Fan out</td></tr>
-     * <tr><td>Incoming routing strategy</td><td>N/A</td></tr>
-     * <tr><td>Action in mute state</td><td>Drop</td></tr>
-     * </table>
-     * <p>
-     * NOTE: RADIO is still in draft phase.
-     * </p>
-     */
-    @Draft
-    RADIO(zmq.ZMQ.ZMQ_RADIO),
-
-    /**
-     * <p>Flag to specify DISH socket.</p>
+     * conversation.</p>
      *
-     * <p>
-     * The radio-dish pattern is used for one-to-many distribution of data from a single publisher to multiple subscribers in a fan out fashion.
-     * Radio-dish is using groups (vs Pub-sub topics), Dish sockets can join a group and each message sent by Radio sockets belong to a group.
-     * </p>
-     * <p>
-     * Groups are strings limited to 16 chars length (including null).
-     * The intention is to increase the length to 40 chars (including null).
-     * The encoding of groups shall be UTF8.
-     * Groups are matched using exact matching (vs prefix matching of PubSub).
-     * </p>
+     * <p>Each received message has a routing_id that is a 32-bit unsigned integer. To send a message to a given CLIENT
+     * peer the application must set the peer’s routing_id on the message.</p>
      *
-     * A socket of type DISH is used by a subscriber to subscribe to groups distributed by a radio.
-     * Initially a DISH socket is not subscribed to any groups, use {@link org.zeromq.ZMQ.Socket#join(String)} to join a group.
-     * To get the group the message belong, call {@link ZFrame#getGroup()}.
-     * The {@link org.zeromq.ZMQ.Socket#send(byte[], int)} function is not implemented for this socket type.
-     *
-     * <p>
-     * NOTE: DISH sockets are threadsafe.
-     * They do not accept ZMQ_RCVMORE on receives.
-     * This limits them to single part data.
-     * <p>
      * <table border="1">
-     * <caption><strong>Summary of socket characteristics</strong></caption>
-     * <tr><td>Compatible peer sockets</td><td>{@link org.zeromq.SocketType#RADIO}</td></tr>
-     * <tr><td>Direction</td><td>Unidirectional</td></tr>
-     * <tr><td>Send/receive pattern</td><td>Receive only</td></tr>
-     * <tr><td>Outgoing routing strategy</td><td>N/A</td></tr>
-     * <tr><td>Incoming routing strategy</td><td>Fair-queued</td></tr>
+     * <caption> </caption>
+     * <tr>
+     *     <th colspan="2">Summary of socket characteristics</th>
+     * </tr>
+     * <tr>
+     *     <td>Compatible peer sockets</td><td>CLIENT</td>
+     * </tr>
+     * <tr>
+     *     <td>Direction</td><td>Bidirectional</td>
+     * </tr>
+     * <tr>
+     *     <td>Send/receive pattern</td><td>Unrestricted</td>
+     * </tr>
+     * <tr>
+     *     <td>Outgoing routing strategy</td><td>See text</td>
+     * </tr>
+     * <tr>
+     *     <td>Incoming routing strategy</td><td>Fair-queued</td>
+     * </tr>
+     * <tr>
+     *     <td>Action in mute state</td><td>Fail</td>
+     * </tr>
      * </table>
-     * NOTE: DISH is still in draft phase.
      */
-    @Draft
-    DISH(zmq.ZMQ.ZMQ_DISH),
-
-    /**
-     * <p>Flag to specify CHANNEL socket.</p>
-     * <p>
-     * The channel pattern is the thread-safe version of the exclusive pair pattern.
-     * The channel pattern is used to connect a peer to precisely one other peer.
-     * This pattern is used for inter-thread communication across the inproc transport.
-     * </p>
-     * <p>
-     * A socket of type 'CHANNEL' can only be connected to a single peer at any one
-     * time.  No message routing or filtering is performed on messages sent over a
-     * 'CHANNEL' socket.
-     * </p>
-     * <p>
-     * When a 'CHANNEL' socket enters the 'mute' state due to having reached the
-     * high water mark for the connected peer, or, for connection-oriented transports,
-     * if the ZMQ_IMMEDIATE option is set and there is no connected peer, then
-     * any {@link org.zeromq.ZMQ.Socket#send(byte[], int)} operations on the socket shall block until the peer
-     * becomes available for sending; messages are not discarded.
-     * </p>
-     * <p>
-     * While 'CHANNEL' sockets can be used over transports other than 'inproc',
-     * their inability to auto-reconnect coupled with the fact new incoming connections will
-     * be terminated while any previous connections (including ones in a closing state)
-     * exist makes them unsuitable for TCP in most cases.
-     * </p>
-     * <p>
-     * NOTE: 'CHANNEL' sockets are designed for inter-thread communication across
-     * the 'inproc' transport and do not implement functionality such
-     * as auto-reconnection.
-     * </p>
-     * <p>
-     * NOTE: 'CHANNEL' sockets are threadsafe. They do not accept ZMQ_RCVMORE on receives.
-     * This limits them to single part data.
-     * <p>
-     * <table border="1">
-     * <caption><strong>Summary of socket characteristics</strong></caption>
-     * <tr><td>Compatible peer sockets</td><td>CHANNEL</td></tr>
-     * <tr><td>Direction</td><td>Bidirectional</td></tr>
-     * <tr><td>Send/receive pattern</td><td>Unrestricted</td></tr>
-     * <tr><td>Outgoing routing strategy</td><td>N/A</td></tr>
-     * <tr><td>Incoming routing strategy</td><td>N/A</td></tr>
-     * <tr><td>Action in mute state</td><td>Block</td></tr>
-     * </table>
-     * <p>
-     * NOTE: CHANNEL is still in draft phase.
-     * </p>
-     */
-    @Draft
-    CHANNEL(zmq.ZMQ.ZMQ_CHANNEL),
-
-    /**
-     * <p>Flag to specify PEER socket.
-     * </p>
-     * <p>
-     * A 'PEER' socket talks to a set of 'PEER' sockets.
-     * </p>
-     * <p>
-     * To connect and fetch the 'routing_id' of the peer use {@link ZMQ.Socket#connectPeer(String)}.
-     * </p>
-     * <p>
-     * Each received message has a 'routing_id' that is a 32-bit unsigned integer.
-     * The application can fetch this with {@link ZFrame#getRoutingId()}.
-     * </p>
-     * <p>
-     * To send a message to a given 'PEER' peer the application must set the peer's
-     * 'routing_id' on the message, using {@link ZFrame#setRoutingId(int)}.
-     * </p>
-     * <p>
-     * If the 'routing_id' is not specified, or does not refer to a connected client
-     * peer, the send call will fail with EHOSTUNREACH. If the outgoing buffer for
-     * the peer is full, the send call shall block, unless ZMQ_DONTWAIT is
-     * used in the send, in which case it shall fail with EAGAIN. The 'PEER'
-     * socket shall not drop messages in any case.
-     * </p>
-     * <p>
-     * NOTE: 'PEER' sockets are threadsafe. They do not accept the ZMQ_SNDMORE
-     * option on sends not ZMQ_RCVMORE on receives. This limits them to single part
-     * data.
-     * <p>
-     * <table border="1">
-     * <caption><strong>Summary of socket characteristics</strong></caption>
-     * <tr><td>Compatible peer sockets</td><td>PEER</td></tr>
-     * <tr><td>Direction</td><td>Bidirectional</td></tr>
-     * <tr><td>Send/receive pattern</td><td>Unrestricted</td></tr>
-     * <tr><td>Outgoing routing strategy</td><td>See text</td></tr>
-     * <tr><td>Incoming routing strategy</td><td>Fair-queued</td></tr>
-     * <tr><td>Action in mute state</td><td>Return EAGAIN</td></tr>
-     * </table>
-     * NOTE: PEER is still in draft phase.
-     */
-    @Draft
-    PEER(zmq.ZMQ.ZMQ_PEER),
-
-    /**
-     * <p>Flag to specify RAW socket.</p>
-     *
-     */
-    @Draft
-    RAW(zmq.ZMQ.ZMQ_RAW),
-
-    /**
-     * <p>Flag to specify SCATTER socket.
-     * </p>
-     * <p>
-     * The scatter-gather pattern is the thread-safe version of the pipeline pattern.
-     * The scatter-gather pattern is used for distributing data to nodes arranged in a pipeline.
-     * Data always flows down the pipeline, and each stage of the pipeline
-     * is connected to at least one node.
-     * When a pipeline stage is connected to multiple nodes data is round-robined among all connected nodes.
-     * </p>
-     * <p>
-     * When a 'SCATTER' socket enters the 'mute' state due to having reached the
-     * high water mark for all downstream nodes, or, for connection-oriented transports,
-     * if the ZMQ_IMMEDIATE option is set and there are no downstream nodes at all,
-     * then any {@link org.zeromq.ZMQ.Socket#send(byte[], int)} operations on the socket shall block until the mute
-     * state ends or at least one downstream node becomes available for sending;
-     * messages are not discarded.
-     * </p>
-     * <p>
-     * NOTE: 'SCATTER' sockets are threadsafe. They do not accept ZMQ_RCVMORE on receives.
-     * This limits them to single part data.
-     * <p>
-     * <table border="1">
-     * <caption><strong>Summary of socket characteristics</strong></caption>
-     * <tr><td>Compatible peer sockets</td><td>{@link org.zeromq.SocketType#GATHER}</td></tr>
-     * <tr><td>Direction</td><td>Unidirectional</td></tr>
-     * <tr><td>Send/receive pattern</td><td>Send only</td></tr>
-     * <tr><td>Outgoing routing strategy</td><td>Round-robin</td></tr>
-     * <tr><td>Incoming routing strategy</td><td>N/A</td></tr>
-     * <tr><td>Action in mute state</td><td>Block</td></tr>
-     * </table>
-     * NOTE: SCATTER is still in draft phase.
-     */
-    @Draft
-    SCATTER(zmq.ZMQ.ZMQ_SCATTER),
-
-    /**
-     * <p>Flag to specify GATHER socket.
-     * </p>
-     * <p>
-     * The scatter-gather pattern is the thread-safe version of the pipeline pattern.
-     * The scatter-gather pattern is used for distributing data to nodes arranged in a pipeline.
-     * Data always flows down the pipeline, and each stage of the pipeline
-     * is connected to at least one node.
-     * When a pipeline stage is connected to multiple nodes data is round-robined among all connected nodes.
-     * </p>
-     * <p>
-     * A socket of type 'GATHER' is used by a scatter-gather node to receive messages
-     * from upstream scatter-gather nodes. Messages are fair-queued from among all
-     * connected upstream nodes. The {@link org.zeromq.ZMQ.Socket#send(byte[], int)} function is not implemented for
-     * this socket type.
-     * </p>
-     * <p>
-     * NOTE: 'GATHER' sockets are threadsafe. They do not accept ZMQ_RCVMORE on receives.
-     * This limits them to single part data.
-     * <p>
-     * <table border="1">
-     * <caption><strong>Summary of socket characteristics</strong></caption>
-     * <tr><td>Compatible peer sockets</td><td>{@link org.zeromq.SocketType#SCATTER}</td></tr>
-     * <tr><td>Direction</td><td>Unidirectional</td></tr>
-     * <tr><td>Send/receive pattern</td><td>Receive only</td></tr>
-     * <tr><td>Outgoing routing strategy</td><td>N/A</td></tr>
-     * <tr><td>Incoming routing strategy</td><td>Fair-queued</td></tr>
-     * <tr><td>Action in mute state</td><td>Block</td></tr>
-     * </table>
-     * NOTE: SCATTER is still in draft phase.
-     */
-    @Draft
-    GATHER(zmq.ZMQ.ZMQ_GATHER);
+    SERVER(zmq.ZMQ.ZMQ_SERVER);
 
     public final int type;
 
-    SocketType(int socketType)
+    private SocketType(int socketType)
     {
         this.type = socketType;
     }

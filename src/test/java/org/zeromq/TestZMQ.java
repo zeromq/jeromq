@@ -4,11 +4,10 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.CoreMatchers.anyOf;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
@@ -1227,10 +1226,10 @@ public class TestZMQ
         assertThat(socket, notNullValue());
 
         boolean rc = socket.setTCPKeepAliveCount(42);
-        assertThat(rc, anyOf(is(false), is(true)));
+        assertThat(rc, is(false));
 
         long tcp = socket.getTCPKeepAliveCount();
-        assertThat(tcp, anyOf(is(-1L), is(42L)));
+        assertThat(tcp, is(0L));
 
         socket.close();
     }
@@ -1242,10 +1241,10 @@ public class TestZMQ
         assertThat(socket, notNullValue());
 
         boolean rc = socket.setTCPKeepAliveInterval(42);
-        assertThat(rc, anyOf(is(false), is(true)));
+        assertThat(rc, is(false));
 
         long tcp = socket.getTCPKeepAliveInterval();
-        assertThat(tcp, anyOf(is(-1L), is(42L)));
+        assertThat(tcp, is(0L));
 
         socket.close();
     }
@@ -1257,10 +1256,10 @@ public class TestZMQ
         assertThat(socket, notNullValue());
 
         boolean rc = socket.setTCPKeepAliveIdle(42);
-        assertThat(rc, anyOf(is(false), is(true)));
+        assertThat(rc, is(false));
 
         long tcp = socket.getTCPKeepAliveIdle();
-        assertThat(tcp, anyOf(is(-1L), is(42L)));
+        assertThat(tcp, is(0L));
 
         socket.close();
     }

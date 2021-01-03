@@ -99,16 +99,9 @@ public class MailboxSafe implements IMailbox
         else {
             try {
                 //  Wait for signal from the command sender.
-                if (timeout == -1) {
-                    condition.await();
-                }
-                else {
-                    condition.await(timeout, TimeUnit.MILLISECONDS);
-                }
+                condition.await(timeout, TimeUnit.MILLISECONDS);
             }
             catch (InterruptedException e) {
-                // Restore interrupted state...
-                Thread.currentThread().interrupt();
                 errno.set(ZError.EINTR);
                 return null;
             }
