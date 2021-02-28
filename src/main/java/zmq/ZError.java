@@ -1,6 +1,7 @@
 package zmq;
 
 import java.net.SocketException;
+import java.nio.channels.ClosedByInterruptException;
 import java.nio.channels.ClosedChannelException;
 
 import org.zeromq.ZMQ.Error;
@@ -98,6 +99,9 @@ public class ZError
     {
         if (e instanceof SocketException) {
             return ESOCKET;
+        }
+        else if (e instanceof ClosedByInterruptException) {
+            return EINTR;
         }
         else if (e instanceof ClosedChannelException) {
             return ENOTCONN;
