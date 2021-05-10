@@ -88,6 +88,8 @@ public class Pipe extends ZObject
 
     private final boolean conflate;
 
+    private Msg disconnectMsg;
+
     // JeroMQ only
     private final ZObject parent;
 
@@ -110,6 +112,7 @@ public class Pipe extends ZObject
         state = State.ACTIVE;
         this.delay = true;
         this.conflate = conflate;
+        disconnectMsg = null;
 
         this.parent = parent;
     }
@@ -597,6 +600,21 @@ public class Pipe extends ZObject
         // TODO DIFF V4 small change, it is done like this in 4.2.2
         boolean full = hwm > 0 && (msgsWritten - peersMsgsRead) >= hwm;
         return !full;
+    }
+
+    public void setDisconnectMsg(Msg msg) {
+        disconnectMsg = msg;
+    }
+
+    public void sendDisconnectMsg() {
+        if (disconnectMsg != null) {
+            // Rollback any incomplete message in the pipe, and push the disconnect message.
+            rollback();
+
+            outpipe.write(disconnectMsg,false);
+            flush();
+            disconnectMsg = null;
+        }
     }
 
     @Override

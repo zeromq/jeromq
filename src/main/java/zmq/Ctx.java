@@ -732,6 +732,10 @@ public class Ctx
         pendingConnection.connectPipe.setHwms(hwms[1], hwms[0]);
         pendingConnection.bindPipe.setHwms(hwms[0], hwms[1]);
 
+        if (bindOptions.canReceiveDisconnectMsg && bindOptions.disconnectMsg != null) {
+            pendingConnection.connectPipe.setDisconnectMsg(bindOptions.disconnectMsg);
+        }
+
         if (side == Side.BIND) {
             Command cmd = new Command(null, Command.Type.BIND, pendingConnection.bindPipe);
             bindSocket.processCommand(cmd);

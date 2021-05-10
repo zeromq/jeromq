@@ -171,6 +171,10 @@ public class Options
     public Msg helloMsg;
     public boolean canSendHelloMsg;
 
+    // Disconnect message to receive when peer disconnect
+    public Msg disconnectMsg;
+    public boolean canReceiveDisconnectMsg;
+
     //  As Socket type on the network.
     public int asType;
 
@@ -233,6 +237,9 @@ public class Options
 
         canSendHelloMsg = false;
         helloMsg = null;
+
+        canReceiveDisconnectMsg = false;
+        disconnectMsg = null;
 
         asType = -1;
 
@@ -592,6 +599,21 @@ public class Options
                 }
                 else {
                     helloMsg = new Msg(Arrays.copyOf(bytes, bytes.length));
+                }
+            }
+            return true;
+
+        case ZMQ.ZMQ_DISCONNECT_MSG:
+            if (optval == null) {
+                disconnectMsg = null;
+            }
+            else {
+                byte[] bytes = parseBytes(option, optval);
+                if (bytes.length == 0) {
+                    disconnectMsg = null;
+                }
+                else {
+                    disconnectMsg = new Msg(Arrays.copyOf(bytes, bytes.length));
                 }
             }
             return true;

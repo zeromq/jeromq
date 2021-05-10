@@ -376,7 +376,7 @@ public class SessionBase extends Own implements Pipe.IPipeEvents, IPollEvents
         this.engine.plug(ioThread, this);
     }
 
-    public void engineError(ErrorReason reason)
+    public void engineError(boolean handshaked, ErrorReason reason)
     {
         //  Engine is dead. Let's forget about it.
         engine = null;
@@ -384,6 +384,12 @@ public class SessionBase extends Own implements Pipe.IPipeEvents, IPollEvents
         //  Remove any half-done messages from the pipes.
         if (pipe != null) {
             cleanPipes();
+
+            //  Only send disconnect message if socket was accepted and handshake was completed
+            if (!active && handshaked && options.canReceiveDisconnectMsg && options.disconnectMsg != null) {
+                pipe.setDisconnectMsg(options.disconnectMsg);
+                pipe.sendDisconnectMsg();
+            }
         }
 
         assert (reason == ErrorReason.CONNECTION || reason == ErrorReason.TIMEOUT || reason == ErrorReason.PROTOCOL);
