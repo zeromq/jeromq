@@ -139,6 +139,7 @@ public class ZMQ
     public static final int ZMQ_XPUB_VERBOSE_UNSUBSCRIBE = 78;
     public static final int ZMQ_HELLO_MSG                = 79;
     public static final int ZMQ_AS_TYPE                  = 80;
+    public static final int ZMQ_DISCONNECT_MSG           = 81;
 
     /* Custom options */
     @Deprecated

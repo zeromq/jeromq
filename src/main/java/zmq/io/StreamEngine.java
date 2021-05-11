@@ -91,12 +91,12 @@ public class StreamEngine implements IEngine, IPollEvents
     private Poller.Handle handle;
 
     private ByteBuffer inpos;
-    private int        insize;
-    private IDecoder   decoder;
+    private int insize;
+    private IDecoder decoder;
 
     private final ValueReference<ByteBuffer> outpos;
-    private int                              outsize;
-    private IEncoder                         encoder;
+    private int outsize;
+    private IEncoder encoder;
 
     private Metadata metadata;
 
@@ -131,7 +131,7 @@ public class StreamEngine implements IEngine, IPollEvents
 
     private boolean plugged;
 
-    private Supplier<Msg>          nextMsg;
+    private Supplier<Msg> nextMsg;
     private Function<Msg, Boolean> processMsg;
 
     private boolean ioError;
@@ -150,18 +150,18 @@ public class StreamEngine implements IEngine, IPollEvents
     private boolean outputStopped;
 
     //  ID of the handshake timer
-    private static final int HANDSHAKE_TIMER_ID         = 0x40;
-    private static final int HEARTBEAT_TTL_TIMER_ID     = 0x80;
-    private static final int HEARTBEAT_IVL_TIMER_ID     = 0x81;
+    private static final int HANDSHAKE_TIMER_ID = 0x40;
+    private static final int HEARTBEAT_TTL_TIMER_ID = 0x80;
+    private static final int HEARTBEAT_IVL_TIMER_ID = 0x81;
     private static final int HEARTBEAT_TIMEOUT_TIMER_ID = 0x82;
 
     //  True is linger timer is running.
     private boolean hasHandshakeTimer;
 
-    private boolean      hasTtlTimer;
-    private boolean      hasTimeoutTimer;
-    private boolean      hasHeartbeatTimer;
-    private final int    heartbeatTimeout;
+    private boolean hasTtlTimer;
+    private boolean hasTimeoutTimer;
+    private boolean hasHeartbeatTimer;
+    private final int heartbeatTimeout;
     private final byte[] heartbeatContext;
 
     // Socket
@@ -876,7 +876,7 @@ public class StreamEngine implements IEngine, IPollEvents
     }
 
     private final Function<Msg, Boolean> processIdentity = this::processIdentityMsg;
-    private final Supplier<Msg>          nextIdentity    = this::identityMsg;
+    private final Supplier<Msg> nextIdentity = this::identityMsg;
 
     private Msg nextHandshakeCommand()
     {
@@ -930,7 +930,7 @@ public class StreamEngine implements IEngine, IPollEvents
     }
 
     private final Function<Msg, Boolean> processHandshakeCommand = this::processHandshakeCommand;
-    private final Supplier<Msg>          nextHandshakeCommand    = this::nextHandshakeCommand;
+    private final Supplier<Msg> nextHandshakeCommand = this::nextHandshakeCommand;
 
     @Override
     public void zapMsgAvailable()
@@ -1004,8 +1004,8 @@ public class StreamEngine implements IEngine, IPollEvents
         return session.pushMsg(msg);
     }
 
-    private final Function<Msg, Boolean> pushMsgToSession   = this::pushMsgToSession;
-    private final Supplier<Msg>          pullMsgFromSession = this::pullMsgFromSession;
+    private final Function<Msg, Boolean> pushMsgToSession = this::pushMsgToSession;
+    private final Supplier<Msg> pullMsgFromSession = this::pullMsgFromSession;
 
     private boolean pushRawMsgToSession(Msg msg)
     {
@@ -1114,7 +1114,8 @@ public class StreamEngine implements IEngine, IPollEvents
         assert (session != null);
         socket.eventDisconnected(endpoint, fd);
         session.flush();
-        session.engineError(error);
+        session.engineError(!handshaking && (mechanism == null ||
+                mechanism.status() != Mechanism.Status.HANDSHAKING), error);
         unplug();
         destroy();
     }

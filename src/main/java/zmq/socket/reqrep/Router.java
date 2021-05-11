@@ -101,6 +101,7 @@ public class Router extends SocketBase
         options.recvIdentity = true;
         options.rawSocket = false;
         options.canSendHelloMsg = true;
+        options.canReceiveDisconnectMsg = true;
 
         fq = new FQ();
         prefetchedId = new Msg();

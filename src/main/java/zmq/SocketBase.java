@@ -599,6 +599,10 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
                     pipes[1].flush();
                 }
 
+                if (peer.options.canReceiveDisconnectMsg && peer.options.disconnectMsg != null) {
+                    pipes[0].setDisconnectMsg(peer.options.disconnectMsg);
+                }
+
                 //  Attach remote end of the pipe to the peer socket. Note that peer's
                 //  seqnum was incremented in findEndpoint function. We don't need it
                 //  increased here.
@@ -721,6 +725,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
                 }
                 else {
                     for (Pipe old : olds) {
+                        old.sendDisconnectMsg();
                         old.terminate(true);
                     }
                 }
@@ -1168,6 +1173,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
 
         //  Ask all attached pipes to terminate.
         for (Pipe pipe : pipes) {
+            pipe.sendDisconnectMsg();
             pipe.terminate(false);
         }
         registerTermAcks(pipes.size());

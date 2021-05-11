@@ -46,6 +46,7 @@ public class Server extends SocketBase
 
         options.type = ZMQ.ZMQ_SERVER;
         options.canSendHelloMsg = true;
+        options.canReceiveDisconnectMsg = true;
 
         fq = new FQ();
         outpipes = new HashMap<>();
