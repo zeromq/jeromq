@@ -66,7 +66,7 @@ public class TestDisconnectMsg
     {
         System.out.println("Scenario 2");
 
-        test ("inproc://disconnect-msg");
+        test("inproc://disconnect-msg");
     }
 
     @Test
