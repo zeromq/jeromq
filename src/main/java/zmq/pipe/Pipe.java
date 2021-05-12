@@ -602,16 +602,18 @@ public class Pipe extends ZObject
         return !full;
     }
 
-    public void setDisconnectMsg(Msg msg) {
+    public void setDisconnectMsg(Msg msg)
+    {
         disconnectMsg = msg;
     }
 
-    public void sendDisconnectMsg() {
+    public void sendDisconnectMsg()
+    {
         if (disconnectMsg != null) {
             // Rollback any incomplete message in the pipe, and push the disconnect message.
             rollback();
 
-            outpipe.write(disconnectMsg,false);
+            outpipe.write(disconnectMsg, false);
             flush();
             disconnectMsg = null;
         }
