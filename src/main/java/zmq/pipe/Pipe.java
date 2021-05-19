@@ -609,7 +609,7 @@ public class Pipe extends ZObject
 
     public void sendDisconnectMsg()
     {
-        if (disconnectMsg != null) {
+        if (disconnectMsg != null && outpipe != null) {
             // Rollback any incomplete message in the pipe, and push the disconnect message.
             rollback();
 
