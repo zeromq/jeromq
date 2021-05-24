@@ -1006,6 +1006,65 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
         sendCancel();
     }
 
+    public final int poll(int interest, int timeout, AtomicBoolean canceled)
+    {
+        lock();
+
+        try {
+            if (ctxTerminated) {
+                errno.set(ZError.ETERM);
+                return -1;
+            }
+
+            int ready = 0;
+
+            if (hasOut() && (interest & ZMQ.ZMQ_POLLOUT) > 0) {
+                ready |= ZMQ.ZMQ_POLLOUT;
+            }
+
+            if (hasIn() && (interest & ZMQ.ZMQ_POLLIN) > 0) {
+                ready |= ZMQ.ZMQ_POLLIN;
+            }
+
+            if (ready != 0) {
+                return ready;
+            }
+
+            long end = timeout < 0 ? 0 : (Clock.nowMS() + timeout);
+
+            while (true) {
+                if (!processCommands(timeout, false, canceled)) {
+                    return -1;
+                }
+
+                ready = 0;
+
+                if (hasOut() && (interest & ZMQ.ZMQ_POLLOUT) > 0) {
+                    ready |= ZMQ.ZMQ_POLLOUT;
+                }
+
+                if (hasIn() && (interest & ZMQ.ZMQ_POLLIN) > 0) {
+                    ready |= ZMQ.ZMQ_POLLIN;
+                }
+
+                if (ready != 0) {
+                    return ready;
+                }
+
+                if (timeout > 0) {
+                    timeout = (int) (end - Clock.nowMS());
+                    if (timeout <= 0) {
+                        errno.set(ZError.EAGAIN);
+                        return -1;
+                    }
+                }
+            }
+        }
+        finally {
+            unlock();
+        }
+    }
+
     public final void close()
     {
         lock();
