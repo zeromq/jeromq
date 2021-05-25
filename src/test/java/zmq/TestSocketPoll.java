@@ -2,7 +2,9 @@ package zmq;
 
 import org.junit.Test;
 import zmq.util.Utils;
+
 import java.util.concurrent.atomic.AtomicBoolean;
+
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -82,6 +84,33 @@ public class TestSocketPoll
         int ready = server.poll(ZMQ.ZMQ_POLLIN, -1, cancellationToken);
         assertThat(ready, is(-1));
         assertThat(server.errno(), is(ZError.ECANCELED));
+
+        ZMQ.close(server);
+        ZMQ.term(context);
+    }
+
+    @Test
+    public void testZeroTimeout() throws Exception
+    {
+        System.out.println("Scenario 3");
+
+        int port = Utils.findOpenPort();
+
+        Ctx context = ZMQ.createContext();
+        assertThat(context, notNullValue());
+
+        // Create a server
+        SocketBase server = ZMQ.socket(context, ZMQ.ZMQ_SERVER);
+        assertThat(server, notNullValue());
+
+        // bind server
+        boolean rc = ZMQ.bind(server, "tcp://*:" + port);
+        assertThat(rc, is(true));
+
+        //  poll zero timeout
+        int ready = server.poll(ZMQ.ZMQ_POLLIN, 0, null);
+        assertThat(ready, is(-1));
+        assertThat(server.errno(), is(ZError.EAGAIN));
 
         ZMQ.close(server);
         ZMQ.term(context);
