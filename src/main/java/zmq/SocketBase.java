@@ -1051,7 +1051,11 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
                     return ready;
                 }
 
-                if (timeout > 0) {
+                if (timeout == 0) {
+                    errno.set(ZError.EAGAIN);
+                    return -1;
+                }
+                else if (timeout > 0) {
                     timeout = (int) (end - Clock.nowMS());
                     if (timeout <= 0) {
                         errno.set(ZError.EAGAIN);
