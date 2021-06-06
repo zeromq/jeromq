@@ -619,6 +619,17 @@ public class Pipe extends ZObject
         }
     }
 
+    public void sendHiccupMsg(Msg hiccupMsg)
+    {
+        if (hiccupMsg != null && outpipe != null) {
+            // Rollback any incomplete message in the pipe, and push the hiccupMsg message.
+            rollback();
+
+            outpipe.write(hiccupMsg, false);
+            flush();
+        }
+    }
+
     @Override
     public String toString()
     {

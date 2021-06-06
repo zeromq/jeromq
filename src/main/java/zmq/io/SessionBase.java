@@ -390,6 +390,10 @@ public class SessionBase extends Own implements Pipe.IPipeEvents, IPollEvents
                 pipe.setDisconnectMsg(options.disconnectMsg);
                 pipe.sendDisconnectMsg();
             }
+
+            if (active && handshaked && options.canReceiveHiccupMsg && options.hiccupMsg != null) {
+                pipe.sendHiccupMsg(options.hiccupMsg);
+            }
         }
 
         assert (reason == ErrorReason.CONNECTION || reason == ErrorReason.TIMEOUT || reason == ErrorReason.PROTOCOL);
@@ -481,7 +485,7 @@ public class SessionBase extends Own implements Pipe.IPipeEvents, IPollEvents
 
         //  For delayed connect situations, terminate the pipe
         //  and reestablish later on
-        if (pipe != null && !options.immediate && ! addr.protocol().isMulticast) {
+        if (pipe != null && !options.immediate && !addr.protocol().isMulticast) {
             pipe.hiccup();
             pipe.terminate(false);
             terminatingPipes.add(pipe);

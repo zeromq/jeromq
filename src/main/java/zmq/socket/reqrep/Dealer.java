@@ -29,6 +29,7 @@ public class Dealer extends SocketBase
 
         options.type = ZMQ.ZMQ_DEALER;
         options.canSendHelloMsg = true;
+        options.canReceiveHiccupMsg = true;
 
         fq = new FQ();
         lb = new LB();

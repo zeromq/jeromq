@@ -175,6 +175,10 @@ public class Options
     public Msg disconnectMsg;
     public boolean canReceiveDisconnectMsg;
 
+    // Hiccup message to receive when the connecting peer experience an hiccup in the connection
+    public Msg hiccupMsg;
+    public boolean canReceiveHiccupMsg;
+
     //  As Socket type on the network.
     public int asType;
 
@@ -240,6 +244,9 @@ public class Options
 
         canReceiveDisconnectMsg = false;
         disconnectMsg = null;
+
+        canReceiveHiccupMsg = false;
+        hiccupMsg = null;
 
         asType = -1;
 
@@ -614,6 +621,21 @@ public class Options
                 }
                 else {
                     disconnectMsg = new Msg(Arrays.copyOf(bytes, bytes.length));
+                }
+            }
+            return true;
+
+        case ZMQ.ZMQ_HICCUP_MSG:
+            if (optval == null) {
+                hiccupMsg = null;
+            }
+            else {
+                byte[] bytes = parseBytes(option, optval);
+                if (bytes.length == 0) {
+                    hiccupMsg = null;
+                }
+                else {
+                    hiccupMsg = new Msg(Arrays.copyOf(bytes, bytes.length));
                 }
             }
             return true;
