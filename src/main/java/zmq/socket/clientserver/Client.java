@@ -24,6 +24,7 @@ public class Client extends SocketBase
 
         options.type = ZMQ.ZMQ_CLIENT;
         options.canSendHelloMsg = true;
+        options.canReceiveHiccupMsg = true;
 
         fq = new FQ();
         lb = new LB();

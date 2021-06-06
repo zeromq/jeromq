@@ -140,6 +140,7 @@ public class ZMQ
     public static final int ZMQ_HELLO_MSG                = 79;
     public static final int ZMQ_AS_TYPE                  = 80;
     public static final int ZMQ_DISCONNECT_MSG           = 81;
+    public static final int ZMQ_HICCUP_MSG               = 82;
 
     /* Custom options */
     @Deprecated
