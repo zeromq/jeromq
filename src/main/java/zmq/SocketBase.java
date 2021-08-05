@@ -765,7 +765,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
                 //  If we have an associated pipe, terminate it.
                 for (EndpointPipe ep : eps) {
                     if (ep.pipe != null) {
-                        ep.pipe.terminate(true);
+                        ep.pipe.terminate(false);
                     }
                     termChild(ep.endpoint);
                 }
