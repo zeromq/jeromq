@@ -20,17 +20,25 @@ public class Utils
     {
     }
 
-    private static final SecureRandom random = new SecureRandom();
+    private static SecureRandom _random;
+    
+    private static random()
+    {
+        if (null == _random) {
+            _random = new SecureRandom();
+        }
+        return _random;
+    }
 
     public static int randomInt()
     {
-        return random.nextInt();
+        return random().nextInt();
     }
 
     public static byte[] randomBytes(int length)
     {
         byte[] bytes = new byte[length];
-        random.nextBytes(bytes);
+        random().nextBytes(bytes);
         return bytes;
     }
 
