@@ -20,14 +20,14 @@ public class Utils
     {
     }
 
-    private static SecureRandom _random;
+    private static SecureRandom secureRandom;
     
     private static random()
     {
-        if (null == _random) {
-            _random = new SecureRandom();
+        if (null == secureRandom) {
+            secureRandom = new SecureRandom();
         }
-        return _random;
+        return secureRandom;
     }
 
     public static int randomInt()
