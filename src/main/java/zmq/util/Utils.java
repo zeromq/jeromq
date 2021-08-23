@@ -20,12 +20,14 @@ public class Utils
     {
     }
 
-    private static SecureRandom secureRandom;
+    private static volatile SecureRandom secureRandom;
     
     private static random()
     {
         if (null == secureRandom) {
-            secureRandom = new SecureRandom();
+            synchronized (Utils.class) {
+                secureRandom = new SecureRandom();
+            }
         }
         return secureRandom;
     }
