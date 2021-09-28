@@ -26,7 +26,9 @@ public class Utils
     {
         if  (null == secureRandom) {
             synchronized (Utils.class) {
-                secureRandom = new SecureRandom();
+                if (secureRandom == null) {
+                    secureRandom = new SecureRandom();
+		}
 	    }
         }
         return secureRandom;
