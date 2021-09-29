@@ -116,7 +116,7 @@ public class ZData
         if (data == null) {
             return "";
         }
-        StringBuilder b = new StringBuilder();
+        StringBuilder b = new StringBuilder(data.length * 2);
         for (byte aData : data) {
             int b1 = aData >>> 4 & 0xf;
             int b2 = aData & 0xf;
