@@ -39,6 +39,7 @@ public class ZThread
             this.attachedRunnable = runnable;
             this.args = args;
             this.pipe = pipe;
+            this.setUncaughtExceptionHandler(ctx.getUncaughtExceptionHandler());
         }
 
         public ShimThread(IDetachedRunnable runnable, Object[] args)

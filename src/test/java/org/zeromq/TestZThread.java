@@ -55,6 +55,20 @@ public class TestZThread
         ctx.close();
     }
 
+    @Test(timeout = 1000)
+    public void testCriticalException() throws InterruptedException
+    {
+        final CountDownLatch stopped = new CountDownLatch(1);
+        try (final ZContext ctx = new ZContext()) {
+            ctx.setUncaughtExceptionHandler((t, e) -> stopped.countDown());
+            Socket pipe = ZThread.fork(ctx, (args, ctx1, pipe1) -> {
+                throw new Error("critical");
+            });
+            assertThat(pipe, notNullValue());
+            stopped.await();
+        }
+    }
+
     @Test
     @Ignore
     public void testClosePipe()
