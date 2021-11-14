@@ -20,14 +20,15 @@ public class PollerTest
         Ctx ctx = new Ctx()
         {
             @Override
-            public Selector createSelector() {
+            public Selector createSelector()
+            {
                 selectorRef.set(super.createSelector());
                 return selectorRef.get();
             }
         };
-        ctx.setNotificationExceptionHandler((t, e) -> {
-            if (e instanceof ClosedSelectorException)
-            {
+        ctx.setNotificationExceptionHandler((t, e) ->
+        {
+            if (e instanceof ClosedSelectorException) {
                 catched.countDown();
             }
         });

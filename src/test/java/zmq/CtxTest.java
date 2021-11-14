@@ -38,9 +38,10 @@ public class CtxTest
 
         assertThat(ctx.checkTag(), is(false));
     }
-    
+
     @Test
-    public void testSetHandler() {
+    public void testSetHandler()
+{
         Ctx ctx = ZMQ.init(0);
         SocketBase socket = ZMQ.socket(ctx, Sockets.CLIENT.ordinal());
         Assert.assertThrows(IllegalStateException.class, () -> ctx.setNotificationExceptionHandler(null));

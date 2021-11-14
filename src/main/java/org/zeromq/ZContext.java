@@ -372,14 +372,16 @@ public class ZContext implements Closeable
      * It default to the value of {@link Thread#getDefaultUncaughtExceptionHandler()}
      * @param the object to use as this thread's uncaught exception handler. If null then this thread has no explicit handler.
      */
-    public void setUncaughtExceptionHandler(UncaughtExceptionHandler handler) {
+    public void setUncaughtExceptionHandler(UncaughtExceptionHandler handler)
+    {
         context.setUncaughtExceptionHandler(handler);
     }
 
     /**
      * @return The handler invoked when a {@link zmq.poll.Poller} abruptly terminates due to an uncaught exception.
      */
-    public UncaughtExceptionHandler getUncaughtExceptionHandler() {
+    public UncaughtExceptionHandler getUncaughtExceptionHandler()
+    {
         return context.getUncaughtExceptionHandler();
     }
 
@@ -389,14 +391,16 @@ public class ZContext implements Closeable
      * Default to {@link Throwable#printStackTrace()}
      * @param handler
      */
-    public void setNotificationExceptionHandler(UncaughtExceptionHandler handler) {
+    public void setNotificationExceptionHandler(UncaughtExceptionHandler handler)
+    {
         context.setNotificationExceptionHandler(handler);
     }
 
     /**
      * @return The handler invoked when a non-fatal exceptions is thrown in zmq.poll.Poller#run()
      */
-    public UncaughtExceptionHandler getNotificationExceptionHandler() {
+    public UncaughtExceptionHandler getNotificationExceptionHandler()
+    {
         return context.getNotificationExceptionHandler();
     }
 

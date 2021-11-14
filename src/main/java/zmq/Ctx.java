@@ -351,7 +351,8 @@ public class Ctx
      * It default to the value of {@link Thread#getDefaultUncaughtExceptionHandler()}
      * @param the object to use as this thread's uncaught exception handler. If null then this thread has no explicit handler.
      */
-    public void setUncaughtExceptionHandler(UncaughtExceptionHandler handler) {
+    public void setUncaughtExceptionHandler(UncaughtExceptionHandler handler)
+    {
         if  (!starting.get()) {
             throw new IllegalStateException("Already started");
         }
@@ -361,7 +362,8 @@ public class Ctx
     /**
      * @return The handler invoked when a {@link zmq.poll.Poller} abruptly terminates due to an uncaught exception.
      */
-    public UncaughtExceptionHandler getUncaughtExceptionHandler() {
+    public UncaughtExceptionHandler getUncaughtExceptionHandler()
+    {
         return exhandler;
     }
 
@@ -371,7 +373,8 @@ public class Ctx
      * Default to {@link Throwable#printStackTrace()}
      * @param handler
      */
-    public void setNotificationExceptionHandler(UncaughtExceptionHandler handler) {
+    public void setNotificationExceptionHandler(UncaughtExceptionHandler handler)
+    {
         if  (!starting.get()) {
             throw new IllegalStateException("Already started");
         }
@@ -381,7 +384,8 @@ public class Ctx
     /**
      * @return The handler invoked when a non-fatal exceptions is thrown in zmq.poll.Poller#run()
      */
-    public UncaughtExceptionHandler getNotificationExceptionHandler() {
+    public UncaughtExceptionHandler getNotificationExceptionHandler()
+    {
         return exnotification;
     }
 
