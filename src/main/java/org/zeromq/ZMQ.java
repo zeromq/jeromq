@@ -629,7 +629,7 @@ public class ZMQ
         /**
          * Set the handler invoked when a {@link zmq.poll.Poller} abruptly terminates due to an uncaught exception.<p>
          * It default to the value of {@link Thread#getDefaultUncaughtExceptionHandler()}
-         * @param the object to use as this thread's uncaught exception handler. If null then this thread has no explicit handler.
+         * @param handler The object to use as this thread's uncaught exception handler. If null then this thread has no explicit handler.
          */
         public void setUncaughtExceptionHandler(UncaughtExceptionHandler handler)
         {
@@ -648,7 +648,7 @@ public class ZMQ
          * In {@link zmq.poll.Poller#run()}, some non-fatal exceptions can be thrown. This handler will be notified, so they can
          * be logged.<p>
          * Default to {@link Throwable#printStackTrace()}
-         * @param handler
+         * @param handler The object to use as this thread's handler for recoverable exceptions notifications.
          */
         public void setNotificationExceptionHandler(UncaughtExceptionHandler handler)
         {
