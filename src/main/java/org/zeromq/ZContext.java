@@ -1,6 +1,7 @@
 package org.zeromq;
 
 import java.io.Closeable;
+import java.lang.Thread.UncaughtExceptionHandler;
 import java.nio.channels.Selector;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -364,6 +365,43 @@ public class ZContext implements Closeable
     public void setSndHWM(int sndhwm)
     {
         this.sndhwm = sndhwm;
+    }
+
+    /**
+     * Set the handler invoked when a {@link zmq.poll.Poller} abruptly terminates due to an uncaught exception.<p>
+     * It default to the value of {@link Thread#getDefaultUncaughtExceptionHandler()}
+     * @param the object to use as this thread's uncaught exception handler. If null then this thread has no explicit handler.
+     */
+    public void setUncaughtExceptionHandler(UncaughtExceptionHandler handler)
+    {
+        context.setUncaughtExceptionHandler(handler);
+    }
+
+    /**
+     * @return The handler invoked when a {@link zmq.poll.Poller} abruptly terminates due to an uncaught exception.
+     */
+    public UncaughtExceptionHandler getUncaughtExceptionHandler()
+    {
+        return context.getUncaughtExceptionHandler();
+    }
+
+    /**
+     * In {@link zmq.poll.Poller#run()}, some non-fatal exceptions can be thrown. This handler will be notified, so they can
+     * be logged.<p>
+     * Default to {@link Throwable#printStackTrace()}
+     * @param handler
+     */
+    public void setNotificationExceptionHandler(UncaughtExceptionHandler handler)
+    {
+        context.setNotificationExceptionHandler(handler);
+    }
+
+    /**
+     * @return The handler invoked when a non-fatal exceptions is thrown in zmq.poll.Poller#run()
+     */
+    public UncaughtExceptionHandler getNotificationExceptionHandler()
+    {
+        return context.getNotificationExceptionHandler();
     }
 
     /**

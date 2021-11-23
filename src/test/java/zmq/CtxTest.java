@@ -7,6 +7,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 import zmq.socket.Sockets;
@@ -36,5 +37,15 @@ public class CtxTest
         ZMQ.term(ctx);
 
         assertThat(ctx.checkTag(), is(false));
+    }
+
+    @Test
+    public void testSetHandler()
+{
+        Ctx ctx = ZMQ.init(0);
+        SocketBase socket = ZMQ.socket(ctx, Sockets.CLIENT.ordinal());
+        Assert.assertThrows(IllegalStateException.class, () -> ctx.setNotificationExceptionHandler(null));
+        Assert.assertThrows(IllegalStateException.class, () -> ctx.setUncaughtExceptionHandler(null));
+        ZMQ.close(socket);
     }
 }

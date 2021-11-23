@@ -1,6 +1,7 @@
 package zmq.poll;
 
 import java.io.IOException;
+import java.lang.Thread.UncaughtExceptionHandler;
 import java.nio.channels.CancelledKeyException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.ClosedSelectorException;
@@ -81,6 +82,7 @@ public final class Poller extends PollerBase implements Runnable
     //  If true, thread is in the process of shutting down.
     private final AtomicBoolean  stopping = new AtomicBoolean();
     private final CountDownLatch stopped  = new CountDownLatch(1);
+    private final UncaughtExceptionHandler exnotification;
 
     private Selector selector;
 
@@ -88,7 +90,8 @@ public final class Poller extends PollerBase implements Runnable
     {
         super(name);
         this.ctx = ctx;
-
+        worker.setUncaughtExceptionHandler(ctx.getUncaughtExceptionHandler());
+        exnotification = ctx.getNotificationExceptionHandler();
         fdTable = new HashSet<>();
         selector = ctx.createSelector();
     }
@@ -217,7 +220,7 @@ public final class Poller extends PollerBase implements Runnable
                                 assert (key != null);
                             }
                             catch (CancelledKeyException | ClosedSelectorException | ClosedChannelException e) {
-                                e.printStackTrace();
+                                exnotification.uncaughtException(worker, e);
                             }
                         }
                     }
@@ -235,7 +238,7 @@ public final class Poller extends PollerBase implements Runnable
             }
             catch (ClosedSelectorException e) {
                 rebuildSelector();
-                e.printStackTrace();
+                exnotification.uncaughtException(worker, e);
                 ctx.errno().set(ZError.EINTR);
                 continue;
             }
@@ -273,13 +276,8 @@ public final class Poller extends PollerBase implements Runnable
                         pollset.handler.inEvent();
                     }
                 }
-                catch (CancelledKeyException e) {
-                    // key may have been cancelled (?)
-                    e.printStackTrace();
-                }
                 catch (RuntimeException e) {
-                    // avoid the thread death by continuing to iterate
-                    e.printStackTrace();
+                    exnotification.uncaughtException(worker, e);
                 }
             }
         }

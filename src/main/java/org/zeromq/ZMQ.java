@@ -1,6 +1,7 @@
 package org.zeromq;
 
 import java.io.Closeable;
+import java.lang.Thread.UncaughtExceptionHandler;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.Selector;
@@ -623,6 +624,43 @@ public class ZMQ
         public boolean setIPv6(boolean ipv6)
         {
             return ctx.set(zmq.ZMQ.ZMQ_IPV6, ipv6 ? 1 : 0);
+        }
+
+        /**
+         * Set the handler invoked when a {@link zmq.poll.Poller} abruptly terminates due to an uncaught exception.<p>
+         * It default to the value of {@link Thread#getDefaultUncaughtExceptionHandler()}
+         * @param the object to use as this thread's uncaught exception handler. If null then this thread has no explicit handler.
+         */
+        public void setUncaughtExceptionHandler(UncaughtExceptionHandler handler)
+        {
+            ctx.setUncaughtExceptionHandler(handler);
+        }
+
+        /**
+         * @return The handler invoked when a {@link zmq.poll.Poller} abruptly terminates due to an uncaught exception.
+         */
+        public UncaughtExceptionHandler getUncaughtExceptionHandler()
+        {
+            return ctx.getUncaughtExceptionHandler();
+        }
+
+        /**
+         * In {@link zmq.poll.Poller#run()}, some non-fatal exceptions can be thrown. This handler will be notified, so they can
+         * be logged.<p>
+         * Default to {@link Throwable#printStackTrace()}
+         * @param handler
+         */
+        public void setNotificationExceptionHandler(UncaughtExceptionHandler handler)
+        {
+            ctx.setNotificationExceptionHandler(handler);
+        }
+
+        /**
+         * @return The handler invoked when a non-fatal exceptions is thrown in zmq.poll.Poller#run()
+         */
+        public UncaughtExceptionHandler getNotificationExceptionHandler()
+        {
+            return ctx.getNotificationExceptionHandler();
         }
 
         /**

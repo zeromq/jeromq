@@ -1,6 +1,7 @@
 package zmq;
 
 import java.io.IOException;
+import java.lang.Thread.UncaughtExceptionHandler;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
@@ -148,6 +149,12 @@ public class Ctx
     private boolean ipv6;
 
     private final Errno errno = new Errno();
+
+    // Exception handlers to receive notifications of critical exceptions in zmq.poll.Poller and handle uncaught exceptions
+    private UncaughtExceptionHandler exhandler = Thread.getDefaultUncaughtExceptionHandler();
+
+    // Exception handlers to receive notifications of exception in zmq.poll.Poller, and can be used for logging
+    private UncaughtExceptionHandler exnotification = (t, e) -> e.printStackTrace();
 
     /**
      * A class that holds the informations needed to forward channel in monitor sockets.
@@ -337,6 +344,49 @@ public class Ctx
         finally {
             slotSync.unlock();
         }
+    }
+
+    /**
+     * Set the handler invoked when a {@link zmq.poll.Poller} abruptly terminates due to an uncaught exception.<p>
+     * It default to the value of {@link Thread#getDefaultUncaughtExceptionHandler()}
+     * @param the object to use as this thread's uncaught exception handler. If null then this thread has no explicit handler.
+     */
+    public void setUncaughtExceptionHandler(UncaughtExceptionHandler handler)
+    {
+        if  (!starting.get()) {
+            throw new IllegalStateException("Already started");
+        }
+        exhandler = handler;
+    }
+
+    /**
+     * @return The handler invoked when a {@link zmq.poll.Poller} abruptly terminates due to an uncaught exception.
+     */
+    public UncaughtExceptionHandler getUncaughtExceptionHandler()
+    {
+        return exhandler;
+    }
+
+    /**
+     * In {@link zmq.poll.Poller#run()}, some non-fatal exceptions can be thrown. This handler will be notified, so they can
+     * be logged.<p>
+     * Default to {@link Throwable#printStackTrace()}
+     * @param handler
+     */
+    public void setNotificationExceptionHandler(UncaughtExceptionHandler handler)
+    {
+        if  (!starting.get()) {
+            throw new IllegalStateException("Already started");
+        }
+        exnotification = handler;
+    }
+
+    /**
+     * @return The handler invoked when a non-fatal exceptions is thrown in zmq.poll.Poller#run()
+     */
+    public UncaughtExceptionHandler getNotificationExceptionHandler()
+    {
+        return exnotification;
     }
 
     public boolean set(int option, int optval)
