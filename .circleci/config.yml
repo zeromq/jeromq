@@ -14,7 +14,7 @@ jobs:
                 key: jeromq-mavendep
             - run: mkdir -p /home/circleci/.sonar/cache /home/circleci/.m2/repository
             - run:
-                command: "mvn -B dependency:resolve dependency:resolve-plugins -s .circleci/settings.xml"
+                command: "mvn -B dependency:resolve dependency:resolve-plugins -s .circleci/settings.xml -Pandroid"
                 environment:
                     JAVA_HOME: /usr/local/openjdk-15
                     MAVEN_OPTS: "-Xmx1024m"
@@ -149,7 +149,7 @@ jobs:
             #don't persist_to_workspace, can't be done in parallel with testsj13
     testsandroid:
         docker:
-            - image: circleci/android:api-29
+            - image: circleci/openjdk:13-jdk-buster
         steps:
             - attach_workspace:
                 at: /tmp/ws
@@ -161,11 +161,7 @@ jobs:
                     mv -n /tmp/ws/home/circleci/project/.??* /home/circleci/project/
             - run:
                 command: |
-                    sdkmanager --update
-                    # default android sdk is old, manually update it
-                    (cd /tmp && curl -JORL https://dl.google.com/android/repository/commandlinetools-linux-6200805_latest.zip  && sudo unzip -o commandlinetools-linux-6200805_latest.zip -d /opt/android/sdk)
-                    rm src/android/Jeromq/{,app}/build.gradle
-                    /opt/android/sdk/tools/bin/lint --showall --xml target/lint-results.xml --sources src/main/java --exitcode --disable Assert --classpath target/classes --config src/android/Jeromq/lint.xml src/main
+                    mvn -B test -Pskip,android -Darg.line="-Xmx2048m" -s .circleci/settings.xml -Dmaven.test.skip=true
     publish:
         docker:
             - image: circleci/openjdk:13-jdk-buster
@@ -248,7 +244,6 @@ workflows:
               - testsj11
               - testsj13
               #- testsj15 -- fails until https://issues.apache.org/jira/browse/FELIX-6259 is closed
-              - testsandroid
       - savecache:
           requires:
               - publish
