@@ -30,7 +30,7 @@
     <arg.line></arg.line>
     <argLine>${arg.line}</argLine>
     <!-- Hides incompatibily in javadoc headers between java 8 and latter -->
-    <doclint>html</doclint>
+    <doclint>all</doclint>
   </properties>
   <dependencies>
     <dependency>
@@ -473,13 +473,6 @@
           </plugin>
         </plugins>
       </build>
-    </profile>
-    <profile>
-      <!-- strict javadoc compliance -->
-      <id>javadoc</id>
-      <properties>
-        <doclint>all</doclint>
-      </properties>
     </profile>
     <profile>
       <id>android</id>

@@ -44,7 +44,7 @@ jobs:
                     mv -n /tmp/ws/home/circleci/project/* /home/circleci/project/
                     mv -n /tmp/ws/home/circleci/project/.??* /home/circleci/project/
             - run:
-                command: mvn -B clean compile -Pcheckstyle,javadoc -Djdk.compile.home=/tmp/ws/openjdk-8 -s .circleci/settings.xml
+                command: mvn -B clean compile site -Pcheckstyle -Djdk.compile.home=/tmp/ws/openjdk-8 -s .circleci/settings.xml
                 environment:
                     JAVA_HOME: /usr/local/openjdk-15
                     MAVEN_OPTS: "-Xmx2048m"
@@ -183,7 +183,7 @@ jobs:
                         PUBLISH="install"
                     fi
                     echo "publishing jobs: $PUBLISH"
-                    mvn -B $PUBLISH -Pskip,javadoc -Dmaven.test.skip=true -s .circleci/settings.xml
+                    mvn -B $PUBLISH -Pskip -Dmaven.test.skip=true -s .circleci/settings.xml
                 environment:
                     JAVA_HOME: /usr/java/openjdk-13
                     MAVEN_OPTS: "-Xmx2048m"
