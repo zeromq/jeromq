@@ -80,11 +80,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
-        <configuration>
-          <bootclasspath>${bootclasspath}</bootclasspath>
-          <detectJavaApiLink>true</detectJavaApiLink>
-          <source>${maven.compiler.source}</source>
-        </configuration>
         <executions>
           <execution>
             <id>attach-javadocs</id>
@@ -151,8 +146,9 @@
           <artifactId>maven-javadoc-plugin</artifactId>
           <version>3.2.0</version>
           <configuration>
-            <keywords>true</keywords>
-            <source>1.8</source>
+            <bootclasspath>${bootclasspath}</bootclasspath>
+            <detectJavaApiLink>true</detectJavaApiLink>
+            <source>${maven.compiler.source}</source>
             <tags>
               <tag>
                 <name>api.note</name>
@@ -231,6 +227,11 @@
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-site-plugin</artifactId>
             <version>3.9.0</version>
+        </plugin>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-project-info-reports-plugin</artifactId>
+            <version>3.1.2</version>
         </plugin>
         <plugin>
             <groupId>org.apache.maven.plugins</groupId>
