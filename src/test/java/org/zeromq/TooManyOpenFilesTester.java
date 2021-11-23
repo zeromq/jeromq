@@ -157,7 +157,7 @@ public class TooManyOpenFilesTester
 
     /**
      * Test exhaustion of java pipes.
-     * Exhaustion can currently come from {@link zmq.Signaler} that are not closed
+     * Exhaustion can currently come from zmq.Signaler that are not closed
      * or from {@link java.nio.channels.Selector} that are not closed.
      * @throws Exception if something bad occurs.
      */
