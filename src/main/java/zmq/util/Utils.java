@@ -16,21 +16,33 @@ import zmq.util.function.Supplier;
 
 public class Utils
 {
+    private static final ThreadLocal<SecureRandom> random = new ThreadLocal<SecureRandom>()
+    {
+        @Override
+        protected SecureRandom initialValue()
+        {
+            return new SecureRandom();
+        }
+    };
+
     private Utils()
     {
     }
 
-    private static final SecureRandom random = new SecureRandom();
-
     public static int randomInt()
     {
-        return random.nextInt();
+        return random.get().nextInt();
+    }
+
+    public static int randomInt(int bound)
+    {
+        return random.get().nextInt(bound);
     }
 
     public static byte[] randomBytes(int length)
     {
         byte[] bytes = new byte[length];
-        random.nextBytes(bytes);
+        random.get().nextBytes(bytes);
         return bytes;
     }
 
