@@ -204,12 +204,12 @@ public class Dish extends SocketBase
 
     private void sendSubscriptions(Pipe pipe)
     {
-        subscriptions.forEach(s -> {
+        for (String s : subscriptions) {
             Msg msg = new Msg();
             msg.initJoin();
             msg.setGroup(s);
             pipe.write(msg);
-        });
+        }
 
         pipe.flush();
     }

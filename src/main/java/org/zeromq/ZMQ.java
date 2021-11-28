@@ -11,8 +11,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -3136,11 +3134,8 @@ public class ZMQ
         public int bindToRandomPort(String addr, int min, int max)
         {
             int port;
-            final Random rand = ThreadLocalRandom.current();
-            //            int port = min;
-            //            while (port <= max) {
             for (int i = 0; i < 100; i++) { // hardcoded to 100 tries. should this be parametrised
-                port = rand.nextInt(max - min + 1) + min;
+                port = zmq.util.Utils.randomInt(max - min + 1) + min;
                 if (base.bind(String.format("%s:%s", addr, port))) {
                     base.errno.set(0);
                     return port;

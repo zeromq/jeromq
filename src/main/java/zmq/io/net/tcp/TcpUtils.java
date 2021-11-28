@@ -4,57 +4,16 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
-import java.net.SocketOption;
 import java.nio.channels.Channel;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 
-import zmq.Options;
 import zmq.ZError;
 import zmq.io.net.Address;
 
 public class TcpUtils
 {
-    public static final boolean WITH_EXTENDED_KEEPALIVE = SocketOptionsProvider.WITH_EXTENDED_KEEPALIVE;
-
-    @SuppressWarnings("unchecked")
-    private static final class SocketOptionsProvider
-    {
-        // Wrapped in a inner class, to avoid the @SuppressWarnings for the whole class
-        private static final SocketOption<Integer> TCP_KEEPCOUNT;
-        private static final SocketOption<Integer> TCP_KEEPIDLE;
-        private static final SocketOption<Integer> TCP_KEEPINTERVAL;
-        private static final boolean WITH_EXTENDED_KEEPALIVE;
-        static {
-            SocketOption<Integer> tryCount = null;
-            SocketOption<Integer> tryIdle = null;
-            SocketOption<Integer> tryInterval = null;
-
-            boolean extendedKeepAlive = false;
-            try {
-                Class<?> eso = Options.class.getClassLoader().loadClass("jdk.net.ExtendedSocketOptions");
-                tryCount = (SocketOption<Integer>) eso.getField("TCP_KEEPCOUNT").get(null);
-                tryIdle = (SocketOption<Integer>) eso.getField("TCP_KEEPIDLE").get(null);
-                tryInterval = (SocketOption<Integer>) eso.getField("TCP_KEEPINTERVAL").get(null);
-                extendedKeepAlive = true;
-            }
-            catch (Throwable e) {
-            }
-            TCP_KEEPCOUNT = tryCount;
-            TCP_KEEPIDLE = tryIdle;
-            TCP_KEEPINTERVAL = tryInterval;
-            WITH_EXTENDED_KEEPALIVE = extendedKeepAlive;
-        }
-        @SuppressWarnings("restriction")
-        private static void conditionnalSet(Socket socket, SocketOption<Integer> option, int value) throws IOException
-        {
-            if (value >= 0) {
-                jdk.net.Sockets.setOption(socket, option, value);
-            }
-        }
-    }
-
     private static interface OptionSetter<S>
     {
         void setOption(S socket) throws IOException;
@@ -70,20 +29,8 @@ public class TcpUtils
         // Disable Nagle's algorithm. We are doing data batching on 0MQ level,
         // so using Nagle wouldn't improve throughput in anyway, but it would
         // hurt latency.
-        setOption(channel, socket -> socket.setTcpNoDelay(true));
-    }
-
-    public static void tuneTcpKeepalives(SocketChannel channel, int tcpKeepAlive, int tcpKeepAliveCnt,
-            int tcpKeepAliveIdle, int tcpKeepAliveIntvl)
-    {
-        setOption(channel, socket -> {
-            socket.setKeepAlive(tcpKeepAlive == 1);
-            if (WITH_EXTENDED_KEEPALIVE) {
-                SocketOptionsProvider.conditionnalSet(socket, SocketOptionsProvider.TCP_KEEPCOUNT, tcpKeepAliveCnt);
-                SocketOptionsProvider.conditionnalSet(socket, SocketOptionsProvider.TCP_KEEPIDLE, tcpKeepAliveIdle);
-                SocketOptionsProvider.conditionnalSet(socket, SocketOptionsProvider.TCP_KEEPINTERVAL, tcpKeepAliveIntvl);
-            }
-        });
+        setOption(channel,
+                socket -> socket.setTcpNoDelay(true));
     }
 
     public static boolean setTcpReceiveBuffer(Channel channel, final int rcvbuf)
@@ -96,13 +43,15 @@ public class TcpUtils
 
     public static boolean setTcpSendBuffer(Channel channel, final int sndbuf)
     {
-        setOption(channel, socket -> socket.setSendBufferSize(sndbuf));
+        setOption(channel,
+                socket -> socket.setSendBufferSize(sndbuf));
         return true;
     }
 
     public static boolean setIpTypeOfService(Channel channel, final int tos)
     {
-        setOption(channel, socket -> socket.setTrafficClass(tos));
+        setOption(channel,
+                socket -> socket.setTrafficClass(tos));
         return true;
     }
 
@@ -114,6 +63,18 @@ public class TcpUtils
         return true;
     }
 
+    public static void tuneTcpKeepalives(SocketChannel channel, int tcpKeepAlive, int tcpKeepAliveCnt,
+            int tcpKeepAliveIdle, int tcpKeepAliveIntvl)
+    {
+        setOption(channel,
+                socket -> socket.setKeepAlive(tcpKeepAlive == 1));
+   }
+
+    /**
+     * A single setter method, used when the option doesn't apply to a {@link ServerSocket}
+     * @param channel
+     * @param setter
+     */
     private static void setOption(Channel channel, OptionSetter<Socket> setter)
     {
         setOption(channel, setter, s -> { });
