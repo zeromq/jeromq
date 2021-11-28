@@ -1,11 +1,8 @@
-# JAVA_HOME keep moving around in debian
-# Check it with the following script:
-# for j in 8 11 13 ; do for d in stretch buster ; do echo "==== circleci/openjdk:$j-$d ====" ; docker run --rm -ti circleci/openjdk:$j-$d bash -c 'find /usr -name '*openjdk*' -type d | while read p ; do echo ">>> $p" ; $p/bin/java -version ; done' ; done ; done | grep -v -e doc -e gdb
 version: 2.1
 jobs:
     checkout:
         docker:
-            - image: circleci/openjdk:15-jdk-buster
+            - image: circleci/openjdk:17-jdk-buster
         steps:
             - checkout
             - restore_cache:
@@ -14,9 +11,9 @@ jobs:
                 key: jeromq-mavendep
             - run: mkdir -p /home/circleci/.sonar/cache /home/circleci/.m2/repository
             - run:
-                command: "mvn -B dependency:resolve dependency:resolve-plugins -s .circleci/settings.xml -Pandroid"
+                command: "mvn -B dependency:resolve dependency:resolve-plugins -s .circleci/settings.xml -Pandroid,sonar,coverage,checkstyle"
                 environment:
-                    JAVA_HOME: /usr/local/openjdk-15
+                    JAVA_HOME: /usr/local/openjdk-17
                     MAVEN_OPTS: "-Xmx1024m"
             - persist_to_workspace:
                 root: /
@@ -34,7 +31,7 @@ jobs:
                     - openjdk-8
     build:
         docker:
-            - image: circleci/openjdk:15-jdk-buster
+            - image: circleci/openjdk:17-jdk-buster
         steps:
             - attach_workspace:
                 at: /tmp/ws
@@ -46,16 +43,16 @@ jobs:
             - run:
                 command: mvn -B clean compile site -Pcheckstyle -Djdk.compile.home=/tmp/ws/openjdk-8 -s .circleci/settings.xml
                 environment:
-                    JAVA_HOME: /usr/local/openjdk-15
+                    JAVA_HOME: /usr/local/openjdk-17
                     MAVEN_OPTS: "-Xmx2048m"
             - persist_to_workspace:
                 root: /
                 paths:
                     - home/circleci/.m2/repository
                     - home/circleci/project/target
-    testsj13:
+    testsj17:
         docker:
-            - image: circleci/openjdk:13-jdk-buster
+            - image: circleci/openjdk:17-jdk-buster
         steps:
             - attach_workspace:
                 at: /tmp/ws
@@ -75,7 +72,7 @@ jobs:
                     fi
                     mvn -B test $SONAR -Pskip -Darg.line="-Xmx2048m" -s .circleci/settings.xml
                 environment:
-                    JAVA_HOME: /usr/java/openjdk-13
+                    JAVA_HOME: /usr/local/openjdk-17
                     MAVEN_OPTS: "-Xmx1024m"
             - store_test_results:
                 path: target/surefire-reports
@@ -84,27 +81,6 @@ jobs:
                 paths:
                     - home/circleci/.m2/repository
                     - home/circleci/.sonar/cache
-    testsj15:
-        docker:
-            - image: circleci/openjdk:15-jdk-buster
-        steps:
-            - attach_workspace:
-                at: /tmp/ws
-            - run:
-                command: |
-                    mv -n /tmp/ws/home/circleci/.m2 /home/circleci/
-                    mv -n /tmp/ws/home/circleci/.sonar /home/circleci/
-                    mv -n /tmp/ws/home/circleci/project/* /home/circleci/project/
-                    mv -n /tmp/ws/home/circleci/project/.??* /home/circleci/project/
-            - run:
-                command: |
-                    mvn -B test -Pskip -Darg.line="-Xmx2048m" -s .circleci/settings.xml
-                environment:
-                    JAVA_HOME: /usr/local/openjdk-15
-                    MAVEN_OPTS: "-Xmx512m"
-            - store_test_results:
-                path: target/surefire-reports
-            #don't persist_to_workspace, can't be done in parallel with testsj13
     testsj11:
         docker:
             - image: circleci/openjdk:11-buster
@@ -149,7 +125,7 @@ jobs:
             #don't persist_to_workspace, can't be done in parallel with testsj13
     testsandroid:
         docker:
-            - image: circleci/openjdk:13-jdk-buster
+            - image: circleci/openjdk:17-jdk-buster
         steps:
             - attach_workspace:
                 at: /tmp/ws
@@ -162,9 +138,12 @@ jobs:
             - run:
                 command: |
                     mvn -B test -Pskip,android -Darg.line="-Xmx2048m" -s .circleci/settings.xml -Dmaven.test.skip=true
+                environment:
+                    JAVA_HOME: /usr/local/openjdk-17
+                    MAVEN_OPTS: "-Xmx2048m"
     publish:
         docker:
-            - image: circleci/openjdk:13-jdk-buster
+            - image: circleci/openjdk:17-jdk-buster
         steps:
             - attach_workspace:
                 at: /tmp/ws
@@ -177,18 +156,20 @@ jobs:
             - run:
                 command: |
                     # If no symbolic name, it's a PR, will not publish results
-                    if [ -n "$(git symbolic-ref HEAD 2>/dev/null )" ] ; then
+                    # If not the official github, it's a fork, don't publish either
+                    if [ -n "$(git symbolic-ref HEAD 2>/dev/null )"  -a "$CIRCLE_REPOSITORY_URL" == "git@github.com:zeromq/jeromq.git" ] ; then
                         PUBLISH="deploy"
                     else
                         PUBLISH="install"
                     fi
                     echo "publishing jobs: $PUBLISH"
-                    mvn -B $PUBLISH -Pskip -Dmaven.test.skip=true -s .circleci/settings.xml
+                    mvn -B $PUBLISH -Pskip -Dmaven.test.skip=true -Dmaven.javadoc.skip=false -s .circleci/settings.xml
                 environment:
-                    JAVA_HOME: /usr/java/openjdk-13
+                    JAVA_HOME: /usr/local/openjdk-17
                     MAVEN_OPTS: "-Xmx2048m"
             - store_artifacts:
-                path: target/jeromq-*.jar
+                path: /home/circleci/.m2/repository/org/zeromq/jeromq
+                destination: /
             - persist_to_workspace:
                 root: /
                 paths:
@@ -196,7 +177,7 @@ jobs:
                     - home/circleci/.sonar/cache
     savecache:
         docker:
-            - image: circleci/openjdk:13-jdk-buster
+            - image: circleci/openjdk:17-jdk-buster
         steps:
             - attach_workspace:
                 at: /tmp/ws
@@ -229,10 +210,7 @@ workflows:
       - testsj11:
           requires:
               - build
-      - testsj15:
-          requires:
-              - build
-      - testsj13:
+      - testsj17:
           requires:
               - build
       - testsandroid:
@@ -242,8 +220,7 @@ workflows:
           requires:
               - testsj8
               - testsj11
-              - testsj13
-              #- testsj15 -- fails until https://issues.apache.org/jira/browse/FELIX-6259 is closed
+              - testsj17
       - savecache:
           requires:
               - publish
