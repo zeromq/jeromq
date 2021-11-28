@@ -1,5 +1,49 @@
 # Changelog
 
+## v0.5.3 (2021-xx-xx)
+
+### Added
+
+* [#775](https://github.com/zeromq/jeromq/pull/775): ZMQ_HEARTBEAT is not
+  useful without sending an hello message.To solve that, the majordomo worker
+  still has to implement heartbeat. With this new option, whenever the
+  connection drops and reconnects the hello message will be sent, greatly
+  simplify the majordomo protocol, as now READY and HEARTBEAT can be handled by
+  zeromq.
+
+* [#783](https://github.com/zeromq/jeromq/pull/777): Jeromq is not thread-safe,
+  so port CLIENT and SERVER sockets from libzmq, which are thread-safe sockets.
+
+* [#808](https://github.com/zeromq/jeromq/pull/808): Add Client/Server support
+  to ZFrame.
+
+* [#837](https://github.com/zeromq/jeromq/pull/837): Radio-Dish implementation.
+
+* [#880](https://github.com/zeromq/jeromq/pull/880): Port of
+  https://github.com/zeromq/libzmq/pull/3871, router can handle peer
+  disconnected.
+
+* [#898](https://github.com/zeromq/jeromq/pull/898): Adding critical and
+  notification exceptions handlers in zmq.poll.Poller.
+
+### Changed
+
+* [#777](https://github.com/zeromq/jeromq/pull/777): ZMQ.Socket now remember
+  the ZContext that created it and remove from it when closed.
+
+* Many improvement to error handling, with more error messages.
+
+* [#772](https://github.com/zeromq/jeromq/pull/772): Fix ZMQ_REQ_CORRELATE.
+
+* [#797](https://github.com/zeromq/jeromq/pull/797): A new ZBeacon implementation.
+
+* [#814](https://github.com/zeromq/jeromq/pull/814): IPC protocol now comply to
+  java.net.preferIPv4Stack or java.net.preferIPv6Addresses for the choice of
+  the TCP stack to use.
+
+* [#825](https://github.com/zeromq/jeromq/pull/825): Improved monitor, with
+  added events in some mechanisms.
+
 ## v0.5.2 (2020-01-31)
 
 ### Added
