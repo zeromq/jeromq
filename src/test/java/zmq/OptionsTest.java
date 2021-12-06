@@ -287,6 +287,22 @@ public class OptionsTest
     }
 
     @Test
+    public void testIdentityOk()
+    {
+        Options opt = new Options();
+        // Try with a big identity
+        Assert.assertTrue(opt.setSocketOpt(ZMQ.ZMQ_IDENTITY, new byte[255]));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testIdentityFails()
+    {
+        Options opt = new Options();
+        // Try with a big identity
+        Assert.assertTrue(opt.setSocketOpt(ZMQ.ZMQ_IDENTITY, new byte[256]));
+    }
+
+    @Test
     public void testDefaultValue()
     {
         //        assertThat(options.getSocketOpt(ZMQ.ZMQ_DECODER), is((Object)options.decoder));
@@ -329,5 +345,6 @@ public class OptionsTest
         assertThat(options.getSocketOpt(ZMQ.ZMQ_HEARTBEAT_TIMEOUT), is((Object) options.heartbeatTimeout));
         assertThat(options.getSocketOpt(ZMQ.ZMQ_HEARTBEAT_TTL), is((Object) options.heartbeatTtl));
         assertThat(options.getSocketOpt(ZMQ.ZMQ_SELECTOR_PROVIDERCHOOSER), nullValue());
+        assertThat(options.getSocketOpt(ZMQ.ZMQ_IDENTITY), is(new byte[0]));
     }
 }

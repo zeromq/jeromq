@@ -27,8 +27,8 @@ public class Options
     public long affinity;
 
     //  Socket identity
-    public byte   identitySize;
-    public byte[] identity;    // [256];
+    public short  identitySize;
+    public byte[] identity;
 
     // Last socket endpoint resolved URI
     String lastEndpoint;
@@ -191,7 +191,6 @@ public class Options
         sendHwm = 1000;
         recvHwm = 1000;
         affinity = 0;
-        identitySize = 0;
         rate = 100;
         recoveryIvl = 10000;
         multicastHops = 1;
@@ -228,7 +227,7 @@ public class Options
         heartbeatContext = new byte[0];
 
         identity = new byte[0];
-        identitySize = (byte) identity.length;
+        identitySize = 0;
 
         curvePublicKey = new byte[CURVE_KEYSIZE];
         curveSecretKey = new byte[CURVE_KEYSIZE];
@@ -282,7 +281,7 @@ public class Options
                 throw new IllegalArgumentException("identity must not be null or less than 255 " + optval);
             }
             identity = Arrays.copyOf(val, val.length);
-            identitySize = (byte) identity.length;
+            identitySize = (short) identity.length;
             return true;
 
         case ZMQ.ZMQ_RATE:
