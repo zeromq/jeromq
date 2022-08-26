@@ -55,7 +55,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
     private boolean active;
 
     //  If true, associated context was already terminated.
-    private boolean ctxTerminated;
+    private AtomicBoolean ctxTerminated;
 
     //  If true, object should have been already destroyed. However,
     //  destruction is delayed while we unwind the stack to the point
@@ -113,7 +113,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
     {
         super(parent, tid);
         active = true;
-        ctxTerminated = false;
+        ctxTerminated = new AtomicBoolean();
         destroyed = false;
         lastTsc = 0;
         ticks = 0;
@@ -257,7 +257,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
         lock();
 
         try {
-            if (ctxTerminated) {
+            if (ctxTerminated.get()) {
                 errno.set(ZError.ETERM);
                 return false;
             }
@@ -286,7 +286,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
         lock();
 
         try {
-            if (ctxTerminated) {
+            if (ctxTerminated.get()) {
                 errno.set(ZError.ETERM);
                 return -1;
             }
@@ -326,7 +326,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
 
     public final Object getSocketOptx(int option)
     {
-        if (ctxTerminated) {
+        if (ctxTerminated.get()) {
             errno.set(ZError.ETERM);
             return null;
         }
@@ -370,7 +370,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
         lock();
 
         try {
-            if (ctxTerminated) {
+            if (ctxTerminated.get()) {
                 errno.set(ZError.ETERM);
                 return false;
             }
@@ -485,7 +485,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
 
     private boolean connectInternal(String addr)
     {
-        if (ctxTerminated) {
+        if (ctxTerminated.get()) {
             errno.set(ZError.ETERM);
             return false;
         }
@@ -689,7 +689,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
 
         try {
             //  Check whether the library haven't been shut down yet.
-            if (ctxTerminated) {
+            if (ctxTerminated.get()) {
                 errno.set(ZError.ETERM);
                 return false;
             }
@@ -788,7 +788,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
 
         try {
             //  Check whether the library haven't been shut down yet.
-            if (ctxTerminated) {
+            if (ctxTerminated.get()) {
                 errno.set(ZError.ETERM);
                 return false;
             }
@@ -880,7 +880,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
 
         try {
             //  Check whether the library haven't been shut down yet.
-            if (ctxTerminated) {
+            if (ctxTerminated.get()) {
                 errno.set(ZError.ETERM);
                 return null;
             }
@@ -1011,7 +1011,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
         lock();
 
         try {
-            if (ctxTerminated) {
+            if (ctxTerminated.get()) {
                 errno.set(ZError.ETERM);
                 return -1;
             }
@@ -1142,7 +1142,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
 
 	private final void setCtxTerminated()
     {
-        ctxTerminated = true;
+        ctxTerminated.set(true);
     }
 
     //  Processes commands sent to this socket (if any). If timeout is -1,
@@ -1200,7 +1200,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
 
         assert (errno.get() == ZError.EAGAIN) : errno;
 
-        if (ctxTerminated) {
+        if (ctxTerminated.get()) {
             errno.set(ZError.ETERM); // Do not raise exception at the blocked operation
             return false;
         }
@@ -1431,7 +1431,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
             monitorSync.lock();
 
             boolean rc;
-            if (ctxTerminated) {
+            if (ctxTerminated.get()) {
                 errno.set(ZError.ETERM);
                 return false;
             }
