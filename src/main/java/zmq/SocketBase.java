@@ -1140,7 +1140,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
         checkDestroy();
     }
 
-	private final void setCtxTerminated()
+    private final void setCtxTerminated()
     {
         ctxTerminated.set(true);
     }
