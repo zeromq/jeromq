@@ -1135,8 +1135,14 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
 
         //  Initialize the termination and check whether it can be deallocated
         //  immediately.
+        setCtxTerminated();
         terminate();
         checkDestroy();
+    }
+
+	private final void setCtxTerminated()
+    {
+        ctxTerminated = true;
     }
 
     //  Processes commands sent to this socket (if any). If timeout is -1,
@@ -1212,7 +1218,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
         try {
             monitorSync.lock();
             stopMonitor();
-            ctxTerminated = true;
+            setCtxTerminated();
         }
         finally {
             monitorSync.unlock();
