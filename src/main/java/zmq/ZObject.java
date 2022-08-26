@@ -107,6 +107,10 @@ public abstract class ZObject
             processReap((SocketBase) cmd.arg);
             break;
 
+        case REAP_ACK:
+            processReapAck();
+            break;
+
         case REAPED:
             processReaped();
             break;
@@ -280,6 +284,12 @@ public abstract class ZObject
         sendCommand(cmd);
     }
 
+    protected final void sendReapAck()
+    {
+        Command cmd = new Command(this, Command.Type.REAP_ACK);
+        sendCommand(cmd);
+    }
+
     protected final void sendReaped()
     {
         Command cmd = new Command(ctx.getReaper(), Command.Type.REAPED);
@@ -372,6 +382,10 @@ public abstract class ZObject
     protected void processReap(SocketBase socket)
     {
         throw new UnsupportedOperationException();
+    }
+
+    protected void processReapAck()
+    {
     }
 
     protected void processReaped()
