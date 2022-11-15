@@ -203,6 +203,7 @@ public class Server extends SocketBase
             return true;
         }
 
+        errno.set(ZError.EHOSTUNREACH);
         return false;
     }
 }
