@@ -160,7 +160,6 @@ public class TestPeer
         size = ZMQ.send(bind, msg, 0);
         assertThat(size, is(-1));
 
-
         ZMQ.close(client);
         ZMQ.close(bind);
         ZMQ.term(context);

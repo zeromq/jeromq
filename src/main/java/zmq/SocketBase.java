@@ -675,7 +675,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
         return true;
     }
 
-    public boolean disconnectPeer(int routingId) 
+    public boolean disconnectPeer(int routingId)
     {
         return xdisconnectPeer(routingId);
     }
