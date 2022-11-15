@@ -1,8 +1,22 @@
 # Changelog
 
-## v0.5.3 (2021-xx-xx)
+## v0.5.3 (2022-xx-xx)
 
 ### Added
+
+* [#921](https://github.com/zeromq/jeromq/pull/921): Add peer support
+  disconnect
+
+* [#906](https://github.com/zeromq/jeromq/pull/906): Fix issue where
+  socket identity was failing with overflow when identity was bigger
+  than 127
+
+* [#903](https://github.com/zeromq/jeromq/pull/903): Make JeroMQ
+  compatiable with Android API Level 19
+
+* [#902](https://github.com/zeromq/jeromq/pull/902): Add tests and
+  build on Java 17. Helping dependecies resolution by activating more
+  profiles and don't try to publish on forks
 
 * [#775](https://github.com/zeromq/jeromq/pull/775): ZMQ_HEARTBEAT is not
   useful without sending an hello message.To solve that, the majordomo worker
@@ -27,6 +41,13 @@
   notification exceptions handlers in zmq.poll.Poller.
 
 ### Changed
+
+* [#906](https://github.com/zeromq/jeromq/pull/906): Fix issue where
+  socket identity was failing with overflow when identity was bigger
+  than 127
+
+* [#903](https://github.com/zeromq/jeromq/pull/903): Make JeroMQ
+  compatiable with Android API Level 19
 
 * [#777](https://github.com/zeromq/jeromq/pull/777): ZMQ.Socket now remember
   the ZContext that created it and remove from it when closed.
