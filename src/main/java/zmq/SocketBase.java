@@ -675,6 +675,11 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
         return true;
     }
 
+    public boolean disconnectPeer(int routingId) 
+    {
+        return xdisconnectPeer(routingId);
+    }
+
     //  Creates new endpoint ID and adds the endpoint to the map.
     private void addEndpoint(String addr, Own endpoint, Pipe pipe)
     {
@@ -1307,6 +1312,11 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
     }
 
     protected boolean xleave(String group)
+    {
+        throw new UnsupportedOperationException("Must override");
+    }
+
+    protected boolean xdisconnectPeer(int routingId)
     {
         throw new UnsupportedOperationException("Must override");
     }

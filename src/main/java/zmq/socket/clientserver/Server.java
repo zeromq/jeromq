@@ -193,4 +193,16 @@ public class Server extends SocketBase
     {
         return fq.getCredential();
     }
+
+    @Override
+    protected boolean xdisconnectPeer(int routingId)
+    {
+        Outpipe out = outpipes.get(routingId);
+        if (out != null) {
+            out.pipe.terminate(false);
+            return true;
+        }
+
+        return false;
+    }
 }
