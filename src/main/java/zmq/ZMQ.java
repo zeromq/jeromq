@@ -487,6 +487,12 @@ public class ZMQ
         return s.connectPeer(addr);
     }
 
+    public static boolean disconnectPeer(SocketBase s, int routingId)
+    {
+        checkSocket(s);
+        return s.disconnectPeer(routingId);
+    }
+
     public static boolean unbind(SocketBase s, String addr)
     {
         checkSocket(s);
