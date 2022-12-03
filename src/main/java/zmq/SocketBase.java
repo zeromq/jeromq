@@ -1149,7 +1149,8 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
         checkDestroy();
     }
 
-    private boolean isInEvent() {
+    private boolean isInEvent()
+    {
         Boolean bRes = isInEventThreadLocal.get();
         return null != bRes && bRes;
     }
@@ -1198,7 +1199,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
             cmd = mailbox.recv(0);
         }
 
-        if(!isInEvent() && destroyed.get()) {
+        if (!isInEvent() && destroyed.get()) {
             sendReapAck();
         }
 
@@ -1335,11 +1336,13 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
         throw new UnsupportedOperationException("Must override");
     }
 
-    private void enterInEvent() {
+    private void enterInEvent()
+    {
         isInEventThreadLocal.set(true);
     }
 
-    private void leaveInEvent() {
+    private void leaveInEvent()
+    {
         isInEventThreadLocal.remove();
     }
 

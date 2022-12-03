@@ -12,10 +12,7 @@ import java.nio.channels.DatagramChannel;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 import org.zeromq.ZLoop.IZLoopHandler;
 import org.zeromq.ZMQ.PollItem;
 import org.zeromq.ZMQ.Poller;
@@ -50,7 +47,7 @@ public class TestZLoop
         ctx.destroy();
     }
 
-    @Test
+    @Ignore
     public void testZLoopWithUDP() throws IOException
     {
         final int port = Utils.findOpenPort();
