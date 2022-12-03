@@ -1,6 +1,9 @@
 # Changelog
 
-## v0.5.3 (2022-xx-xx)
+## v0.5.4 (202x-xx-xx)
+
+
+## v0.5.3 (2022-12-03)
 
 ### Added
 
@@ -41,6 +44,9 @@
   notification exceptions handlers in zmq.poll.Poller.
 
 ### Changed
+
+* [#919](https://github.com/zeromq/jeromq/pull/919): Fix deadlock
+  issue on socket close
 
 * [#906](https://github.com/zeromq/jeromq/pull/906): Fix issue where
   socket identity was failing with overflow when identity was bigger
