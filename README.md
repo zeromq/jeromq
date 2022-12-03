@@ -52,14 +52,14 @@ Add it to your Maven project's `pom.xml`:
     <dependency>
       <groupId>org.zeromq</groupId>
       <artifactId>jeromq</artifactId>
-      <version>0.5.2</version>
+      <version>0.5.3</version>
     </dependency>
 
     <!-- for the latest SNAPSHOT -->
     <dependency>
       <groupId>org.zeromq</groupId>
       <artifactId>jeromq</artifactId>
-      <version>0.5.3-SNAPSHOT</version>
+      <version>0.5.4-SNAPSHOT</version>
     </dependency>
 
     <!-- If you can't find the latest snapshot -->
@@ -140,7 +140,7 @@ JeroMQ.
 
 ## License
 
-All source files are copyright © 2007-2020 contributors as noted in the AUTHORS file.
+All source files are copyright © 2007-2022 contributors as noted in the AUTHORS file.
 
 Free use of this software is granted under the terms of the Mozilla Public License 2.0. For details see the file `LICENSE` included with the JeroMQ distribution.
 
