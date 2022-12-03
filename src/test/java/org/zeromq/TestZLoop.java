@@ -12,7 +12,11 @@ import java.nio.channels.DatagramChannel;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.junit.*;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
 import org.zeromq.ZLoop.IZLoopHandler;
 import org.zeromq.ZMQ.PollItem;
 import org.zeromq.ZMQ.Poller;
