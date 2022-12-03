@@ -3,7 +3,7 @@
   <groupId>org.zeromq</groupId>
   <artifactId>jeromq</artifactId>
   <packaging>jar</packaging>
-  <version>0.5.3-SNAPSHOT</version>
+  <version>0.5.3</version>
   <name>JeroMQ</name>
   <description>Pure Java implementation of libzmq</description>
   <url>https://github.com/zeromq/jeromq</url>
@@ -17,7 +17,7 @@
     <url>git@github.com:zeromq/jeromq.git</url>
     <connection>scm:git:git@github.com:zeromq/jeromq.git</connection>
     <developerConnection>scm:git:git@github.com:zeromq/jeromq.git</developerConnection>
-    <tag>HEAD</tag>
+    <tag>v0.5.3</tag>
   </scm>
   <developers>
     <developer />
@@ -27,7 +27,7 @@
     <maven.compiler.source>8</maven.compiler.source>
     <maven.compiler.target>8</maven.compiler.target>
     <!-- Indirection needed to keep optionnal jacoco settings and external argument lines-->
-    <arg.line></arg.line>
+    <arg.line />
     <argLine>${arg.line}</argLine>
     <!-- Hides incompatibily in javadoc headers between java 8 and latter -->
     <doclint>all</doclint>
