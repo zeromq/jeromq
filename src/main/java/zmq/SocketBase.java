@@ -1,15 +1,5 @@
 package zmq;
 
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.nio.channels.SelectableChannel;
-import java.nio.channels.SocketChannel;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.ReentrantLock;
-
 import zmq.io.IOThread;
 import zmq.io.SessionBase;
 import zmq.io.net.Address;
@@ -23,6 +13,16 @@ import zmq.socket.Sockets;
 import zmq.util.Blob;
 import zmq.util.Clock;
 import zmq.util.MultiMap;
+
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.nio.channels.SelectableChannel;
+import java.nio.channels.SocketChannel;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.ReentrantLock;
 
 public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeEvents
 {
@@ -55,12 +55,15 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
     private boolean active;
 
     //  If true, associated context was already terminated.
-    private boolean ctxTerminated;
+    private AtomicBoolean ctxTerminated;
+
+    // If processCommand function was called from InEvent function.
+    private ThreadLocal<Boolean> isInEventThreadLocal;
 
     //  If true, object should have been already destroyed. However,
     //  destruction is delayed while we unwind the stack to the point
     //  where it doesn't intersect the object being destroyed.
-    private boolean destroyed;
+    private AtomicBoolean destroyed;
 
     //  Socket's mailbox object.
     private final IMailbox mailbox;
@@ -113,8 +116,9 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
     {
         super(parent, tid);
         active = true;
-        ctxTerminated = false;
-        destroyed = false;
+        ctxTerminated = new AtomicBoolean();
+        isInEventThreadLocal = new ThreadLocal<>();
+        destroyed = new AtomicBoolean();
         lastTsc = 0;
         ticks = 0;
         rcvmore = false;
@@ -175,7 +179,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
             }
 
             stopMonitor();
-            assert (destroyed);
+            assert (destroyed.get());
         }
         finally {
             monitorSync.unlock();
@@ -257,7 +261,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
         lock();
 
         try {
-            if (ctxTerminated) {
+            if (ctxTerminated.get()) {
                 errno.set(ZError.ETERM);
                 return false;
             }
@@ -286,7 +290,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
         lock();
 
         try {
-            if (ctxTerminated) {
+            if (ctxTerminated.get()) {
                 errno.set(ZError.ETERM);
                 return -1;
             }
@@ -326,7 +330,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
 
     public final Object getSocketOptx(int option)
     {
-        if (ctxTerminated) {
+        if (ctxTerminated.get()) {
             errno.set(ZError.ETERM);
             return null;
         }
@@ -370,7 +374,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
         lock();
 
         try {
-            if (ctxTerminated) {
+            if (ctxTerminated.get()) {
                 errno.set(ZError.ETERM);
                 return false;
             }
@@ -485,7 +489,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
 
     private boolean connectInternal(String addr)
     {
-        if (ctxTerminated) {
+        if (ctxTerminated.get()) {
             errno.set(ZError.ETERM);
             return false;
         }
@@ -694,7 +698,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
 
         try {
             //  Check whether the library haven't been shut down yet.
-            if (ctxTerminated) {
+            if (ctxTerminated.get()) {
                 errno.set(ZError.ETERM);
                 return false;
             }
@@ -793,7 +797,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
 
         try {
             //  Check whether the library haven't been shut down yet.
-            if (ctxTerminated) {
+            if (ctxTerminated.get()) {
                 errno.set(ZError.ETERM);
                 return false;
             }
@@ -885,7 +889,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
 
         try {
             //  Check whether the library haven't been shut down yet.
-            if (ctxTerminated) {
+            if (ctxTerminated.get()) {
                 errno.set(ZError.ETERM);
                 return null;
             }
@@ -1016,7 +1020,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
         lock();
 
         try {
-            if (ctxTerminated) {
+            if (ctxTerminated.get()) {
                 errno.set(ZError.ETERM);
                 return -1;
             }
@@ -1140,8 +1144,14 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
 
         //  Initialize the termination and check whether it can be deallocated
         //  immediately.
+        ctxTerminated.set(true);
         terminate();
         checkDestroy();
+    }
+
+    private boolean isInEvent() {
+        Boolean bRes = isInEventThreadLocal.get();
+        return null != bRes && bRes;
     }
 
     //  Processes commands sent to this socket (if any). If timeout is -1,
@@ -1188,6 +1198,10 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
             cmd = mailbox.recv(0);
         }
 
+        if(!isInEvent() && destroyed.get()) {
+            sendReapAck();
+        }
+
         if (errno.get() == ZError.EINTR) {
             return false;
         }
@@ -1199,7 +1213,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
 
         assert (errno.get() == ZError.EAGAIN) : errno;
 
-        if (ctxTerminated) {
+        if (ctxTerminated.get()) {
             errno.set(ZError.ETERM); // Do not raise exception at the blocked operation
             return false;
         }
@@ -1217,7 +1231,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
         try {
             monitorSync.lock();
             stopMonitor();
-            ctxTerminated = true;
+            ctxTerminated.set(true);
         }
         finally {
             monitorSync.unlock();
@@ -1254,7 +1268,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
     @Override
     protected final void processDestroy()
     {
-        destroyed = true;
+        destroyed.set(true);
     }
 
     //  The default implementation assumes there are no specific socket
@@ -1321,6 +1335,14 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
         throw new UnsupportedOperationException("Must override");
     }
 
+    private void enterInEvent() {
+        isInEventThreadLocal.set(true);
+    }
+
+    private void leaveInEvent() {
+        isInEventThreadLocal.remove();
+    }
+
     @Override
     public final void inEvent()
     {
@@ -1336,11 +1358,11 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
             if (threadSafe) {
                 reaperSignaler.recv();
             }
-
+            enterInEvent();
             processCommands(0, false, null);
-
         }
         finally {
+            leaveInEvent();
             unlock();
         }
 
@@ -1352,7 +1374,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
     private void checkDestroy()
     {
         //  If the object was already marked as destroyed, finish the deallocation.
-        if (destroyed) {
+        if (destroyed.get()) {
             //  Remove the socket from the reaper's poller.
             poller.removeHandle(handle);
 
@@ -1435,7 +1457,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
             monitorSync.lock();
 
             boolean rc;
-            if (ctxTerminated) {
+            if (ctxTerminated.get()) {
                 errno.set(ZError.ETERM);
                 return false;
             }

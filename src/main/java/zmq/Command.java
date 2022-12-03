@@ -49,6 +49,8 @@ public class Command
         //  Transfers the ownership of the closed socket
         //  to the reaper thread.
         REAP,
+        //  Sent by non-reaper socket to reaper to check destroy.
+        REAP_ACK,
         //  Closed socket notifies the reaper that it's already deallocated.
         REAPED,
         // TODO V4 provide a description for Command#INPROC_CONNECTED
