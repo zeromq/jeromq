@@ -186,6 +186,9 @@ public class Options
 
     public final Errno errno = new Errno();
 
+    // A metadata record name where the self address will be stored if defined
+    public String selfAddressPropertyName;
+
     public Options()
     {
         sendHwm = 1000;
@@ -249,6 +252,8 @@ public class Options
         asType = -1;
 
         peerLastRoutingId = 0;
+
+        selfAddressPropertyName = null;
     }
 
     @SuppressWarnings("deprecation")
@@ -621,6 +626,10 @@ public class Options
             this.asType = (Integer) optval;
             return true;
 
+        case ZMQ.ZMQ_SELFADDR_PROPERTY_NAME:
+            this.selfAddressPropertyName = parseString(option, optval);
+            return true;
+
         default:
             throw new IllegalArgumentException("Unknown Option " + option);
         }
@@ -871,6 +880,9 @@ public class Options
 
         case ZMQ.ZMQ_AS_TYPE:
             return asType;
+
+        case ZMQ.ZMQ_SELFADDR_PROPERTY_NAME:
+            return selfAddressPropertyName;
 
         default:
             throw new IllegalArgumentException("option=" + option);

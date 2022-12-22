@@ -346,5 +346,6 @@ public class OptionsTest
         assertThat(options.getSocketOpt(ZMQ.ZMQ_HEARTBEAT_TTL), is((Object) options.heartbeatTtl));
         assertThat(options.getSocketOpt(ZMQ.ZMQ_SELECTOR_PROVIDERCHOOSER), nullValue());
         assertThat(options.getSocketOpt(ZMQ.ZMQ_IDENTITY), is(new byte[0]));
+        assertThat(options.getSocketOpt(ZMQ.ZMQ_SELFADDR_PROPERTY_NAME), nullValue());
     }
 }
