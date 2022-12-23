@@ -155,6 +155,13 @@ public class Utils
         return new Address(address);
     }
 
+    public static Address getLocalIpAddress(SocketChannel fd)
+    {
+        SocketAddress address = fd.socket().getLocalSocketAddress();
+
+        return new Address(address);
+    }
+
     public static String dump(ByteBuffer buffer, int pos, int limit)
     {
         int oldpos = buffer.position();

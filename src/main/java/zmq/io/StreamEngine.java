@@ -168,6 +168,7 @@ public class StreamEngine implements IEngine, IPollEvents
     private SocketBase socket;
 
     private final Address peerAddress;
+    private final Address selfAddress;
 
     private final Errno errno;
 
@@ -196,6 +197,7 @@ public class StreamEngine implements IEngine, IPollEvents
         }
 
         peerAddress = Utils.getPeerIpAddress(fd);
+        selfAddress = Utils.getLocalIpAddress(fd);
 
         heartbeatTimeout = heartbeatTimeout();
         heartbeatContext = Arrays.copyOf(options.heartbeatContext, options.heartbeatContext.length);
@@ -280,6 +282,14 @@ public class StreamEngine implements IEngine, IPollEvents
                 // Compile metadata
                 metadata = new Metadata();
                 metadata.set(Metadata.PEER_ADDRESS, peerAddress.address());
+            }
+
+            if (options.selfAddressPropertyName != null && ! options.selfAddressPropertyName.isEmpty()
+                && selfAddress != null && !selfAddress.address().isEmpty()) {
+                if (metadata == null) {
+                    metadata = new Metadata();
+                }
+                metadata.set(options.selfAddressPropertyName, selfAddress.address());
             }
 
             //  For raw sockets, send an initial 0-length message to the
@@ -981,6 +991,11 @@ public class StreamEngine implements IEngine, IPollEvents
         //  If we have a peer_address, add it to metadata
         if (peerAddress != null && !peerAddress.address().isEmpty()) {
             metadata.set(Metadata.PEER_ADDRESS, peerAddress.address());
+        }
+        //  If we have a local_address, add it to metadata
+        if (options.selfAddressPropertyName != null && ! options.selfAddressPropertyName.isEmpty()
+            && selfAddress != null && !selfAddress.address().isEmpty()) {
+            metadata.set(options.selfAddressPropertyName, selfAddress.address());
         }
         //  Add ZAP properties.
         metadata.set(mechanism.zapProperties);

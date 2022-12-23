@@ -1359,4 +1359,18 @@ public class TestZMQ
 
         socket.close();
     }
+
+    @Test
+    public void testSocketLocalAddressPropertyName()
+    {
+        try (final Socket socket = ctx.socket(SocketType.XPUB)) {
+            assertThat(socket, notNullValue());
+
+            boolean rc = socket.setSelfAddressPropertyName("X-LocalAddress");
+            assertThat(rc, is(true));
+
+            String propertyName = socket.getSelfAddressPropertyName();
+            assertThat(propertyName, is("X-LocalAddress"));
+        }
+    }
 }

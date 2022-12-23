@@ -108,6 +108,8 @@ public class MetadataTest
 
         ZMQ.setSocketOption(server, ZMQ.ZMQ_ZAP_DOMAIN, "DOMAIN");
 
+        ZMQ.setSocketOption(server, ZMQ.ZMQ_SELFADDR_PROPERTY_NAME, "X-Local-Address");
+
         rc = ZMQ.bind(server, host);
         assertThat(rc, is(true));
 
@@ -134,6 +136,9 @@ public class MetadataTest
 
         prop = ZMQ.getMessageMetadata(msg, "Hello");
         assertThat(prop, is("World"));
+
+        prop = ZMQ.getMessageMetadata(msg, "X-Local-Address");
+        assertThat(prop, is("127.0.0.1:" + port));
 
         ZMQ.closeZeroLinger(server);
         ZMQ.closeZeroLinger(client);

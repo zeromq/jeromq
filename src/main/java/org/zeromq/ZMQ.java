@@ -2767,6 +2767,31 @@ public class ZMQ
         }
 
         /**
+         * The ZMQ_SELFADDR_PROPERTY_NAME option shall retrieve the metadata record used to store the self address.
+         * The returned value MAY be null or empty.
+         *
+         * @return the meta record name
+         * @see #setSelfAddressPropertyName(String)
+         */
+        public String getSelfAddressPropertyName()
+        {
+            return (String) base.getSocketOptx(zmq.ZMQ.ZMQ_SELFADDR_PROPERTY_NAME);
+        }
+
+        /**
+         * Sets the field name where the self address will be stored.
+         * If set to null or empty string, it will not be stored
+         *
+         * @param recordName the name of the field
+         * @return true if the option was set
+         * @see #getSelfAddressPropertyName()
+         */
+        public boolean setSelfAddressPropertyName(String recordName)
+        {
+            return setSocketOpt(zmq.ZMQ.ZMQ_SELFADDR_PROPERTY_NAME, recordName);
+        }
+
+        /**
          * Defines whether the socket will act as server for PLAIN security, see zmq_plain(7).
          * A value of true means the socket will act as PLAIN server.
          * A value of false means the socket will not act as PLAIN server,
