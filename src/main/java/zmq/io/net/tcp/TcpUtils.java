@@ -3,7 +3,6 @@ package zmq.io.net.tcp;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketAddress;
 import java.nio.channels.Channel;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.ServerSocketChannel;
@@ -11,6 +10,7 @@ import java.nio.channels.SocketChannel;
 
 import zmq.ZError;
 import zmq.io.net.Address;
+import zmq.util.Utils;
 
 public class TcpUtils
 {
@@ -107,10 +107,17 @@ public class TcpUtils
         // TODO V4 enable ipv4 mapping
     }
 
+    /**
+     * Return the {@link  Address} of the channel
+     * @param channel the channel, should be a TCP socket channel
+     * @return The {@link Address} of the channel
+     * @deprecated Use {@link zmq.util.Utils#getPeerIpAddress(SocketChannel)} instead
+     * @throws ZError.IOException if the channel is closed or an I/O errors occurred
+     * @throws IllegalArgumentException if the SocketChannel is not a TCP channel
+     */
+    @Deprecated
     public static Address getPeerIpAddress(SocketChannel channel)
     {
-        SocketAddress address = channel.socket().getRemoteSocketAddress();
-
-        return new Address(address);
+        return Utils.getPeerIpAddress(channel);
     }
 }
