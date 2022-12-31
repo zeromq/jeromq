@@ -47,12 +47,21 @@ public class Address
         resolved = null;
     }
 
+    /**
+     * @param socketAddress
+     * @throws IllegalArgumentException if the SocketChannel is not an IP socket address
+     */
     public Address(SocketAddress socketAddress)
     {
-        InetSocketAddress sockAddr = (InetSocketAddress) socketAddress;
-        this.address = sockAddr.getAddress().getHostAddress() + ":" + sockAddr.getPort();
-        protocol = NetProtocol.tcp;
-        resolved = null;
+        if (socketAddress instanceof InetSocketAddress) {
+            InetSocketAddress sockAddr = (InetSocketAddress) socketAddress;
+            this.address = sockAddr.getAddress().getHostAddress() + ":" + sockAddr.getPort();
+            protocol = NetProtocol.tcp;
+            resolved = null;
+        }
+        else {
+            throw new IllegalArgumentException("Not a IP socket address");
+        }
     }
 
     @Override

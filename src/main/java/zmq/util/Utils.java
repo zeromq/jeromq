@@ -10,6 +10,7 @@ import java.nio.channels.SelectableChannel;
 import java.nio.channels.SocketChannel;
 import java.security.SecureRandom;
 
+import zmq.ZError;
 import zmq.io.net.Address;
 import zmq.io.net.tcp.TcpUtils;
 import zmq.util.function.Supplier;
@@ -148,18 +149,40 @@ public class Utils
         return ret && path.delete();
     }
 
+    /**
+     * Resolve the remote address of the channel.
+     * @param fd the channel, should be a TCP socket channel
+     * @return a new {@link Address}
+     * @throws ZError.IOException if the channel is closed or an I/O errors occurred
+     * @throws IllegalArgumentException if the SocketChannel is not a TCP channel
+     */
     public static Address getPeerIpAddress(SocketChannel fd)
     {
-        SocketAddress address = fd.socket().getRemoteSocketAddress();
-
-        return new Address(address);
+        try {
+            SocketAddress address = fd.getRemoteAddress();
+            return new Address(address);
+        }
+        catch (IOException e) {
+            throw new ZError.IOException(e);
+        }
     }
 
+    /**
+     * Resolve the local address of the channel.
+     * @param fd the channel, should be a TCP socket channel
+     * @return a new {@link Address}
+     * @throws ZError.IOException if the channel is closed or an I/O errors occurred
+     * @throws IllegalArgumentException if the SocketChannel is not a TCP channel
+     */
     public static Address getLocalIpAddress(SocketChannel fd)
     {
-        SocketAddress address = fd.socket().getLocalSocketAddress();
-
-        return new Address(address);
+        try {
+            SocketAddress address = fd.getLocalAddress();
+            return new Address(address);
+        }
+        catch (IOException e) {
+            throw new ZError.IOException(e);
+        }
     }
 
     public static String dump(ByteBuffer buffer, int pos, int limit)
