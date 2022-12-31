@@ -1,11 +1,8 @@
 package zmq.io.net.tcp;
 
 import java.io.IOException;
-import java.net.SocketAddress;
 import java.net.SocketOption;
 import java.net.StandardSocketOptions;
-import java.net.ServerSocket;
-import java.net.Socket;
 import java.nio.channels.Channel;
 import java.nio.channels.NetworkChannel;
 import java.nio.channels.SelectableChannel;
