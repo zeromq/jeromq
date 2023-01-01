@@ -24,6 +24,8 @@ Pure Java implementation of libzmq (http://zeromq.org).
   * 4.5M messages (100B) per sec.
   * [Performance](https://github.com/zeromq/jeromq/wiki/Performance).
 * Exactly same developer experience with zeromq and jzmq.
+ 
+* TCP KeepAlive Count, Idle and Interval are known to only work with JVM 13 and later.
 
 ## Unsupported
 
@@ -33,8 +35,6 @@ Pure Java implementation of libzmq (http://zeromq.org).
 * tipc:// protocol. Cannot find a Java implementation.
 
 * GSSAPI mechanism is not yet implemented.
-
-* TCP KeepAlive Count, Idle, Interval cannot be set via Java but as OS level.
 
 * Interrupting threads is still unsupported: library is NOT Thread.interrupt safe.
 
@@ -143,4 +143,3 @@ JeroMQ.
 All source files are copyright © 2007-2022 contributors as noted in the AUTHORS file.
 
 Free use of this software is granted under the terms of the Mozilla Public License 2.0. For details see the file `LICENSE` included with the JeroMQ distribution.
-

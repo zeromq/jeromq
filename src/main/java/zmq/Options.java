@@ -372,10 +372,14 @@ public class Options
             return true;
 
         case ZMQ.ZMQ_TCP_KEEPALIVE_CNT:
+            this.tcpKeepAliveCnt = ((Number) optval).intValue();
+            return true;
         case ZMQ.ZMQ_TCP_KEEPALIVE_IDLE:
+            this.tcpKeepAliveIdle = ((Number) optval).intValue();
+            return true;
         case ZMQ.ZMQ_TCP_KEEPALIVE_INTVL:
-            // not supported
-            return false;
+            this.tcpKeepAliveIntvl = ((Number) optval).intValue();
+            return true;
 
         case ZMQ.ZMQ_IMMEDIATE:
             immediate = parseBoolean(option, optval);
@@ -799,10 +803,11 @@ public class Options
             return socksProxyAddress;
 
         case ZMQ.ZMQ_TCP_KEEPALIVE_CNT:
+            return tcpKeepAliveCnt;
         case ZMQ.ZMQ_TCP_KEEPALIVE_IDLE:
+            return tcpKeepAliveIdle;
         case ZMQ.ZMQ_TCP_KEEPALIVE_INTVL:
-            // not supported
-            return 0;
+            return tcpKeepAliveIntvl;
 
         case ZMQ.ZMQ_MECHANISM:
             return mechanism;

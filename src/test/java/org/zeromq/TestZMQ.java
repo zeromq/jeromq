@@ -1226,10 +1226,10 @@ public class TestZMQ
         assertThat(socket, notNullValue());
 
         boolean rc = socket.setTCPKeepAliveCount(42);
-        assertThat(rc, is(false));
+        assertThat(rc, is(true));
 
         long tcp = socket.getTCPKeepAliveCount();
-        assertThat(tcp, is(0L));
+        assertThat(tcp, is(42L));
 
         socket.close();
     }
@@ -1241,10 +1241,10 @@ public class TestZMQ
         assertThat(socket, notNullValue());
 
         boolean rc = socket.setTCPKeepAliveInterval(42);
-        assertThat(rc, is(false));
+        assertThat(rc, is(true));
 
         long tcp = socket.getTCPKeepAliveInterval();
-        assertThat(tcp, is(0L));
+        assertThat(tcp, is(42L));
 
         socket.close();
     }
@@ -1256,10 +1256,10 @@ public class TestZMQ
         assertThat(socket, notNullValue());
 
         boolean rc = socket.setTCPKeepAliveIdle(42);
-        assertThat(rc, is(false));
+        assertThat(rc, is(true));
 
         long tcp = socket.getTCPKeepAliveIdle();
-        assertThat(tcp, is(0L));
+        assertThat(tcp, is(42L));
 
         socket.close();
     }
