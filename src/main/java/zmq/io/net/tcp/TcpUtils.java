@@ -68,9 +68,15 @@ public class TcpUtils
                 setOption(channel, StandardSocketOptions.SO_KEEPALIVE, tcpKeepAlive == 1);
             }
             if (WITH_EXTENDED_KEEPALIVE && tcpKeepAlive == 1) {
-                setOption(channel, SocketOptionsProvider.TCP_KEEPCOUNT, tcpKeepAliveCnt);
-                setOption(channel, SocketOptionsProvider.TCP_KEEPIDLE, tcpKeepAliveIdle);
-                setOption(channel, SocketOptionsProvider.TCP_KEEPINTERVAL, tcpKeepAliveIntvl);
+                if (tcpKeepAliveCnt > 0) {
+                    setOption(channel, SocketOptionsProvider.TCP_KEEPCOUNT, tcpKeepAliveCnt);
+                }
+                if (tcpKeepAliveIdle > 0) {
+                    setOption(channel, SocketOptionsProvider.TCP_KEEPIDLE, tcpKeepAliveIdle);
+                }
+                if (tcpKeepAliveIntvl > 0) {
+                    setOption(channel, SocketOptionsProvider.TCP_KEEPINTERVAL, tcpKeepAliveIntvl);
+                }
             }
         }
     }
