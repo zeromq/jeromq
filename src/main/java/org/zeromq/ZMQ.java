@@ -4260,6 +4260,9 @@ public class ZMQ
         public static Event recv(Socket socket, int flags)
         {
             zmq.ZMQ.Event e = zmq.ZMQ.Event.read(socket.base, flags);
+            if (e == null) {
+                return null;
+            }
             Object resolvedValue;
             switch (e.event) {
             case zmq.ZMQ.ZMQ_EVENT_HANDSHAKE_FAILED_PROTOCOL:
@@ -4280,6 +4283,7 @@ public class ZMQ
                 break;
             case zmq.ZMQ.ZMQ_EVENT_CONNECT_DELAYED:
             case zmq.ZMQ.ZMQ_EVENT_HANDSHAKE_SUCCEEDED:
+            case zmq.ZMQ.ZMQ_EVENT_MONITOR_STOPPED:
                 resolvedValue = null;
                 break;
             default:
