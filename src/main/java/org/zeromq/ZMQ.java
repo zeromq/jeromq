@@ -16,6 +16,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.zeromq.proto.ZPicture;
 import zmq.Ctx;
+import zmq.Msg;
 import zmq.Options;
 import zmq.SocketBase;
 import zmq.ZError;
@@ -3254,6 +3255,61 @@ public class ZMQ
         /**
          * Queues a message created from data, so it can be sent.
          *
+         * @param msg the {@link Msg} to send. The message is either a single-part message by itself,
+         *             or the last part of a multi-part message.
+         * @return true when it has been queued on the socket and ØMQ has assumed responsibility for the message.
+         * This does not indicate that the message has been transmitted to the network.
+         */
+        public boolean sendMsg(Msg msg)
+        {
+            return sendMsg(msg, 0);
+        }
+
+        /**
+         * Queues a multi-part message created from data, so it can be sent.
+         *
+         * @param msg the message to send. further message parts are to follow.
+         * @return true when it has been queued on the socket and ØMQ has assumed responsibility for the message.
+         * This does not indicate that the message has been transmitted to the network.
+         */
+        public boolean sendMsgMore(Msg msg)
+        {
+            return sendMsg(msg, zmq.ZMQ.ZMQ_SNDMORE);
+        }
+
+        /**
+         * Queues a message created from data, so it can be sent.
+         *
+         * @param msg  the {@link Msg} to send. The message is either a single-part message by itself,
+         *             or the last part of a multi-part message.
+         * @param flags a combination (with + or |) of the flags defined below:
+         *              <ul>
+         *              <li>{@link org.zeromq.ZMQ#DONTWAIT DONTWAIT}:
+         *              For socket types ({@link org.zeromq.ZMQ#DEALER DEALER}, {@link org.zeromq.ZMQ#PUSH PUSH})
+         *              that block when there are no available peers (or all peers have full high-water mark),
+         *              specifies that the operation should be performed in non-blocking mode.
+         *              If the message cannot be queued on the socket, the method shall fail with errno set to EAGAIN.</li>
+         *              <li>{@link org.zeromq.ZMQ#SNDMORE SNDMORE}:
+         *              Specifies that the message being sent is a multi-part message,
+         *              and that further message parts are to follow.</li>
+         *              <li>0 : blocking send of a single-part message or the last of a multi-part message</li>
+         *              </ul>
+         * @return true when it has been queued on the socket and ØMQ has assumed responsibility for the message.
+         *              This does not indicate that the message has been transmitted to the network.
+         */
+        public boolean sendMsg(Msg msg, int flags)
+        {
+            if (base.send(msg, flags)) {
+                return true;
+            }
+
+            mayRaise();
+            return false;
+        }
+
+        /**
+         * Queues a message created from data, so it can be sent.
+         *
          * @param data the data to send. The data is either a single-part message by itself,
          *             or the last part of a multi-part message.
          * @return true when it has been queued on the socket and ØMQ has assumed responsibility for the message.
@@ -3515,6 +3571,42 @@ public class ZMQ
         public boolean sendBinaryPicture(String picture, Object... args)
         {
             return new ZPicture().sendBinaryPicture(this, picture, args);
+        }
+
+        /**
+         * Receives a message.
+         *
+         * @return the message received; null on error.
+         */
+        public Msg recvMsg()
+        {
+            return recvMsg(0);
+        }
+
+        /**
+         * Receives a message.
+         * <p>
+         * @param flags either:
+         *              <ul>
+         *              <li>{@link org.zeromq.ZMQ#DONTWAIT DONTWAIT}:
+         *              Specifies that the operation should be performed in non-blocking mode.
+         *              If there are no messages available on the specified socket,
+         *              the method shall fail with errno set to EAGAIN and return null.</li>
+         *              <li>0 : receive operation blocks until one message is successfully retrieved,
+         *              or stops when timeout set by {@link #setReceiveTimeOut(int)} expires.</li>
+         *              </ul>
+         * @return the message received; null on error.
+         */
+        public Msg recvMsg(int flags)
+        {
+            zmq.Msg msg = base.recv(flags);
+
+            if (msg != null) {
+                return msg;
+            }
+
+            mayRaise();
+            return null;
         }
 
         /**

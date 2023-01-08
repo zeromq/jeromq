@@ -281,7 +281,7 @@ public class StreamEngine implements IEngine, IPollEvents
                 assert (metadata == null);
                 // Compile metadata
                 metadata = new Metadata();
-                metadata.set(Metadata.PEER_ADDRESS, peerAddress.address());
+                metadata.put(Metadata.PEER_ADDRESS, peerAddress.address());
             }
 
             if (options.selfAddressPropertyName != null && ! options.selfAddressPropertyName.isEmpty()
@@ -289,7 +289,7 @@ public class StreamEngine implements IEngine, IPollEvents
                 if (metadata == null) {
                     metadata = new Metadata();
                 }
-                metadata.set(options.selfAddressPropertyName, selfAddress.address());
+                metadata.put(options.selfAddressPropertyName, selfAddress.address());
             }
 
             //  For raw sockets, send an initial 0-length message to the
@@ -995,7 +995,7 @@ public class StreamEngine implements IEngine, IPollEvents
         //  If we have a local_address, add it to metadata
         if (options.selfAddressPropertyName != null && ! options.selfAddressPropertyName.isEmpty()
             && selfAddress != null && !selfAddress.address().isEmpty()) {
-            metadata.set(options.selfAddressPropertyName, selfAddress.address());
+            metadata.put(options.selfAddressPropertyName, selfAddress.address());
         }
         //  Add ZAP properties.
         metadata.set(mechanism.zapProperties);

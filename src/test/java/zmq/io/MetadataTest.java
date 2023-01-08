@@ -8,6 +8,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 import org.junit.Test;
@@ -152,9 +154,18 @@ public class MetadataTest
     @Test
     public void testWriteRead() throws IOException
     {
+        Map<String, String> srcMap = new HashMap<>();
+        srcMap.put("keyEmpty", "");
+        srcMap.put("keyNull", null);
+        Metadata fromMap = new Metadata(srcMap);
+        assertThat(fromMap.get("keyEmpty"), is(""));
+        assertThat(fromMap.get("keyNull"), is(""));
+
         Metadata src = new Metadata();
-        src.set("key", "value");
-        src.set(UUID.randomUUID().toString(), UUID.randomUUID().toString());
+        src.put("key", "value");
+        src.put("keyEmpty", "");
+        src.put("keyNull", null);
+        src.put(UUID.randomUUID().toString(), UUID.randomUUID().toString());
 
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         src.write(stream);
@@ -164,5 +175,7 @@ public class MetadataTest
         dst.read(ByteBuffer.wrap(array), 0, null);
 
         assertThat(dst, is(src));
+        assertThat(dst.get("keyEmpty"), is(""));
+        assertThat(dst.get("keyNull"), is(""));
     }
 }
