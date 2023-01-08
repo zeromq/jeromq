@@ -179,6 +179,20 @@ public class ZSocket implements AutoCloseable
         return -1;
     }
 
+    public int sendMessage(Msg msg, int flags)
+    {
+        if (socketBase.send(msg, flags)) {
+            return msg.size();
+        }
+        mayRaise();
+        return -1;
+    }
+
+    public int sendMessage(Msg msg)
+    {
+        return sendMessage(msg, 0);
+    }
+
     /**
      * Send a frame
      *
@@ -234,6 +248,16 @@ public class ZSocket implements AutoCloseable
             return null;
         }
         return msg.data();
+    }
+
+    public Msg receiveMessage()
+    {
+        return socketBase.recv(0);
+    }
+
+    public Msg receiveMessage(int flags)
+    {
+        return socketBase.recv(flags);
     }
 
     public String receiveStringUtf8()

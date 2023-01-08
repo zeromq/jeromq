@@ -4,15 +4,24 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.util.Collection;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import zmq.Msg;
 import zmq.ZError;
 import zmq.ZMQ;
 import zmq.util.Wire;
 
+/**
+ * The metadata holder class.
+ * <p>The class is thread safe, as it uses a {@link ConcurrentHashMap} for the backend</p>
+ * <p>Null value are transformed to empty string.</p>
+ */
 public class Metadata
 {
     /**
@@ -39,7 +48,7 @@ public class Metadata
     public static final String PEER_ADDRESS = "Peer-Address";
 
     //  Dictionary holding metadata.
-    private final Properties dictionary = new Properties();
+    private final Map<String, String> dictionary = new ConcurrentHashMap<>();
 
     public Metadata()
     {
@@ -48,29 +57,136 @@ public class Metadata
 
     public Metadata(Properties dictionary)
     {
-        this.dictionary.putAll(dictionary);
+        // Ensure a conversion of each entry to a String.
+        // No need to check for nul values as the Properties class ignore null and don't stores them
+        dictionary.entrySet().forEach(e -> this.dictionary.put(e.getKey().toString(), e.getValue().toString()));
     }
 
-    public final Set<String> keySet()
+    public Metadata(Map<String, String> dictionary)
     {
-        return dictionary.stringPropertyNames();
+        dictionary.entrySet().forEach(e -> this.dictionary.put(e.getKey(), Optional.ofNullable(e.getValue()).orElse("")));
     }
 
-    public final void remove(String key)
+    /**
+     * Returns a {@link Set} view of the keys contained in this metadata.
+     * The set is backed by the metadata, so changes to the map are
+     * reflected in the set, and vice-versa.  If the metadata is modified
+     * while an iteration over the set is in progress (except through
+     * the iterator's own {@code remove} operation), the results of
+     * the iteration are undefined.  The set supports element removal,
+     * which removes the corresponding mapping from the metadata, via the
+     * {@code Iterator.remove}, {@code Set.remove},
+     * {@code removeAll}, {@code retainAll}, and {@code clear}
+     * operations.  It does not support the {@code add} or {@code addAll}
+     * operations.
+     *
+     * @return a set view of the keys contained in this metadata
+     */
+    public Set<String> keySet()
+    {
+        return dictionary.keySet();
+    }
+
+    /**
+     * Returns a {@link Set} view of the properties contained in this metadata.
+     * The set is backed by the metadata, so changes to the metadata are
+     * reflected in the set, and vice-versa.  If the metadata is modified
+     * while an iteration over the set is in progress (except through
+     * the iterator's own {@code remove} operation, or through the
+     * {@code setValue} operation on a metadata property returned by the
+     * iterator) the results of the iteration are undefined.  The set
+     * supports element removal, which removes the corresponding
+     * mapping from the metadata, via the {@code Iterator.remove},
+     * {@code Set.remove}, {@code removeAll}, {@code retainAll} and
+     * {@code clear} operations.  It does not support the
+     * {@code add} or {@code addAll} operations.
+     *
+     * @return a set view of the properties contained in this metadata
+     */
+    public Set<Entry<String, String>> entrySet()
+    {
+        return dictionary.entrySet();
+    }
+
+    /**
+     * Returns a {@link Collection} view of the values contained in this metadata.
+     * The collection is backed by the metadata, so changes to the map are
+     * reflected in the collection, and vice-versa.  If the metadata is
+     * modified while an iteration over the collection is in progress
+     * (except through the iterator's own {@code remove} operation),
+     * the results of the iteration are undefined.  The collection
+     * supports element removal, which removes the corresponding
+     * property from the metadata, via the {@code Iterator.remove},
+     * {@code Collection.remove}, {@code removeAll},
+     * {@code retainAll} and {@code clear} operations.  It does not
+     * support the {@code add} or {@code addAll} operations.
+     *
+     * @return a collection view of the values contained in this map
+     */
+    public Collection<String> values()
+    {
+        return dictionary.values();
+    }
+
+    /**
+     * Removes the property for a name from this metada if it is present.
+     *
+     * <p>If this map permits null values, then a return value of
+     * {@code null} does not <i>necessarily</i> indicate that the map
+     * contained no mapping for the key; it's also possible that the map
+     * explicitly mapped the key to {@code null}.
+     *
+     * <p>The map will not contain a mapping for the specified key once the
+     * call returns.
+     *
+     * @param key key whose mapping is to be removed from the map
+     */
+    public void remove(String key)
     {
         dictionary.remove(key);
     }
 
-    //  Returns property value or NULL if
-    //  property is not found.
-    public final String get(String key)
+    /**
+     * Returns the value for this property,
+     * or {@code null} if it does not exist.
+     *
+     * @param property the property name
+     * @return the value of the property, or {@code null} if it does not exist.
+     */
+    public String get(String property)
     {
-        return dictionary.getProperty(key);
+        return dictionary.get(property);
     }
 
-    public final void set(String key, String value)
+    /**
+     * Define the value for this property. If the value is null, an empty string
+     * is stored instead.
+     *
+     * @param property the property name
+     * @param value value to be associated with the specified property
+     * @deprecated Use {@link #put(String, String)} instead
+     */
+    @Deprecated
+    public void set(String property, String value)
     {
-        dictionary.setProperty(key, value);
+        put(property, value);
+    }
+
+    /**
+     * Define the value for this property. If the value is null, an empty string
+     * is stored instead.
+     *
+     * @param property the property name
+     * @param value value to be associated with the specified property
+     */
+    public void put(String property, String value)
+    {
+        if (value != null) {
+            dictionary.put(property, value);
+        }
+        else {
+            dictionary.put(property, "");
+        }
     }
 
     @Override
@@ -95,14 +211,50 @@ public class Metadata
         return this.dictionary.equals(that.dictionary);
     }
 
-    public final void set(Metadata zapProperties)
+    public void set(Metadata zapProperties)
     {
         dictionary.putAll(zapProperties.dictionary);
     }
 
-    public final boolean isEmpty()
+    /**
+     * Returns {@code true} if this map contains no key-value mappings.
+     *
+     * @return {@code true} if this map contains no key-value mappings
+     */
+    public boolean isEmpty()
     {
         return dictionary.isEmpty();
+    }
+
+    /**
+     * Returns {@code true} if this metada contains the property requested
+     *
+     * @param property property the name of the property to be tested.
+     * @return {@code true} if this metada contains the property
+     */
+    public boolean containsKey(String property)
+    {
+        return dictionary.containsKey(property);
+    }
+
+    /**
+     * Removes all the properties.
+     * The map will be empty after this call returns.
+     */
+    public void clear()
+    {
+        dictionary.clear();
+    }
+
+    /**
+     * Returns the number of properties. If it contains more properties
+     * than {@code Integer.MAX_VALUE} elements, returns {@code Integer.MAX_VALUE}.
+     *
+     * @return the number of properties
+     */
+    public int size()
+    {
+        return dictionary.size();
     }
 
     @Override
@@ -111,52 +263,106 @@ public class Metadata
         return "Metadata=" + dictionary;
     }
 
-    public final byte[] bytes()
+    /**
+     * Return the content of the metadata as a new byte array, using the specifications of the ZMTP protocol
+     * <pre>
+     * property = name value
+     * name = OCTET 1*255name-char
+     * name-char = ALPHA | DIGIT | "-" | "_" | "." | "+"
+     * value = 4OCTET *OCTET       ; Size in network byte order
+     * </pre>
+     * @return a new byte array
+     * @throws IllegalStateException if the content can't be serialized
+     */
+    public byte[] bytes()
     {
-        try (ByteArrayOutputStream stream = new ByteArrayOutputStream(size())) {
+        try (ByteArrayOutputStream stream = new ByteArrayOutputStream(bytesSize())) {
             write(stream);
             return stream.toByteArray();
         }
         catch (IOException e) {
-            return new byte[0];
+            throw new IllegalStateException("Unable to write content as bytes", e);
         }
     }
 
-    private int size()
+    /**
+     * Return an approximate size of the serialization of the metadata, it will probably be higher if there is a lot
+     * of non ASCII value in it.
+     * @return the size estimation
+     */
+    private int bytesSize()
     {
         int size = 0;
-        for (Entry<Object, Object> entry : dictionary.entrySet()) {
-            String key = entry.getKey().toString();
-            String value = entry.getValue().toString();
-
+        for (Entry<String, String> entry : dictionary.entrySet()) {
             size += 1;
-            size += key.length();
+            size += entry.getKey().length();
             size += 4;
-            size += value.length();
+            size += entry.getValue().length();
         }
         return size;
     }
 
-    public final void write(OutputStream stream) throws IOException
+    /**
+     * Serialize metadata to an output stream, using the specifications of the ZMTP protocol
+     * <pre>
+     * property = name value
+     * name = OCTET 1*255name-char
+     * name-char = ALPHA | DIGIT | "-" | "_" | "." | "+"
+     * value = 4OCTET *OCTET       ; Size in network byte order
+     * </pre>
+     * @param stream
+     * @throws IOException if an I/O error occurs.
+     * @throws IllegalStateException if one of the properties name size is bigger than 255
+     */
+    public void write(OutputStream stream) throws IOException
     {
-        for (Entry<?, ?> entry : dictionary.entrySet()) {
-            String key = entry.getKey().toString();
-            String value = entry.getValue().toString();
+        for (Entry<String, String> entry : dictionary.entrySet()) {
+            byte[] keyBytes = entry.getKey().getBytes(ZMQ.CHARSET);
+            if (keyBytes.length > 255) {
+                throw new IllegalStateException("Trying to serialize an oversize attribute name");
+            }
+            // write the length as a byte
+            stream.write(keyBytes.length);
+            stream.write(keyBytes);
 
-            stream.write(key.length());
-            stream.write(key.getBytes(ZMQ.CHARSET));
-
-            stream.write(Wire.putUInt32(value.length()));
-            stream.write(value.getBytes(ZMQ.CHARSET));
+            byte[] valueBytes = entry.getValue().getBytes(ZMQ.CHARSET);
+            stream.write(Wire.putUInt32(valueBytes.length));
+            stream.write(valueBytes);
         }
     }
 
-    public final int read(Msg msg, int offset, ParseListener listener)
+    /**
+     * Deserialize metadata from a {@link Msg}, using the specifications of the ZMTP protocol
+     * <pre>
+     * property = name value
+     * name = OCTET 1*255name-char
+     * name-char = ALPHA | DIGIT | "-" | "_" | "." | "+"
+     * value = 4OCTET *OCTET       ; Size in network byte order
+     * </pre>
+     * @param msg
+     * @param offset
+     * @param listener an optional {@link ParseListener}, can be null.
+     * @return 0 if successful. Otherwise, it returns {@code zmq.ZError.EPROTO} or the error value from the {@link ParseListener}.
+     */
+    public int read(Msg msg, int offset, ParseListener listener)
     {
         return read(msg.buf(), offset, listener);
     }
 
-    public final int read(ByteBuffer msg, int offset, ParseListener listener)
+    /**
+     * Deserialize metadata from a {@link ByteBuffer}, using the specifications of the ZMTP protocol
+     * <pre>
+     * property = name value
+     * name = OCTET 1*255name-char
+     * name-char = ALPHA | DIGIT | "-" | "_" | "." | "+"
+     * value = 4OCTET *OCTET       ; Size in network byte order
+     * </pre>
+     * @param msg
+     * @param offset
+     * @param listener an optional {@link ParseListener}, can be null.
+     * @return 0 if successful. Otherwise, it returns {@code zmq.ZError.EPROTO} or the error value from the {@link ParseListener}.
+     */
+    public int read(ByteBuffer msg, int offset, ParseListener listener)
     {
         ByteBuffer data = msg.duplicate();
 
@@ -165,7 +371,10 @@ public class Metadata
         int index = offset;
 
         while (bytesLeft > 1) {
-            final byte nameLength = data.get(index);
+            final int nameLength = Byte.toUnsignedInt(data.get(index));
+            if (nameLength == 0) {
+                break;
+            }
             index++;
             bytesLeft -= 1;
 
@@ -184,7 +393,7 @@ public class Metadata
             index += 4;
             bytesLeft -= 4;
 
-            if (bytesLeft < valueLength) {
+            if (bytesLeft < valueLength || valueLength < 0) {
                 break;
             }
 

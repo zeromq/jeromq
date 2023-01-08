@@ -81,7 +81,7 @@ public abstract class Mechanism
     private void setUserId(byte[] data)
     {
         userId = Blob.createBlob(data);
-        zapProperties.set(Metadata.USER_ID, new String(data, ZMQ.CHARSET));
+        zapProperties.put(Metadata.USER_ID, new String(data, ZMQ.CHARSET));
     }
 
     public final Blob getUserId()
