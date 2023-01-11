@@ -6,13 +6,7 @@ class PollerBaseTested extends PollerBase
 
     PollerBaseTested()
     {
-        super("test");
-    }
-
-    @Override
-    Thread createWorker(String name)
-    {
-        return Thread.currentThread();
+        super("test", (s, r) -> Thread.currentThread());
     }
 
     void clock(long clock)

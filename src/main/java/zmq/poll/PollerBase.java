@@ -5,6 +5,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import zmq.util.Clock;
 import zmq.util.MultiMap;
+import zmq.util.function.BiFunction;
 
 abstract class PollerBase implements Runnable
 {
@@ -55,11 +56,11 @@ abstract class PollerBase implements Runnable
         }
     }
 
-    //  Load of the poller. Currently the number of file descriptors
+    //  Load of the poller. Currently, the number of file descriptors
     //  registered.
-    private final AtomicInteger load;
+    private final AtomicInteger load = new AtomicInteger(0);
 
-    private final MultiMap<Long, TimerInfo> timers;
+    private final MultiMap<Long, TimerInfo> timers = new MultiMap<>();
 
     // the thread where all events will be dispatched. So, the actual IO or Reaper threads.
     protected final Thread worker;
@@ -70,10 +71,12 @@ abstract class PollerBase implements Runnable
     protected PollerBase(String name)
     {
         worker = createWorker(name);
-
-        load = new AtomicInteger(0);
-        timers = new MultiMap<>();
     }
+
+    protected PollerBase(String name, BiFunction<Runnable, String, Thread> threadFactory)
+    {
+        worker = threadFactory.apply(this, name);
+   }
 
     Thread createWorker(String name)
     {

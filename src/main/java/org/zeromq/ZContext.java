@@ -14,6 +14,7 @@ import org.zeromq.ZMQ.Poller;
 import org.zeromq.ZMQ.Socket;
 
 import zmq.util.Draft;
+import zmq.util.function.BiFunction;
 
 /**
  * ZContext provides a high-level ZeroMQ context management class
@@ -371,6 +372,7 @@ public class ZContext implements Closeable
      * Set the handler invoked when a {@link zmq.poll.Poller} abruptly terminates due to an uncaught exception.<p>
      * It default to the value of {@link Thread#getDefaultUncaughtExceptionHandler()}
      * @param handler The object to use as this thread's uncaught exception handler. If null then this thread has no explicit handler.
+     * @throws IllegalStateException If context was already initialized by the creation of a socket
      */
     public void setUncaughtExceptionHandler(UncaughtExceptionHandler handler)
     {
@@ -390,6 +392,7 @@ public class ZContext implements Closeable
      * be logged.<p>
      * Default to {@link Throwable#printStackTrace()}
      * @param handler The object to use as this thread's handler for recoverable exceptions notifications.
+     * @throws IllegalStateException If context was already initialized by the creation of a socket
      */
     public void setNotificationExceptionHandler(UncaughtExceptionHandler handler)
     {
@@ -402,6 +405,27 @@ public class ZContext implements Closeable
     public UncaughtExceptionHandler getNotificationExceptionHandler()
     {
         return context.getNotificationExceptionHandler();
+    }
+
+    /**
+     * Used to define a custom thread factory. It can be used to create thread that will be bounded to a CPU for
+     * performance or tweaks the created thread. It the UncaughtExceptionHandler is not set, the created thread UncaughtExceptionHandler
+     * will not be changed, so the factory can also be used to set it.
+     *
+     * @param threadFactory the thread factory used by {@link zmq.poll.Poller}
+     * @throws IllegalStateException If context was already initialized by the creation of a socket
+     */
+    public void setThreadFactor(BiFunction<Runnable, String, Thread> threadFactory)
+    {
+        context.setThreadFactor(threadFactory);
+    }
+
+    /**
+     * @return the current thread factory
+     */
+    public BiFunction<Runnable, String, Thread> getThreadFactory()
+    {
+        return context.getThreadFactory();
     }
 
     /**

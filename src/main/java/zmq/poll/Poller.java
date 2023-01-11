@@ -88,9 +88,8 @@ public final class Poller extends PollerBase implements Runnable
 
     public Poller(Ctx ctx, String name)
     {
-        super(name);
+        super(name, ctx.getThreadFactory());
         this.ctx = ctx;
-        worker.setUncaughtExceptionHandler(ctx.getUncaughtExceptionHandler());
         exnotification = ctx.getNotificationExceptionHandler();
         fdTable = new HashSet<>();
         selector = ctx.createSelector();

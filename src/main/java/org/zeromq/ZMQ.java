@@ -28,6 +28,7 @@ import zmq.io.net.SelectorProviderChooser;
 import zmq.msg.MsgAllocator;
 import zmq.util.Draft;
 import zmq.util.Z85;
+import zmq.util.function.BiFunction;
 
 /**
  * <p>The ØMQ lightweight messaging kernel is a library which extends the standard socket interfaces
@@ -569,6 +570,7 @@ public class ZMQ
 
         /**
          * Set the size of the 0MQ thread pool to handle I/O operations.
+         * @throws IllegalStateException If context was already initialized by the creation of a socket
          */
         public boolean setIOThreads(int ioThreads)
         {
@@ -585,6 +587,7 @@ public class ZMQ
 
         /**
          * Sets the maximum number of sockets allowed on the context
+         * @throws IllegalStateException If context was already initialized by the creation of a socket
          */
         public boolean setMaxSockets(int maxSockets)
         {
@@ -629,6 +632,7 @@ public class ZMQ
          * Set the handler invoked when a {@link zmq.poll.Poller} abruptly terminates due to an uncaught exception.<p>
          * It default to the value of {@link Thread#getDefaultUncaughtExceptionHandler()}
          * @param handler The object to use as this thread's uncaught exception handler. If null then this thread has no explicit handler.
+         * @throws IllegalStateException If context was already initialized by the creation of a socket
          */
         public void setUncaughtExceptionHandler(UncaughtExceptionHandler handler)
         {
@@ -648,6 +652,7 @@ public class ZMQ
          * be logged.<p>
          * Default to {@link Throwable#printStackTrace()}
          * @param handler The object to use as this thread's handler for recoverable exceptions notifications.
+         * @throws IllegalStateException If context was already initialized by the creation of a socket
          */
         public void setNotificationExceptionHandler(UncaughtExceptionHandler handler)
         {
@@ -660,6 +665,27 @@ public class ZMQ
         public UncaughtExceptionHandler getNotificationExceptionHandler()
         {
             return ctx.getNotificationExceptionHandler();
+        }
+
+        /**
+         * Used to define a custom thread factory. It can be used to create thread that will be bounded to a CPU for
+         * performance or tweaks the created thread. It the UncaughtExceptionHandler is not set, the created thread UncaughtExceptionHandler
+         * will not be changed, so the factory can also be used to set it.
+         *
+         * @param threadFactory the thread factory used by {@link zmq.poll.Poller}
+         * @throws IllegalStateException If context was already initialized by the creation of a socket
+         */
+        public void setThreadFactor(BiFunction<Runnable, String, Thread> threadFactory)
+        {
+            ctx.setThreadFactory(threadFactory);
+        }
+
+        /**
+         * @return the current thread factory
+         */
+        public BiFunction<Runnable, String, Thread> getThreadFactory()
+        {
+            return ctx.getThreadFactory();
         }
 
         /**
