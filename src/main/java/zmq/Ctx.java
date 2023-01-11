@@ -29,10 +29,16 @@ import zmq.pipe.Pipe;
 import zmq.socket.Sockets;
 import zmq.util.Errno;
 import zmq.util.MultiMap;
+import zmq.util.function.BiFunction;
 
-//Context object encapsulates all the global state associated with
-//  the library.
-
+/**
+ * Context object encapsulates all the global state associated with
+ * the library.<br/>
+ * It creates a reaper thread and some IO threads as defined by {@link ZMQ#ZMQ_IO_THREADS}. The thread are created
+ * using a thread factory that defined the UncaughtExceptionHandler as defined by {@link Ctx#setUncaughtExceptionHandler(UncaughtExceptionHandler)}
+ * and defined the thread as a daemon. If a custom thread factory is defined with {@link Ctx#setThreadFactory(BiFunction)},
+ * all that steps must be handled manually.
+ */
 public class Ctx
 {
     private static final int WAIT_FOREVER = -1;
@@ -132,6 +138,9 @@ public class Ctx
     //  Number of I/O threads to launch.
     private int ioThreadCount;
 
+    // The thread factory used by the poller
+    private BiFunction<Runnable, String, Thread> threadFactory;
+
     //  Does context wait (possibly forever) on termination?
     private boolean blocky;
 
@@ -185,6 +194,7 @@ public class Ctx
         slots = null;
         maxSockets = ZMQ.ZMQ_MAX_SOCKETS_DFLT;
         ioThreadCount = ZMQ.ZMQ_IO_THREADS_DFLT;
+        threadFactory = this::createThread;
 
         ipv6 = false;
         blocky = true;
@@ -346,16 +356,23 @@ public class Ctx
         }
     }
 
-    /**
-     * Set the handler invoked when a {@link zmq.poll.Poller} abruptly terminates due to an uncaught exception.<p>
-     * It default to the value of {@link Thread#getDefaultUncaughtExceptionHandler()}
-     * @param handler The object to use as this thread's uncaught exception handler. If null then this thread has no explicit handler.
-     */
-    public void setUncaughtExceptionHandler(UncaughtExceptionHandler handler)
+    private void chechStarted()
     {
         if  (!starting.get()) {
             throw new IllegalStateException("Already started");
         }
+    }
+
+    /**
+     * Set the handler invoked when a {@link zmq.poll.Poller} abruptly terminates due to an uncaught exception.<br/>
+     * It defaults to the value of {@link Thread#getDefaultUncaughtExceptionHandler()}
+     * @param handler The object to use as this thread's uncaught exception handler. If null then this thread has no
+     *                explicit handler and will use the one defined for the {@link ThreadGroup}.
+     * @throws IllegalStateException If context was already initialized by the creation of a socket
+     */
+    public void setUncaughtExceptionHandler(UncaughtExceptionHandler handler)
+    {
+        chechStarted();
         exhandler = handler;
     }
 
@@ -372,12 +389,11 @@ public class Ctx
      * be logged.<p>
      * Default to {@link Throwable#printStackTrace()}
      * @param handler The object to use as this thread's handler for recoverable exceptions notifications.
+     * @throws IllegalStateException If context was already initialized by the creation of a socket
      */
     public void setNotificationExceptionHandler(UncaughtExceptionHandler handler)
     {
-        if  (!starting.get()) {
-            throw new IllegalStateException("Already started");
-        }
+        chechStarted();
         exnotification = handler;
     }
 
@@ -389,9 +405,40 @@ public class Ctx
         return exnotification;
     }
 
+   /**
+     * Used to define a custom thread factory. It can be used to create thread that will be bounded to a CPU for
+     * performance or tweaks the created thread. It the UncaughtExceptionHandler is not set, the created thread UncaughtExceptionHandler
+     * will not be changed, so the factory can also be used to set it.
+     *
+     * @param threadFactory the thread factory used by {@link zmq.poll.Poller}
+     * @throws IllegalStateException If context was already initialized by the creation of a socket
+     */
+    public void setThreadFactory(BiFunction<Runnable, String, Thread> threadFactory)
+    {
+        chechStarted();
+        this.threadFactory = threadFactory;
+    }
+
+    /**
+     * @return the current thread factory
+     */
+    public BiFunction<Runnable, String, Thread> getThreadFactory()
+    {
+        return threadFactory;
+    }
+
+    /**
+     * Set an option
+     * @param option the option to set
+     * @param optval the option value
+     * @return true is the option is allowed for a context and the value is valid for the option
+     * @throws IllegalStateException If context was already initialized by the creation of a socket, and the
+     *         option can't be changed.
+     */
     public boolean set(int option, int optval)
     {
         if (option == ZMQ.ZMQ_MAX_SOCKETS && optval >= 1) {
+            chechStarted();
             optSync.lock();
             try {
                 maxSockets = optval;
@@ -401,6 +448,7 @@ public class Ctx
             }
         }
         else if (option == ZMQ.ZMQ_IO_THREADS && optval >= 0) {
+            chechStarted();
             optSync.lock();
             try {
                 ioThreadCount = optval;
@@ -870,5 +918,13 @@ public class Ctx
             Integer handle = forwardHolder.reversemap.remove(ref);
             forwardHolder.map.remove(handle);
         }
+    }
+
+    private Thread createThread(Runnable target, String name)
+    {
+        Thread t = new Thread(target, name);
+        t.setDaemon(true);
+        t.setUncaughtExceptionHandler(getUncaughtExceptionHandler());
+        return t;
     }
 }
