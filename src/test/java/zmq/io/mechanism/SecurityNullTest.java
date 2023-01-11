@@ -1,202 +1,105 @@
 package zmq.io.mechanism;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.CoreMatchers.nullValue;
-import static org.hamcrest.MatcherAssert.assertThat;
-
-import java.io.IOException;
-import java.io.OutputStream;
-import java.net.Socket;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
 import org.junit.Test;
 
-import zmq.Ctx;
-import zmq.Helper;
-import zmq.Msg;
 import zmq.SocketBase;
 import zmq.ZMQ;
-import zmq.util.TestUtils;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 public class SecurityNullTest
 {
-    private static class ZapHandler implements Runnable
+    private static class NullTestContext extends MechanismTester.TestContext
     {
-        private final SocketBase handler;
-
-        public ZapHandler(SocketBase handler)
-        {
-            this.handler = handler;
-        }
-
-        @Override
-        @SuppressWarnings("unused")
-        public void run()
-        {
-            //  Process ZAP requests forever
-            while (true) {
-                Msg version = ZMQ.recv(handler, 0);
-                if (version == null) {
-                    break; //  Terminating
-                }
-                Msg sequence = ZMQ.recv(handler, 0);
-                Msg domain = ZMQ.recv(handler, 0);
-                Msg address = ZMQ.recv(handler, 0);
-                Msg identity = ZMQ.recv(handler, 0);
-                Msg mechanism = ZMQ.recv(handler, 0);
-
-                assertThat(new String(version.data(), ZMQ.CHARSET), is("1.0"));
-                assertThat(new String(mechanism.data(), ZMQ.CHARSET), is("NULL"));
-
-                int ret = ZMQ.send(handler, version, ZMQ.ZMQ_SNDMORE);
-                assertThat(ret, is(3));
-                ret = ZMQ.send(handler, sequence, ZMQ.ZMQ_SNDMORE);
-                assertThat(ret, is(1));
-
-                System.out.println("Sending ZAP NULL reply");
-                if ("TEST".equals(new String(domain.data(), ZMQ.CHARSET))) {
-                    ret = ZMQ.send(handler, "200", ZMQ.ZMQ_SNDMORE);
-                    assertThat(ret, is(3));
-                    ret = ZMQ.send(handler, "OK", ZMQ.ZMQ_SNDMORE);
-                    assertThat(ret, is(2));
-                    ret = ZMQ.send(handler, "anonymous", ZMQ.ZMQ_SNDMORE);
-                    assertThat(ret, is(9));
-                    ret = ZMQ.send(handler, "", 0);
-                    assertThat(ret, is(0));
-                }
-                else {
-                    ret = ZMQ.send(handler, "400", ZMQ.ZMQ_SNDMORE);
-                    assertThat(ret, is(3));
-                    ret = ZMQ.send(handler, "BAD DOMAIN", ZMQ.ZMQ_SNDMORE);
-                    assertThat(ret, is(10));
-                    ret = ZMQ.send(handler, "", ZMQ.ZMQ_SNDMORE);
-                    assertThat(ret, is(0));
-                    ret = ZMQ.send(handler, "", 0);
-                    assertThat(ret, is(0));
-                }
-            }
-
-            ZMQ.closeZeroLinger(handler);
-        }
+        // Nothing to add
     }
 
-    @Test
-    public void testNullMechanismSecurity() throws IOException, InterruptedException
+    private Boolean runTest(boolean withzap, Function<NullTestContext, Boolean> tested) throws InterruptedException
     {
-        String host = "tcp://127.0.0.1:*";
+        NullTestContext testCtx = new NullTestContext();
 
-        Ctx ctx = ZMQ.createContext();
+        BiFunction<SocketBase, CompletableFuture<Boolean>, ZapHandler> zapProvider = ZapHandler::new;
+        Runnable configurator = () -> ZMQ.setSocketOption(testCtx.server, ZMQ.ZMQ_IDENTITY, "IDENT");
 
-        //  Spawn ZAP handler
-        //  We create and bind ZAP socket in main thread to avoid case
-        //  where child thread does not start up fast enough.
-        SocketBase handler = ZMQ.socket(ctx, ZMQ.ZMQ_REP);
-        assertThat(handler, notNullValue());
-        boolean rc = ZMQ.bind(handler, "inproc://zeromq.zap.01");
-        assertThat(rc, is(true));
+        return MechanismTester.runTest(testCtx, withzap, tested, zapProvider, configurator);
+    }
 
-        Thread thread = new Thread(new ZapHandler(handler));
-        thread.start();
-
-        //  We bounce between a binding server and a connecting client
-
+    @Test(timeout = 5000)
+    public void testNoZap() throws InterruptedException
+    {
         //  We first test client/server with no ZAP domain
-        //  Libzmq does not call our ZAP handler, the connect must succeed
-        System.out.println("Test NO ZAP domain");
-        SocketBase server = ZMQ.socket(ctx, ZMQ.ZMQ_DEALER);
-        assertThat(server, notNullValue());
-        SocketBase client = ZMQ.socket(ctx, ZMQ.ZMQ_DEALER);
-        assertThat(client, notNullValue());
+        Boolean status = runTest(false, tctxt -> {
+            boolean rc;
 
-        rc = ZMQ.bind(server, host);
-        assertThat(rc, is(true));
+            rc = ZMQ.bind(tctxt.server, tctxt.host);
+            assertThat(rc, is(true));
 
-        String endpoint = (String) ZMQ.getSocketOptionExt(server, ZMQ.ZMQ_LAST_ENDPOINT);
-        assertThat(endpoint, notNullValue());
+            String host = (String) ZMQ.getSocketOptionExt(tctxt.server, ZMQ.ZMQ_LAST_ENDPOINT);
 
-        rc = ZMQ.connect(client, endpoint);
-        assertThat(rc, is(true));
+            rc = ZMQ.connect(tctxt.client, host);
+            assertThat(rc, is(true));
+            return true;
+        });
+        assertThat(status, nullValue());
+    }
 
-        Helper.bounce(server, client);
-        ZMQ.closeZeroLinger(server);
-        ZMQ.closeZeroLinger(client);
+    @Test(timeout = 5000)
+    public void testZap() throws InterruptedException
+    {
+        //  Now use the right domain, the test must pass
 
-        //  Now define a ZAP domain for the server; this enables
+        Boolean status = runTest(true, tctxt -> {
+            boolean rc;
+
+            ZMQ.setSocketOption(tctxt.server, ZMQ.ZMQ_ZAP_DOMAIN, "TEST");
+
+            rc = ZMQ.bind(tctxt.server, tctxt.host);
+            assertThat(rc, is(true));
+
+            String host = (String) ZMQ.getSocketOptionExt(tctxt.server, ZMQ.ZMQ_LAST_ENDPOINT);
+
+            rc = ZMQ.connect(tctxt.client, host);
+            assertThat(rc, is(true));
+            return true;
+        });
+        assertThat(status, is(true));
+    }
+
+    @Test(timeout = 5000)
+    public void testWrongDomain() throws InterruptedException
+    {
+        //  Define a ZAP domain for the server; this enables
         //  authentication. We're using the wrong domain so this test
         //  must fail.
-        System.out.println("Test WRONG ZAP domain");
-        server = ZMQ.socket(ctx, ZMQ.ZMQ_DEALER);
-        assertThat(server, notNullValue());
-        client = ZMQ.socket(ctx, ZMQ.ZMQ_DEALER);
-        assertThat(client, notNullValue());
 
-        ZMQ.setSocketOption(server, ZMQ.ZMQ_ZAP_DOMAIN, "WRONG");
+        Boolean status = runTest(true, tctxt -> {
+            boolean rc;
 
-        rc = ZMQ.bind(server, host);
-        assertThat(rc, is(true));
+            ZMQ.setSocketOption(tctxt.server, ZMQ.ZMQ_ZAP_DOMAIN, "WRONG");
 
-        endpoint = (String) ZMQ.getSocketOptionExt(server, ZMQ.ZMQ_LAST_ENDPOINT);
-        assertThat(endpoint, notNullValue());
+            rc = ZMQ.bind(tctxt.server, tctxt.host);
+            assertThat(rc, is(true));
 
-        rc = ZMQ.connect(client, endpoint);
-        assertThat(rc, is(true));
+            String host = (String) ZMQ.getSocketOptionExt(tctxt.server, ZMQ.ZMQ_LAST_ENDPOINT);
 
-        Helper.expectBounceFail(server, client);
-        ZMQ.closeZeroLinger(server);
-        ZMQ.closeZeroLinger(client);
+            rc = ZMQ.connect(tctxt.client, host);
+            assertThat(rc, is(true));
+            return false;
+        });
+        assertThat(status, is(false));
+    }
 
-        //  Now use the right domain, the test must pass
-        System.out.println("Test RIGHT ZAP domain");
-        server = ZMQ.socket(ctx, ZMQ.ZMQ_DEALER);
-        assertThat(server, notNullValue());
-        client = ZMQ.socket(ctx, ZMQ.ZMQ_DEALER);
-        assertThat(client, notNullValue());
-
-        ZMQ.setSocketOption(server, ZMQ.ZMQ_ZAP_DOMAIN, "TEST");
-        rc = ZMQ.bind(server, host);
-        assertThat(rc, is(true));
-
-        endpoint = (String) ZMQ.getSocketOptionExt(server, ZMQ.ZMQ_LAST_ENDPOINT);
-        assertThat(endpoint, notNullValue());
-
-        rc = ZMQ.connect(client, endpoint);
-        assertThat(rc, is(true));
-
-        Helper.bounce(server, client);
-        ZMQ.closeZeroLinger(server);
-        ZMQ.closeZeroLinger(client);
-
+    @Test(timeout = 5000)
+    public void testRawSocket() throws InterruptedException
+    {
         // Unauthenticated messages from a vanilla socket shouldn't be received
-        server = ZMQ.socket(ctx, ZMQ.ZMQ_DEALER);
-        assertThat(server, notNullValue());
-        ZMQ.setSocketOption(server, ZMQ.ZMQ_ZAP_DOMAIN, "WRONG");
-        rc = ZMQ.bind(server, host);
-        assertThat(rc, is(true));
-
-        endpoint = (String) ZMQ.getSocketOptionExt(server, ZMQ.ZMQ_LAST_ENDPOINT);
-        assertThat(endpoint, notNullValue());
-
-        Socket sock = new Socket("127.0.0.1", TestUtils.port(endpoint));
-        // send anonymous ZMTP/1.0 greeting
-        OutputStream out = sock.getOutputStream();
-        out.write(new StringBuilder().append(0x01).append(0x00).toString().getBytes(ZMQ.CHARSET));
-        // send sneaky message that shouldn't be received
-        out.write(
-                  new StringBuilder().append(0x08).append(0x00).append("sneaky").append(0x00).toString()
-                          .getBytes(ZMQ.CHARSET));
-        int timeout = 250;
-        ZMQ.setSocketOption(server, ZMQ.ZMQ_RCVTIMEO, timeout);
-
-        Msg msg = ZMQ.recv(server, 0);
-        assertThat(msg, nullValue());
-
-        sock.close();
-        ZMQ.closeZeroLinger(server);
-
-        //  Shutdown
-        ZMQ.term(ctx);
-
-        //  Wait until ZAP handler terminates
-        thread.join();
+        Boolean zapCheck = runTest(false, MechanismTester::testRawSocket);
+        assertThat(zapCheck, nullValue());
     }
 }

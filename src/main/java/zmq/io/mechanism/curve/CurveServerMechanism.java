@@ -513,6 +513,9 @@ public class CurveServerMechanism extends Mechanism
         if (statusCode != null) {
             msg.putShortString(statusCode);
         }
+        else {
+            msg.putShortString("");
+        }
 
         return 0;
     }
