@@ -9,6 +9,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.Condition;
 
+@Deprecated
 public class MailboxSafe implements IMailbox
 {
     //  The pipe to store actual commands.
