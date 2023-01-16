@@ -104,9 +104,6 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
     // Mutex for synchronize access to the socket in thread safe mode
     private final ReentrantLock threadSafeSync;
 
-    // Signaler to be used in the reaping stage
-    private Signaler reaperSignaler;
-
     protected SocketBase(Ctx parent, int tid, int sid)
     {
         this(parent, tid, sid, false);
@@ -135,14 +132,8 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
 
         this.threadSafe = threadSafe;
         this.threadSafeSync = new ReentrantLock();
-        this.reaperSignaler = null;
 
-        if (threadSafe) {
-            mailbox = new MailboxSafe(parent, this.threadSafeSync, "safe-socket-" + sid);
-        }
-        else {
-            mailbox = new Mailbox(parent, "socket-" + sid, tid);
-        }
+        mailbox = new Mailbox(parent, "socket-" + sid, tid);
     }
 
     //  Concrete algorithms for the x- methods are to be defined by
@@ -168,14 +159,6 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
                 mailbox.close();
             }
             catch (IOException ignore) {
-            }
-
-            if (reaperSignaler != null) {
-                try {
-                    reaperSignaler.close();
-                }
-                catch (IOException ignored) {
-                }
             }
 
             stopMonitor();
@@ -1083,11 +1066,6 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
         lock();
 
         try {
-            //  Remove all existing signalers for thread safe sockets
-            if (threadSafe) {
-                ((MailboxSafe) mailbox).clearSignalers();
-            }
-
             //  Mark the socket as dead
             active = false;
 
@@ -1121,23 +1099,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
         this.poller = poller;
         SelectableChannel fd;
 
-        if (!threadSafe) {
-            fd = ((Mailbox) mailbox).getFd();
-        }
-        else {
-            threadSafeSync.lock();
-            try {
-                reaperSignaler = new Signaler(getCtx(), getTid(), getCtx().errno());
-                fd = reaperSignaler.getFd();
-                ((MailboxSafe) mailbox).addSignaler(reaperSignaler);
-
-                // Send a signal to make sure reaper handle existing commands
-                reaperSignaler.send();
-            }
-            finally {
-                threadSafeSync.unlock();
-            }
-        }
+        fd = ((Mailbox) mailbox).getFd();
 
         handle = this.poller.addHandle(fd, this);
         this.poller.setPollIn(handle);
@@ -1357,10 +1319,6 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
         lock();
 
         try {
-            //  If the socket is thread safe we need to unsignal the reaper signaler
-            if (threadSafe) {
-                reaperSignaler.recv();
-            }
             enterInEvent();
             processCommands(0, false, null);
         }

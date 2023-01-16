@@ -30,8 +30,8 @@ final class Signaler implements Closeable
     private final Pipe.SinkChannel   w;
     private final Pipe.SourceChannel r;
     private final Selector           selector;
-    private final ByteBuffer         wdummy = ByteBuffer.allocate(1);
-    private final ByteBuffer         rdummy = ByteBuffer.allocate(1);
+    private final ThreadLocal<ByteBuffer>         wdummy = ThreadLocal.withInitial(() -> ByteBuffer.allocate(1));
+    private final ThreadLocal<ByteBuffer>         rdummy = ThreadLocal.withInitial(() -> ByteBuffer.allocate(1));
 
     // Selector.selectNow at every sending message doesn't show enough performance
     private final AtomicLong wcursor = new AtomicLong(0);
@@ -68,7 +68,7 @@ final class Signaler implements Closeable
     private <O> O maksInterrupt(IoOperation<O> operation) throws IOException
     {
         // This loop try to protect the current thread from external interruption.
-        // If it happens, it mangle current context internal state.
+        // If it happens, it mangles current context internal state.
         // So it keep trying until it succeed.
         // This must only be called on internal IO (using Pipe)
         boolean interrupted = Thread.interrupted();
@@ -131,8 +131,8 @@ final class Signaler implements Closeable
 
         while (nbytes == 0) {
             try {
-                wdummy.clear();
-                nbytes = maksInterrupt(() -> w.write(wdummy));
+                wdummy.get().clear();
+                nbytes = maksInterrupt(() -> w.write(wdummy.get()));
             }
             catch (IOException e) {
                 throw new ZError.IOException(e);
@@ -198,8 +198,8 @@ final class Signaler implements Closeable
         // On windows, there may be a need to try several times until it succeeds
         while (nbytes == 0) {
             try {
-                rdummy.clear();
-                nbytes = maksInterrupt(() -> r.read(rdummy));
+                rdummy.get().clear();
+                nbytes = maksInterrupt(() -> r.read(rdummy.get()));
             }
             catch (ClosedChannelException e) {
                 errno.set(ZError.EINTR);
