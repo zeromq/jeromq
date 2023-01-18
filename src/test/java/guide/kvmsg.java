@@ -179,6 +179,7 @@ public class kvmsg
         System.arraycopy(key.getBytes(ZMQ.CHARSET), 0, msg, 0, key.length());
         frame[FRAME_KEY] = msg;
         present[FRAME_KEY] = true;
+        this.key = null;
     }
 
     //  Set message getKey using printf format
