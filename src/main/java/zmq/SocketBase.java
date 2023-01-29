@@ -378,7 +378,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
                 return false;
             }
 
-            switch(protocol) {
+            switch (protocol) {
             case inproc: {
                 Ctx.Endpoint endpoint = new Ctx.Endpoint(this, options);
                 boolean rc = registerEndpoint(addr, endpoint);
