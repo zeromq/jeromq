@@ -24,19 +24,16 @@
   </developers>
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <maven.compiler.source>8</maven.compiler.source>
-    <maven.compiler.target>8</maven.compiler.target>
-    <!-- Indirection needed to keep optionnal jacoco settings and external argument lines-->
+    <jdk.target>8</jdk.target>
+    <!-- Indirection needed to keep optional jacoco settings and external argument lines-->
     <arg.line />
     <argLine>${arg.line}</argLine>
-    <!-- Hides incompatibily in javadoc headers between java 8 and latter -->
-    <doclint>all</doclint>
   </properties>
   <dependencies>
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <version>4.13.1</version>
+      <version>4.13.2</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -144,9 +141,8 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-javadoc-plugin</artifactId>
-          <version>3.2.0</version>
+          <version>3.4.1</version>
           <configuration>
-            <bootclasspath>${bootclasspath}</bootclasspath>
             <detectJavaApiLink>true</detectJavaApiLink>
             <source>${maven.compiler.source}</source>
             <tags>
@@ -161,37 +157,37 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-antrun-plugin</artifactId>
-          <version>1.8</version>
-        </plugin>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-clean-plugin</artifactId>
           <version>3.1.0</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-clean-plugin</artifactId>
+          <version>3.2.0</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-dependency-plugin</artifactId>
-          <version>3.1.1</version>
+          <version>3.3.0</version>
         </plugin>
         <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-resources-plugin</artifactId>
-            <version>3.1.0</version>
+            <version>3.3.0</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-compiler-plugin</artifactId>
-          <version>3.8.0</version>
+          <version>3.10.1</version>
         </plugin>
         <plugin>
             <groupId>org.jacoco</groupId>
             <artifactId>jacoco-maven-plugin</artifactId>
-            <version>0.8.5</version>
+            <version>0.8.8</version>
         </plugin>
         <plugin>
             <groupId>org.sonarsource.scanner.maven</groupId>
             <artifactId>sonar-maven-plugin</artifactId>
-            <version>3.7.0.1746</version>
+            <version>3.9.1.2184</version>
         </plugin>
         <plugin>
             <groupId>org.eluder.coveralls</groupId>
@@ -201,84 +197,84 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
-          <version>3.0.0-M3</version>
+          <version>3.0.0-M7</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-source-plugin</artifactId>
-          <version>3.0.1</version>
+          <version>3.2.1</version>
         </plugin>
         <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-jar-plugin</artifactId>
-            <version>3.1.1</version>
+            <version>3.2.2</version>
         </plugin>
         <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-assembly-plugin</artifactId>
-            <version>3.1.1</version>
+            <version>3.4.1</version>
         </plugin>
         <plugin>
           <groupId>org.apache.felix</groupId>
           <artifactId>maven-bundle-plugin</artifactId>
-          <version>5.1.1</version>
+          <version>5.1.8</version>
         </plugin>
         <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-site-plugin</artifactId>
-            <version>3.9.0</version>
+            <version>4.0.0-M2</version>
         </plugin>
         <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-project-info-reports-plugin</artifactId>
-            <version>3.1.2</version>
+            <version>3.4.1</version>
         </plugin>
         <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-checkstyle-plugin</artifactId>
-            <version>3.1.1</version>
+            <version>3.2.1</version>
             <dependencies>
               <dependency>
                 <groupId>com.puppycrawl.tools</groupId>
                 <artifactId>checkstyle</artifactId>
-                <version>8.38</version>
+                <version>10.6.0</version>
               </dependency>
             </dependencies>
          </plugin>
          <plugin>
            <groupId>org.codehaus.mojo</groupId>
            <artifactId>animal-sniffer-maven-plugin</artifactId>
-           <version>1.20</version>
+           <version>1.22</version>
          </plugin>
          <plugin>
             <groupId>org.codehaus.mojo</groupId>
             <artifactId>versions-maven-plugin</artifactId>
-            <version>2.8.1</version>
+            <version>2.14.2</version>
         </plugin>
         <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-install-plugin</artifactId>
-            <version>3.0.0-M1</version>
+            <version>3.0.1</version>
         </plugin>
         <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-deploy-plugin</artifactId>
-            <version>3.0.0-M1</version>
+            <version>3.0.0-M2</version>
         </plugin>
         <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-gpg-plugin</artifactId>
-            <version>1.6</version>
+            <version>3.0.1</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-release-plugin</artifactId>
-          <version>2.5.3</version>
+          <version>3.0.0-M6</version>
         </plugin>
         <plugin>
           <groupId>org.sonatype.plugins</groupId>
           <artifactId>nexus-staging-maven-plugin</artifactId>
-          <version>1.6.8</version>
+          <version>1.6.13</version>
         </plugin>
       </plugins>
     </pluginManagement>
@@ -293,60 +289,23 @@
   </reporting>
   <profiles>
     <profile>
-      <!--Activate jacoco coverage -->
-      <id>coverage</id>
-        <activation>
-          <activeByDefault>false</activeByDefault>
-        </activation>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.jacoco</groupId>
-            <artifactId>jacoco-maven-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>default-prepare-agent</id>
-                <goals>
-                  <goal>prepare-agent</goal>
-                </goals>
-              </execution>
-              <execution>
-                <id>default-report</id>
-                <phase>prepare-package</phase>
-                <goals>
-                  <goal>report</goal>
-                </goals>
-              </execution>
-              <execution>
-                <id>default-check</id>
-                <goals>
-                  <goal>check</goal>
-                </goals>
-                <configuration>
-                  <rules>
-                    <!-- implementation is needed only for Maven 2 -->
-                    <rule implementation="org.jacoco.maven.RuleConfiguration">
-                      <element>BUNDLE</element>
-                      <limits>
-                        <!-- implementation is needed only for Maven 2 -->
-                        <limit implementation="org.jacoco.report.check.Limit">
-                          <counter>COMPLEXITY</counter>
-                          <value>COVEREDRATIO</value>
-                          <minimum>0.60</minimum>
-                        </limit>
-                      </limits>
-                    </rule>
-                  </rules>
-                </configuration>
-              </execution>
-            </executions>
-          </plugin>
-        <plugin>
-          <groupId>org.eluder.coveralls</groupId>
-          <artifactId>coveralls-maven-plugin</artifactId>
-        </plugin>
-        </plugins>
-      </build>
+      <id>jdk8</id>
+      <activation>
+        <jdk>1.8</jdk>
+      </activation>
+      <properties>
+        <maven.compiler.source>${jdk.target}</maven.compiler.source>
+        <maven.compiler.target>${jdk.target}</maven.compiler.target>
+      </properties>
+    </profile>
+    <profile>
+      <id>jdk9+</id>
+      <activation>
+        <jdk>(1.8,)</jdk>
+      </activation>
+      <properties>
+        <maven.compiler.release>${jdk.target}</maven.compiler.release>
+      </properties>
     </profile>
     <profile>
       <!-- Used with the phase 'site' to check plugins and dependency versions -->
@@ -397,57 +356,34 @@
       </build>
     </profile>
     <profile>
-      <!-- With this profile, it's possible to used the latest jvm but still get jar compatible with pre-9 JVM.
-           It's activated when jdk.compile.home is defined. Example:
-           JAVA_HOME=$JAVA14_HOME mvn compile -Djdk.compile.home=$JAVA8_HOME !-->
-      <id>crosscompile</id>
-      <activation>
-        <property>
-          <name>jdk.compile.home</name>
-        </property>
-      </activation>
-      <properties>
-        <bootclasspath>${jdk.compile.home}/jre/lib/rt.jar</bootclasspath>
-      </properties>
+      <id>sonar</id>
       <build>
         <plugins>
           <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-compiler-plugin</artifactId>
-            <configuration>
-              <compilerArgs>
-                  <arg>-Xbootclasspath:${bootclasspath}</arg>
-              </compilerArgs>
-              <!-- needed for maven-plugin-javadoc to find the source version to use -->
-              <source>${maven.compiler.source}</source>
-              <target>${maven.compiler.target}</target>
-            </configuration>
+            <groupId>org.sonarsource.scanner.maven</groupId>
+            <artifactId>sonar-maven-plugin</artifactId>
+          </plugin>
+          <plugin>
+            <groupId>org.jacoco</groupId>
+            <artifactId>jacoco-maven-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>prepare-agent</id>
+                <goals>
+                  <goal>prepare-agent</goal>
+                </goals>
+              </execution>
+              <execution>
+                <id>report</id>
+                <goals>
+                  <goal>report</goal>
+                </goals>
+              </execution>
+            </executions>
           </plugin>
         </plugins>
       </build>
     </profile>
-    <profile>
-      <!-- The default compile settings, when jdk.compile.home is not defined -->
-      <id>nocrosscompile</id>
-      <activation>
-        <property>
-            <name>!jdk.compile.home</name>
-        </property>
-      </activation>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-compiler-plugin</artifactId>
-            <configuration>
-              <!-- needed for maven-plugin-javadoc to find the source version to use -->
-              <source>${maven.compiler.source}</source>
-              <target>${maven.compiler.target}</target>
-            </configuration>
-          </plugin>
-        </plugins>
-      </build>
-   </profile>
     <profile>
       <!-- Used to sign a release -->
       <id>release</id>

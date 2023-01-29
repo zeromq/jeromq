@@ -2,36 +2,23 @@ version: 2.1
 jobs:
     checkout:
         docker:
-            - image: circleci/openjdk:17-jdk-buster
+            - image: cimg/openjdk:17.0
         steps:
             - checkout
             - restore_cache:
                 key: jeromq-{{ checksum "pom.xml" }}
-            - restore_cache:
-                key: jeromq-mavendep
             - run: mkdir -p /home/circleci/.sonar/cache /home/circleci/.m2/repository
             - run:
-                command: "mvn -B dependency:resolve dependency:resolve-plugins -s .circleci/settings.xml -Pandroid,sonar,coverage,checkstyle"
-                environment:
-                    JAVA_HOME: /usr/local/openjdk-17
-                    MAVEN_OPTS: "-Xmx1024m"
+                command: "mvn -B dependency:resolve dependency:resolve-plugins sonar:help jacoco:help checkstyle:help -Psonar,versions,android -s .circleci/settings.xml"
             - persist_to_workspace:
                 root: /
                 paths:
                     - home/circleci/.m2/repository
                     - home/circleci/.sonar/cache
                     - home/circleci/project
-    jdk8:
-        docker:
-            - image: circleci/openjdk:8-buster
-        steps:
-            - persist_to_workspace:
-                root: /usr/local
-                paths:
-                    - openjdk-8
     build:
         docker:
-            - image: circleci/openjdk:17-jdk-buster
+            - image: cimg/openjdk:17.0
         steps:
             - attach_workspace:
                 at: /tmp/ws
@@ -41,18 +28,36 @@ jobs:
                     mv -n /tmp/ws/home/circleci/project/* /home/circleci/project/
                     mv -n /tmp/ws/home/circleci/project/.??* /home/circleci/project/
             - run:
-                command: mvn -B clean compile site -Pcheckstyle -Djdk.compile.home=/tmp/ws/openjdk-8 -s .circleci/settings.xml
+                command: mvn -B clean compile -Pcheckstyle -s .circleci/settings.xml
                 environment:
-                    JAVA_HOME: /usr/local/openjdk-17
                     MAVEN_OPTS: "-Xmx2048m"
             - persist_to_workspace:
                 root: /
                 paths:
                     - home/circleci/.m2/repository
                     - home/circleci/project/target
+    testsj19:
+        docker:
+            - image: cimg/openjdk:19.0
+        steps:
+            - attach_workspace:
+                  at: /tmp/ws
+            - run:
+                  command: |
+                      mv -n /tmp/ws/home/circleci/.m2 /home/circleci/
+                      mv -n /tmp/ws/home/circleci/project/* /home/circleci/project/
+                      mv -n /tmp/ws/home/circleci/project/.??* /home/circleci/project/
+            - run:
+                  command: |
+                      mkdir -p /tmp/$CIRCLE_JOB
+                      mvn -B test -Pskip -Darg.line="-Xmx2048m" -Djava.io.tmpdir="/tmp/$CIRCLE_JOB" -s .circleci/settings.xml
+                  environment:
+                      MAVEN_OPTS: "-Xmx1024m"
+            - store_test_results:
+                  path: target/surefire-reports
     testsj17:
         docker:
-            - image: circleci/openjdk:17-jdk-buster
+            - image: cimg/openjdk:17.0
         steps:
             - attach_workspace:
                 at: /tmp/ws
@@ -65,14 +70,14 @@ jobs:
                 command: |
                     # If no symbolic name, it's a PR, will run sonar
                     if [ -n "$(git symbolic-ref HEAD 2>/dev/null )" ] ; then
-                        SONAR="jacoco:report sonar:sonar -Psonar,coverage"
+                        SONAR="jacoco:report sonar:sonar -Psonar"
                         echo "Doing sonar"
                     else
                         SONAR=""
                     fi
-                    mvn -B test $SONAR -Pskip -Darg.line="-Xmx2048m" -s .circleci/settings.xml
+                    mkdir -p /tmp/$CIRCLE_JOB
+                    mvn -B test $SONAR -Pskip -Darg.line="-Xmx2048m" -Djava.io.tmpdir="/tmp/$CIRCLE_JOB" -s .circleci/settings.xml
                 environment:
-                    JAVA_HOME: /usr/local/openjdk-17
                     MAVEN_OPTS: "-Xmx1024m"
             - store_test_results:
                 path: target/surefire-reports
@@ -81,9 +86,10 @@ jobs:
                 paths:
                     - home/circleci/.m2/repository
                     - home/circleci/.sonar/cache
+                    - home/circleci/project
     testsj11:
         docker:
-            - image: circleci/openjdk:11-buster
+            - image: cimg/openjdk:11.0
         steps:
             - attach_workspace:
                 at: /tmp/ws
@@ -95,16 +101,16 @@ jobs:
                     mv -n /tmp/ws/home/circleci/project/.??* /home/circleci/project/
             - run:
                 command: |
-                    mvn -B test -Pskip -Darg.line="-Xmx2048m" -s .circleci/settings.xml
+                    mkdir -p /tmp/$CIRCLE_JOB
+                    mvn -B test -Pskip -Darg.line="-Xmx2048m" -Djava.io.tmpdir="/tmp/$CIRCLE_JOB" -s .circleci/settings.xml
                 environment:
-                    JAVA_HOME: /usr/local/openjdk-11
                     MAVEN_OPTS: "-Xmx512m"
             - store_test_results:
                 path: target/surefire-reports
             #don't persist_to_workspace, can't be done in parallel with testsj13
     testsj8:
         docker:
-            - image: circleci/openjdk:8-buster
+            - image: cimg/openjdk:8.0
         steps:
             - attach_workspace:
                 at: /tmp/ws
@@ -116,16 +122,15 @@ jobs:
                     mv -n /tmp/ws/home/circleci/project/.??* /home/circleci/project/
             - run:
                 command: |
-                    mvn -B test -Pskip -Darg.line="-Xmx2048m" -s .circleci/settings.xml
+                    mvn -B test -Pskip -Darg.line="-Xmx2048m" -Djava.io.tmpdir="/tmp/$CIRCLE_JOB" -s .circleci/settings.xml
                 environment:
-                    JAVA_HOME: /usr/local/openjdk-8
                     MAVEN_OPTS: "-Xmx512m"
             - store_test_results:
                 path: target/surefire-reports
             #don't persist_to_workspace, can't be done in parallel with testsj13
     testsandroid:
         docker:
-            - image: circleci/openjdk:17-jdk-buster
+            - image: cimg/openjdk:17.0
         steps:
             - attach_workspace:
                 at: /tmp/ws
@@ -139,11 +144,10 @@ jobs:
                 command: |
                     mvn -B test -Pskip,android -Darg.line="-Xmx2048m" -s .circleci/settings.xml -Dmaven.test.skip=true
                 environment:
-                    JAVA_HOME: /usr/local/openjdk-17
                     MAVEN_OPTS: "-Xmx2048m"
     publish:
         docker:
-            - image: circleci/openjdk:17-jdk-buster
+            - image: cimg/openjdk:17.0
         steps:
             - attach_workspace:
                 at: /tmp/ws
@@ -165,7 +169,6 @@ jobs:
                     echo "publishing jobs: $PUBLISH"
                     mvn -B $PUBLISH -Pskip -Dmaven.test.skip=true -Dmaven.javadoc.skip=false -s .circleci/settings.xml
                 environment:
-                    JAVA_HOME: /usr/local/openjdk-17
                     MAVEN_OPTS: "-Xmx2048m"
             - store_artifacts:
                 path: /home/circleci/.m2/repository/org/zeromq/jeromq
@@ -177,7 +180,7 @@ jobs:
                     - home/circleci/.sonar/cache
     savecache:
         docker:
-            - image: circleci/openjdk:17-jdk-buster
+            - image: cimg/openjdk:17.0
         steps:
             - attach_workspace:
                 at: /tmp/ws
@@ -188,22 +191,17 @@ jobs:
                     mv /tmp/ws/home/circleci/.sonar /home/circleci/
             - save_cache:
                 paths:
+                    - /home/circleci/.m2/repository
                     - /home/circleci/.sonar/cache
                 key: jeromq-{{ checksum "pom.xml" }}
-            - save_cache:
-                paths:
-                    - /home/circleci/.m2/repository
-                key: jeromq-mavendep
 workflows:
   version: 2.1
   build_and_test:
     jobs:
       - checkout
-      - jdk8
       - build:
           requires:
               - checkout
-              - jdk8
       - testsj8:
           requires:
               - build
@@ -213,6 +211,9 @@ workflows:
       - testsj17:
           requires:
               - build
+      - testsj19:
+            requires:
+                - build
       - testsandroid:
           requires:
               - build
@@ -221,6 +222,8 @@ workflows:
               - testsj8
               - testsj11
               - testsj17
+              - testsj19
+              - testsandroid
       - savecache:
           requires:
               - publish
