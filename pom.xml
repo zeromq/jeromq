@@ -93,7 +93,7 @@
           <archive>
             <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
             <manifestEntries>
-              <Automatic-Module-Name>jeromq</Automatic-Module-Name>
+              <Automatic-Module-Name>${groupId}.${artifactId}</Automatic-Module-Name>
             </manifestEntries>
           </archive>
         </configuration>
