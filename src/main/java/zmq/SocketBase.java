@@ -1,5 +1,16 @@
 package zmq;
 
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.nio.channels.SelectableChannel;
+import java.nio.channels.SocketChannel;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.ReentrantLock;
+
 import zmq.io.IOThread;
 import zmq.io.SessionBase;
 import zmq.io.net.Address;
@@ -13,16 +24,6 @@ import zmq.socket.Sockets;
 import zmq.util.Blob;
 import zmq.util.Clock;
 import zmq.util.MultiMap;
-
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.nio.channels.SelectableChannel;
-import java.nio.channels.SocketChannel;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.ReentrantLock;
 
 public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeEvents
 {
@@ -42,6 +43,30 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
         public String toString()
         {
             return "EndpointPipe [endpoint=" + endpoint + ", pipe=" + pipe + "]";
+        }
+    }
+
+    /**
+     * The old consumer that forward events through a socket
+     */
+    private static class SocketEventHandler implements ZMQ.EventConsummer
+    {
+        private final SocketBase monitorSocket;
+
+        public SocketEventHandler(SocketBase monitorSocket)
+        {
+            this.monitorSocket = monitorSocket;
+        }
+
+        public void consume(ZMQ.Event ev)
+        {
+            ev.write(monitorSocket);
+        }
+
+        @Override
+        public void close()
+        {
+            monitorSocket.close();
         }
     }
 
@@ -87,16 +112,13 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
     // File descriptor if applicable
     private SocketChannel fileDesc;
 
-    // Monitor socket
-    private SocketBase monitorSocket;
-
     // Bitmask of events being monitored
     private int monitorEvents;
 
     // Next assigned name on a zmq_connect() call used by ROUTER and STREAM socket types
     protected String connectRid;
 
-    private final ReentrantLock monitorSync = new ReentrantLock(false);
+    private final AtomicReference<ZMQ.EventConsummer> monitor;
 
     // Indicate if the socket is thread safe
     private final boolean threadSafe;
@@ -119,8 +141,8 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
         lastTsc = 0;
         ticks = 0;
         rcvmore = false;
-        monitorSocket = null;
         monitorEvents = 0;
+        monitor = new AtomicReference<>(null);
 
         options.socketId = sid;
         options.ipv6 = parent.get(ZMQ.ZMQ_IPV6) != 0;
@@ -153,8 +175,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
     @Override
     protected void destroy()
     {
-        try {
-            monitorSync.lock();
+        synchronized (monitor) {
             try {
                 mailbox.close();
             }
@@ -163,9 +184,6 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
 
             stopMonitor();
             assert (destroyed.get());
-        }
-        finally {
-            monitorSync.unlock();
         }
     }
 
@@ -1191,15 +1209,10 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
         //  We'll remember the fact so that any blocking call is interrupted and any
         //  further attempt to use the socket will return ETERM. The user is still
         //  responsible for calling zmq_close on the socket though!
-        try {
-            monitorSync.lock();
+        synchronized (monitor) {
             stopMonitor();
             ctxTerminated.set(true);
         }
-        finally {
-            monitorSync.unlock();
-        }
-
     }
 
     @Override
@@ -1410,26 +1423,20 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
      * @param events an event mask to monitor.
      * @return true if creation succeeded.
      * @throws IllegalStateException if a previous monitor was already
-     *         registered.
+     *         registered and consumer is not null.
      */
     public final boolean monitor(final String addr, int events)
     {
-        try {
-            monitorSync.lock();
-
-            boolean rc;
+        synchronized (monitor) {
+            // To be tested before trying anything
             if (ctxTerminated.get()) {
                 errno.set(ZError.ETERM);
                 return false;
             }
-
-            // Support deregistering monitoring endpoints as well
+            // Support unregistering monitoring endpoints as well
             if (addr == null) {
                 stopMonitor();
                 return true;
-            }
-            if (monitorSocket != null) {
-                throw new IllegalStateException("Monitor registred twice");
             }
 
             SimpleURI uri = SimpleURI.create(addr);
@@ -1444,35 +1451,51 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
                 errno.set(ZError.EPROTONOSUPPORT);
                 return false;
             }
-
-            // Register events to monitor
-            monitorEvents = events;
-
-            monitorSocket = getCtx().createSocket(ZMQ.ZMQ_PAIR);
+            SocketBase monitorSocket = getCtx().createSocket(ZMQ.ZMQ_PAIR);
             if (monitorSocket == null) {
                 return false;
             }
-
             // Never block context termination on pending event messages
-            try {
-                monitorSocket.setSocketOpt(ZMQ.ZMQ_LINGER, 0);
+            monitorSocket.setSocketOpt(ZMQ.ZMQ_LINGER, 0);
+            boolean rc = monitorSocket.bind(addr);
+            if (rc) {
+                return monitor(new SocketEventHandler(monitorSocket), events);
             }
-            catch (IllegalArgumentException e) {
-                stopMonitor();
-                throw e;
+            else {
+                return false;
             }
-
-            // Spawn the monitor socket endpoint
-            rc = monitorSocket.bind(addr);
-            if (!rc) {
-                stopMonitor();
-            }
-            return rc;
         }
-        finally {
-            monitorSync.unlock();
-        }
+    }
 
+    /**
+     * Register a custom event consumer.
+     * @param consumer or null for unregister.
+     * @param events an event mask to monitor.
+     * @return true if creation succeeded.
+     * @throws IllegalStateException if a previous monitor was already
+     *         registered and consumer is not null.
+     */
+    public final boolean monitor(ZMQ.EventConsummer consumer, int events)
+    {
+        synchronized (monitor) {
+            if (ctxTerminated.get()) {
+                errno.set(ZError.ETERM);
+                return false;
+            }
+            // Support unregistering monitoring endpoints as well
+            if (consumer == null) {
+                stopMonitor();
+            }
+            else {
+                if (monitor.get() != null) {
+                    throw new IllegalStateException("Monitor registered twice");
+                }
+                monitor.set(consumer);
+                // Register events to monitor
+                monitorEvents = events;
+            }
+            return true;
+        }
     }
 
     public final void eventHandshaken(String addr, int zmtpVersion)
@@ -1552,27 +1575,21 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
 
     private void event(String addr, Object arg, int event)
     {
-        try {
-            monitorSync.lock();
-            if ((monitorEvents & event) == 0 || monitorSocket == null) {
+        synchronized (monitor) {
+            if ((monitorEvents & event) == 0 || monitor.get() == null) {
                 return;
             }
-
             monitorEvent(new ZMQ.Event(event, addr, arg));
-        }
-        finally {
-            monitorSync.unlock();
         }
     }
 
     //  Send a monitor event
     protected final void monitorEvent(ZMQ.Event event)
     {
-        if (monitorSocket == null) {
+        if (monitor.get() == null) {
             return;
         }
-
-        event.write(monitorSocket);
+        monitor.get().consume(event);
     }
 
     private void stopMonitor()
@@ -1580,12 +1597,12 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
         // this is a private method which is only called from
         // contexts where the mutex has been locked before
 
-        if (monitorSocket != null) {
+        if (monitor.get() != null) {
             if ((monitorEvents & ZMQ.ZMQ_EVENT_MONITOR_STOPPED) != 0) {
                 monitorEvent(new ZMQ.Event(ZMQ.ZMQ_EVENT_MONITOR_STOPPED, "", 0));
             }
-            monitorSocket.close();
-            monitorSocket = null;
+            monitor.get().close();
+            monitor.set(null);
             monitorEvents = 0;
         }
     }
