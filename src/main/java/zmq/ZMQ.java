@@ -263,6 +263,22 @@ public class ZMQ
         }
     }
 
+    /**
+     * A interface used to consume events in monitor
+     */
+    public interface EventConsummer
+    {
+        public void consume(Event ev);
+
+        /**
+         * An optional method to close the monitor if needed
+         */
+        default void close()
+        {
+            // Default do nothing
+        }
+    }
+
     public static class Event
     {
         private static final int VALUE_INTEGER = 1;
@@ -299,6 +315,12 @@ public class ZMQ
 
         public boolean write(SocketBase s)
         {
+            Msg msg = new Msg(serialize(s.getCtx()));
+            return s.send(msg, 0);
+        }
+
+        private ByteBuffer serialize(Ctx ctx)
+        {
             int size = 4 + 1 + addr.length() + 1; // event + len(addr) + addr + flag
             if (flag == VALUE_INTEGER || flag == VALUE_CHANNEL) {
                 size += 4;
@@ -313,13 +335,11 @@ public class ZMQ
                 buffer.putInt((Integer) arg);
             }
             else if (flag == VALUE_CHANNEL) {
-                int channeldId = s.getCtx().forwardChannel((SelectableChannel) arg);
+                int channeldId = ctx.forwardChannel((SelectableChannel) arg);
                 buffer.putInt(channeldId);
             }
             buffer.flip();
-
-            Msg msg = new Msg(buffer);
-            return s.send(msg, 0);
+            return buffer;
         }
 
         /**
