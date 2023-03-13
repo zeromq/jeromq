@@ -15,6 +15,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.zeromq.proto.ZPicture;
+
 import zmq.Ctx;
 import zmq.Msg;
 import zmq.Options;
@@ -457,6 +458,7 @@ public class ZMQ
      */
     public enum Error
     {
+        NOERROR(0, "No error"),
         ENOTSUP(ZError.ENOTSUP, "Not supported"),
         EPROTONOSUPPORT(ZError.EPROTONOSUPPORT, "Protocol not supported"),
         ENOBUFS(ZError.ENOBUFS, "No buffer space available"),
@@ -514,7 +516,10 @@ public class ZMQ
 
         public static Error findByCode(int code)
         {
-            if (map.containsKey(code)) {
+            if (code <= 0) {
+                return NOERROR;
+            }
+            else if (map.containsKey(code)) {
                 return map.get(code);
             }
             else {
@@ -3877,6 +3882,19 @@ public class ZMQ
             return base.monitor(addr, events);
         }
 
+        /**
+         * Register a custom event consumer.
+         *
+         * @param consumer  The event consumer.
+         * @param events the events of interest. A bitmask of the socket events you wish to monitor. To monitor all events, use the event value {@link ZMQ#EVENT_ALL}.
+         * @return true if consumer setup is successful
+         * @throws ZMQException
+         */
+        public boolean setEventHook(ZEvent.ZEventConsummer consumer, int events)
+        {
+            return base.setEventHook(consumer::consume, events);
+        }
+
         protected void mayRaise()
         {
             int errno = base.errno();
@@ -4375,7 +4393,9 @@ public class ZMQ
     /**
      * Inner class: Event.
      * Monitor socket event class
+     * @deprecated Uses {@link org.zeromq.ZEvent} instead
      */
+    @Deprecated
     public static class Event
     {
         private final int    event;
@@ -4513,7 +4533,7 @@ public class ZMQ
         /**
          * Return the argument as an integer or a Enum of the appropriate type if available.
          *
-         * It return objects of type:
+         * It returns objects of type:
          * <ul>
          * <li> {@link org.zeromq.ZMonitor.ProtocolCode} for a handshake protocol error.</li>
          * <li> {@link org.zeromq.ZMQ.Error} for any other error.</li>

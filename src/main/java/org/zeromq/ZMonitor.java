@@ -69,6 +69,7 @@ public class ZMonitor implements Closeable
             }
         }
 
+        @SuppressWarnings("deprecation")
         public ZEvent(ZMQ.Event event)
         {
             code = event.getEvent();
@@ -417,10 +418,10 @@ public class ZMonitor implements Closeable
         @Override
         public boolean stage(Socket socket, Socket pipe, ZPoller poller, int evts)
         {
-            final ZMQ.Event event = ZMQ.Event.recv(socket);
+            final zmq.ZMQ.Event event = zmq.ZMQ.Event.read(socket.base());
             assert (event != null);
-            final int code = event.getEvent();
-            final String address = event.getAddress();
+            final int code = event.event;
+            final String address = event.addr;
             assert (address != null);
             final Event type = Event.findByCode(code);
             assert (type != null);
@@ -434,7 +435,7 @@ public class ZMonitor implements Closeable
 
             msg.add(frame);
 
-            final Object value = event.getValue();
+            final Object value = event.arg;
             if (value != null) {
                 msg.add(value.toString());
             }

@@ -264,7 +264,7 @@ public class ZMQ
     }
 
     /**
-     * A interface used to consume events in monitor
+     * An interface used to consume events in monitor
      */
     public interface EventConsummer
     {
@@ -355,8 +355,24 @@ public class ZMQ
          */
         public SelectableChannel getChannel(SocketBase socket)
         {
+            return getChannel(socket.getCtx());
+        }
+
+        /**
+         * Resolve the channel that was associated with this event.
+         * Implementation note: to be backward compatible, {@link #arg} only store Integer value, so
+         * the channel is resolved using this call.
+         * <p>
+         * Internally socket are kept using weak values, so it's better to retrieve the channel as early
+         * as possible, otherwise it might get lost.
+         *
+         * @param ctx the socket that send the event
+         * @return the channel in the event, or null if was not a channel event.
+         */
+        public SelectableChannel getChannel(Ctx ctx)
+        {
             if (flag == VALUE_CHANNEL) {
-                return socket.getCtx().getForwardedChannel((Integer) arg);
+                return ctx.getForwardedChannel((Integer) arg);
             }
             else {
                 return null;

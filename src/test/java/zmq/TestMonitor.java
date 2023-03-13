@@ -250,7 +250,7 @@ public class TestMonitor
         CountDownLatch listeningLatch = new CountDownLatch(1);
         CountDownLatch closedLatch = new CountDownLatch(1);
         CountDownLatch stoppedLatch = new CountDownLatch(1);
-        boolean rc = rep.monitor(e -> {
+        boolean rc = rep.setEventHook(e -> {
             switch (e.event) {
             case ZMQ.ZMQ_EVENT_LISTENING:
                 assertThat(Thread.currentThread().getName(), is("Time-limited test"));
@@ -289,17 +289,16 @@ public class TestMonitor
         assertThat(ctx, notNullValue());
         SocketBase rep = ZMQ.socket(ctx, ZMQ.ZMQ_REP);
         assertThat(rep, notNullValue());
-        boolean rc = rep.monitor(e -> {
+        boolean rc = rep.setEventHook(e -> {
             assertThat(e.event, is(ZMQ.ZMQ_EVENT_MONITOR_STOPPED));
             assertThat(Thread.currentThread().getName(), is("Time-limited test"));
         }, ZMQ.ZMQ_EVENT_ALL);
         assertThat(rc, is(true));
-        rc = rep.monitor((String) null, ZMQ.ZMQ_EVENT_ALL);
+        rc = rep.monitor(null, ZMQ.ZMQ_EVENT_ALL);
         assertThat(rc, is(true));
         rc = ZMQ.bind(rep, addr);
         assertThat(rc, is(true));
         rep.close();
-        assertThat(rc, is(true));
         ctx.terminate();
     }
 }
