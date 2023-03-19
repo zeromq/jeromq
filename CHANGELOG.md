@@ -2,6 +2,24 @@
 
 ## v0.5.4 (202x-xx-xx)
 
+### Changed
+
+* [#935](https://github.com/zeromq/jeromq/pull/935): With 
+  org.zeromq.ZMQ.Event.recv(socket, DONTWAIT), if there is no more,
+  event to receive, it throws an NPE although the javadoc says it should
+  return null. Fixed.
+  
+  Also don’t resolve event value for ZMQ_EVENT_MONITOR_STOPPED, it’s a constant.
+
+* [#937] (https://github.com/zeromq/jeromq/pull/937): When doing PLAIN or CURVE 
+  authentication, the logic can be exchanged. The client is doing the bind, and
+  the server doing the connect. That was not handled, a connect socket was not 
+  expected to reuse the session, and so found an already configured zapPipe. It’s
+  now handled.
+
+  Some error message was not returning any message, the specification says that an empty error should be returned instead.
+
+  Big rewrite of the tests for mechanisms, the big test function is split and more code is shared.
 
 ## v0.5.3 (2022-12-03)
 
