@@ -3,14 +3,10 @@ package zmq.io.mechanism;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.Socket;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.function.BiFunction;
-import java.util.function.Consumer;
-import java.util.function.Function;
 
 import zmq.Ctx;
 import zmq.Helper;
@@ -19,6 +15,10 @@ import zmq.Options;
 import zmq.SocketBase;
 import zmq.ZMQ;
 import zmq.util.TestUtils;
+import zmq.util.function.BiFunction;
+import zmq.util.function.Function;
+import zmq.util.function.Consumer;
+import zmq.util.function.Optional;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;

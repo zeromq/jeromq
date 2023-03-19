@@ -1,14 +1,14 @@
 package zmq.io.mechanism;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.function.BiFunction;
-import java.util.function.Function;
 
 import org.junit.Test;
 
 import zmq.SocketBase;
 import zmq.ZMQ;
 import zmq.io.mechanism.curve.Curve;
+import zmq.util.function.BiFunction;
+import zmq.util.function.Function;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
