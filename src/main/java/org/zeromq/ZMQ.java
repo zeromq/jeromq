@@ -15,6 +15,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.zeromq.proto.ZPicture;
+
 import zmq.Ctx;
 import zmq.Msg;
 import zmq.Options;
@@ -29,6 +30,7 @@ import zmq.msg.MsgAllocator;
 import zmq.util.Draft;
 import zmq.util.Z85;
 import zmq.util.function.BiFunction;
+import zmq.util.function.Consumer;
 
 /**
  * <p>The ØMQ lightweight messaging kernel is a library which extends the standard socket interfaces
@@ -456,6 +458,7 @@ public class ZMQ
      */
     public enum Error
     {
+        NOERROR(0, "No error"),
         ENOTSUP(ZError.ENOTSUP, "Not supported"),
         EPROTONOSUPPORT(ZError.EPROTONOSUPPORT, "Protocol not supported"),
         ENOBUFS(ZError.ENOBUFS, "No buffer space available"),
@@ -513,7 +516,10 @@ public class ZMQ
 
         public static Error findByCode(int code)
         {
-            if (map.containsKey(code)) {
+            if (code <= 0) {
+                return NOERROR;
+            }
+            else if (map.containsKey(code)) {
                 return map.get(code);
             }
             else {
@@ -874,7 +880,7 @@ public class ZMQ
         private static final int DYNFROM = 0xc000;
         private static final int DYNTO   = 0xffff;
 
-        private final ZContext      zctx;
+        private final Consumer<Socket> socketClose;
         private final SocketBase    base;
         private final AtomicBoolean isClosed = new AtomicBoolean(false);
 
@@ -886,7 +892,7 @@ public class ZMQ
          */
         protected Socket(Context context, SocketType type)
         {
-            this(context, null, type.type);
+            this(context.ctx, type.type, null);
         }
 
         /**
@@ -897,7 +903,7 @@ public class ZMQ
          */
         protected Socket(ZContext context, SocketType type)
         {
-            this(context.getContext(), context, type.type);
+            this(context.getContext().ctx, type.type, context::closeSocket);
         }
 
         /**
@@ -910,19 +916,23 @@ public class ZMQ
         @Deprecated
         protected Socket(Context context, int type)
         {
-            this(context, null, type);
+            this(context.ctx, type, null);
         }
 
-        private Socket(Context context, ZContext zctx, int type)
-        {
-            this.zctx = zctx;
-            base = context.ctx.createSocket(type);
-        }
-
+        /**
+         * Wrap an already existing socket
+         * @param base an already generated socket
+         */
         protected Socket(SocketBase base)
         {
-            zctx = null;
+            this.socketClose = s -> internalClose();
             this.base = base;
+        }
+
+        private Socket(Ctx ctx, int type, Consumer<Socket> socketClose)
+        {
+            this.base = ctx.createSocket(type);
+            this.socketClose = socketClose != null ? socketClose : s -> internalClose();
         }
 
         /**
@@ -943,12 +953,7 @@ public class ZMQ
         @Override
         public void close()
         {
-            if (zctx != null) {
-                zctx.closeSocket(this);
-            }
-            else {
-                internalClose();
-            }
+            socketClose.accept(this);
         }
 
         void internalClose()
@@ -980,6 +985,15 @@ public class ZMQ
         public SocketType getSocketType()
         {
             return SocketType.type(getType());
+        }
+
+        /**
+         *
+         * @return the low level {@link Ctx} associated with this socket.
+         */
+        public Ctx getCtx()
+        {
+            return base.getCtx();
         }
 
         /**
@@ -3868,6 +3882,19 @@ public class ZMQ
             return base.monitor(addr, events);
         }
 
+        /**
+         * Register a custom event consumer.
+         *
+         * @param consumer  The event consumer.
+         * @param events the events of interest. A bitmask of the socket events you wish to monitor. To monitor all events, use the event value {@link ZMQ#EVENT_ALL}.
+         * @return true if consumer setup is successful
+         * @throws ZMQException
+         */
+        public boolean setEventHook(ZEvent.ZEventConsummer consumer, int events)
+        {
+            return base.setEventHook(consumer::consume, events);
+        }
+
         protected void mayRaise()
         {
             int errno = base.errno();
@@ -4366,7 +4393,9 @@ public class ZMQ
     /**
      * Inner class: Event.
      * Monitor socket event class
+     * @deprecated Uses {@link org.zeromq.ZEvent} instead
      */
+    @Deprecated
     public static class Event
     {
         private final int    event;
@@ -4504,7 +4533,7 @@ public class ZMQ
         /**
          * Return the argument as an integer or a Enum of the appropriate type if available.
          *
-         * It return objects of type:
+         * It returns objects of type:
          * <ul>
          * <li> {@link org.zeromq.ZMonitor.ProtocolCode} for a handshake protocol error.</li>
          * <li> {@link org.zeromq.ZMQ.Error} for any other error.</li>

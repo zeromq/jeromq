@@ -37,7 +37,7 @@ public abstract class ZObject
         this.tid = tid;
     }
 
-    protected final Ctx getCtx()
+    public final Ctx getCtx()
     {
         return ctx;
     }

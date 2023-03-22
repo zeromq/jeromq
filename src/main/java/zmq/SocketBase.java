@@ -1459,7 +1459,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
             monitorSocket.setSocketOpt(ZMQ.ZMQ_LINGER, 0);
             boolean rc = monitorSocket.bind(addr);
             if (rc) {
-                return monitor(new SocketEventHandler(monitorSocket), events);
+                return setEventHook(new SocketEventHandler(monitorSocket), events);
             }
             else {
                 return false;
@@ -1475,7 +1475,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
      * @throws IllegalStateException if a previous monitor was already
      *         registered and consumer is not null.
      */
-    public final boolean monitor(ZMQ.EventConsummer consumer, int events)
+    public final boolean setEventHook(ZMQ.EventConsummer consumer, int events)
     {
         synchronized (monitor) {
             if (ctxTerminated.get()) {
