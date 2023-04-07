@@ -21,21 +21,22 @@ import zmq.util.Objects;
 
 /**
  * A ZAuth actor takes over authentication for all incoming connections in
- *  its context. You can whitelist or blacklist peers based on IP address,
- *  and define policies for securing PLAIN, CURVE, and GSSAPI connections.
- *  <br>
+ * its context. You can whitelist or blacklist peers based on IP address,
+ * and define policies for securing PLAIN, CURVE, and GSSAPI connections.
+ * <br>
  * Note that libzmq provides four levels of security: default NULL (which ZAuth
  * does not see), and authenticated NULL, PLAIN, and CURVE, which ZAuth can see.
- *  <br>
- * Based on <a href="http://github.com/zeromq/czmq/blob/master/src/zauth.c">zauth.c</a> in czmq
+ * <br>
+ * Based on
+ * <a href="http://github.com/zeromq/czmq/blob/master/src/zauth.c">zauth.c</a>
+ * in czmq
  */
-public class ZAuth implements Closeable
-{
-    public interface Auth
-    {
+public class ZAuth implements Closeable {
+    public interface Auth {
         /**
          * Configures with ad-hoc message.
-         * @param msg the configuration message.
+         * 
+         * @param msg     the configuration message.
          * @param verbose true if the actor is verbose.
          * @return true if correctly configured, otherwise false.
          */
@@ -43,6 +44,7 @@ public class ZAuth implements Closeable
 
         /**
          * Callback for authorizing a connection.
+         * 
          * @param request
          * @param verbose
          * @return true if the connection is authorized, false otherwise.
@@ -50,15 +52,13 @@ public class ZAuth implements Closeable
         boolean authorize(ZapRequest request, boolean verbose);
     }
 
-    public static class SimplePlainAuth implements Auth
-    {
+    public static class SimplePlainAuth implements Auth {
         private final Properties passwords = new Properties(); // PLAIN passwords, if loaded
-        private File             passwordsFile;
-        private long             passwordsModified;
+        private File passwordsFile;
+        private long passwordsModified;
 
         @Override
-        public boolean configure(ZMsg msg, boolean verbose)
-        {
+        public boolean configure(ZMsg msg, boolean verbose) {
             assert (msg.size() == 2);
 
             // For now we don't do anything with domains
@@ -71,28 +71,25 @@ public class ZAuth implements Closeable
 
             if (verbose) {
                 System.out.printf(
-                                  "ZAuth: activated plain-mechanism with password-file: %s%n",
-                                  passwordsFile.getAbsolutePath());
+                        "ZAuth: activated plain-mechanism with password-file: %s%n",
+                        passwordsFile.getAbsolutePath());
             }
 
             try {
                 loadPasswords(true);
-            }
-            catch (IOException e) {
+            } catch (IOException e) {
                 // Ignore the exception, just don't read the file
             }
             return true;
         }
 
         @Override
-        public boolean authorize(ZapRequest request, boolean verbose)
-        {
+        public boolean authorize(ZapRequest request, boolean verbose) {
             // assert (request.username != null);
             // Refresh the passwords map if the file changed
             try {
                 loadPasswords(false);
-            }
-            catch (IOException e) {
+            } catch (IOException e) {
                 // Ignore the exception, just don't read the file
             }
 
@@ -103,8 +100,7 @@ public class ZAuth implements Closeable
                 }
                 request.userId = request.username;
                 return true;
-            }
-            else {
+            } else {
                 if (verbose) {
                     System.out.printf("ZAuth: Denied (PLAIN) username=%s\n", request.username);
                 }
@@ -113,16 +109,14 @@ public class ZAuth implements Closeable
             }
         }
 
-        private void loadPasswords(boolean initial) throws IOException
-        {
+        private void loadPasswords(boolean initial) throws IOException {
             if (!initial) {
                 final long lastModified = passwordsFile.lastModified();
                 final long age = System.currentTimeMillis() - lastModified;
                 if (lastModified > passwordsModified && age > 1000) {
                     // File has been modified and is stable, clear map
                     passwords.clear();
-                }
-                else {
+                } else {
                     return;
                 }
             }
@@ -131,46 +125,39 @@ public class ZAuth implements Closeable
             Reader br = new BufferedReader(new FileReader(passwordsFile));
             try {
                 passwords.load(br);
-            }
-            catch (IOException | IllegalArgumentException ex) {
+            } catch (IOException | IllegalArgumentException ex) {
                 // Ignore the exception, just don't read the file
-            }
-            finally {
+            } finally {
                 br.close();
             }
         }
     }
 
-    public static class SimpleCurveAuth implements Auth
-    {
+    public static class SimpleCurveAuth implements Auth {
         private final ZCertStore.Fingerprinter fingerprinter;
 
         private ZCertStore certStore = null;
-        private boolean    allowAny;
+        private boolean allowAny;
 
-        public SimpleCurveAuth()
-        {
+        public SimpleCurveAuth() {
             this(new ZCertStore.Hasher());
         }
 
-        public SimpleCurveAuth(ZCertStore.Fingerprinter fingerprinter)
-        {
+        public SimpleCurveAuth(ZCertStore.Fingerprinter fingerprinter) {
             this.fingerprinter = fingerprinter;
         }
 
         @Override
-        public boolean configure(ZMsg configuration, boolean verbose)
-        {
-            //  If location is CURVE_ALLOW_ANY, allow all clients. Otherwise
-            //  treat location as a directory that holds the certificates.
+        public boolean configure(ZMsg configuration, boolean verbose) {
+            // If location is CURVE_ALLOW_ANY, allow all clients. Otherwise
+            // treat location as a directory that holds the certificates.
             final String location = configuration.popString();
             allowAny = location.equals(CURVE_ALLOW_ANY);
             if (allowAny) {
                 if (verbose) {
                     System.out.println("ZAuth: Allowing all clients");
                 }
-            }
-            else {
+            } else {
                 if (verbose) {
                     System.out.printf("ZAuth: Using %s as certificates directory%n", location);
                 }
@@ -180,15 +167,13 @@ public class ZAuth implements Closeable
         }
 
         @Override
-        public boolean authorize(ZapRequest request, boolean verbose)
-        {
+        public boolean authorize(ZapRequest request, boolean verbose) {
             if (allowAny) {
                 if (verbose) {
                     System.out.println("ZAuth: allowed (CURVE allow any client)");
                 }
                 return true;
-            }
-            else {
+            } else {
                 if (certStore != null) {
                     if (certStore.containsPublicKey(request.clientKey)) {
                         // login allowed
@@ -198,8 +183,7 @@ public class ZAuth implements Closeable
                         request.userId = request.clientKey;
                         request.metadata = certStore.getMetadata(request.clientKey);
                         return true;
-                    }
-                    else {
+                    } else {
                         // login not allowed. couldn't find certificate
                         if (verbose) {
                             System.out.printf("ZAuth: Denied (CURVE) client_key=%s\n", request.clientKey);
@@ -212,43 +196,37 @@ public class ZAuth implements Closeable
         }
     }
 
-    public static class SimpleNullAuth implements Auth
-    {
+    public static class SimpleNullAuth implements Auth {
         @Override
-        public boolean configure(ZMsg configuration, boolean verbose)
-        {
+        public boolean configure(ZMsg configuration, boolean verbose) {
             return true;
         }
 
         @Override
-        public boolean authorize(ZapRequest request, boolean verbose)
-        {
+        public boolean authorize(ZapRequest request, boolean verbose) {
             return true;
         }
     }
 
     private static final String ZAP_VERSION = "1.0";
 
-    public static class ZapReply
-    {
-        public final String    version;    //  Version number, must be "1.0"
-        public final String    sequence;   //  Sequence number of request
-        public final int       statusCode; //  numeric status code
-        public final String    statusText; //  readable status
-        public final String    userId;     //  User-Id
-        public final ZMetadata metadata;   //  optional metadata
-        public final String    address;    // not part of the ZAP protocol, but handy information for user
-        public final String    identity;   // not part of the ZAP protocol, but handy information for user
+    public static class ZapReply {
+        public final String version; // Version number, must be "1.0"
+        public final String sequence; // Sequence number of request
+        public final int statusCode; // numeric status code
+        public final String statusText; // readable status
+        public final String userId; // User-Id
+        public final ZMetadata metadata; // optional metadata
+        public final String address; // not part of the ZAP protocol, but handy information for user
+        public final String identity; // not part of the ZAP protocol, but handy information for user
 
         private ZapReply(String version, String sequence, int statusCode, String statusText, String userId,
-                         ZMetadata metadata)
-        {
+                ZMetadata metadata) {
             this(version, sequence, statusCode, statusText, userId, metadata, null, null);
         }
 
         private ZapReply(String version, String sequence, int statusCode, String statusText, String userId,
-                         ZMetadata metadata, String address, String identity)
-        {
+                ZMetadata metadata, String address, String identity) {
             assert (ZAP_VERSION.equals(version));
             this.version = version;
             this.sequence = sequence;
@@ -260,8 +238,7 @@ public class ZAuth implements Closeable
             this.identity = identity;
         }
 
-        private ZMsg msg()
-        {
+        private ZMsg msg() {
             ZMsg msg = new ZMsg();
             msg.add(version);
             msg.add(sequence);
@@ -273,8 +250,7 @@ public class ZAuth implements Closeable
         }
 
         @Override
-        public String toString()
-        {
+        public String toString() {
             return "ZapReply [" + (version != null ? "version=" + version + ", " : "")
                     + (sequence != null ? "sequence=" + sequence + ", " : "") + "statusCode=" + statusCode + ", "
                     + (statusText != null ? "statusText=" + statusText + ", " : "")
@@ -282,18 +258,15 @@ public class ZAuth implements Closeable
                     + (metadata != null ? "metadata=" + metadata : "") + "]";
         }
 
-        private static ZapReply recv(ZAgent agent, boolean wait)
-        {
+        private static ZapReply recv(ZAgent agent, boolean wait) {
             return received(agent.recv(wait));
         }
 
-        private static ZapReply recv(ZAgent agent, int timeout)
-        {
+        private static ZapReply recv(ZAgent agent, int timeout) {
             return received(agent.recv(timeout));
         }
 
-        private static ZapReply received(ZMsg msg)
-        {
+        private static ZapReply received(ZMsg msg) {
             if (msg == null) {
                 return null;
             }
@@ -314,28 +287,26 @@ public class ZAuth implements Closeable
     /**
      * A small class for working with ZAP requests and replies.
      */
-    public static class ZapRequest
-    {
-        private final Socket handler; //  socket we're talking to
+    public static class ZapRequest {
+        private final Socket handler; // socket we're talking to
 
-        public final String version;   //  Version number, must be "1.0"
-        public final String sequence;  //  Sequence number of request
-        public final String domain;    //  Server socket domain
-        public final String address;   //  Client IP address
-        public final String identity;  //  Server socket identity
-        public final String mechanism; //  Security mechanism
-        public final String username;  //  PLAIN user name
-        public final String password;  //  PLAIN password, in clear text
-        public final String clientKey; //  CURVE client public key in ASCII
-        public final String principal; //  GSSAPI principal
-        public String       userId;    //  User-Id to return in the ZAP Response
-        public ZMetadata    metadata;  // metadata to eventually return
+        public final String version; // Version number, must be "1.0"
+        public final String sequence; // Sequence number of request
+        public final String domain; // Server socket domain
+        public final String address; // Client IP address
+        public final String identity; // Server socket identity
+        public final String mechanism; // Security mechanism
+        public final String username; // PLAIN user name
+        public final String password; // PLAIN password, in clear text
+        public final String clientKey; // CURVE client public key in ASCII
+        public final String principal; // GSSAPI principal
+        public String userId; // User-Id to return in the ZAP Response
+        public ZMetadata metadata; // metadata to eventually return
 
-        private ZapRequest(Socket handler, ZMsg request)
-        {
-            //  Store handler socket so we can send a reply easily
+        private ZapRequest(Socket handler, ZMsg request) {
+            // Store handler socket so we can send a reply easily
             this.handler = handler;
-            //  Get all standard frames off the handler socket
+            // Get all standard frames off the handler socket
             version = request.popString();
             sequence = request.popString();
             domain = request.popString();
@@ -343,7 +314,7 @@ public class ZAuth implements Closeable
             identity = request.popString();
             mechanism = request.popString();
 
-            //  If the version is wrong, we're linked with a bogus libzmq, so die
+            // If the version is wrong, we're linked with a bogus libzmq, so die
             assert (ZAP_VERSION.equals(version));
 
             // Get mechanism-specific frames
@@ -352,23 +323,20 @@ public class ZAuth implements Closeable
                 password = request.popString();
                 clientKey = null;
                 principal = null;
-            }
-            else if (Mechanism.CURVE.name().equals(mechanism)) {
+            } else if (Mechanism.CURVE.name().equals(mechanism)) {
                 ZFrame frame = request.pop();
                 byte[] clientPublicKey = frame.getData();
                 username = null;
                 password = null;
                 clientKey = ZMQ.Curve.z85Encode(clientPublicKey);
                 principal = null;
-            }
-            else if (zmq.io.mechanism.Mechanisms.GSSAPI.name().equals(mechanism)) {
+            } else if (zmq.io.mechanism.Mechanisms.GSSAPI.name().equals(mechanism)) {
                 // TOD handle GSSAPI as well
                 username = null;
                 password = null;
                 clientKey = null;
                 principal = request.popString();
-            }
-            else {
+            } else {
                 username = null;
                 password = null;
                 clientKey = null;
@@ -376,8 +344,7 @@ public class ZAuth implements Closeable
             }
         }
 
-        private static ZapRequest recvRequest(Socket handler, boolean wait)
-        {
+        private static ZapRequest recvRequest(Socket handler, boolean wait) {
             ZMsg request = ZMsg.recvMsg(handler, wait);
             if (request == null) {
                 return null;
@@ -385,7 +352,7 @@ public class ZAuth implements Closeable
 
             ZapRequest self = new ZapRequest(handler, request);
 
-            //  If the version is wrong, we're linked with a bogus libzmq, so die
+            // If the version is wrong, we're linked with a bogus libzmq, so die
             assert (ZAP_VERSION.equals(self.version));
 
             request.destroy();
@@ -395,8 +362,7 @@ public class ZAuth implements Closeable
         /**
          * Send a zap reply to the handler socket
          */
-        private void reply(int statusCode, String statusText, Socket replies)
-        {
+        private void reply(int statusCode, String statusText, Socket replies) {
             ZapReply reply = new ZapReply(ZAP_VERSION, sequence, statusCode, statusText, userId, metadata);
             ZMsg msg = reply.msg();
             boolean destroy = replies == null;
@@ -412,40 +378,37 @@ public class ZAuth implements Closeable
 
     public static final String CURVE_ALLOW_ANY = "*";
 
-    private static final String VERBOSE   = "VERBOSE";
-    private static final String REPLIES   = "REPLIES";
-    private static final String ALLOW     = "ALLOW";
-    private static final String DENY      = "DENY";
+    private static final String VERBOSE = "VERBOSE";
+    private static final String REPLIES = "REPLIES";
+    private static final String ALLOW = "ALLOW";
+    private static final String DENY = "DENY";
     private static final String TERMINATE = "TERMINATE";
 
-    private final ZAgent     agent;
+    private final ZAgent agent;
     private final ZStar.Exit exit;
-    private final ZAgent     replies;
-    private boolean          repliesEnabled; // are replies enabled?
+    private final ZAgent replies;
+    private boolean repliesEnabled; // are replies enabled?
 
     /**
      * Install authentication for the specified context. Note that until you add
      * policies, all incoming NULL connections are allowed (classic ZeroMQ
      * behavior), and all PLAIN and CURVE connections are denied.
+     * 
      * @param ctx
      */
-    public ZAuth(ZContext ctx)
-    {
+    public ZAuth(ZContext ctx) {
         this(ctx, "ZAuth");
     }
 
-    public ZAuth(ZContext ctx, ZCertStore.Fingerprinter fingerprinter)
-    {
+    public ZAuth(ZContext ctx, ZCertStore.Fingerprinter fingerprinter) {
         this(ctx, "ZAuth", curveVariant(fingerprinter));
     }
 
-    public ZAuth(ZContext ctx, String actorName)
-    {
+    public ZAuth(ZContext ctx, String actorName) {
         this(ctx, actorName, makeSimpleAuths());
     }
 
-    private static Map<String, Auth> makeSimpleAuths()
-    {
+    private static Map<String, Auth> makeSimpleAuths() {
         Map<String, Auth> auths = new HashMap<>();
 
         auths.put(Mechanism.PLAIN.name(), new SimplePlainAuth());
@@ -455,15 +418,13 @@ public class ZAuth implements Closeable
         return auths;
     }
 
-    private static Map<String, Auth> curveVariant(ZCertStore.Fingerprinter fingerprinter)
-    {
+    private static Map<String, Auth> curveVariant(ZCertStore.Fingerprinter fingerprinter) {
         Map<String, Auth> auths = makeSimpleAuths();
         auths.put(Mechanism.CURVE.name(), new SimpleCurveAuth(fingerprinter));
         return auths;
     }
 
-    public ZAuth(final ZContext ctx, String actorName, Map<String, Auth> auths)
-    {
+    public ZAuth(final ZContext ctx, String actorName, Map<String, Auth> auths) {
         Objects.requireNonNull(ctx, "ZAuth works only with a provided ZContext");
         Objects.requireNonNull(actorName, "Actor name shall be defined");
         Objects.requireNonNull(auths, "Authenticators shall be supplied as non-null map");
@@ -479,15 +440,14 @@ public class ZAuth implements Closeable
 
     /**
      * Enable verbose tracing of commands and activity
+     * 
      * @param verbose
      */
-    public ZAuth setVerbose(boolean verbose)
-    {
+    public ZAuth setVerbose(boolean verbose) {
         return verbose(verbose);
     }
 
-    public ZAuth verbose(boolean verbose)
-    {
+    public ZAuth verbose(boolean verbose) {
         return send(VERBOSE, String.format("%b", verbose));
     }
 
@@ -497,10 +457,10 @@ public class ZAuth implements Closeable
      * continue with authentication. You can call this method multiple times to
      * whitelist multiple IP addresses. If you whitelist a single address, any
      * non-whitelisted addresses are treated as blacklisted.
+     * 
      * @param address
      */
-    public ZAuth allow(String address)
-    {
+    public ZAuth allow(String address) {
         Objects.requireNonNull(address, "Address has to be supplied for allowance");
         return send(ALLOW, address);
     }
@@ -510,10 +470,10 @@ public class ZAuth implements Closeable
      * rejects the connection without any further authentication. Use either a
      * whitelist, or a blacklist, not not both. If you define both a whitelist
      * and a blacklist, only the whitelist takes effect.
+     * 
      * @param address
      */
-    public ZAuth deny(String address)
-    {
+    public ZAuth deny(String address) {
         Objects.requireNonNull(address, "Address has to be supplied for denial");
         return send(DENY, address);
     }
@@ -522,11 +482,11 @@ public class ZAuth implements Closeable
      * Configure PLAIN authentication for a given domain. PLAIN authentication
      * uses a plain-text password file. To cover all domains, use "*". You can
      * modify the password file at any time; it is reloaded automatically.
+     * 
      * @param domain
      * @param filename
      */
-    public ZAuth configurePlain(String domain, String filename)
-    {
+    public ZAuth configurePlain(String domain, String filename) {
         Objects.requireNonNull(domain, "Domain has to be supplied");
         Objects.requireNonNull(filename, "File name has to be supplied");
         return send(Mechanism.PLAIN.name(), domain, filename);
@@ -535,36 +495,37 @@ public class ZAuth implements Closeable
     /**
      * Configure CURVE authentication
      *
-     * @param location Can be ZAuth.CURVE_ALLOW_ANY or a directory with public-keys that will be accepted
+     * @param location Can be ZAuth.CURVE_ALLOW_ANY or a directory with public-keys
+     *                 that will be accepted
      */
-    public ZAuth configureCurve(String location)
-    {
+    public ZAuth configureCurve(String location) {
         Objects.requireNonNull(location, "Location has to be supplied");
         return send(Mechanism.CURVE.name(), location);
     }
 
-    public ZAuth replies(boolean enable)
-    {
+    public ZAuth replies(boolean enable) {
         repliesEnabled = enable;
         return send(REPLIES, String.format("%b", enable));
     }
 
     /**
      * Retrieves the next ZAP reply.
+     * 
      * @return the next reply or null if the actor is closed.
      */
-    public ZapReply nextReply()
-    {
+    public ZapReply nextReply() {
         return nextReply(true);
     }
 
     /**
      * Retrieves the next ZAP reply.
-     * @param wait true to wait for the next reply, false to immediately return if there is no next reply.
-     * @return the next reply or null if the actor is closed or if there is no next reply yet.
+     * 
+     * @param wait true to wait for the next reply, false to immediately return if
+     *             there is no next reply.
+     * @return the next reply or null if the actor is closed or if there is no next
+     *         reply yet.
      */
-    public ZapReply nextReply(boolean wait)
-    {
+    public ZapReply nextReply(boolean wait) {
         if (!repliesEnabled) {
             System.out.println("ZAuth: replies are disabled. Please use replies(true);");
             return null;
@@ -574,11 +535,13 @@ public class ZAuth implements Closeable
 
     /**
      * Retrieves the next ZAP reply.
-     * @param timeout the timeout in milliseconds to wait for a reply before giving up and returning null.
-     * @return the next reply or null if the actor is closed or if there is no next reply after the elapsed timeout.
+     * 
+     * @param timeout the timeout in milliseconds to wait for a reply before giving
+     *                up and returning null.
+     * @return the next reply or null if the actor is closed or if there is no next
+     *         reply after the elapsed timeout.
      */
-    public ZapReply nextReply(int timeout)
-    {
+    public ZapReply nextReply(int timeout) {
         if (!repliesEnabled) {
             System.out.println("ZAuth: replies are disabled. Please use replies(true);");
             return null;
@@ -590,24 +553,21 @@ public class ZAuth implements Closeable
      * Destructor.
      */
     @Override
-    public void close() throws IOException
-    {
+    public void close() throws IOException {
         destroy();
     }
 
     /**
      * Destructor.
      */
-    public void destroy()
-    {
+    public void destroy() {
         send(TERMINATE);
         exit.awaitSilent();
         agent.close();
         replies.close();
     }
 
-    protected ZAuth send(String command, String... datas)
-    {
+    protected ZAuth send(String command, String... datas) {
         ZMsg msg = new ZMsg();
         msg.add(command);
         for (String data : datas) {
@@ -625,23 +585,20 @@ public class ZAuth implements Closeable
      * does other things. This is invisible to the caller, who sees a classic
      * API.
      */
-    private static class AuthActor extends ZActor.SimpleActor
-    {
-        private static final String OK = "OK";
+    private static class AuthActor extends ZActor.SimpleActor {
 
         private final String actorName;
 
-        private final Properties        whitelist = new Properties(); // whitelisted addresses
-        private final Properties        blacklist = new Properties(); // blacklisted addresses
-        private final Map<String, Auth> auths     = new HashMap<>();
+        private final Properties whitelist = new Properties(); // whitelisted addresses
+        private final Properties blacklist = new Properties(); // blacklisted addresses
+        private final Map<String, Auth> auths = new HashMap<>();
 
         private final String repliesAddress; // address of replies pipe AND safeguard lock for connected agent
-        private boolean      repliesEnabled; // are replies enabled?
-        private Socket       replies;        // replies pipe
-        private boolean      verbose;        // trace behavior
+        private boolean repliesEnabled; // are replies enabled?
+        private Socket replies; // replies pipe
+        private boolean verbose; // trace behavior
 
-        private AuthActor(String actorName, Map<String, Auth> auths)
-        {
+        private AuthActor(String actorName, Map<String, Auth> auths) {
             assert (auths != null);
             assert (actorName != null);
             this.actorName = actorName;
@@ -649,8 +606,7 @@ public class ZAuth implements Closeable
             this.repliesAddress = "inproc://zauth-replies-" + UUID.randomUUID().toString();
         }
 
-        private ZAgent createAgent(ZContext ctx)
-        {
+        private ZAgent createAgent(ZContext ctx) {
             Socket pipe = ctx.createSocket(SocketType.PAIR);
             boolean rc = pipe.connect(repliesAddress);
             assert (rc);
@@ -658,27 +614,24 @@ public class ZAuth implements Closeable
         }
 
         @Override
-        public String premiere(Socket pipe)
-        {
+        public String premiere(Socket pipe) {
             return actorName;
         }
 
         @Override
-        public List<Socket> createSockets(ZContext ctx, Object... args)
-        {
-            //create replies pipe that will forward replies to user
+        public List<Socket> createSockets(ZContext ctx, Object... args) {
+            // create replies pipe that will forward replies to user
             replies = ctx.createSocket(SocketType.PAIR);
             assert (replies != null);
 
-            //create ZAP handler and get ready for requests
+            // create ZAP handler and get ready for requests
             Socket handler = ctx.createSocket(SocketType.REP);
             assert (handler != null);
             return Arrays.asList(handler, replies);
         }
 
         @Override
-        public void start(Socket pipe, List<Socket> sockets, ZPoller poller)
-        {
+        public void start(Socket pipe, List<Socket> sockets, ZPoller poller) {
             boolean rc;
             try {
                 rc = replies.bind(repliesAddress);
@@ -690,8 +643,7 @@ public class ZAuth implements Closeable
                 assert (rc);
                 rc = pipe.send(OK);
                 assert (rc);
-            }
-            catch (ZMQException e) {
+            } catch (ZMQException e) {
                 System.out.println("ZAuth: Error");
                 e.printStackTrace();
                 rc = pipe.send("ERROR");
@@ -700,14 +652,13 @@ public class ZAuth implements Closeable
         }
 
         @Override
-        public boolean backstage(Socket pipe, ZPoller poller, int events)
-        {
+        public boolean backstage(Socket pipe, ZPoller poller, int events) {
             ZMsg msg = ZMsg.recvMsg(pipe);
 
             String command = msg.popString();
             if (command == null) {
                 System.out.printf("ZAuth: Closing auth: No command%n");
-                return false; //interrupted
+                return false; // interrupted
             }
             boolean rc;
             if (ALLOW.equals(command)) {
@@ -717,33 +668,28 @@ public class ZAuth implements Closeable
                 }
                 whitelist.put(address, OK);
                 rc = pipe.send(OK);
-            }
-            else if (DENY.equals(command)) {
+            } else if (DENY.equals(command)) {
                 String address = msg.popString();
                 if (verbose) {
                     System.out.printf("ZAuth: Blacklisting IP address=%s\n", address);
                 }
                 blacklist.put(address, OK);
                 rc = pipe.send(OK);
-            }
-            else if (VERBOSE.equals(command)) {
+            } else if (VERBOSE.equals(command)) {
                 String verboseStr = msg.popString();
                 this.verbose = Boolean.parseBoolean(verboseStr);
                 rc = pipe.send(OK);
-            }
-            else if (REPLIES.equals(command)) {
+            } else if (REPLIES.equals(command)) {
                 repliesEnabled = Boolean.parseBoolean(msg.popString());
                 if (verbose) {
                     if (repliesEnabled) {
                         System.out.println("ZAuth: Enabled replies");
-                    }
-                    else {
+                    } else {
                         System.out.println("ZAuth: Disabled replies");
                     }
                 }
                 rc = pipe.send(OK);
-            }
-            else if (TERMINATE.equals(command)) {
+            } else if (TERMINATE.equals(command)) {
                 if (repliesEnabled) {
                     replies.send(repliesAddress); // lock replies agent
                 }
@@ -752,18 +698,15 @@ public class ZAuth implements Closeable
                 }
                 pipe.send(OK);
                 return false;
-            }
-            else {
+            } else {
                 final Auth authenticator = auths.get(command);
                 if (authenticator != null) {
                     if (authenticator.configure(msg, verbose)) {
                         rc = pipe.send(OK);
-                    }
-                    else {
+                    } else {
                         rc = pipe.send("ERROR");
                     }
-                }
-                else {
+                } else {
                     System.out.printf("ZAuth: Invalid command %s%n", command);
                     rc = true;
                 }
@@ -777,14 +720,13 @@ public class ZAuth implements Closeable
         }
 
         @Override
-        public boolean stage(Socket socket, Socket pipe, ZPoller poller, int events)
-        {
+        public boolean stage(Socket socket, Socket pipe, ZPoller poller, int events) {
             ZapRequest request = ZapRequest.recvRequest(socket, true);
             if (request == null) {
                 return false;
             }
 
-            //is the address explicitly whitelisted or blacklisted?
+            // is the address explicitly whitelisted or blacklisted?
             boolean allowed = false;
             boolean denied = false;
 
@@ -794,22 +736,19 @@ public class ZAuth implements Closeable
                     if (verbose) {
                         System.out.printf("ZAuth: Passed (whitelist) address = %s\n", request.address);
                     }
-                }
-                else {
+                } else {
                     denied = true;
                     if (verbose) {
                         System.out.printf("ZAuth: Denied (not in whitelist) address = %s\n", request.address);
                     }
                 }
-            }
-            else if (!blacklist.isEmpty()) {
+            } else if (!blacklist.isEmpty()) {
                 if (blacklist.containsKey(request.address)) {
                     denied = true;
                     if (verbose) {
                         System.out.printf("ZAuth: Denied (blacklist) address = %s\n", request.address);
                     }
-                }
-                else {
+                } else {
                     allowed = true;
                     if (verbose) {
                         System.out.printf("ZAuth: Passed (not in blacklist) address = %s\n", request.address);
@@ -817,14 +756,13 @@ public class ZAuth implements Closeable
                 }
             }
 
-            //mechanism specific check
+            // mechanism specific check
             if (!denied) {
                 final Auth auth = auths.get(request.mechanism);
                 if (auth == null) {
                     System.out.printf("ZAuth E: Skipping unhandled mechanism %s%n", request.mechanism);
                     return false;
-                }
-                else {
+                } else {
                     allowed = auth.authorize(request, verbose);
                 }
             }
@@ -832,8 +770,7 @@ public class ZAuth implements Closeable
             final Socket reply = repliesEnabled ? replies : null;
             if (allowed) {
                 request.reply(200, OK, reply);
-            }
-            else {
+            } else {
                 request.metadata = null;
                 request.reply(400, "NO ACCESS", reply);
             }

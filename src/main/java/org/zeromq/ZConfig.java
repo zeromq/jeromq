@@ -16,6 +16,7 @@ import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import main.java.org.zeromq.util.ReadException;
 
 /**
  * <p>
@@ -344,16 +345,4 @@ public class ZConfig {
         return new ZConfig(matcher.group(2), parent);
     }
 
-    public static class ReadException extends RuntimeException {
-        private static final long serialVersionUID = 1L;
-
-        public final int currentLineNumber;
-        public final String currentLine;
-
-        public ReadException(String message, String currentLine, AtomicInteger currentLineNumber) {
-            super(String.format("%s %s: %s", message, currentLineNumber, currentLine));
-            this.currentLine = currentLine;
-            this.currentLineNumber = currentLineNumber.get();
-        }
-    }
 }
