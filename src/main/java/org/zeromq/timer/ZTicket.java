@@ -99,7 +99,7 @@ public final class ZTicket
         {
             if (alive) {
                 if (other.alive) {
-                    return Long.valueOf(start - other.start).compareTo(other.delay - delay);
+                    return Long.compare(start - other.start, other.delay - delay);
                 }
                 return -1;
             }
