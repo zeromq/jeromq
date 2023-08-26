@@ -9,7 +9,6 @@ import zmq.io.net.NetProtocol;
 // TODO continue socks connecter
 public class SocksConnecter extends TcpConnecter
 {
-
     private enum Status
     {
         UNPLUGGED,
