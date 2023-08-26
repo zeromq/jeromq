@@ -12,13 +12,13 @@ import org.zeromq.*;
 public class mdcliapi
 {
 
-    private String     broker;
-    private ZContext   ctx;
+    private final String     broker;
+    private final ZContext   ctx;
     private ZMQ.Socket client;
     private long       timeout = 2500;
     private int        retries = 3;
-    private boolean    verbose;
-    private Formatter  log     = new Formatter(System.out);
+    private final boolean    verbose;
+    private final Formatter  log     = new Formatter(System.out);
 
     public long getTimeout()
     {

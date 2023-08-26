@@ -3982,7 +3982,7 @@ public class ZMQ
         private final Selector selector;
         private final Context  context;
 
-        private List<PollItem> items;
+        private final List<PollItem> items;
 
         private long timeout;
 

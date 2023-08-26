@@ -12,7 +12,7 @@ import org.zeromq.ZMQ.Socket;
 
 public class ZHelper
 {
-    private static Random rand = new Random(System.currentTimeMillis());
+    private static final Random rand = new Random(System.currentTimeMillis());
 
     /**
      * Receives all message parts from socket, prints neatly

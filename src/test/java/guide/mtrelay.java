@@ -12,7 +12,7 @@ public class mtrelay
 
     private static class Step1 extends Thread
     {
-        private ZContext context;
+        private final ZContext context;
 
         private Step1(ZContext context)
         {
@@ -34,7 +34,7 @@ public class mtrelay
 
     private static class Step2 extends Thread
     {
-        private ZContext context;
+        private final ZContext context;
 
         private Step2(ZContext context)
         {
@@ -64,7 +64,7 @@ public class mtrelay
 
     private static class Step3 extends Thread
     {
-        private ZContext context;
+        private final ZContext context;
 
         private Step3(ZContext context)
         {

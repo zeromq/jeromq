@@ -18,8 +18,8 @@ public class flclient2
     //  Here is the {{flclient}} class implementation. Each instance has a
     //  context, a DEALER socket it uses to talk to the servers, a counter
     //  of how many servers it's connected to, and a request getSequence number:
-    private ZContext ctx;      //  Our context wrapper
-    private Socket   socket;   //  DEALER socket talking to servers
+    private final ZContext ctx;      //  Our context wrapper
+    private final Socket   socket;   //  DEALER socket talking to servers
     private int      servers;  //  How many servers we have connected to
     private int      sequence; //  Number of requests ever sent
 

@@ -9,7 +9,7 @@ import zmq.io.net.NetProtocol;
 // TODO continue socks connecter
 public class SocksConnecter extends TcpConnecter
 {
-    private Address proxyAddress;
+    private final Address proxyAddress;
 
     private enum Status
     {

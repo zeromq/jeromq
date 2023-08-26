@@ -28,9 +28,9 @@ public abstract class DecoderBase implements IDecoder
     private int toRead;
 
     //  The buffer for data to decode.
-    private int bufsize;
+    private final int bufsize;
 
-    private ByteBuffer buf;
+    private final ByteBuffer buf;
 
     private Step next;
 

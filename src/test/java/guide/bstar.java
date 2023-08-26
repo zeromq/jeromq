@@ -27,10 +27,10 @@ public class bstar
         CLIENT_REQUEST //  Client makes request
     }
 
-    private ZContext            ctx;        //  Our private context
-    private ZLoop               loop;       //  Reactor loop
-    private Socket              statepub;   //  State publisher
-    private Socket              statesub;   //  State subscriber
+    private final ZContext            ctx;        //  Our private context
+    private final ZLoop               loop;       //  Reactor loop
+    private final Socket              statepub;   //  State publisher
+    private final Socket              statesub;   //  State subscriber
     private State               state;      //  Current state
     private Event               event;      //  Current event
     private long                peerExpiry; //  When peer is considered 'dead'
@@ -158,7 +158,7 @@ public class bstar
     //  Reactor event handlers...
 
     //  Publish our state to peer
-    private static IZLoopHandler SendState = new IZLoopHandler()
+    private static final IZLoopHandler SendState = new IZLoopHandler()
     {
 
         @Override
@@ -171,7 +171,7 @@ public class bstar
     };
 
     //  Receive state from peer, execute finite state machine
-    private static IZLoopHandler RecvState = new IZLoopHandler()
+    private static final IZLoopHandler RecvState = new IZLoopHandler()
     {
 
         @Override
@@ -188,7 +188,7 @@ public class bstar
     };
 
     //  Application wants to speak to us, see if it's possible
-    private static IZLoopHandler VoterReady = new IZLoopHandler()
+    private static final IZLoopHandler VoterReady = new IZLoopHandler()
     {
 
         @Override

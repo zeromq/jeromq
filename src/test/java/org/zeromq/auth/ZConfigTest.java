@@ -18,7 +18,7 @@ import org.zeromq.ZConfig;
 public class ZConfigTest
 {
     private static final String TEST_FOLDER = "target/testCertFolder";
-    private static ZConfig      conf        = new ZConfig("root", null);
+    private static final ZConfig      conf        = new ZConfig("root", null);
 
     private String  testFolder = TEST_FOLDER;
 

@@ -29,8 +29,8 @@ public class flcliapi
     //  inproc pipe socket:
 
     //  Structure of our frontend class
-    private ZContext ctx;  //  Our context wrapper
-    private Socket   pipe; //  Pipe through to flcliapi agent
+    private final ZContext ctx;  //  Our context wrapper
+    private final Socket   pipe; //  Pipe through to flcliapi agent
 
     public flcliapi()
     {
@@ -89,7 +89,7 @@ public class flcliapi
     //  Simple class for one server we talk to
     private static class Server
     {
-        private String  endpoint; //  Server identity/endpoint
+        private final String  endpoint; //  Server identity/endpoint
         private boolean alive;    //  1 if known to be alive
         private long    pingAt;   //  Next ping at this time
         private long    expires;  //  Expires at this time
@@ -132,11 +132,11 @@ public class flcliapi
     //  Simple class for one background agent
     private static class Agent
     {
-        private ZContext            ctx;      //  Own context
-        private Socket              pipe;     //  Socket to talk back to application
-        private Socket              router;   //  Socket to talk to servers
-        private Map<String, Server> servers;  //  Servers we've connected to
-        private List<Server>        actives;  //  Servers we know are alive
+        private final ZContext            ctx;      //  Own context
+        private final Socket              pipe;     //  Socket to talk back to application
+        private final Socket              router;   //  Socket to talk to servers
+        private final Map<String, Server> servers;  //  Servers we've connected to
+        private final List<Server>        actives;  //  Servers we know are alive
         private int                 sequence; //  Number of requests ever sent
         private ZMsg                request;  //  Current request if any
         private ZMsg                reply;    //  Current reply if any

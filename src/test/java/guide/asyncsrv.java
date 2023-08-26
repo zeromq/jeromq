@@ -21,7 +21,7 @@ public class asyncsrv
     //It collects responses as they arrive, and it prints them out. We will
     //run several client tasks in parallel, each with a different random ID.
 
-    private static Random rand = new Random(System.nanoTime());
+    private static final Random rand = new Random(System.nanoTime());
 
     private static class client_task implements Runnable
     {
@@ -94,7 +94,7 @@ public class asyncsrv
 
     private static class server_worker implements Runnable
     {
-        private ZContext ctx;
+        private final ZContext ctx;
 
         public server_worker(ZContext ctx)
         {

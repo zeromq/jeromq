@@ -19,7 +19,7 @@ import zmq.util.ValueReference;
 
 public class CustomEncoderTest
 {
-    private Helper.DummySocketChannel sock = new Helper.DummySocketChannel();
+    private final Helper.DummySocketChannel sock = new Helper.DummySocketChannel();
 
     private int write(ByteBuffer out)
     {

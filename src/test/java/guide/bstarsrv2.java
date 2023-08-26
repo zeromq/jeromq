@@ -10,7 +10,7 @@ import org.zeromq.ZMsg;
 //  Binary Star server, using bstar reactor
 public class bstarsrv2
 {
-    private static IZLoopHandler Echo = new IZLoopHandler()
+    private static final IZLoopHandler Echo = new IZLoopHandler()
     {
         @Override
         public int handle(ZLoop loop, PollItem item, Object arg)

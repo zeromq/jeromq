@@ -16,7 +16,7 @@ public class lbbroker2
 {
     private static final int NBR_CLIENTS  = 10;
     private static final int NBR_WORKERS  = 3;
-    private static byte[]    WORKER_READY = { '\001' }; //  Signals worker is ready
+    private static final byte[]    WORKER_READY = { '\001' }; //  Signals worker is ready
 
     /**
      * Basic request-reply client using REQ socket

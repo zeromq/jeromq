@@ -18,17 +18,17 @@ import org.zeromq.ZMQ.Socket;
 //  Clone server - Model Six
 public class clonesrv6
 {
-    private ZContext           ctx;        //  Context wrapper
+    private final ZContext           ctx;        //  Context wrapper
     private Map<String, kvmsg> kvmap;      //  Key-value store
-    private bstar              bStar;      //  Bstar reactor core
+    private final bstar              bStar;      //  Bstar reactor core
     private long               sequence;   //  How many updates we're at
-    private int                port;       //  Main port we're working on
-    private int                peer;       //  Main port of our peer
-    private Socket             publisher;  //  Publish updates and hugz
-    private Socket             collector;  //  Collect updates from clients
-    private Socket             subscriber; //  Get updates from peer
-    private List<kvmsg>        pending;    //  Pending updates from clients
-    private boolean            primary;    //  TRUE if we're primary
+    private final int                port;       //  Main port we're working on
+    private final int                peer;       //  Main port of our peer
+    private final Socket             publisher;  //  Publish updates and hugz
+    private final Socket             collector;  //  Collect updates from clients
+    private final Socket             subscriber; //  Get updates from peer
+    private final List<kvmsg>        pending;    //  Pending updates from clients
+    private final boolean            primary;    //  TRUE if we're primary
     private boolean            active;     //  TRUE if we're active
     private boolean            passive;    //  TRUE if we're passive
 

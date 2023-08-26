@@ -12,7 +12,7 @@ import org.zeromq.ZContext;
  */
 public class rtdealer
 {
-    private static Random    rand        = new Random();
+    private static final Random    rand        = new Random();
     private static final int NBR_WORKERS = 10;
 
     private static class Worker extends Thread

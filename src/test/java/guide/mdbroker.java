@@ -60,16 +60,16 @@ public class mdbroker
 
     // ---------------------------------------------------------------------
 
-    private ZContext   ctx;    // Our context
-    private ZMQ.Socket socket; // Socket for clients & workers
+    private final ZContext   ctx;    // Our context
+    private final ZMQ.Socket socket; // Socket for clients & workers
 
     private long                 heartbeatAt;// When to send HEARTBEAT
-    private Map<String, Service> services;   // known services
-    private Map<String, Worker>  workers;    // known workers
-    private Deque<Worker>        waiting;    // idle workers
+    private final Map<String, Service> services;   // known services
+    private final Map<String, Worker>  workers;    // known workers
+    private final Deque<Worker>        waiting;    // idle workers
 
     private boolean   verbose = false;                    // Print activity to stdout
-    private Formatter log     = new Formatter(System.out);
+    private final Formatter log     = new Formatter(System.out);
 
     // ---------------------------------------------------------------------
 

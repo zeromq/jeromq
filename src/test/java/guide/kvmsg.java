@@ -31,13 +31,13 @@ public class kvmsg
     private static final int KVMSG_FRAMES = 5;
 
     //  Presence indicators for each frame
-    private boolean[] present = new boolean[KVMSG_FRAMES];
+    private final boolean[] present = new boolean[KVMSG_FRAMES];
     //  Corresponding 0MQ message frames, if any
-    private byte[][] frame = new byte[KVMSG_FRAMES][];
+    private final byte[][] frame = new byte[KVMSG_FRAMES][];
     //  Key, copied into safe string
     private String key;
     //  List of properties, as name=value strings
-    private Properties props;
+    private final Properties props;
     private int        props_size;
 
     //  .split property encoding

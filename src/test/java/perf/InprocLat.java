@@ -13,8 +13,8 @@ public class InprocLat
 
     static class Worker implements Runnable
     {
-        private Ctx ctx;
-        private int roundtripCount;
+        private final Ctx ctx;
+        private final int roundtripCount;
 
         Worker(Ctx ctx, int roundtripCount)
         {

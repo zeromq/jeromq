@@ -21,7 +21,7 @@ public class clonecli4
     //  handles subtrees.
     private final static String SUBTREE = "/client/";
 
-    private static Map<String, kvsimple> kvMap = new HashMap<String, kvsimple>();
+    private static final Map<String, kvsimple> kvMap = new HashMap<String, kvsimple>();
 
     public void run()
     {

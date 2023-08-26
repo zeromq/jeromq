@@ -17,8 +17,8 @@ import org.zeromq.timer.ZTimer.Timer;
 
 public class ZTimerTest
 {
-    private AtomicLong    time = new AtomicLong();
-    private ZTimer        timers = new ZTimer(() -> time.get());
+    private final AtomicLong    time = new AtomicLong();
+    private final ZTimer        timers = new ZTimer(() -> time.get());
     private AtomicBoolean invoked = new AtomicBoolean();
 
     private final TimerHandler handler = new TimerHandler()

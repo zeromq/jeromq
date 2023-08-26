@@ -13,7 +13,7 @@ public class mtserver
 
     private static class Worker extends Thread
     {
-        private ZContext context;
+        private final ZContext context;
 
         private Worker(ZContext context)
         {

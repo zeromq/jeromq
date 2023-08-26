@@ -43,7 +43,7 @@ public class Router extends SocketBase
 
     class Outpipe
     {
-        private Pipe    pipe;
+        private final Pipe    pipe;
         private boolean active;
 
         public Outpipe(Pipe pipe, boolean active)

@@ -27,7 +27,7 @@ public class ProxyTcpTest
 {
     static class Client extends Thread
     {
-        private int port;
+        private final int port;
 
         public Client(int port)
         {
@@ -233,9 +233,9 @@ public class ProxyTcpTest
 
     static class Proxy extends Thread
     {
-        private Ctx ctx;
-        private int routerPort;
-        private int dealerPort;
+        private final Ctx ctx;
+        private final int routerPort;
+        private final int dealerPort;
 
         Proxy(Ctx ctx, int routerPort, int dealerPort)
         {

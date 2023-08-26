@@ -17,7 +17,7 @@ import org.zeromq.ZContext;
  */
 public class clonesrv1
 {
-    private static AtomicLong sequence = new AtomicLong();
+    private static final AtomicLong sequence = new AtomicLong();
 
     public void run()
     {

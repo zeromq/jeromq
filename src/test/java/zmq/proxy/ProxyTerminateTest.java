@@ -23,7 +23,7 @@ public class ProxyTerminateTest
         private final Ctx    ctx;
         private final CompletableFuture<Boolean> resultHander;
         private final String hostFrontend;
-        private String       hostBackend;
+        private final String       hostBackend;
 
         public ServerTask(Ctx ctx, String hostFrontend, String hostBackend, CompletableFuture<Boolean> resultHander)
         {

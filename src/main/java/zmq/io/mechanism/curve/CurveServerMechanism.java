@@ -39,7 +39,7 @@ public class CurveServerMechanism extends Mechanism
     //  Our short-term secret key (s')
     private final byte[] cnSecret;
     //  Client's short-term public key (C')
-    private byte[] cnClient = new byte[Curve.Size.PUBLICKEY.bytes()];
+    private final byte[] cnClient = new byte[Curve.Size.PUBLICKEY.bytes()];
     //  Key used to produce cookie
     private byte[] cookieKey;
     //  Intermediary buffer used to speed up boxing and unboxing.

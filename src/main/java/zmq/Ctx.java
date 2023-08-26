@@ -130,7 +130,7 @@ public class Ctx
     private final Lock endpointsSync;
 
     //  Maximum socket ID.
-    private static AtomicInteger maxSocketId = new AtomicInteger(0);
+    private static final AtomicInteger maxSocketId = new AtomicInteger(0);
 
     //  Maximum number of sockets that can be opened at the same time.
     private int maxSockets;

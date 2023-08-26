@@ -16,8 +16,8 @@ import org.zeromq.ZMQ.Socket;
  */
 public class clonecli1
 {
-    private static Map<String, kvsimple> kvMap    = new HashMap<String, kvsimple>();
-    private static AtomicLong            sequence = new AtomicLong();
+    private static final Map<String, kvsimple> kvMap    = new HashMap<String, kvsimple>();
+    private static final AtomicLong            sequence = new AtomicLong();
 
     public void run()
     {

@@ -17,7 +17,7 @@ import zmq.util.ValueReference;
 
 public class V2EncoderTest
 {
-    private EncoderBase encoder = new V2Encoder(new Errno(), 64);
+    private final EncoderBase encoder = new V2Encoder(new Errno(), 64);
 
     // as if it read data from socket
     private Msg readShortMessage()

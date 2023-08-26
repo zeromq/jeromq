@@ -10,8 +10,8 @@ import org.zeromq.ZThread.IAttachedRunnable;
 
 public class clone
 {
-    private ZContext ctx;  //  Our context wrapper
-    private Socket   pipe; //  Pipe through to clone agent
+    private final ZContext ctx;  //  Our context wrapper
+    private final Socket   pipe; //  Pipe through to clone agent
 
     //  .split constructor and destructor
     //  Here are the constructor and destructor for the clone class. Note that
@@ -91,10 +91,10 @@ public class clone
     //  our simple class model:
     private static class Server
     {
-        private String address;    //  Server address
-        private int    port;       //  Server port
-        private Socket snapshot;   //  Snapshot socket
-        private Socket subscriber; //  Incoming updates
+        private final String address;    //  Server address
+        private final int    port;       //  Server port
+        private final Socket snapshot;   //  Snapshot socket
+        private final Socket subscriber; //  Incoming updates
         private long   expiry;     //  When server expires
         private int    requests;   //  How many snapshot requests made?
 
@@ -132,16 +132,16 @@ public class clone
 
     private static class Agent
     {
-        private ZContext            ctx;        //  Context wrapper
-        private Socket              pipe;       //  Pipe back to application
-        private Map<String, String> kvmap;      //  Actual key/value table
+        private final ZContext            ctx;        //  Context wrapper
+        private final Socket              pipe;       //  Pipe back to application
+        private final Map<String, String> kvmap;      //  Actual key/value table
         private String              subtree;    //  Subtree specification, if any
-        private Server[]            server;
+        private final Server[]            server;
         private int                 nbrServers; //  0 to SERVER_MAX
         private int                 state;      //  Current state
         private int                 curServer;  //  If active, server 0 or 1
         private long                sequence;   //  Last kvmsg processed
-        private Socket              publisher;  //  Outgoing updates
+        private final Socket              publisher;  //  Outgoing updates
 
         protected Agent(ZContext ctx, Socket pipe)
         {

@@ -34,8 +34,8 @@ public class Helper
 
     public static class DummySocketChannel implements WritableByteChannel
     {
-        private int    bufsize;
-        private byte[] buf;
+        private final int    bufsize;
+        private final byte[] buf;
 
         public DummySocketChannel()
         {
