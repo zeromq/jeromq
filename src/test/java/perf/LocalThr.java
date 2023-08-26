@@ -101,12 +101,12 @@ public class LocalThr
 
     private static int atoi(String string)
     {
-        return Integer.valueOf(string);
+        return Integer.parseInt(string);
     }
 
     private static long atol(String string)
     {
-        return Long.valueOf(string);
+        return Long.parseLong(string);
     }
 
     private static void printf(String string)

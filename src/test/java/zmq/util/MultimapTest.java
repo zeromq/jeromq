@@ -18,7 +18,7 @@ public class MultimapTest
     {
         map = new MultiMap<>();
 
-        final Integer value = Integer.valueOf(42);
+        final Integer value = 42;
         boolean rc = map.insert(1L, value);
         assertThat(rc, is(true));
     }

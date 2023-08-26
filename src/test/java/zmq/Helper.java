@@ -295,7 +295,7 @@ public class Helper
         catch (InterruptedException e) {
             e.printStackTrace();
         }
-        reslen = Integer.valueOf(new String(buf, 0, 4, ZMQ.CHARSET));
+        reslen = Integer.parseInt(new String(buf, 0, 4, ZMQ.CHARSET));
 
         in.read(buf, 0, reslen);
         System.out.println("recv " + reslen + " " + new String(buf, 0, reslen, ZMQ.CHARSET));

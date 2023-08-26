@@ -384,15 +384,15 @@ public class ZPicture
                 break;
             }
             case '1': {
-                elements[index] = (0xff) & Integer.valueOf(socket.recvStr());
+                elements[index] = (0xff) & Integer.parseInt(socket.recvStr());
                 break;
             }
             case '2': {
-                elements[index] = (0xffff) & Integer.valueOf(socket.recvStr());
+                elements[index] = (0xffff) & Integer.parseInt(socket.recvStr());
                 break;
             }
             case '4': {
-                elements[index] = (0xffffffff) & Integer.valueOf(socket.recvStr());
+                elements[index] = (0xffffffff) & Integer.parseInt(socket.recvStr());
                 break;
             }
             case '8': {
