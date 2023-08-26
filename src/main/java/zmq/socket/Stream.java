@@ -34,7 +34,7 @@ public class Stream extends SocketBase
     //  Holds the prefetched message.
     private Msg prefetchedMsg;
 
-    private class Outpipe
+    private static class Outpipe
     {
         private final Pipe    pipe;
         private boolean active;

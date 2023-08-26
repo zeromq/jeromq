@@ -116,7 +116,7 @@ public class TestClientServer
     }
 
     //  Client threads loop on send/recv until told to exit
-    class ClientThread extends Thread
+    static class ClientThread extends Thread
     {
         SocketBase client;
 

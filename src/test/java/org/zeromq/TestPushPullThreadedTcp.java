@@ -19,7 +19,7 @@ import org.zeromq.ZMQ.Socket;
  */
 public class TestPushPullThreadedTcp
 {
-    private class Worker implements Runnable
+    private static class Worker implements Runnable
     {
         private final int    count;
         private final AtomicBoolean  finished = new AtomicBoolean();
@@ -48,7 +48,7 @@ public class TestPushPullThreadedTcp
         }
     }
 
-    private class Client implements Runnable
+    private static class Client implements Runnable
     {
         private final Socket sender;
 

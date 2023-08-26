@@ -9,7 +9,7 @@ import org.junit.Test;
 
 public class TestTimeo
 {
-    class Worker implements Runnable
+    static class Worker implements Runnable
     {
         Ctx ctx;
 

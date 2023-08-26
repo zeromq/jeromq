@@ -24,7 +24,7 @@ public class ZLoop
         int handle(ZLoop loop, PollItem item, Object arg);
     }
 
-    private class SPoller
+    private static class SPoller
     {
         PollItem      item;
         IZLoopHandler handler;
@@ -41,7 +41,7 @@ public class ZLoop
 
     }
 
-    private class STimer
+    private static class STimer
     {
         int           delay;
         int           times;

@@ -41,7 +41,7 @@ public class TestZStar
         }
     }
 
-    private final class NoNo implements ZStar.Star
+    private static final class NoNo implements ZStar.Star
     {
         @Override
         public void prepare()

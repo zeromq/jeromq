@@ -44,7 +44,7 @@ import zmq.util.Utils;
 // run several client tasks in parallel, each with a different random ID.
 public class ProxyTest
 {
-    private final class Client implements Callable<Boolean>
+    private static final class Client implements Callable<Boolean>
     {
         private final String  host;
         private final String  controlEndpoint;
@@ -220,7 +220,7 @@ public class ProxyTest
     // Each worker task works on one request at a time and sends a random number
     // of replies back, with random delays between replies:
     // The comments in the first column, if suppressed, makes it a poller version
-    private final class Worker implements Callable<Boolean>
+    private static final class Worker implements Callable<Boolean>
     {
         private final boolean verbose;
         private final int     idx;

@@ -41,7 +41,7 @@ public class Router extends SocketBase
     //  If true, more incoming message parts are expected.
     private boolean moreIn;
 
-    class Outpipe
+    static class Outpipe
     {
         private final Pipe    pipe;
         private boolean active;

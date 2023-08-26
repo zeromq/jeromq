@@ -29,7 +29,7 @@ import zmq.util.function.BiFunction;
 
 public class TestZPoller
 {
-    private final class EventsHandlerCounter implements BiFunction<SelectableChannel, Integer, Boolean>
+    private static final class EventsHandlerCounter implements BiFunction<SelectableChannel, Integer, Boolean>
     {
         private final AtomicInteger count;
 
@@ -54,7 +54,7 @@ public class TestZPoller
         }
     }
 
-    private final class EventsHandlerErrorCounter implements BiFunction<SelectableChannel, Integer, Boolean>
+    private static final class EventsHandlerErrorCounter implements BiFunction<SelectableChannel, Integer, Boolean>
     {
         private final AtomicInteger error;
 

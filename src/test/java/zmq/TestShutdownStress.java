@@ -12,7 +12,7 @@ public class TestShutdownStress
 {
     private static final int THREAD_COUNT = 100;
 
-    class Worker implements Runnable
+    static class Worker implements Runnable
     {
         SocketBase s;
 

@@ -16,7 +16,7 @@ import org.zeromq.ZMQ.Context;
 
 public class DealerDealerTest
 {
-    private final class Client implements Runnable
+    private static final class Client implements Runnable
     {
         private final Context       context;
         private final boolean       verbose;

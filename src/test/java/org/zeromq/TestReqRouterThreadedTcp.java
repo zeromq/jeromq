@@ -25,7 +25,7 @@ public class TestReqRouterThreadedTcp
      * A very simple server for one reply only.
      *
      */
-    private class Server implements Runnable
+    private static class Server implements Runnable
     {
         private final int port;
 
@@ -62,7 +62,7 @@ public class TestReqRouterThreadedTcp
         }
     }
 
-    private class Client implements Runnable
+    private static class Client implements Runnable
     {
         private final int port;
 
