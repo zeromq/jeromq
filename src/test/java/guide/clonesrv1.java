@@ -5,7 +5,6 @@ import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.zeromq.SocketType;
-import org.zeromq.ZMQ;
 import org.zeromq.ZMQ.Socket;
 import org.zeromq.ZContext;
 

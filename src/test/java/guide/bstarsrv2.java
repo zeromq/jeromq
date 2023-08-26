@@ -3,7 +3,6 @@ package guide;
 import org.zeromq.SocketType;
 import org.zeromq.ZLoop;
 import org.zeromq.ZLoop.IZLoopHandler;
-import org.zeromq.ZMQ;
 import org.zeromq.ZMQ.PollItem;
 import org.zeromq.ZMsg;
 
