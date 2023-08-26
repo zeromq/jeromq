@@ -2,6 +2,7 @@ package org.zeromq;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 
@@ -231,8 +232,7 @@ public class TestZProxy
                                        ctx,
                                        "ProxyAsync" + (ctx == null ? "Null" : ""),
                                        new ProxyProvider(),
-                                       "ABRACADABRA",
-                                       Arrays.asList("TEST"));
+                                       "ABRACADABRA", Collections.singletonList("TEST"));
 
         final boolean async = false;
         String status = null;
@@ -278,8 +278,7 @@ public class TestZProxy
                                        ctx,
                                        "ProxySync" + (ctx == null ? "Null" : ""),
                                        new ProxyProvider(),
-                                       "ABRACADABRA",
-                                       Arrays.asList("TEST"));
+                                       "ABRACADABRA", Collections.singletonList("TEST"));
 
         final boolean sync = true;
         String status = null;
@@ -331,8 +330,7 @@ public class TestZProxy
                                        ctx,
                                        "ProxyStateSync" + (ctx == null ? "Null" : ""),
                                        new ProxyProvider(),
-                                       "ABRACADABRA",
-                                       Arrays.asList("TEST"));
+                                       "ABRACADABRA", Collections.singletonList("TEST"));
 
         status = proxy.start(sync);
         Assert.assertEquals("Start sync status is not good!", ZProxy.STARTED, status);
@@ -373,8 +371,7 @@ public class TestZProxy
                                        ctx,
                                        "ProxyStatePauseSync" + (ctx == null ? "Null" : ""),
                                        new ProxyProvider(),
-                                       "ABRACADABRA",
-                                       Arrays.asList("TEST"));
+                                       "ABRACADABRA", Collections.singletonList("TEST"));
 
         status = proxy.pause(sync);
         Assert.assertEquals("Pause sync status is not good!", ZProxy.PAUSED, status);
@@ -417,8 +414,7 @@ public class TestZProxy
                                        ctx,
                                        "ProxyStateASync" + (ctx == null ? "Null" : ""),
                                        new ProxyProvider(),
-                                       "ABRACADABRA",
-                                       Arrays.asList("TEST"));
+                                       "ABRACADABRA", Collections.singletonList("TEST"));
 
         status = proxy.start(sync);
         Assert.assertEquals("Start sync status is not good!", ZProxy.ALIVE, status);
