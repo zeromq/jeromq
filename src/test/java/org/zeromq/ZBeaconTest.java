@@ -67,7 +67,6 @@ public class ZBeaconTest
         byte[] beacon = new byte[] { 'H', 'Y', 'D', 'R', 'A', 0x01, 0x12, 0x34 };
         byte[] prefix = new byte[] { 'H', 'Y', 'D', 'R', 'A', 0x01 };
         int port = Utils.findOpenPort();
-        @SuppressWarnings("resource")
         ZBeacon zbeacon = new ZBeacon("127.0.0.1", port, beacon, false);
         zbeacon.setPrefix(prefix);
         zbeacon.setListener((sender, beacon1) -> latch.countDown());
@@ -91,7 +90,6 @@ public class ZBeaconTest
 
         final byte[] beacon = new byte[] { 'Z', 'R', 'E', 0x01, 0x2 };
         final byte[] prefix = new byte[] { 'Z', 'R', 'E', 0x01 };
-        @SuppressWarnings("resource")
         final ZBeacon zbeacon = new ZBeacon(ZBeacon.DEFAULT_BROADCAST_HOST, port, beacon, true);
         zbeacon.setPrefix(prefix);
 
@@ -122,7 +120,6 @@ public class ZBeaconTest
         byte[] beacon = new byte[] { 'H', 'Y', 'D', 'R', 'A', 0x01, 0x12, 0x34 };
         byte[] prefix = new byte[] { 'H', 'Y', 'D', 'R', 'A', 0x01 };
         int port = Utils.findOpenPort();
-        @SuppressWarnings("resource")
         ZBeacon zbeacon = new ZBeacon("127.0.0.1", port, beacon, false, true);
         zbeacon.setPrefix(prefix);
         zbeacon.setListener((sender, beacon1) -> latch.countDown());
@@ -146,7 +143,6 @@ public class ZBeaconTest
 
         final byte[] beacon = new byte[] { 'Z', 'R', 'E', 0x01, 0x2 };
         final byte[] prefix = new byte[] { 'Z', 'R', 'E', 0x01 };
-        @SuppressWarnings("resource")
         final ZBeacon zbeacon = new ZBeacon(ZBeacon.DEFAULT_BROADCAST_HOST, port, beacon, true, true);
         zbeacon.setPrefix(prefix);
 

@@ -113,7 +113,6 @@ import zmq.SocketBase;
  *
  */
 // Proxy for 0MQ.
-@SuppressWarnings("deprecation")
 public class ZProxy
 {
     /**
