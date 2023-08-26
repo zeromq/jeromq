@@ -105,7 +105,7 @@ public class kvmsg
                 break;
             }
             //  Verify multipart framing
-            boolean rcvmore = (frameNbr < KVMSG_FRAMES - 1) ? true : false;
+            boolean rcvmore = frameNbr < KVMSG_FRAMES - 1;
             if (socket.hasReceiveMore() != rcvmore) {
                 self.destroy();
                 break;

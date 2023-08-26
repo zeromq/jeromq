@@ -26,7 +26,7 @@ public class Msgs
         if (msg.size() < length + start) {
             return false;
         }
-        boolean comparison = includeLength ? length == (msg.get(0) & 0xff) : true;
+        boolean comparison = !includeLength || length == (msg.get(0) & 0xff);
         if (comparison) {
             for (int idx = start; idx < length; ++idx) {
                 comparison = (msg.get(idx) == data.charAt(idx - start));
