@@ -195,6 +195,8 @@ public enum Sockets
         }
     };
 
+    private static final Sockets[] VALUES = values();
+
     private final List<String> compatible;
 
     Sockets(String... compatible)
@@ -218,26 +220,26 @@ public enum Sockets
     public static SessionBase createSession(IOThread ioThread, boolean connect, SocketBase socket, Options options,
                                             Address addr)
     {
-        return values()[options.type].create(ioThread, connect, socket, options, addr);
+        return VALUES[options.type].create(ioThread, connect, socket, options, addr);
     }
 
     public static SocketBase create(int socketType, Ctx parent, int tid, int sid)
     {
-        return values()[socketType].create(parent, tid, sid);
+        return VALUES[socketType].create(parent, tid, sid);
     }
 
     public static String name(int socketType)
     {
-        return values()[socketType].name();
+        return VALUES[socketType].name();
     }
 
     public static Sockets fromType(int socketType)
     {
-        return values()[socketType];
+        return VALUES[socketType];
     }
 
     public static boolean compatible(int self, String peer)
     {
-        return values()[self].compatible.contains(peer);
+        return VALUES[self].compatible.contains(peer);
     }
 }
