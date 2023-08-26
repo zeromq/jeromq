@@ -24,16 +24,16 @@ public class ZHelper
         while (true) {
             byte[] msg = sock.recv(0);
             boolean isText = true;
-            String data = "";
+            StringBuilder data = new StringBuilder();
             for (int i = 0; i < msg.length; i++) {
                 if (msg[i] < 32 || msg[i] > 127)
                     isText = false;
-                data += String.format("%02X", msg[i]);
+                data.append(String.format("%02X", msg[i]));
             }
             if (isText)
-                data = new String(msg, ZMQ.CHARSET);
+                data = new StringBuilder(new String(msg, ZMQ.CHARSET));
 
-            System.out.printf("[%03d] %s%n", msg.length, data);
+            System.out.printf("[%03d] %s%n", msg.length, data.toString());
             if (!sock.hasReceiveMore())
                 break;
         }
