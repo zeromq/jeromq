@@ -13,7 +13,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.Ignore;
 import org.junit.Test;
-import org.zeromq.ZBeacon.Listener;
 
 public class ZBeaconTest
 {

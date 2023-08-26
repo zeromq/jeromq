@@ -13,7 +13,6 @@ import zmq.Options;
 import zmq.ZError;
 import zmq.ZMQ;
 import zmq.io.Metadata;
-import zmq.io.Metadata.ParseListener;
 import zmq.io.Msgs;
 import zmq.io.SessionBase;
 import zmq.io.net.Address;
