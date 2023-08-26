@@ -141,7 +141,7 @@ public class ProxyTest
 
     private static final String BACKEND = "inproc://backend";
 
-    private final class Server implements Callable<Boolean>
+    private static final class Server implements Callable<Boolean>
     {
         private final String  host;
         private final String  controlEndpoint;

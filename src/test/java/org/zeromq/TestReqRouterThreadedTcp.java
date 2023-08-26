@@ -114,7 +114,7 @@ public class TestReqRouterThreadedTcp
         }
     }
 
-    private class ClientPoll extends Client
+    private static class ClientPoll extends Client
     {
         public ClientPoll(int port)
         {
