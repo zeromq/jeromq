@@ -85,7 +85,7 @@ public class clonecli3
                     ByteBuffer b = ByteBuffer.allocate(4);
                     b.asIntBuffer().put(body);
 
-                    kvsimple kvUpdateMsg = new kvsimple(key + "", 0, b.array());
+                    kvsimple kvUpdateMsg = new kvsimple(String.valueOf(key), 0, b.array());
                     kvUpdateMsg.send(push);
                     alarm = System.currentTimeMillis() + 1000;
                 }

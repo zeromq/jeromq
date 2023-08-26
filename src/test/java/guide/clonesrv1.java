@@ -42,8 +42,7 @@ public class clonesrv1
                 ByteBuffer b = ByteBuffer.allocate(4);
                 b.asIntBuffer().put(body);
 
-                kvsimple kvMsg = new kvsimple(
-                    key + "", currentSequenceNumber, b.array()
+                kvsimple kvMsg = new kvsimple(String.valueOf(key), currentSequenceNumber, b.array()
                 );
                 kvMsg.send(publisher);
                 System.out.println("sending " + kvMsg);
