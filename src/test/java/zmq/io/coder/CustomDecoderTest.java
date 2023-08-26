@@ -21,8 +21,8 @@ public class CustomDecoderTest
 {
     static class CustomDecoder extends Decoder
     {
-        private final Step readHeader = () -> readHeader();
-        private final Step readBody   = () -> readBody();
+        private final Step readHeader = this::readHeader;
+        private final Step readBody   = this::readBody;
 
         ByteBuffer header = ByteBuffer.allocate(10);
         Msg        msg;

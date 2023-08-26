@@ -18,7 +18,7 @@ import org.zeromq.timer.ZTicket.Ticket;
 public class ZTicketTest
 {
     final AtomicLong      time    = new AtomicLong();
-    private ZTicket       tickets = new ZTicket(() -> time.get());
+    private ZTicket       tickets = new ZTicket(time::get);
     private AtomicInteger invoked = new AtomicInteger();
 
     private final TimerHandler handler = args -> {
@@ -218,7 +218,7 @@ public class ZTicketTest
     public void testCancelledTimerIsRemoved()
     {
         ArrayList<Ticket> list = new ArrayList<>();
-        tickets = new ZTicket(() -> time.get(), list);
+        tickets = new ZTicket(time::get, list);
 
         ZTicket.Ticket ticket100 = tickets.add(100, handler, invoked);
         ZTicket.Ticket ticket1000 = tickets.add(1000, handler, invoked);

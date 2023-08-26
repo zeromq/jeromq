@@ -103,8 +103,8 @@ public class ProxyTcpTest
 
     public static class ProxyDecoder extends Decoder
     {
-        private final Step readHeader = () -> readHeader();
-        private final Step readBody   = () -> readBody();
+        private final Step readHeader = this::readHeader;
+        private final Step readBody   = this::readBody;
 
         byte[]  header       = new byte[4];
         Msg     msg;
@@ -151,8 +151,8 @@ public class ProxyTcpTest
 
     public static class ProxyEncoder extends EncoderBase
     {
-        private final Runnable writeHeader = () -> writeHeader();
-        private final Runnable writeBody   = () -> writeBody();
+        private final Runnable writeHeader = this::writeHeader;
+        private final Runnable writeBody   = this::writeBody;
 
         ByteBuffer header = ByteBuffer.allocate(4);
         Msg        msg;

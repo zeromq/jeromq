@@ -35,8 +35,8 @@ public class CustomEncoderTest
     static class CustomEncoder extends EncoderBase
     {
         public static final boolean RAW_ENCODER = true;
-        private final Runnable      readHeader  = () -> readHeader();
-        private final Runnable      readBody    = () -> readBody();
+        private final Runnable      readHeader  = this::readHeader;
+        private final Runnable      readBody    = this::readBody;
 
         ByteBuffer header = ByteBuffer.allocate(10);
 

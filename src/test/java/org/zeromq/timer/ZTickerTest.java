@@ -96,7 +96,7 @@ public class ZTickerTest
     public void testExecution()
     {
         AtomicLong time = new AtomicLong();
-        ZTicker ticker = new ZTicker(() -> time.get());
+        ZTicker ticker = new ZTicker(time::get);
 
         AtomicInteger timerTriggered = new AtomicInteger();
         AtomicInteger ticketTriggered = new AtomicInteger();
