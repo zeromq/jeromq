@@ -128,15 +128,10 @@ public class ZAuth implements Closeable
             }
 
             passwordsModified = passwordsFile.lastModified();
-            Reader br = new BufferedReader(new FileReader(passwordsFile));
-            try {
+            try (Reader br = new BufferedReader(new FileReader(passwordsFile))) {
                 passwords.load(br);
-            }
-            catch (IOException | IllegalArgumentException ex) {
+            } catch (IOException | IllegalArgumentException ex) {
                 // Ignore the exception, just don't read the file
-            }
-            finally {
-                br.close();
             }
         }
     }

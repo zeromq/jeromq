@@ -74,21 +74,10 @@ public class titanic
                 //  Generate UUID and save message to disk
                 String uuid = generateUUID();
                 String filename = requestFilename(uuid);
-                DataOutputStream file = null;
-                try {
-                    file = new DataOutputStream(new FileOutputStream(filename));
+                try (DataOutputStream file = new DataOutputStream(new FileOutputStream(filename))) {
                     ZMsg.save(request, file);
-                }
-                catch (IOException e) {
+                } catch (IOException e) {
                     e.printStackTrace();
-                }
-                finally {
-                    try {
-                        if (file != null)
-                            file.close();
-                    }
-                    catch (IOException e) {
-                    }
                 }
                 request.destroy();
 
@@ -131,24 +120,11 @@ public class titanic
                 String repFilename = replyFilename(uuid);
 
                 if (new File(repFilename).exists()) {
-                    DataInputStream file = null;
-                    try {
-                        file = new DataInputStream(
-                            new FileInputStream(repFilename)
-                        );
+                    try (DataInputStream file = new DataInputStream(new FileInputStream(repFilename))) {
                         reply = ZMsg.load(file);
                         reply.push("200");
-                    }
-                    catch (IOException e) {
+                    } catch (IOException e) {
                         e.printStackTrace();
-                    }
-                    finally {
-                        try {
-                            if (file != null)
-                                file.close();
-                        }
-                        catch (IOException e) {
-                        }
                     }
                 }
                 else {
@@ -230,24 +206,11 @@ public class titanic
                     if (msg == null)
                         break; //  Interrupted
                     String uuid = msg.popString();
-                    BufferedWriter wfile = null;
-                    try {
-                        wfile = new BufferedWriter(
-                            new FileWriter(TITANIC_DIR + "/queue", true)
-                        );
+                    try (BufferedWriter wfile = new BufferedWriter(new FileWriter(TITANIC_DIR + "/queue", true))) {
                         wfile.write("-" + uuid + "\n");
-                    }
-                    catch (IOException e) {
+                    } catch (IOException e) {
                         e.printStackTrace();
                         break;
-                    }
-                    finally {
-                        try {
-                            if (wfile != null)
-                                wfile.close();
-                        }
-                        catch (IOException e) {
-                        }
                     }
                     msg.destroy();
                 }
@@ -256,25 +219,14 @@ public class titanic
                 // "?........:....:....:....:............:";
                 byte[] entry = new byte[37];
 
-                RandomAccessFile file = null;
-
-                try {
-                    file = new RandomAccessFile(TITANIC_DIR + "/queue", "rw");
+                try (RandomAccessFile file = new RandomAccessFile(TITANIC_DIR + "/queue", "rw")) {
                     while (file.read(entry) > 0) {
                         //  UUID is prefixed with '-' if still waiting
                         if (entry[0] == '-') {
                             if (verbose)
-                                System.out.printf(
-                                    "I: processing request %s\n",
-                                    new String(
-                                        entry, 1, entry.length - 1, ZMQ.CHARSET
-                                    )
-                                );
-                            if (serviceSuccess(
-                                    new String(
-                                        entry, 1, entry.length - 1, ZMQ.CHARSET
-                                    )
-                                )) {
+                                System.out.printf("I: processing request %s\n",
+                                        new String(entry, 1, entry.length - 1, ZMQ.CHARSET));
+                            if (serviceSuccess(new String(entry, 1, entry.length - 1, ZMQ.CHARSET))) {
                                 //  Mark queue entry as processed
                                 file.seek(file.getFilePointer() - 37);
                                 file.writeBytes("+");
@@ -289,20 +241,9 @@ public class titanic
                         if (Thread.currentThread().isInterrupted())
                             break;
                     }
-                }
-                catch (FileNotFoundException e) {
-                }
-                catch (IOException e) {
+                } catch (FileNotFoundException e) {
+                } catch (IOException e) {
                     e.printStackTrace();
-                }
-                finally {
-                    if (file != null) {
-                        try {
-                            file.close();
-                        }
-                        catch (IOException e) {
-                        }
-                    }
                 }
             }
         }

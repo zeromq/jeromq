@@ -243,12 +243,8 @@ public class ZConfig
                 // create necessary directories;
                 file.getParentFile().mkdirs();
             }
-            Writer writer = new FileWriter(file);
-            try {
+            try (Writer writer = new FileWriter(file)) {
                 save(writer);
-            }
-            finally {
-                writer.close();
             }
             return file;
         }

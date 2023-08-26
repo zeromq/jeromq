@@ -45,11 +45,7 @@ public class ByteBuffersTest
         int port = Utils.findOpenPort();
         ZMQ.Context context = ZMQ.context(1);
         ByteBuffer bb = ByteBuffer.allocate(4).order(ByteOrder.nativeOrder());
-        ZMQ.Socket push = null;
-        ZMQ.Socket pull = null;
-        try {
-            push = context.socket(SocketType.PUSH);
-            pull = context.socket(SocketType.PULL);
+        try (Socket push = context.socket(SocketType.PUSH); Socket pull = context.socket(SocketType.PULL)) {
             pull.bind("tcp://*:" + port);
             push.connect("tcp://localhost:" + port);
 
@@ -61,22 +57,10 @@ public class ByteBuffersTest
             push.sendByteBuffer(bb, 0);
             String actual = new String(pull.recv(), ZMQ.CHARSET);
             assertEquals("PING", actual);
-        }
-        finally {
-            try {
-                push.close();
-            }
-            catch (Exception ignore) {
-            }
-            try {
-                pull.close();
-            }
-            catch (Exception ignore) {
-            }
+        } finally {
             try {
                 context.term();
-            }
-            catch (Exception ignore) {
+            } catch (Exception ignore) {
             }
         }
     }
