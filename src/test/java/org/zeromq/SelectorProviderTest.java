@@ -35,7 +35,7 @@ public class SelectorProviderTest
         try (
              ZContext ctx = new ZContext();
              Socket pull = ctx.createSocket(SocketType.PULL);
-             Socket push = ctx.createSocket(SocketType.PUSH);) {
+             Socket push = ctx.createSocket(SocketType.PUSH)) {
             DefaultSelectorProviderChooser chooser = new DefaultSelectorProviderChooser();
             pull.setSelectorChooser(chooser);
             push.setSelectorChooser(chooser);

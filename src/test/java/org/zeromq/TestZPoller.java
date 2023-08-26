@@ -137,7 +137,7 @@ public class TestZPoller
 
         try (ZContext context = new ZContext();
              ZPoller poller = new ZPoller(context);
-             ZMQ.Socket receiver = context.createSocket(SocketType.PULL);) {
+             ZMQ.Socket receiver = context.createSocket(SocketType.PULL)) {
             context.setLinger(5000);
             final Server client = new Server(context, port);
             client.start();

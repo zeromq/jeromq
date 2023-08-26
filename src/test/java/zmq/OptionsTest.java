@@ -246,8 +246,7 @@ public class OptionsTest
     public void testSelectorObject()
     {
         try (ZContext ctx = new ZContext();
-             Socket socket = ctx.createSocket(SocketType.PUB);
-            ) {
+             Socket socket = ctx.createSocket(SocketType.PUB)) {
             SelectorProviderChooser chooser = new DefaultSelectorProviderChooser();
             socket.setSelectorChooser(chooser);
             Assert.assertEquals(chooser, socket.getSelectorProviderChooser());

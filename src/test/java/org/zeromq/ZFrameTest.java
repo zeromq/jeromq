@@ -135,8 +135,7 @@ public class ZFrameTest
     {
         try (ZContext ctx = new ZContext();
             Socket client = ctx.createSocket(SocketType.CLIENT);
-            Socket server = ctx.createSocket(SocketType.SERVER);
-        ) {
+            Socket server = ctx.createSocket(SocketType.SERVER)) {
             server.bind("inproc://zframe-test.routing");
             client.connect("inproc://zframe-test.routing");
 

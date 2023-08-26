@@ -79,7 +79,7 @@ class LRUQueueArg
     Socket        frontend; //  Listen to clients
     Socket        backend;  //  Listen to workers
     Queue<ZFrame> workers;  //  List of ready workers
-};
+}
 
 //In the reactor design, each time a message arrives on a socket, the
 //reactor passes it to a handler function. We have two handlers; one

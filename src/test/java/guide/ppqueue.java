@@ -72,7 +72,7 @@ public class ppqueue
                 it.remove();
             }
         }
-    };
+    }
 
     //  The main task is an LRU queue with heartbeating on workers so we can
     //  detect crashed or blocked worker tasks:

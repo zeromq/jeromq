@@ -95,7 +95,7 @@ public class ParanoidPiratServerWithLazyPiratClientTest
                     it.remove();
                 }
             }
-        };
+        }
 
         public Queue(int portQueue, int portWorkers)
         {

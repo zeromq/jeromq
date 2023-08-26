@@ -273,7 +273,7 @@ public class ZMonitorTest
              Socket server = ctx.createSocket(SocketType.PUSH);
              ZMonitor serverMonitor = new ZMonitor(ctx, server);
              Socket client = ctx.createSocket(SocketType.PULL);
-             ZMonitor clientMonitor = new ZMonitor(ctx, client);) {
+             ZMonitor clientMonitor = new ZMonitor(ctx, client)) {
             clientMonitor.verbose(true);
             clientMonitor.add(Event.ALL);
             clientMonitor.start();
