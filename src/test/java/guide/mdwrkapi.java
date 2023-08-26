@@ -26,7 +26,6 @@ public class mdwrkapi
     // Internal state
     private boolean expectReply = false; // false only at start
 
-    private final long      timeout = 2500;
     private final boolean   verbose;                            // Print activity to stdout
     private final Formatter log     = new Formatter(System.out);
 
@@ -113,6 +112,7 @@ public class mdwrkapi
             // Poll socket for a reply, with timeout
             ZMQ.Poller items = ctx.createPoller(1);
             items.register(worker, ZMQ.Poller.POLLIN);
+            long timeout = 2500;
             if (items.poll(timeout) == -1)
                 break; // Interrupted
 

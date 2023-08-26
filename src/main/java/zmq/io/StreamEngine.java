@@ -180,6 +180,7 @@ public class StreamEngine implements IEngine, IPollEvents
         greetingSize = V2_GREETING_SIZE;
         this.options = options;
         this.endpoint = endpoint;
+        Supplier<Msg> nextIdentity = this::identityMsg;
         nextMsg = nextIdentity;
         processMsg = processIdentity;
 
@@ -886,7 +887,6 @@ public class StreamEngine implements IEngine, IPollEvents
     }
 
     private final Function<Msg, Boolean> processIdentity = this::processIdentityMsg;
-    private final Supplier<Msg> nextIdentity = this::identityMsg;
 
     private Msg nextHandshakeCommand()
     {

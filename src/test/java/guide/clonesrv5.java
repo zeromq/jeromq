@@ -19,7 +19,6 @@ public class clonesrv5
     private final ZContext           ctx;       //  Context wrapper
     private final Map<String, kvmsg> kvmap;     //  Key-value store
     private final ZLoop              loop;      //  zloop reactor
-    private final int                port;      //  Main port we're working on
     private long               sequence;  //  How many updates we're at
     private final Socket             snapshot;  //  Handle snapshot requests
     private final Socket             publisher; //  Publish updates to clients
@@ -110,7 +109,8 @@ public class clonesrv5
 
     public clonesrv5()
     {
-        port = 5556;
+        //  Main port we're working on
+        int port = 5556;
         ctx = new ZContext();
         kvmap = new HashMap<>();
         loop = new ZLoop(ctx);

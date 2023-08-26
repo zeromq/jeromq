@@ -22,13 +22,11 @@ public class clonesrv6
     private Map<String, kvmsg> kvmap;      //  Key-value store
     private final bstar              bStar;      //  Bstar reactor core
     private long               sequence;   //  How many updates we're at
-    private final int                port;       //  Main port we're working on
     private final int                peer;       //  Main port of our peer
     private final Socket             publisher;  //  Publish updates and hugz
     private final Socket             collector;  //  Collect updates from clients
     private final Socket             subscriber; //  Get updates from peer
     private final List<kvmsg>        pending;    //  Pending updates from clients
-    private final boolean            primary;    //  TRUE if we're primary
     private boolean            active;     //  TRUE if we're active
     private boolean            passive;    //  TRUE if we're passive
 
@@ -253,13 +251,17 @@ public class clonesrv6
 
     public clonesrv6(boolean primary)
     {
+        //  TRUE if we're primary
+        boolean primary1;
+        //  Main port we're working on
+        int port;
         if (primary) {
             bStar = new bstar(true, "tcp://*:5003", "tcp://localhost:5004");
             bStar.voter("tcp://*:5556", SocketType.ROUTER, new Snapshots(), this);
 
             port = 5556;
             peer = 5566;
-            this.primary = true;
+            primary1 = true;
         }
         else {
             bStar = new bstar(false, "tcp://*:5004", "tcp://localhost:5003");
@@ -267,7 +269,7 @@ public class clonesrv6
 
             port = 5566;
             peer = 5556;
-            this.primary = false;
+            primary1 = false;
         }
 
         //  Primary server will become first active

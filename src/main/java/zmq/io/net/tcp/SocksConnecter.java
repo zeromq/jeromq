@@ -9,7 +9,6 @@ import zmq.io.net.NetProtocol;
 // TODO continue socks connecter
 public class SocksConnecter extends TcpConnecter
 {
-    private final Address proxyAddress;
 
     private enum Status
     {
@@ -32,8 +31,7 @@ public class SocksConnecter extends TcpConnecter
     {
         super(ioThread, session, options, addr, delayedStart);
         assert (NetProtocol.tcp.equals(addr.protocol()));
-        this.proxyAddress = proxyAddr;
-        endpoint = proxyAddress.toString();
+        endpoint = proxyAddr.toString();
         this.status = Status.UNPLUGGED;
         throw new UnsupportedOperationException("Socks connecter is not implemented");
     }

@@ -31,7 +31,6 @@ public class TooManyOpenFilesTester
     private class Server extends Thread
     {
         private final int port;
-        private final int idx;
 
         /**
          * Creates a new server.
@@ -41,7 +40,6 @@ public class TooManyOpenFilesTester
         public Server(int port, int idx)
         {
             this.port = port;
-            this.idx = idx;
             setName("Server-" + idx);
         }
 
@@ -88,8 +86,6 @@ public class TooManyOpenFilesTester
 
         final AtomicBoolean finished = new AtomicBoolean();
 
-        private final int idx;
-
         /**
          * Creates a new client.
          * @param port the port to which to connect.
@@ -97,7 +93,6 @@ public class TooManyOpenFilesTester
         public Client(int port, int idx)
         {
             this.port = port;
-            this.idx = idx;
             setName("Client-" + idx);
         }
 

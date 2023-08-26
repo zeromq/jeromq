@@ -132,7 +132,6 @@ public class flcliapi
     //  Simple class for one background agent
     private static class Agent
     {
-        private final ZContext            ctx;      //  Own context
         private final Socket              pipe;     //  Socket to talk back to application
         private final Socket              router;   //  Socket to talk to servers
         private final Map<String, Server> servers;  //  Servers we've connected to
@@ -144,7 +143,7 @@ public class flcliapi
 
         protected Agent(ZContext ctx, Socket pipe)
         {
-            this.ctx = ctx;
+            //  Own context
             this.pipe = pipe;
             router = ctx.createSocket(SocketType.ROUTER);
             servers = new HashMap<>();

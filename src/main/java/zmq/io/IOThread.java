@@ -22,12 +22,10 @@ public class IOThread extends ZObject implements IPollEvents, Closeable
     //  I/O multiplexing is performed using a poller object.
     private final Poller poller;
 
-    private final String name;
-
     public IOThread(Ctx ctx, int tid)
     {
         super(ctx, tid);
-        name = "iothread-" + tid;
+        String name = "iothread-" + tid;
         poller = new Poller(ctx, name);
 
         mailbox = new Mailbox(ctx, name, tid);

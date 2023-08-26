@@ -30,7 +30,6 @@ public class bstar
     private final ZContext            ctx;        //  Our private context
     private final ZLoop               loop;       //  Reactor loop
     private final Socket              statepub;   //  State publisher
-    private final Socket              statesub;   //  State subscriber
     private State               state;      //  Current state
     private Event               event;      //  Current event
     private long                peerExpiry; //  When peer is considered 'dead'
@@ -207,7 +206,8 @@ public class bstar
         statepub.bind(local);
 
         //  Create subscriber for state coming from peer
-        statesub = ctx.createSocket(SocketType.SUB);
+        //  State subscriber
+        Socket statesub = ctx.createSocket(SocketType.SUB);
         statesub.subscribe(ZMQ.SUBSCRIPTION_ALL);
         statesub.connect(remote);
 
