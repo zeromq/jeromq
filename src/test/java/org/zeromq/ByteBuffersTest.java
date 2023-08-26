@@ -56,10 +56,12 @@ public class ByteBuffersTest
             push.sendByteBuffer(bb, 0);
             String actual = new String(pull.recv(), ZMQ.CHARSET);
             assertEquals("PING", actual);
-        } finally {
+        }
+        finally {
             try {
                 context.term();
-            } catch (Exception ignore) {
+            }
+            catch (Exception ignore) {
             }
         }
     }
