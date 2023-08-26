@@ -60,13 +60,13 @@ public class bstar
         //  Accepts CLIENT_REQUEST events in this state
         if (state == State.STATE_PRIMARY) {
             if (event == Event.PEER_BACKUP) {
-                System.out.printf("I: connected to backup (passive), ready active\n");
+                System.out.print("I: connected to backup (passive), ready active\n");
                 state = State.STATE_ACTIVE;
                 if (activeFn != null)
                     activeFn.handle(loop, null, activeArg);
             }
             else if (event == Event.PEER_ACTIVE) {
-                System.out.printf("I: connected to backup (active), ready passive\n");
+                System.out.print("I: connected to backup (active), ready passive\n");
                 state = State.STATE_PASSIVE;
                 if (passiveFn != null)
                     passiveFn.handle(loop, null, passiveArg);
@@ -77,7 +77,7 @@ public class bstar
                 // currently acting as active (i.e., after a failover)
                 assert (peerExpiry > 0);
                 if (System.currentTimeMillis() >= peerExpiry) {
-                    System.out.printf("I: request from client, ready as active\n");
+                    System.out.print("I: request from client, ready as active\n");
                     state = State.STATE_ACTIVE;
                     if (activeFn != null)
                         activeFn.handle(loop, null, activeArg);
@@ -90,7 +90,7 @@ public class bstar
         }
         else if (state == State.STATE_BACKUP) {
             if (event == Event.PEER_ACTIVE) {
-                System.out.printf("I: connected to primary (active), ready passive\n");
+                System.out.print("I: connected to primary (active), ready passive\n");
                 state = State.STATE_PASSIVE;
                 if (passiveFn != null)
                     passiveFn.handle(loop, null, passiveArg);
@@ -106,7 +106,7 @@ public class bstar
         if (state == State.STATE_ACTIVE) {
             if (event == Event.PEER_ACTIVE) {
                 //  Two actives would mean split-brain
-                System.out.printf("E: fatal error - dual actives, aborting\n");
+                System.out.print("E: fatal error - dual actives, aborting\n");
                 rc = false;
             }
         }
@@ -116,17 +116,17 @@ public class bstar
         if (state == State.STATE_PASSIVE) {
             if (event == Event.PEER_PRIMARY) {
                 //  Peer is restarting - become active, peer will go passive
-                System.out.printf("I: primary (passive) is restarting, ready active\n");
+                System.out.print("I: primary (passive) is restarting, ready active\n");
                 state = State.STATE_ACTIVE;
             }
             else if (event == Event.PEER_BACKUP) {
                 //  Peer is restarting - become active, peer will go passive
-                System.out.printf("I: backup (passive) is restarting, ready active\n");
+                System.out.print("I: backup (passive) is restarting, ready active\n");
                 state = State.STATE_ACTIVE;
             }
             else if (event == Event.PEER_PASSIVE) {
                 //  Two passives would mean cluster would be non-responsive
-                System.out.printf("E: fatal error - dual passives, aborting\n");
+                System.out.print("E: fatal error - dual passives, aborting\n");
                 rc = false;
             }
             else if (event == Event.CLIENT_REQUEST) {
@@ -135,7 +135,7 @@ public class bstar
                 assert (peerExpiry > 0);
                 if (System.currentTimeMillis() >= peerExpiry) {
                     //  If peer is dead, switch to the active state
-                    System.out.printf("I: failover successful, ready active\n");
+                    System.out.print("I: failover successful, ready active\n");
                     state = State.STATE_ACTIVE;
                 }
                 else

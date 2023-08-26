@@ -48,7 +48,7 @@ public class clonesrv6
                 if (request.equals("ICANHAZ?")) {
                     subtree = socket.recvStr();
                 }
-                else System.out.printf("E: bad request, aborting\n");
+                else System.out.print("E: bad request, aborting\n");
 
                 if (subtree != null) {
                     //  Send state socket to client
@@ -392,7 +392,7 @@ public class clonesrv6
             srv = new clonesrv6(false);
         }
         else {
-            System.out.printf("Usage: clonesrv4 { -p | -b }\n");
+            System.out.print("Usage: clonesrv4 { -p | -b }\n");
             System.exit(0);
         }
         srv.run();

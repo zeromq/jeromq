@@ -52,7 +52,7 @@ public class flclient1
 
             int endpoints = argv.length;
             if (endpoints == 0)
-                System.out.printf("I: syntax: flclient1 <endpoint> ...\n");
+                System.out.print("I: syntax: flclient1 <endpoint> ...\n");
             else if (endpoints == 1) {
                 //  For one endpoint, we retry N times
                 int retries;
@@ -78,7 +78,7 @@ public class flclient1
                 }
             }
             if (reply != null) {
-                System.out.printf("Service is running OK\n");
+                System.out.print("Service is running OK\n");
                 reply.destroy();
             }
             request.destroy();

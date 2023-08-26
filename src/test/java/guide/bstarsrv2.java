@@ -29,17 +29,17 @@ public class bstarsrv2
         bstar bs = null;
 
         if (argv.length == 1 && argv[0].equals("-p")) {
-            System.out.printf("I: Primary active, waiting for backup (passive)\n");
+            System.out.print("I: Primary active, waiting for backup (passive)\n");
             bs = new bstar(true, "tcp://*:5003", "tcp://localhost:5004");
             bs.voter("tcp://*:5001", SocketType.ROUTER, Echo, null);
         }
         else if (argv.length == 1 && argv[0].equals("-b")) {
-            System.out.printf("I: Backup passive, waiting for primary (active)\n");
+            System.out.print("I: Backup passive, waiting for primary (active)\n");
             bs = new bstar(false, "tcp://*:5004", "tcp://localhost:5003");
             bs.voter("tcp://*:5002", SocketType.ROUTER, Echo, null);
         }
         else {
-            System.out.printf("Usage: bstarsrv { -p | -b }\n");
+            System.out.print("Usage: bstarsrv { -p | -b }\n");
             System.exit(0);
         }
         bs.start();

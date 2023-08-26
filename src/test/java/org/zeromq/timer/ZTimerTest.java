@@ -214,13 +214,13 @@ public class ZTimerTest
         }
         long end = System.currentTimeMillis();
         long elapsed = end - start;
-        System.out.println(String.format("ZTimer Add: %s millisec spent on %s iterations: %s microsecs", elapsed, max, 1000 * elapsed / ((double) max)));
+        System.out.printf("ZTimer Add: %s millisec spent on %s iterations: %s microsecs%n", elapsed, max, 1000 * elapsed / ((double) max));
 
         start = System.currentTimeMillis();
         long timeout = this.timers.timeout();
         end = System.currentTimeMillis();
         elapsed = end - start;
-        System.out.println(String.format("ZTimer Timeout: %s millisec ", elapsed));
+        System.out.printf("ZTimer Timeout: %s millisec %n", elapsed);
 
         this.time.set(this.time.get() + timeout);
         start = System.currentTimeMillis();
@@ -228,7 +228,7 @@ public class ZTimerTest
         end = System.currentTimeMillis();
         elapsed = end - start;
         assertThat(rc > 0, is(true));
-        System.out.println(String.format("ZTimer Execute: %s millisec ", elapsed));
+        System.out.printf("ZTimer Execute: %s millisec %n", elapsed);
 
         start = System.currentTimeMillis();
         for (Timer t : timers) {
@@ -236,7 +236,7 @@ public class ZTimerTest
         }
         end = System.currentTimeMillis();
         elapsed = end - start;
-        System.out.println(String.format("ZTimer Reset: %s millisec spent on %s iterations: %s microsecs", elapsed, max, 1000 * elapsed / ((double) max)));
+        System.out.printf("ZTimer Reset: %s millisec spent on %s iterations: %s microsecs%n", elapsed, max, 1000 * elapsed / ((double) max));
 
         start = System.currentTimeMillis();
         for (Timer t : timers) {
@@ -244,6 +244,6 @@ public class ZTimerTest
         }
         end = System.currentTimeMillis();
         elapsed = end - start;
-        System.out.println(String.format("ZTimer Cancel: %s millisec spent on %s iterations: %s microsecs", elapsed, max, 1000 * elapsed / ((double) max)));
+        System.out.printf("ZTimer Cancel: %s millisec spent on %s iterations: %s microsecs%n", elapsed, max, 1000 * elapsed / ((double) max));
     }
 }

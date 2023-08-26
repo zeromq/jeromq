@@ -308,18 +308,16 @@ public class ZTicketTest
         }
         long end = System.currentTimeMillis();
         long elapsed = end - start;
-        System.out.println(
-                           String.format(
-                                         "ZTicket Add: %s millisec spent on %s iterations: %s microsecs",
-                                         elapsed,
-                                         max,
-                                         1000 * elapsed / ((double) max)));
+        System.out.printf("ZTicket Add: %s millisec spent on %s iterations: %s microsecs%n",
+                      elapsed,
+                      max,
+                      1000 * elapsed / ((double) max));
 
         start = System.currentTimeMillis();
         long timeout = this.tickets.timeout();
         end = System.currentTimeMillis();
         elapsed = end - start;
-        System.out.println(String.format("ZTicket Timeout: %s millisec ", elapsed));
+        System.out.printf("ZTicket Timeout: %s millisec %n", elapsed);
 
         this.time.set(this.time.get() + timeout);
         start = System.currentTimeMillis();
@@ -327,7 +325,7 @@ public class ZTicketTest
         end = System.currentTimeMillis();
         elapsed = end - start;
         assertThat(rc > 0, is(true));
-        System.out.println(String.format("ZTicket Execute: %s millisec ", elapsed));
+        System.out.printf("ZTicket Execute: %s millisec %n", elapsed);
 
         start = System.currentTimeMillis();
         for (Ticket t : tickets) {
@@ -335,12 +333,10 @@ public class ZTicketTest
         }
         end = System.currentTimeMillis();
         elapsed = end - start;
-        System.out.println(
-                           String.format(
-                                         "ZTicket Reset: %s millisec spent on %s iterations: %s microsecs",
-                                         elapsed,
-                                         max,
-                                         1000 * elapsed / ((double) max)));
+        System.out.printf("ZTicket Reset: %s millisec spent on %s iterations: %s microsecs%n",
+                      elapsed,
+                      max,
+                      1000 * elapsed / ((double) max));
 
         start = System.currentTimeMillis();
         for (Ticket t : tickets) {
@@ -348,11 +344,9 @@ public class ZTicketTest
         }
         end = System.currentTimeMillis();
         elapsed = end - start;
-        System.out.println(
-                           String.format(
-                                         "ZTicket Cancel: %s millisec spent on %s iterations: %s microsecs",
-                                         elapsed,
-                                         max,
-                                         1000 * elapsed / ((double) max)));
+        System.out.printf("ZTicket Cancel: %s millisec spent on %s iterations: %s microsecs%n",
+                      elapsed,
+                      max,
+                      1000 * elapsed / ((double) max));
     }
 }

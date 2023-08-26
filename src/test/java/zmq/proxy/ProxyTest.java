@@ -102,7 +102,7 @@ public class ProxyTest
 
                         String payload = new String(msgrsp.data(), ZMQ.CHARSET);
                         if (verbose) {
-                            System.out.println(String.format("%1$s Client received %2$s", identity, payload));
+                            System.out.printf("%1$s Client received %2$s%n", identity, payload);
                         }
 
                         //  Check that message is still the same
@@ -126,7 +126,7 @@ public class ProxyTest
                 int sent = ZMQ.send(client, msgout, 0);
                 assertThat(sent, is(msgout.size()));
                 if (verbose) {
-                    System.out.println(String.format("%1$s Sent payload %2$s", identity, payload));
+                    System.out.printf("%1$s Sent payload %2$s%n", identity, payload);
                 }
             }
             ctx.closeSelector(selector);
@@ -280,7 +280,7 @@ public class ProxyTest
                 if (identity != null) {
                     msg = ZMQ.recv(worker, 0);
                     if (verbose) {
-                        System.out.println(String.format("Worker #%1$s received %2$s", idx, msg));
+                        System.out.printf("Worker #%1$s received %2$s%n", idx, msg);
                     }
 
                     // Send 0..4 replies back

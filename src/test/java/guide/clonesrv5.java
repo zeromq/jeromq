@@ -45,7 +45,7 @@ public class clonesrv5
                 if (request.equals("ICANHAZ?")) {
                     subtree = socket.recvStr();
                 }
-                else System.out.printf("E: bad request, aborting\n");
+                else System.out.print("E: bad request, aborting\n");
 
                 if (subtree != null) {
                     //  Send state socket to client

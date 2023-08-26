@@ -24,7 +24,7 @@ public class peering1
             System.exit(-1);
         }
         String self = argv[0];
-        System.out.println(String.format("I: preparing broker at %s\n", self));
+        System.out.printf("I: preparing broker at %s\n%n", self);
         Random rand = new Random(System.nanoTime());
 
         try (ZContext ctx = new ZContext()) {

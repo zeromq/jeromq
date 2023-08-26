@@ -84,7 +84,7 @@ public class flclient2
     public static void main(String[] argv)
     {
         if (argv.length == 0) {
-            System.out.printf("I: syntax: flclient2 <endpoint> ...\n");
+            System.out.print("I: syntax: flclient2 <endpoint> ...\n");
             System.exit(0);
         }
 
@@ -104,7 +104,7 @@ public class flclient2
             request.add("random name");
             ZMsg reply = client.request(request);
             if (reply == null) {
-                System.out.printf("E: name service not available, aborting\n");
+                System.out.print("E: name service not available, aborting\n");
                 break;
             }
             reply.destroy();

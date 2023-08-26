@@ -228,7 +228,7 @@ public class ZLoop
         //  list, and process that list when we're done executing timers.
         zombies.add(arg);
         if (verbose) {
-            System.out.printf("I: zloop: cancel timer\n");
+            System.out.print("I: zloop: cancel timer\n");
         }
 
         return 0;

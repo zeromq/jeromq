@@ -307,16 +307,16 @@ public class kvmsg
         System.err.printf("[getKey:%s]", getKey());
         //  .until
         System.err.printf("[size:%d] ", size);
-        System.err.printf("[");
+        System.err.print("[");
         for (String key : props.stringPropertyNames()) {
             System.err.printf("%s=%s;", key, props.getProperty(key));
         }
-        System.err.printf("]");
+        System.err.print("]");
 
         //  .skip
         for (int charNbr = 0; charNbr < size; charNbr++)
             System.err.printf("%02X", body[charNbr]);
-        System.err.printf("\n");
+        System.err.print("\n");
     }
 
     //  .until
@@ -326,7 +326,7 @@ public class kvmsg
     //  for the uuid and property features of {{kvmsg}}:
     public void test(boolean verbose)
     {
-        System.out.printf(" * kvmsg: ");
+        System.out.print(" * kvmsg: ");
 
         //  Prepare our context and sockets
         try (ZContext ctx = new ZContext()) {
@@ -376,7 +376,7 @@ public class kvmsg
             kvmsg.destroy();
         }
 
-        System.out.printf("OK\n");
+        System.out.print("OK\n");
     }
     //  .until
 }

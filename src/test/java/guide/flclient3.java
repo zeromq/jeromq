@@ -24,7 +24,7 @@ public class flclient3
             request.add("random name");
             ZMsg reply = client.request(request);
             if (reply == null) {
-                System.out.printf("E: name service not available, aborting\n");
+                System.out.print("E: name service not available, aborting\n");
                 break;
             }
             reply.destroy();

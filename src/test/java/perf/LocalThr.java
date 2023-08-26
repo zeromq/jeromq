@@ -96,7 +96,7 @@ public class LocalThr
     private static void printf(String str, Object... args)
     {
         // TODO Auto-generated method stub
-        System.out.println(String.format(str, args));
+        System.out.printf((str) + "%n", args);
     }
 
     private static int atoi(String string)

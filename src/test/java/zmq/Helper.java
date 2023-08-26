@@ -288,7 +288,7 @@ public class Helper
             toRead -= rc;
             System.out.println("read " + rc + " total_read " + read + " toRead " + toRead);
         }
-        System.out.println(String.format("%02x %02x %02x %02x", buf[0], buf[1], buf[2], buf[3]));
+        System.out.printf("%02x %02x %02x %02x%n", buf[0], buf[1], buf[2], buf[3]);
         try {
             Thread.sleep(1000);
         }

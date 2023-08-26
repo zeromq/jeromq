@@ -141,6 +141,6 @@ public class InprocLat
 
     private static void printf(String string, Object... args)
     {
-        System.out.println(String.format(string, args));
+        System.out.printf((string) + "%n", args);
     }
 }

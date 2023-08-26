@@ -40,12 +40,9 @@ public class wuclient
                 total_temp += temperature;
             }
 
-            System.out.println(
-                String.format(
-                    "Average temperature for zipcode '%s' was %d.",
-                    filter,
-                    (int)(total_temp / update_nbr)
-                )
+            System.out.printf("Average temperature for zipcode '%s' was %d.%n",
+                filter,
+                (int)(total_temp / update_nbr)
             );
         }
     }

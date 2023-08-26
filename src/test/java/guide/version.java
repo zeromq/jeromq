@@ -10,10 +10,7 @@ public class version
         String version = ZMQ.getVersionString();
         int fullVersion = ZMQ.getFullVersion();
 
-        System.out.println(
-            String.format(
-                "Version string: %s, Version int: %d", version, fullVersion
-            )
+        System.out.printf("Version string: %s, Version int: %d%n", version, fullVersion
         );
     }
 }

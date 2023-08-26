@@ -48,7 +48,7 @@ public class flserver3
             }
 
             if (Thread.currentThread().isInterrupted())
-                System.out.printf("W: interrupted\n");
+                System.out.print("W: interrupted\n");
         }
     }
 }
