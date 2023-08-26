@@ -3892,7 +3892,7 @@ public class ZMQ
          */
         public boolean setEventHook(ZEvent.ZEventConsummer consumer, int events)
         {
-            return base.setEventHook(consumer::consume, events);
+            return base.setEventHook(consumer, events);
         }
 
         protected void mayRaise()
