@@ -177,7 +177,7 @@ public class bstarsrv
                     //  Have a client request
                     ZMsg msg = ZMsg.recvMsg(frontend);
                     fsm.event = Event.CLIENT_REQUEST;
-                    if (fsm.stateMachine() == false)
+                    if (!fsm.stateMachine())
                         //  Answer client by echoing request back
                         msg.send(frontend);
                     else msg.destroy();
