@@ -74,9 +74,6 @@ public class SocksConnecter extends TcpConnecter
     {
         assert (status != Status.UNPLUGGED && status != Status.WAITING_FOR_RECONNECT_TIME);
 
-        //        if (status == Status.WAITING_FOR_CHOICE) {
-        //
-        //        }
         super.inEvent();
     }
 

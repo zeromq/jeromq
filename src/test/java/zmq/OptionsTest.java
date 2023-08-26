@@ -304,8 +304,6 @@ public class OptionsTest
     @Test
     public void testDefaultValue()
     {
-        //        assertThat(options.getSocketOpt(ZMQ.ZMQ_DECODER), is((Object)options.decoder));
-        //        assertThat(options.getSocketOpt(ZMQ.ZMQ_ENCODER), is((Object)options.encoder));
         assertThat(options.getSocketOpt(ZMQ.ZMQ_GSSAPI_PRINCIPAL), is(options.gssPrincipal));
         assertThat(options.getSocketOpt(ZMQ.ZMQ_GSSAPI_SERVICE_PRINCIPAL), is(options.gssServicePrincipal));
         assertThat(options.getSocketOpt(ZMQ.ZMQ_HANDSHAKE_IVL), is(options.handshakeIvl));
@@ -333,9 +331,6 @@ public class OptionsTest
         assertThat(options.getSocketOpt(ZMQ.ZMQ_SOCKS_PROXY), is(options.socksProxyAddress));
         //        assertThat(options.getSocketOpt(ZMQ.ZMQ_TCP_ACCEPT_FILTER), is((Object)options.tcpAcceptFilters));
         assertThat(options.getSocketOpt(ZMQ.ZMQ_TCP_KEEPALIVE), is(options.tcpKeepAlive));
-        //        assertThat(options.getSocketOpt(ZMQ.ZMQ_TCP_KEEPALIVE_CNT), is((Object)options.tcpKeepAliveCnt));
-        //        assertThat(options.getSocketOpt(ZMQ.ZMQ_TCP_KEEPALIVE_IDLE), is((Object)options.tcpKeepAliveIdle));
-        //        assertThat(options.getSocketOpt(ZMQ.ZMQ_TCP_KEEPALIVE_INTVL), is((Object)options.tcpKeepAliveIntvl));
         assertThat(options.getSocketOpt(ZMQ.ZMQ_TOS), is(options.tos));
         assertThat(options.getSocketOpt(ZMQ.ZMQ_TYPE), is(options.type));
         assertThat(options.getSocketOpt(ZMQ.ZMQ_ZAP_DOMAIN), is(options.zapDomain));

@@ -83,11 +83,6 @@ public class StreamEngine implements IEngine, IPollEvents
     //  Underlying socket.
     private SocketChannel fd;
 
-    //  True if this is server's engine.
-    //    private boolean asServer;
-
-    //    private Msg txMsg;
-
     private Poller.Handle handle;
 
     private ByteBuffer inpos;

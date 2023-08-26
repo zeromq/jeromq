@@ -121,12 +121,6 @@ public class XpubXsubTest
 
         System.out.print("Recv.");
 
-//        msg = sub.recv(0);
-//        assertThat(msg.size(), is(5));
-//
-//        msg = sub.recv(0);
-//        assertThat(msg.size(), is(3));
-//
         rc = sub.send(new Msg("\0topic".getBytes(ZMQ.CHARSET)), 0);
         assertThat(rc, is(true));
 

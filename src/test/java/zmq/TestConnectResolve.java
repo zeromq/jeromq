@@ -29,14 +29,6 @@ public class TestConnectResolve
         boolean brc = ZMQ.connect(sock, "tcp://localhost:" + port);
         assertThat(brc, is(true));
 
-        /*
-        try {
-            brc = ZMQ.connect (sock, "tcp://foobar123xyz:" + port);
-            assertTrue(false);
-        } catch (IllegalArgumentException e) {
-        }
-        */
-
         ZMQ.close(sock);
         ZMQ.term(ctx);
     }

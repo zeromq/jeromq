@@ -141,9 +141,6 @@ public class ProxyTcpTest
                 identitySent = true;
             }
 
-            //            push(bottom);
-            //            push(msg);
-
             nextStep(header, 4, readHeader);
             return Step.Result.DECODED;
         }
