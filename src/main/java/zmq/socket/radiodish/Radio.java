@@ -125,12 +125,6 @@ public class Radio extends SocketBase
     }
 
     @Override
-    protected boolean xhasIn()
-    {
-        return false;
-    }
-
-    @Override
     protected boolean xhasOut()
     {
         return dist.hasOut();
