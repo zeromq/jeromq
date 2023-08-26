@@ -17,7 +17,7 @@ import zmq.util.function.Supplier;
 
 public class Utils
 {
-    private static final ThreadLocal<SecureRandom> random = ThreadLocal.withInitial(() -> new SecureRandom());
+    private static final ThreadLocal<SecureRandom> random = ThreadLocal.withInitial(SecureRandom::new);
 
     private Utils()
     {
