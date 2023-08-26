@@ -60,10 +60,7 @@ public class ZData
             return false;
         }
         ZData that = (ZData) other;
-        if (!Arrays.equals(this.data, that.data)) {
-            return false;
-        }
-        return true;
+        return Arrays.equals(this.data, that.data);
     }
 
     @Override

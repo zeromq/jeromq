@@ -700,10 +700,7 @@ public class Ctx
         finally {
             endpointsSync.unlock();
         }
-        if (inserted != null) {
-            return false;
-        }
-        return true;
+        return inserted == null;
     }
 
     boolean unregisterEndpoint(String addr, SocketBase socket)

@@ -172,9 +172,7 @@ class Proxy
         if (capture != null) {
             Msg ctrl = new Msg(msg);
             boolean success = capture.send(ctrl, more > 0 ? ZMQ.ZMQ_SNDMORE : 0);
-            if (!success) {
-                return false;
-            }
+            return success;
         }
         return true;
     }

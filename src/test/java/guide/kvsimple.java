@@ -109,9 +109,7 @@ public class kvsimple
         }
         else if (!key.equals(other.key))
             return false;
-        if (sequence != other.sequence)
-            return false;
-        return true;
+        return sequence == other.sequence;
     }
 
 }

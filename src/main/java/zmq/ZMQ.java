@@ -256,12 +256,7 @@ public class ZMQ
     static {
         String preferIPv4Stack = System.getProperty("java.net.preferIPv4Stack");
         String preferIPv6Addresses = System.getProperty("java.net.preferIPv6Addresses");
-        if ("false".equalsIgnoreCase(preferIPv4Stack) || "true".equalsIgnoreCase(preferIPv6Addresses)) {
-            PREFER_IPV6 = true;
-        }
-        else {
-            PREFER_IPV6 = false;
-        }
+        PREFER_IPV6 = "false".equalsIgnoreCase(preferIPv4Stack) || "true".equalsIgnoreCase(preferIPv6Addresses);
     }
 
     /**
@@ -638,9 +633,6 @@ public class ZMQ
     {
         checkSocket(s);
         Msg msg = recvMsg(s, flags);
-        if (msg == null) {
-            return null;
-        }
 
         //  At the moment an oversized message is silently truncated.
         //  TODO: Build in a notification mechanism to report the overflows.

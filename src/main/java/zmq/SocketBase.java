@@ -1409,9 +1409,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
     private void extractFlags(Msg msg)
     {
         //  Test whether IDENTITY flag is valid for this socket type.
-        if (msg.isIdentity()) {
-            assert (options.recvIdentity);
-        }
+        assert !msg.isIdentity() || (options.recvIdentity);
 
         //  Remove MORE flag.
         rcvmore = msg.hasMore();
