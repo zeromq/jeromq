@@ -14,6 +14,6 @@ public class TermEndpointIpcTest extends TestTermEndpoint
     @Override
     protected String endpointNormal() throws IOException
     {
-        return "ipc://" + UUID.randomUUID().toString();
+        return "ipc://" + UUID.randomUUID();
     }
 }

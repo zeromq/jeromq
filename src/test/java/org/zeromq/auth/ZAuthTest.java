@@ -283,7 +283,7 @@ public class ZAuthTest
             assertThat(reply.statusCode, is(200));
             assertThat(reply.userId, is(""));
 
-            System.out.println("ZAuth replied " + reply.toString());
+            System.out.println("ZAuth replied " + reply);
 
             String message = client.recvStr();
             assertThat(message, is("Hello"));

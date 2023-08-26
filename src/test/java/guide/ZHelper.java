@@ -33,7 +33,7 @@ public class ZHelper
             if (isText)
                 data = new StringBuilder(new String(msg, ZMQ.CHARSET));
 
-            System.out.printf("[%03d] %s%n", msg.length, data.toString());
+            System.out.printf("[%03d] %s%n", msg.length, data);
             if (!sock.hasReceiveMore())
                 break;
         }

@@ -136,7 +136,7 @@ public class ZMsgTest
         StringBuilder out = new StringBuilder();
         msg.dump(out);
 
-        System.out.println(msg.toString());
+        System.out.println(msg);
 
         assertThat(out.toString(), endsWith("[000] \n[001] AA\n"));
     }

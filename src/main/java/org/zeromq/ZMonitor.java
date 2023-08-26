@@ -391,7 +391,7 @@ public class ZMonitor implements Closeable
         {
             assert (socket != null);
             this.monitored = socket;
-            this.address = String.format("inproc://zmonitor-%s-%s", socket.hashCode(), UUID.randomUUID().toString());
+            this.address = String.format("inproc://zmonitor-%s-%s", socket.hashCode(), UUID.randomUUID());
         }
 
         @Override

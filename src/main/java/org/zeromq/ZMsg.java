@@ -424,7 +424,7 @@ public class ZMsg implements Iterable<ZFrame>, Deque<ZFrame>
             PrintWriter pw = new PrintWriter(sw);
             pw.printf("--------------------------------------\n");
             for (ZFrame frame : frames) {
-                pw.printf("[%03d] %s\n", frame.size(), frame.toString());
+                pw.printf("[%03d] %s\n", frame.size(), frame);
             }
             out.append(sw.getBuffer());
             sw.close();

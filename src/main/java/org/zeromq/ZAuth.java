@@ -646,7 +646,7 @@ public class ZAuth implements Closeable
             assert (actorName != null);
             this.actorName = actorName;
             this.auths.putAll(auths);
-            this.repliesAddress = "inproc://zauth-replies-" + UUID.randomUUID().toString();
+            this.repliesAddress = "inproc://zauth-replies-" + UUID.randomUUID();
         }
 
         private ZAgent createAgent(ZContext ctx)
