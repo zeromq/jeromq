@@ -14,14 +14,7 @@ class ManagedContext
 {
     static {
         // Release ManagedSocket resources when catching SIGINT
-        Runtime.getRuntime().addShutdownHook(new Thread()
-        {
-            @Override
-            public void run()
-            {
-                getInstance().close();
-            }
-        });
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> getInstance().close()));
     }
 
     private final Lock            lock;

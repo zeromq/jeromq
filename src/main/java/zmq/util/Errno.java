@@ -3,14 +3,9 @@ package zmq.util;
 // Emulates the errno mechanism present in C++, in a per-thread basis.
 public final class Errno
 {
-    private static final ThreadLocal<Integer> local = new ThreadLocal<Integer>()
-    {
-        @Override
-        protected Integer initialValue()
-        {
-            return 0; // by default
-        }
-    };
+    private static final ThreadLocal<Integer> local = ThreadLocal.withInitial(() -> {
+        return 0; // by default
+    });
 
     public int get()
     {
