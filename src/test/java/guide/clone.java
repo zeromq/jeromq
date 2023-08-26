@@ -147,7 +147,7 @@ public class clone
         {
             this.ctx = ctx;
             this.pipe = pipe;
-            kvmap = new HashMap<String, String>();
+            kvmap = new HashMap<>();
             subtree = "";
             state = STATE_INITIAL;
             publisher = ctx.createSocket(SocketType.PUB);

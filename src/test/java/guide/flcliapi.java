@@ -147,8 +147,8 @@ public class flcliapi
             this.ctx = ctx;
             this.pipe = pipe;
             router = ctx.createSocket(SocketType.ROUTER);
-            servers = new HashMap<String, Server>();
-            actives = new ArrayList<Server>();
+            servers = new HashMap<>();
+            actives = new ArrayList<>();
         }
 
         protected void destroy()

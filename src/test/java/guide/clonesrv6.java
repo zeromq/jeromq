@@ -130,7 +130,7 @@ public class clonesrv6
         {
             clonesrv6 srv = (clonesrv6) arg;
             if (srv.kvmap != null) {
-                for (kvmsg msg : new ArrayList<kvmsg>(srv.kvmap.values())) {
+                for (kvmsg msg : new ArrayList<>(srv.kvmap.values())) {
                     srv.flushSingle(msg);
                 }
             }
@@ -202,7 +202,7 @@ public class clonesrv6
 
             //  Get state snapshot if necessary
             if (srv.kvmap == null) {
-                srv.kvmap = new HashMap<String, kvmsg>();
+                srv.kvmap = new HashMap<>();
                 Socket snapshot = srv.ctx.createSocket(SocketType.DEALER);
                 snapshot.connect(String.format("tcp://localhost:%d", srv.peer));
 
@@ -272,10 +272,10 @@ public class clonesrv6
 
         //  Primary server will become first active
         if (primary)
-            kvmap = new HashMap<String, kvmsg>();
+            kvmap = new HashMap<>();
 
         ctx = new ZContext();
-        pending = new ArrayList<kvmsg>();
+        pending = new ArrayList<>();
         bStar.setVerbose(true);
 
         //  Set up our clone server sockets

@@ -33,7 +33,7 @@ public class clonecli5
             Socket publisher = ctx.createSocket(SocketType.PUSH);
             publisher.connect("tcp://localhost:5558");
 
-            Map<String, kvmsg> kvMap = new HashMap<String, kvmsg>();
+            Map<String, kvmsg> kvMap = new HashMap<>();
 
             // get state snapshot
             snapshot.sendMore("ICANHAZ?");

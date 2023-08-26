@@ -25,7 +25,7 @@ public class spqueue
             backend.bind("tcp://*:5556"); //  For workers
 
             //  Queue of available workers
-            ArrayList<ZFrame> workers = new ArrayList<ZFrame>();
+            ArrayList<ZFrame> workers = new ArrayList<>();
 
             Poller poller = ctx.createPoller(2);
             poller.register(backend, Poller.POLLIN);

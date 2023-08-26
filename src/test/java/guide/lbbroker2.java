@@ -94,7 +94,7 @@ public class lbbroker2
                 ZThread.start(new WorkerTask());
 
             //  Queue of available workers
-            Queue<ZFrame> workerQueue = new LinkedList<ZFrame>();
+            Queue<ZFrame> workerQueue = new LinkedList<>();
 
             //  Here is the main loop for the load-balancer. It works the same
             //  way as the previous example, but is a lot shorter because ZMsg

@@ -198,7 +198,7 @@ public class peering3
             //  Queue of available workers
             int localCapacity = 0;
             int cloudCapacity = 0;
-            ArrayList<ZFrame> workers = new ArrayList<ZFrame>();
+            ArrayList<ZFrame> workers = new ArrayList<>();
 
             //  The main loop has two parts. First we poll workers and our two
             //  service sockets (statefe and monitor), in any case. If we have

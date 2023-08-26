@@ -110,7 +110,7 @@ public class Helper
 
     public static class DummySession extends SessionBase
     {
-        public List<Msg> out = new ArrayList<Msg>();
+        public List<Msg> out = new ArrayList<>();
 
         public DummySession()
         {

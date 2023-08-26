@@ -100,7 +100,7 @@ public class clonesrv5
         {
             clonesrv5 srv = (clonesrv5) arg;
             if (srv.kvmap != null) {
-                for (kvmsg msg : new ArrayList<kvmsg>(srv.kvmap.values())) {
+                for (kvmsg msg : new ArrayList<>(srv.kvmap.values())) {
                     srv.flushSingle(msg);
                 }
             }
@@ -112,7 +112,7 @@ public class clonesrv5
     {
         port = 5556;
         ctx = new ZContext();
-        kvmap = new HashMap<String, kvmsg>();
+        kvmap = new HashMap<>();
         loop = new ZLoop(ctx);
         loop.verbose(false);
 

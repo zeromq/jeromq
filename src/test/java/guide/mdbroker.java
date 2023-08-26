@@ -35,8 +35,8 @@ public class mdbroker
         public Service(String name)
         {
             this.name = name;
-            this.requests = new ArrayDeque<ZMsg>();
-            this.waiting = new ArrayDeque<Worker>();
+            this.requests = new ArrayDeque<>();
+            this.waiting = new ArrayDeque<>();
         }
     }
 
@@ -90,9 +90,9 @@ public class mdbroker
     public mdbroker(boolean verbose)
     {
         this.verbose = verbose;
-        this.services = new HashMap<String, Service>();
-        this.workers = new HashMap<String, Worker>();
-        this.waiting = new ArrayDeque<Worker>();
+        this.services = new HashMap<>();
+        this.workers = new HashMap<>();
+        this.waiting = new ArrayDeque<>();
         this.heartbeatAt = System.currentTimeMillis() + HEARTBEAT_INTERVAL;
         this.ctx = new ZContext();
         this.socket = ctx.createSocket(SocketType.ROUTER);

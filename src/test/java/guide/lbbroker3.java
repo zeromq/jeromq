@@ -163,7 +163,7 @@ public class lbbroker3
                 ZThread.start(new WorkerTask());
 
             //  Queue of available workers
-            arg.workers = new LinkedList<ZFrame>();
+            arg.workers = new LinkedList<>();
 
             //  Prepare reactor and fire it up
             ZLoop reactor = new ZLoop(context);

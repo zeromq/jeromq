@@ -116,7 +116,7 @@ public class ParanoidPiratServerWithLazyPiratClientTest
             backend.bind("tcp://*:" + portWorkers); //  For workers
 
             //  List of available workers
-            final List<Worker> workers = new ArrayList<Worker>();
+            final List<Worker> workers = new ArrayList<>();
 
             //  Send out heartbeats at regular intervals
             long heartbeatAt = System.currentTimeMillis() + HEARTBEAT_INTERVAL;

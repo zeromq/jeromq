@@ -28,7 +28,7 @@ public class TestRapidOpenCloseSocket
     Socket processMsgSock = ctx.createSocket(SocketType.PUSH);
     processMsgSock.bind("inproc://process-msg");
 
-    List<Socket> workerSocks = new ArrayList<Socket>();
+    List<Socket> workerSocks = new ArrayList<>();
     for (int i = 0; i < 5; i++) {
       Socket workerSock = ctx.createSocket(SocketType.PULL);
       workerSock.connect("inproc://process-msg");

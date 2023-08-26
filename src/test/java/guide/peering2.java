@@ -143,7 +143,7 @@ public class peering2
 
             //  Least recently used queue of available workers
             int capacity = 0;
-            ArrayList<ZFrame> workers = new ArrayList<ZFrame>();
+            ArrayList<ZFrame> workers = new ArrayList<>();
 
             Poller backends = ctx.createPoller(2);
             backends.register(localbe, Poller.POLLIN);

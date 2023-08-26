@@ -109,7 +109,7 @@ public class lbbroker
             //  envelope.
 
             //  Queue of available workers
-            Queue<String> workerQueue = new LinkedList<String>();
+            Queue<String> workerQueue = new LinkedList<>();
 
             while (!Thread.currentThread().isInterrupted()) {
                 //  Initialize poll set

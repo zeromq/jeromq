@@ -16,7 +16,7 @@ import org.zeromq.ZContext;
  */
 public class clonecli2
 {
-    private static final Map<String, kvsimple> kvMap = new HashMap<String, kvsimple>();
+    private static final Map<String, kvsimple> kvMap = new HashMap<>();
 
     public void run()
     {

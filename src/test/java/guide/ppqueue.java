@@ -85,7 +85,7 @@ public class ppqueue
             backend.bind("tcp://*:5556"); //  For workers
 
             //  List of available workers
-            ArrayList<Worker> workers = new ArrayList<Worker>();
+            ArrayList<Worker> workers = new ArrayList<>();
 
             //  Send out heartbeats at regular intervals
             long heartbeat_at = System.currentTimeMillis() + HEARTBEAT_INTERVAL;

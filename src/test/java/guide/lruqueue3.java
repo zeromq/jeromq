@@ -167,7 +167,7 @@ public class lruqueue3
                 new WorkerThread3().start();
 
             //  Queue of available workers
-            arg.workers = new LinkedList<ZFrame>();
+            arg.workers = new LinkedList<>();
 
             //  Prepare reactor and fire it up
             ZLoop reactor = new ZLoop(context);

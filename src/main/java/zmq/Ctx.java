@@ -882,7 +882,7 @@ public class Ctx
                 forwardHolder = new ChannelForwardHolder();
             }
         }
-        WeakReference<SelectableChannel> ref = new WeakReference<SelectableChannel>(channel, forwardHolder.queue);
+        WeakReference<SelectableChannel> ref = new WeakReference<>(channel, forwardHolder.queue);
         int handle = forwardHolder.handleSource.getAndIncrement();
         forwardHolder.map.put(handle, ref);
         forwardHolder.reversemap.put(ref, handle);

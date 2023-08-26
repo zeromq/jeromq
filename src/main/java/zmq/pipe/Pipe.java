@@ -131,9 +131,9 @@ public class Pipe extends ZObject
         //   each to pass messages in one direction.
 
         YPipeBase<Msg> upipe1 = conflates[0] ? new YPipeConflate<>()
-                : new YPipe<Msg>(Config.MESSAGE_PIPE_GRANULARITY.getValue());
+                : new YPipe<>(Config.MESSAGE_PIPE_GRANULARITY.getValue());
         YPipeBase<Msg> upipe2 = conflates[1] ? new YPipeConflate<>()
-                : new YPipe<Msg>(Config.MESSAGE_PIPE_GRANULARITY.getValue());
+                : new YPipe<>(Config.MESSAGE_PIPE_GRANULARITY.getValue());
 
         pipes[0] = new Pipe(parents[0], upipe1, upipe2, hwms[1], hwms[0], conflates[0]);
         pipes[1] = new Pipe(parents[1], upipe2, upipe1, hwms[0], hwms[1], conflates[1]);

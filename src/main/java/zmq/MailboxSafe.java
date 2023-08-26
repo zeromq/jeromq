@@ -34,7 +34,7 @@ public class MailboxSafe implements IMailbox
         this.cpipe = new YPipe<>(Config.COMMAND_PIPE_GRANULARITY.getValue());
         this.sync = sync;
         this.condition = this.sync.newCondition();
-        this.signalers = new ArrayList<Signaler>(10);
+        this.signalers = new ArrayList<>(10);
         this.name = name;
 
         //  Get the pipe into passive state. That way, if the users starts by

@@ -18,7 +18,7 @@ import org.zeromq.ZMQ.Socket;
  */
 public class clonesrv3
 {
-    private static final Map<String, kvsimple> kvMap = new LinkedHashMap<String, kvsimple>();
+    private static final Map<String, kvsimple> kvMap = new LinkedHashMap<>();
 
     public void run()
     {

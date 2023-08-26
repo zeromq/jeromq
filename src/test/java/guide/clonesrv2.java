@@ -60,7 +60,7 @@ public class clonesrv2
 
     public static class StateManager implements IAttachedRunnable
     {
-        private static final Map<String, kvsimple> kvMap = new LinkedHashMap<String, kvsimple>();
+        private static final Map<String, kvsimple> kvMap = new LinkedHashMap<>();
 
         @Override
         public void run(Object[] args, ZContext ctx, Socket pipe)

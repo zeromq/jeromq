@@ -335,7 +335,7 @@ public class kvmsg
             Socket input = ctx.createSocket(SocketType.DEALER);
             input.connect("ipc://kvmsg_selftest.ipc");
 
-            Map<String, kvmsg> kvmap = new HashMap<String, kvmsg>();
+            Map<String, kvmsg> kvmap = new HashMap<>();
 
             //  .until
             //  Test send and receive of simple message

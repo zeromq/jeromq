@@ -821,7 +821,7 @@ public class ZMQ
         long now = 0L;
         long end = 0L;
 
-        HashMap<SelectableChannel, SelectionKey> saved = new HashMap<SelectableChannel, SelectionKey>();
+        HashMap<SelectableChannel, SelectionKey> saved = new HashMap<>();
         for (SelectionKey key : selector.keys()) {
             if (key.isValid()) {
                 saved.put(key.channel(), key);

@@ -15,7 +15,7 @@ public class TestBlob
     @Test
     public void testBlobMap()
     {
-        HashMap<Blob, String> map = new HashMap<Blob, String>();
+        HashMap<Blob, String> map = new HashMap<>();
 
         Blob b = Blob.createBlob("a".getBytes(ZMQ.CHARSET));
         map.put(b, "aa");
