@@ -78,8 +78,7 @@ public class ParanoidPiratServerWithLazyPiratClientTest
             {
                 final Worker worker = workers.remove(0);
                 assertThat(worker, notNullValue());
-                final ZFrame frame = worker.address;
-                return frame;
+                return worker.address;
             }
 
             //  The purge method looks for and kills expired workers. We hold workers

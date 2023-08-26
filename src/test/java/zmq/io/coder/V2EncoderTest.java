@@ -22,8 +22,7 @@ public class V2EncoderTest
     // as if it read data from socket
     private Msg readShortMessage()
     {
-        Msg msg = new Msg("hello".getBytes(ZMQ.CHARSET));
-        return msg;
+        return new Msg("hello".getBytes(ZMQ.CHARSET));
     }
 
     // as if it read data from socket

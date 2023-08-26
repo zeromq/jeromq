@@ -261,8 +261,6 @@ public class ReqSpecTest extends AbstractSpecTest
         assertThat(msg, notNullValue());
         assertThat(msg.size() > 0, is(true));
 
-        Msg peerId = msg;
-
         int more = ZMQ.getSocketOption(router, ZMQ.ZMQ_RCVMORE);
         assertThat(more, is(1));
 
@@ -270,8 +268,8 @@ public class ReqSpecTest extends AbstractSpecTest
         recvSeq(router, null, "ABC", "DEF");
 
         // Send back a single-part reply.
-        int ret = ZMQ.send(router, peerId, ZMQ.ZMQ_SNDMORE);
-        assertThat(ret, is(peerId.size()));
+        int ret = ZMQ.send(router, msg, ZMQ.ZMQ_SNDMORE);
+        assertThat(ret, is(msg.size()));
 
         sendSeq(router, null, "GHI");
 

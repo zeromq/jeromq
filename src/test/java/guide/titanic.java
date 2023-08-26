@@ -36,15 +36,13 @@ public class titanic
     //  Returns freshly allocated request filename for given UUID
     private static String requestFilename(String uuid)
     {
-        String filename = String.format("%s/%s.req", TITANIC_DIR, uuid);
-        return filename;
+        return String.format("%s/%s.req", TITANIC_DIR, uuid);
     }
 
     //  Returns freshly allocated reply filename for given UUID
     private static String replyFilename(String uuid)
     {
-        String filename = String.format("%s/%s.rep", TITANIC_DIR, uuid);
-        return filename;
+        return String.format("%s/%s.rep", TITANIC_DIR, uuid);
     }
 
     //  .split Titanic request service

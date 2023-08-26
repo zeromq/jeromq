@@ -137,9 +137,8 @@ public class Helper
             if (out.size() == 0) {
                 return null;
             }
-            Msg msg = out.remove(0);
 
-            return msg;
+            return out.remove(0);
         }
 
     }

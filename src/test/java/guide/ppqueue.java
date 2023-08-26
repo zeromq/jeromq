@@ -55,8 +55,7 @@ public class ppqueue
         {
             Worker worker = workers.remove(0);
             assert (worker != null);
-            ZFrame frame = worker.address;
-            return frame;
+            return worker.address;
         }
 
         //  The purge method looks for and kills expired workers. We hold workers
