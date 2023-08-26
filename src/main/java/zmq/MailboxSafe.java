@@ -70,8 +70,8 @@ public class MailboxSafe implements IMailbox
             if (!ok) {
                 condition.signalAll();
 
-                for (int i = 0; i < signalers.size(); i++) {
-                    signalers.get(i).send();
+                for (Signaler signaler : signalers) {
+                    signaler.send();
                 }
             }
         }

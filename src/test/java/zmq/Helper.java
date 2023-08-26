@@ -257,9 +257,9 @@ public class Helper
     public static void recvSeq(SocketBase socket, String... data)
     {
         String rc;
-        for (int idx = 0; idx < data.length; ++idx) {
+        for (String datum : data) {
             rc = recv(socket);
-            assert (data[idx].equals(rc));
+            assert (datum.equals(rc));
         }
     }
 

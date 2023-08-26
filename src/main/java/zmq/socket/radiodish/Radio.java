@@ -105,8 +105,8 @@ public class Radio extends SocketBase
 
         List<Pipe> range = subscriptions.get(msg.getGroup());
         if (range != null) {
-            for (int i = 0; i < range.size(); i++) {
-                dist.match(range.get(i));
+            for (Pipe pipe : range) {
+                dist.match(pipe);
             }
         }
 

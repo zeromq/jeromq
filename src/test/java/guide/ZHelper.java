@@ -25,10 +25,10 @@ public class ZHelper
             byte[] msg = sock.recv(0);
             boolean isText = true;
             StringBuilder data = new StringBuilder();
-            for (int i = 0; i < msg.length; i++) {
-                if (msg[i] < 32 || msg[i] > 127)
+            for (byte b : msg) {
+                if (b < 32 || b > 127)
                     isText = false;
-                data.append(String.format("%02X", msg[i]));
+                data.append(String.format("%02X", b));
             }
             if (isText)
                 data = new StringBuilder(new String(msg, ZMQ.CHARSET));
