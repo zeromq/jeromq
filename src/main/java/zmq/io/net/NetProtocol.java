@@ -1,8 +1,9 @@
 package zmq.io.net;
 
-import java.util.HashSet;
+import java.util.Arrays;
 import java.util.Locale;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import zmq.Options;
 import zmq.SocketBase;
@@ -87,15 +88,12 @@ public enum NetProtocol
     public final boolean  valid;
     public final boolean  subscribe2all;
     public final boolean  isMulticast;
-    private Set<Integer> compatibles;
+    private final Set<Integer> compatibles;
 
     NetProtocol(boolean implemented, boolean subscribe2all, boolean isMulticast, Sockets... compatibles)
     {
         valid = implemented;
-        this.compatibles = new HashSet<>(compatibles.length);
-        for (Sockets s : compatibles) {
-            this.compatibles.add(s.ordinal());
-        }
+        this.compatibles = Arrays.stream(compatibles).map(Sockets::ordinal).collect(Collectors.toSet());
         this.subscribe2all = subscribe2all;
         this.isMulticast = isMulticast;
     }
