@@ -191,7 +191,7 @@ public class ProxyTcpTest
         public ProxyEncoder(int bufsize, long unused)
         {
             super(new Errno(), bufsize);
-            nextStep((Msg) null, writeHeader, true);
+            nextStep(null, writeHeader, true);
             messageReady = false;
             identityReceived = false;
         }

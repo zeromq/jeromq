@@ -150,7 +150,7 @@ public class ZNeedleTest
         ZFrame frame = new ZFrame(new byte[1]);
         ZNeedle needle = new ZNeedle(frame);
 
-        needle.putList((List<String>) null);
+        needle.putList(null);
 
         needle = new ZNeedle(frame);
         assertThat(needle.getList(), is(Collections.emptyList()));
@@ -192,7 +192,7 @@ public class ZNeedleTest
         ZFrame frame = new ZFrame(new byte[1]);
         ZNeedle needle = new ZNeedle(frame);
 
-        needle.putMap((Map<String, String>) null);
+        needle.putMap(null);
 
         needle = new ZNeedle(frame);
         assertThat(needle.getMap(), is(Collections.emptyMap()));

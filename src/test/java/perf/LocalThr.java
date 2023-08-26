@@ -83,10 +83,10 @@ public class LocalThr
         megabits = (double) (throughput * messageSize * 8) / 1000000;
 
         printf("message elapsed: %.3f \n", (double) elapsed / 1000000L);
-        printf("message size: %d [B]\n", (int) messageSize);
+        printf("message size: %d [B]\n", messageSize);
         printf("message count: %d\n", (int) messageCount);
         printf("mean throughput: %d [msg/s]\n", (int) throughput);
-        printf("mean throughput: %.3f [Mb/s]\n", (double) megabits);
+        printf("mean throughput: %.3f [Mb/s]\n", megabits);
 
         ZMQ.close(s);
 
