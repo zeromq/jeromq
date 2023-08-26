@@ -6,7 +6,6 @@ import static org.junit.Assert.assertEquals;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.charset.CharacterCodingException;
 
 import org.junit.Assert;
 import org.junit.Test;
