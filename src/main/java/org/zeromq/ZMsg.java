@@ -9,6 +9,7 @@ import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Deque;
 import java.util.Iterator;
+import java.util.Objects;
 
 import org.zeromq.ZMQ.Socket;
 import zmq.util.Draft;
@@ -391,7 +392,7 @@ public class ZMsg implements Iterable<ZFrame>, Deque<ZFrame>
         while (e1.hasNext() && e2.hasNext()) {
             ZFrame o1 = e1.next();
             ZFrame o2 = e2.next();
-            if (!(o1 == null ? o2 == null : o1.equals(o2))) {
+            if (!(Objects.equals(o1, o2))) {
                 return false;
             }
         }
