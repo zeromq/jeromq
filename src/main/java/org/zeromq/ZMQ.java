@@ -505,7 +505,7 @@ public class ZMQ
         Error(int code)
         {
             this.code = code;
-            this.message = "errno " + Integer.toString(code);
+            this.message = "errno " + code;
         }
 
         Error(int code, String message)
