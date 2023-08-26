@@ -67,14 +67,9 @@ public class clonesrv4
 
                     String subtree = snapshot.recvStr();
 
-                    Iterator<Entry<String, kvsimple>> iter = kvMap.entrySet()
-                                                                  .iterator();
-                    while (iter.hasNext()) {
-                        Entry<String, kvsimple> entry = iter.next();
+                    for (Entry<String, kvsimple> entry : kvMap.entrySet()) {
                         kvsimple msg = entry.getValue();
-                        System.out.println(
-                            "Sending message " + entry.getValue().getSequence()
-                        );
+                        System.out.println("Sending message " + entry.getValue().getSequence());
                         this.sendMessage(msg, identity, subtree, snapshot);
                     }
 
