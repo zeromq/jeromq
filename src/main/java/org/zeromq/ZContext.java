@@ -327,7 +327,6 @@ public class ZContext implements Closeable
     @Deprecated
     public void setIoThreads(int ioThreads)
     {
-        return;
     }
 
     /**
@@ -451,7 +450,6 @@ public class ZContext implements Closeable
     @Deprecated
     public void setMain(boolean main)
     {
-        return;
     }
 
     /**
@@ -469,7 +467,6 @@ public class ZContext implements Closeable
     @Deprecated
     public void setContext(Context ctx)
     {
-        return;
     }
 
     /**

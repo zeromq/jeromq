@@ -228,7 +228,6 @@ public class ProxyTcpTest
             header.put(String.format("%04d", msg.size()).getBytes(ZMQ.CHARSET));
             header.flip();
             nextStep(header, header.limit(), writeBody, false);
-            return;
         }
     }
 
