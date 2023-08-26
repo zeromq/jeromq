@@ -489,21 +489,16 @@ public class TestZPoller
         try {
             zPoller.register(new ZPoller.ZPollItem(sub, null, ZPoller.POLLIN));
 
-            Thread server = new Thread(new Runnable()
-            {
-                @Override
-                public void run()
-                {
-                    while (true) {
-                        try {
-                            pub.send("hello");
-                            Thread.sleep(100);
-                        }
-                        catch (InterruptedException ignored) {
-                        }
-                        catch (ZMQException exc) {
-                            assertThat(exc.getErrorCode(), is(ZError.ETERM));
-                        }
+            Thread server = new Thread(() -> {
+                while (true) {
+                    try {
+                        pub.send("hello");
+                        Thread.sleep(100);
+                    }
+                    catch (InterruptedException ignored) {
+                    }
+                    catch (ZMQException exc) {
+                        assertThat(exc.getErrorCode(), is(ZError.ETERM));
                     }
                 }
             });

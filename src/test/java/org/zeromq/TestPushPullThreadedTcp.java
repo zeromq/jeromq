@@ -157,18 +157,13 @@ public class TestPushPullThreadedTcp
 
             final ExecutorService executor = Executors.newFixedThreadPool(1);
             final int messagesNumber = 300000;
-            Runnable receiver = new Runnable()
-            {
-                @Override
-                public void run()
-                {
-                    String actual = null;
-                    int count = messagesNumber;
-                    while (count-- > 0) {
-                        actual = pull.receiveStringUtf8();
-                    }
-                    System.out.println("last message: " + actual);
+            Runnable receiver = () -> {
+                String actual = null;
+                int count = messagesNumber;
+                while (count-- > 0) {
+                    actual = pull.receiveStringUtf8();
                 }
+                System.out.println("last message: " + actual);
             };
             executor.submit(receiver);
 

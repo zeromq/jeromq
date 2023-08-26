@@ -141,30 +141,25 @@ public abstract class Mechanism
     protected final int parseMetadata(ByteBuffer msg, int offset, boolean zapFlag)
     {
         Metadata meta = zapFlag ? zapProperties : zmtpProperties;
-        return meta.read(msg, offset, new ParseListener()
-        {
-            @Override
-            public int parsed(String name, byte[] value, String valueAsString)
-            {
-                int type = options.asType != -1 ? options.asType : options.type;
+        return meta.read(msg, offset, (name, value, valueAsString) -> {
+            int type = options.asType != -1 ? options.asType : options.type;
 
-                if (IDENTITY.equals(name) && options.recvIdentity) {
-                    setPeerIdentity(value);
-                }
-                else if (SOCKET_TYPE.equals(name)) {
-                    if (!Sockets.compatible(type, valueAsString)) {
-                        return ZError.EINVAL;
-                    }
-                }
-                else {
-                    int rc = property(name, value);
-                    if (rc == -1) {
-                        return -1;
-                    }
-                }
-                // continue
-                return 0;
+            if (IDENTITY.equals(name) && options.recvIdentity) {
+                setPeerIdentity(value);
             }
+            else if (SOCKET_TYPE.equals(name)) {
+                if (!Sockets.compatible(type, valueAsString)) {
+                    return ZError.EINVAL;
+                }
+            }
+            else {
+                int rc = property(name, value);
+                if (rc == -1) {
+                    return -1;
+                }
+            }
+            // continue
+            return 0;
         });
     }
 

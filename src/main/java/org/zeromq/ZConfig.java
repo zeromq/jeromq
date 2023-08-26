@@ -252,28 +252,23 @@ public class ZConfig
 
     public void save(final Writer writer) throws IOException
     {
-        visit(this, new IVisitor()
-        {
-            @Override
-            public void handleNode(ZConfig node, int level) throws IOException
-            {
-                // First print comments
-                if (node.comments.size() > 0) {
-                    for (String comment : node.comments) {
-                        writer.append("# ").append(comment).append('\n');
-                    }
-                    writer.append("\n");
+        visit(this, (node, level) -> {
+            // First print comments
+            if (node.comments.size() > 0) {
+                for (String comment : node.comments) {
+                    writer.append("# ").append(comment).append('\n');
                 }
-                // now the values
-                if (level > 0) {
-                    String prefix = level > 1 ? String.format("%" + ((level - 1) * 4) + "s", " ") : "";
-                    writer.append(prefix);
-                    if (node.value == null) {
-                        writer.append(node.name).append("\n");
-                    }
-                    else {
-                        writer.append(String.format("%s = \"%s\"\n", node.name, node.value));
-                    }
+                writer.append("\n");
+            }
+            // now the values
+            if (level > 0) {
+                String prefix = level > 1 ? String.format("%" + ((level - 1) * 4) + "s", " ") : "";
+                writer.append(prefix);
+                if (node.value == null) {
+                    writer.append(node.name).append("\n");
+                }
+                else {
+                    writer.append(String.format("%s = \"%s\"\n", node.name, node.value));
                 }
             }
         }, 0);

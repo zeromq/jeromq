@@ -41,19 +41,14 @@ public class TestRapidOpenCloseSocket
     proxyThr.start();
 
     for (final Socket workerSock : workerSocks) {
-      Thread workerThr = new Thread(new Runnable()
-      {
-        @Override
-        public void run()
-        {
-          try {
-            while (true) {
-              byte[] msg = workerSock.recv();
-              // Process the msg!
-            }
+      Thread workerThr = new Thread(() -> {
+        try {
+          while (true) {
+            byte[] msg = workerSock.recv();
+            // Process the msg!
           }
-          catch (Exception e) {
-          }
+        }
+        catch (Exception e) {
         }
       });
       workerThr.setName("A worker thread");

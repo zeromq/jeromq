@@ -18,23 +18,13 @@ public class ZTickerTest
 {
     private ZTicker ticker;
 
-    private final TimerHandler handler = new TimerHandler()
-    {
-        @Override
-        public void time(Object... args)
-        {
-            AtomicInteger invoked = (AtomicInteger) args[0];
-            invoked.incrementAndGet();
-        }
+    private final TimerHandler handler = args -> {
+        AtomicInteger invoked = (AtomicInteger) args[0];
+        invoked.incrementAndGet();
     };
 
-    private static final TimerHandler NOOP = new TimerHandler()
-    {
-        @Override
-        public void time(Object... args)
-        {
-            // do nothing
-        }
+    private static final TimerHandler NOOP = args -> {
+        // do nothing
     };
 
     @Before

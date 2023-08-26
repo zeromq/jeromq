@@ -444,19 +444,14 @@ public class ParanoidPiratServerWithLazyPiratClientTest
         final Queue queue = new Queue(portQueue, portWorkers);
         service.submit(queue);
         final Future<?> worker = service.submit(new Worker(portWorkers));
-        service.submit(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                try {
-                    worker.get();
-                    System.out.println("I: Rebooter - restarting new worker after crash ++++++++++++");
-                    service.submit(new Worker(portWorkers));
-                }
-                catch (InterruptedException | ExecutionException e) {
-                    e.printStackTrace();
-                }
+        service.submit(() -> {
+            try {
+                worker.get();
+                System.out.println("I: Rebooter - restarting new worker after crash ++++++++++++");
+                service.submit(new Worker(portWorkers));
+            }
+            catch (InterruptedException | ExecutionException e) {
+                e.printStackTrace();
             }
         });
         final Future<?> client = service.submit(new Client(portQueue));

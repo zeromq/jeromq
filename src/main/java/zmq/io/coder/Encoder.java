@@ -4,25 +4,9 @@ import zmq.util.Errno;
 
 public abstract class Encoder extends EncoderBase
 {
-    protected final Runnable sizeReady = new Runnable()
-    {
-        @Override
-        public void run()
-        {
-            sizeReady();
-        }
+    protected final Runnable sizeReady = () -> sizeReady();
 
-    };
-
-    protected final Runnable messageReady = new Runnable()
-    {
-        @Override
-        public void run()
-        {
-            messageReady();
-        }
-
-    };
+    protected final Runnable messageReady = () -> messageReady();
 
     protected Encoder(Errno errno, int bufsize)
     {

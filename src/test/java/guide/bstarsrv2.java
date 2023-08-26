@@ -9,15 +9,10 @@ import org.zeromq.ZMsg;
 //  Binary Star server, using bstar reactor
 public class bstarsrv2
 {
-    private static final IZLoopHandler Echo = new IZLoopHandler()
-    {
-        @Override
-        public int handle(ZLoop loop, PollItem item, Object arg)
-        {
-            ZMsg msg = ZMsg.recvMsg(item.getSocket());
-            msg.send(item.getSocket());
-            return 0;
-        }
+    private static final IZLoopHandler Echo = (loop, item, arg) -> {
+        ZMsg msg = ZMsg.recvMsg(item.getSocket());
+        msg.send(item.getSocket());
+        return 0;
     };
 
     public static void main(String[] argv)

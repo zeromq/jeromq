@@ -103,22 +103,8 @@ public class ProxyTcpTest
 
     public static class ProxyDecoder extends Decoder
     {
-        private final Step readHeader = new Step()
-                                      {
-                                          @Override
-                                          public Step.Result apply()
-                                          {
-                                              return readHeader();
-                                          }
-                                      };
-        private final Step readBody   = new Step()
-                                      {
-                                          @Override
-                                          public Step.Result apply()
-                                          {
-                                              return readBody();
-                                          }
-                                      };
+        private final Step readHeader = () -> readHeader();
+        private final Step readBody   = () -> readBody();
 
         byte[]  header       = new byte[4];
         Msg     msg;
@@ -165,22 +151,8 @@ public class ProxyTcpTest
 
     public static class ProxyEncoder extends EncoderBase
     {
-        private final Runnable writeHeader = new Runnable()
-                                           {
-                                               @Override
-                                               public void run()
-                                               {
-                                                   writeHeader();
-                                               }
-                                           };
-        private final Runnable writeBody   = new Runnable()
-                                           {
-                                               @Override
-                                               public void run()
-                                               {
-                                                   writeBody();
-                                               }
-                                           };
+        private final Runnable writeHeader = () -> writeHeader();
+        private final Runnable writeBody   = () -> writeBody();
 
         ByteBuffer header = ByteBuffer.allocate(4);
         Msg        msg;

@@ -35,22 +35,8 @@ public class CustomEncoderTest
     static class CustomEncoder extends EncoderBase
     {
         public static final boolean RAW_ENCODER = true;
-        private final Runnable      readHeader  = new Runnable()
-                                                {
-                                                    @Override
-                                                    public void run()
-                                                    {
-                                                        readHeader();
-                                                    }
-                                                };
-        private final Runnable      readBody    = new Runnable()
-                                                {
-                                                    @Override
-                                                    public void run()
-                                                    {
-                                                        readBody();
-                                                    }
-                                                };
+        private final Runnable      readHeader  = () -> readHeader();
+        private final Runnable      readBody    = () -> readBody();
 
         ByteBuffer header = ByteBuffer.allocate(10);
 

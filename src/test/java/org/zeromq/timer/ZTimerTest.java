@@ -21,23 +21,13 @@ public class ZTimerTest
     private final ZTimer        timers = new ZTimer(() -> time.get());
     private AtomicBoolean invoked = new AtomicBoolean();
 
-    private final TimerHandler handler = new TimerHandler()
-    {
-        @Override
-        public void time(Object... args)
-        {
-            AtomicBoolean invoked = (AtomicBoolean) args[0];
-            invoked.set(true);
-        }
+    private final TimerHandler handler = args -> {
+        AtomicBoolean invoked = (AtomicBoolean) args[0];
+        invoked.set(true);
     };
 
-    private static final TimerHandler NOOP = new TimerHandler()
-    {
-        @Override
-        public void time(Object... args)
-        {
-            // do nothing
-        }
+    private static final TimerHandler NOOP = args -> {
+        // do nothing
     };
 
     @Before

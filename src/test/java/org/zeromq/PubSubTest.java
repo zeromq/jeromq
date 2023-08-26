@@ -29,56 +29,32 @@ public class PubSubTest
 
         final int messagesNumber = 1000;
         //run publisher
-        Runnable pub = new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                ZMQ.Socket publisher = context.socket(SocketType.PUB);
-                publisher.bind(address);
-                int count = messagesNumber;
-                while (count-- > 0) {
-                    publisher.send(msg);
-                    System.out.println("Send message " + count);
-                }
-                publisher.close();
+        Runnable pub = () -> {
+            Socket publisher = context.socket(SocketType.PUB);
+            publisher.bind(address);
+            int count = messagesNumber;
+            while (count-- > 0) {
+                publisher.send(msg);
+                System.out.println("Send message " + count);
             }
-
+            publisher.close();
         };
         //run subscriber
-        Runnable sub = new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                ZMQ.Socket subscriber = context.socket(SocketType.SUB);
-                subscriber.connect(address);
-                subscriber.subscribe(ZMQ.SUBSCRIPTION_ALL);
-                int count = messagesNumber;
-                while (count-- > 0) {
-                    subscriber.recv();
-                    System.out.println("Received message " + count);
-                }
-                subscriber.close();
+        Runnable sub = () -> {
+            Socket subscriber = context.socket(SocketType.SUB);
+            subscriber.connect(address);
+            subscriber.subscribe(ZMQ.SUBSCRIPTION_ALL);
+            int count = messagesNumber;
+            while (count-- > 0) {
+                subscriber.recv();
+                System.out.println("Received message " + count);
             }
+            subscriber.close();
         };
-        ExecutorService executor = Executors.newFixedThreadPool(2, new ThreadFactory()
-        {
-            @Override
-            public Thread newThread(Runnable r)
-            {
-                Thread thread = new Thread(r);
-                thread.setUncaughtExceptionHandler(new UncaughtExceptionHandler()
-                {
-                    @Override
-                    public void uncaughtException(Thread t, Throwable e)
-                    {
-                        e.printStackTrace();
-                    }
-                });
-                return thread;
-            }
-
+        ExecutorService executor = Executors.newFixedThreadPool(2, r -> {
+            Thread thread = new Thread(r);
+            thread.setUncaughtExceptionHandler((t, e) -> e.printStackTrace());
+            return thread;
         });
         executor.submit(sub);
         zmq.ZMQ.sleep(1);
@@ -128,32 +104,27 @@ public class PubSubTest
         final int port = Utils.findOpenPort();
         final ExecutorService service = Executors.newFixedThreadPool(2);
 
-        final Callable<Boolean> pub = new Callable<Boolean>()
-        {
-            @Override
-            public Boolean call()
-            {
-                final ZMQ.Context ctx = ZMQ.context(1);
-                assertThat(ctx, notNullValue());
-                final ZMQ.Socket pubsocket = ctx.socket(SocketType.PUB);
-                assertThat(pubsocket, notNullValue());
+        final Callable<Boolean> pub = () -> {
+            final ZMQ.Context ctx = ZMQ.context(1);
+            assertThat(ctx, notNullValue());
+            final Socket pubsocket = ctx.socket(SocketType.PUB);
+            assertThat(pubsocket, notNullValue());
 
-                boolean rc = pubsocket.bind("tcp://*:" + port);
+            boolean rc = pubsocket.bind("tcp://*:" + port);
+            assertThat(rc, is(true));
+
+            for (int idx = 1; idx <= 15; ++idx) {
+                rc = pubsocket.sendMore("test/");
+                assertThat(rc, is(true));
+                rc = pubsocket.send("data" + idx);
                 assertThat(rc, is(true));
 
-                for (int idx = 1; idx <= 15; ++idx) {
-                    rc = pubsocket.sendMore("test/");
-                    assertThat(rc, is(true));
-                    rc = pubsocket.send("data" + idx);
-                    assertThat(rc, is(true));
-
-                    System.out.printf("Send-%d/", idx);
-                    ZMQ.msleep(100);
-                }
-                pubsocket.close();
-                ctx.close();
-                return true;
+                System.out.printf("Send-%d/", idx);
+                ZMQ.msleep(100);
             }
+            pubsocket.close();
+            ctx.close();
+            return true;
         };
         final Callable<Integer> sub = new Callable<Integer>()
         {

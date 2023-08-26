@@ -65,43 +65,33 @@ public class HeartbeatsTest
         assertThat(rc, is(true));
 
         ExecutorService service = Executors.newFixedThreadPool(2);
-        service.submit(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                Thread.currentThread().setName("Push");
-                long counter = 0;
-                while (++counter < MAX) {
-                    String data = Long.toString(counter);
-                    int sent = ZMQ.send(push, Long.toString(counter), 0);
-                    assertThat(sent, is(data.length()));
-                }
-                System.out.println("Push finished");
-                push.close();
+        service.submit(() -> {
+            Thread.currentThread().setName("Push");
+            long counter = 0;
+            while (++counter < MAX) {
+                String data = Long.toString(counter);
+                int sent = ZMQ.send(push, Long.toString(counter), 0);
+                assertThat(sent, is(data.length()));
             }
+            System.out.println("Push finished");
+            push.close();
         });
-        service.submit(new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                Thread.currentThread().setName("Pull");
-                long counter = 0;
-                while (++counter < MAX) {
-                    Msg msg = ZMQ.recv(pull, 0);
-                    assertThat(msg, notNullValue());
+        service.submit(() -> {
+            Thread.currentThread().setName("Pull");
+            long counter = 0;
+            while (++counter < MAX) {
+                Msg msg = ZMQ.recv(pull, 0);
+                assertThat(msg, notNullValue());
 
-                    long received = Long.parseLong(new String(msg.data(), ZMQ.CHARSET));
-                    assertThat(received, is(counter));
+                long received = Long.parseLong(new String(msg.data(), ZMQ.CHARSET));
+                assertThat(received, is(counter));
 
-                    if (counter % (MAX / 10) == 0) {
-                        System.out.print(counter + " ");
-                    }
+                if (counter % (MAX / 10) == 0) {
+                    System.out.print(counter + " ");
                 }
-                System.out.println("Pull finished");
-                pull.close();
             }
+            System.out.println("Pull finished");
+            pull.close();
         });
 
         service.shutdown();

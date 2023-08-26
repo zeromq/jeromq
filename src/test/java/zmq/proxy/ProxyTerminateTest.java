@@ -94,14 +94,7 @@ public class ProxyTerminateTest
 
         CompletableFuture<Boolean> resultHander = new CompletableFuture<>();
         Thread thread = new Thread(new ServerTask(ctx, frontend, backend, resultHander));
-        thread.setUncaughtExceptionHandler(new UncaughtExceptionHandler()
-        {
-            @Override
-            public void uncaughtException(Thread t, Throwable e)
-            {
-                resultHander.completeExceptionally(e);
-            }
-        });
+        thread.setUncaughtExceptionHandler((t, e) -> resultHander.completeExceptionally(e));
         thread.start();
 
         Thread.sleep(500);

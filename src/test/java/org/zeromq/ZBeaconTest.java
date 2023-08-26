@@ -34,20 +34,15 @@ public class ZBeaconTest
                 .client(InetAddress.getLoopbackAddress()).port(port)
                 .server(InetAddress.getLoopbackAddress())
                 .prefix(new byte[] { 'H', 'Y', 'D', 'R', 'A', 0x01 })
-                .listener(new Listener()
-                {
-                    @Override
-                    public void onBeacon(InetAddress sender, byte[] received)
-                    {
-                        if (beacon1.get() == 0) {
-                            beacon1.set(System.currentTimeMillis());
-                        }
-                        else if (beacon2.get() == 0) {
-                            beacon2.set(System.currentTimeMillis());
-                            receivedBeacon.set(received);
-                        }
-                        latch.countDown();
+                .listener((sender, received) -> {
+                    if (beacon1.get() == 0) {
+                        beacon1.set(System.currentTimeMillis());
                     }
+                    else if (beacon2.get() == 0) {
+                        beacon2.set(System.currentTimeMillis());
+                        receivedBeacon.set(received);
+                    }
+                    latch.countDown();
                 });
         ZBeacon beacon = builder.build();
         try {
@@ -76,14 +71,7 @@ public class ZBeaconTest
         @SuppressWarnings("resource")
         ZBeacon zbeacon = new ZBeacon("127.0.0.1", port, beacon, false);
         zbeacon.setPrefix(prefix);
-        zbeacon.setListener(new Listener()
-        {
-            @Override
-            public void onBeacon(InetAddress sender, byte[] beacon)
-            {
-                latch.countDown();
-            }
-        });
+        zbeacon.setListener((sender, beacon1) -> latch.countDown());
 
         try {
             zbeacon.start();
@@ -110,20 +98,15 @@ public class ZBeaconTest
 
         final AtomicLong counter = new AtomicLong();
 
-        zbeacon.setListener(new Listener()
-        {
-            @Override
-            public void onBeacon(InetAddress sender, byte[] beacon)
-            {
-                counter.incrementAndGet();
-                System.out.println(sender.toString());
-                try {
-                    System.out.println(InetAddress.getLocalHost().getHostAddress());
-                }
-                catch (Exception e) {
-                }
-                System.out.println(new String(beacon));
+        zbeacon.setListener((sender, beacon1) -> {
+            counter.incrementAndGet();
+            System.out.println(sender.toString());
+            try {
+                System.out.println(InetAddress.getLocalHost().getHostAddress());
             }
+            catch (Exception e) {
+            }
+            System.out.println(new String(beacon1));
         });
         zbeacon.start();
         zmq.ZMQ.sleep(1);
@@ -143,14 +126,7 @@ public class ZBeaconTest
         @SuppressWarnings("resource")
         ZBeacon zbeacon = new ZBeacon("127.0.0.1", port, beacon, false, true);
         zbeacon.setPrefix(prefix);
-        zbeacon.setListener(new Listener()
-        {
-            @Override
-            public void onBeacon(InetAddress sender, byte[] beacon)
-            {
-                latch.countDown();
-            }
-        });
+        zbeacon.setListener((sender, beacon1) -> latch.countDown());
 
         try {
             zbeacon.start();
@@ -177,20 +153,15 @@ public class ZBeaconTest
 
         final AtomicLong counter = new AtomicLong();
 
-        zbeacon.setListener(new Listener()
-        {
-            @Override
-            public void onBeacon(InetAddress sender, byte[] beacon)
-            {
-                counter.incrementAndGet();
-                System.out.println(sender.toString());
-                try {
-                    System.out.println(InetAddress.getLocalHost().getHostAddress());
-                }
-                catch (Exception e) {
-                }
-                System.out.println(new String(beacon));
+        zbeacon.setListener((sender, beacon1) -> {
+            counter.incrementAndGet();
+            System.out.println(sender.toString());
+            try {
+                System.out.println(InetAddress.getLocalHost().getHostAddress());
             }
+            catch (Exception e) {
+            }
+            System.out.println(new String(beacon1));
         });
         zbeacon.start();
         zmq.ZMQ.sleep(1);

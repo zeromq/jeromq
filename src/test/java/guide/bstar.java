@@ -158,54 +158,36 @@ public class bstar
     //  Reactor event handlers...
 
     //  Publish our state to peer
-    private static final IZLoopHandler SendState = new IZLoopHandler()
-    {
-
-        @Override
-        public int handle(ZLoop loop, PollItem item, Object arg)
-        {
-            bstar self = (bstar) arg;
-            self.statepub.send(String.format("%d", self.state.ordinal()));
-            return 0;
-        }
+    private static final IZLoopHandler SendState = (loop, item, arg) -> {
+        bstar self = (bstar) arg;
+        self.statepub.send(String.format("%d", self.state.ordinal()));
+        return 0;
     };
 
     //  Receive state from peer, execute finite state machine
-    private static final IZLoopHandler RecvState = new IZLoopHandler()
-    {
-
-        @Override
-        public int handle(ZLoop loop, PollItem item, Object arg)
-        {
-            bstar self = (bstar) arg;
-            String state = item.getSocket().recvStr();
-            if (state != null) {
-                self.event = Event.values()[Integer.parseInt(state)];
-                self.updatePeerExpiry();
-            }
-            return self.execute() ? 0 : -1;
+    private static final IZLoopHandler RecvState = (loop, item, arg) -> {
+        bstar self = (bstar) arg;
+        String state = item.getSocket().recvStr();
+        if (state != null) {
+            self.event = Event.values()[Integer.parseInt(state)];
+            self.updatePeerExpiry();
         }
+        return self.execute() ? 0 : -1;
     };
 
     //  Application wants to speak to us, see if it's possible
-    private static final IZLoopHandler VoterReady = new IZLoopHandler()
-    {
-
-        @Override
-        public int handle(ZLoop loop, PollItem item, Object arg)
-        {
-            bstar self = (bstar) arg;
-            //  If server can accept input now, call appl handler
-            self.event = Event.CLIENT_REQUEST;
-            if (self.execute())
-                self.voterFn.handle(loop, item, self.voterArg);
-            else {
-                //  Destroy waiting message, no-one to read it
-                ZMsg msg = ZMsg.recvMsg(item.getSocket());
-                msg.destroy();
-            }
-            return 0;
+    private static final IZLoopHandler VoterReady = (loop, item, arg) -> {
+        bstar self = (bstar) arg;
+        //  If server can accept input now, call appl handler
+        self.event = Event.CLIENT_REQUEST;
+        if (self.execute())
+            self.voterFn.handle(loop, item, self.voterArg);
+        else {
+            //  Destroy waiting message, no-one to read it
+            ZMsg msg = ZMsg.recvMsg(item.getSocket());
+            msg.destroy();
         }
+        return 0;
     };
 
     //  .until
