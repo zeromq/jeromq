@@ -15,9 +15,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Iterator;
 
 import org.junit.Test;
@@ -374,12 +373,12 @@ public class ZMsgTest
         try {
             // Save msg to a file
             File f = new File(TemporaryFolderFinder.resolve("zmsg.test"));
-            DataOutputStream dos = new DataOutputStream(new FileOutputStream(f));
+            DataOutputStream dos = new DataOutputStream(Files.newOutputStream(f.toPath()));
             assertThat(ZMsg.save(msg, dos), is(true));
             dos.close();
 
             // Read msg out of the file
-            DataInputStream dis = new DataInputStream(new FileInputStream(f));
+            DataInputStream dis = new DataInputStream(Files.newInputStream(f.toPath()));
             ZMsg msg2 = ZMsg.load(dis);
             dis.close();
             f.delete();

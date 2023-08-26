@@ -4,12 +4,12 @@ import java.io.BufferedWriter;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.UUID;
 
 import org.zeromq.ZContext;
@@ -72,7 +72,7 @@ public class titanic
                 //  Generate UUID and save message to disk
                 String uuid = generateUUID();
                 String filename = requestFilename(uuid);
-                try (DataOutputStream file = new DataOutputStream(new FileOutputStream(filename))) {
+                try (DataOutputStream file = new DataOutputStream(Files.newOutputStream(Paths.get(filename)))) {
                     ZMsg.save(request, file);
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -118,7 +118,7 @@ public class titanic
                 String repFilename = replyFilename(uuid);
 
                 if (new File(repFilename).exists()) {
-                    try (DataInputStream file = new DataInputStream(new FileInputStream(repFilename))) {
+                    try (DataInputStream file = new DataInputStream(Files.newInputStream(Paths.get(repFilename)))) {
                         reply = ZMsg.load(file);
                         reply.push("200");
                     } catch (IOException e) {
@@ -264,7 +264,7 @@ public class titanic
         DataInputStream file = null;
         ZMsg request;
         try {
-            file = new DataInputStream(new FileInputStream(filename));
+            file = new DataInputStream(Files.newInputStream(Paths.get(filename)));
             request = ZMsg.load(file);
         }
         catch (IOException e) {
@@ -302,7 +302,7 @@ public class titanic
                 filename = replyFilename(uuid);
                 DataOutputStream ofile = null;
                 try {
-                    ofile = new DataOutputStream(new FileOutputStream(filename));
+                    ofile = new DataOutputStream(Files.newOutputStream(Paths.get(filename)));
                     ZMsg.save(reply, ofile);
                 }
                 catch (IOException e) {
