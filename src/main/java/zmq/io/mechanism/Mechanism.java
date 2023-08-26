@@ -25,7 +25,7 @@ import zmq.util.Wire;
 // Different mechanism extends this class.
 public abstract class Mechanism
 {
-    public static enum Status
+    public enum Status
     {
         HANDSHAKING,
         READY,

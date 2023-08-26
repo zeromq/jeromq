@@ -118,7 +118,7 @@ public interface ZAgent
     /**
      * Creates a very simple agent with an easy lock mechanism.
      */
-    public static final class SimpleAgent implements ZAgent
+    final class SimpleAgent implements ZAgent
     {
         // the pipe used for communicating with the star
         private final Socket pipe;

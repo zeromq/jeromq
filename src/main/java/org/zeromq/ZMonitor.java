@@ -123,7 +123,7 @@ public class ZMonitor implements Closeable
 
         private final int code;
 
-        private Event(int code)
+        Event(int code)
         {
             this.code = code;
         }
@@ -182,7 +182,7 @@ public class ZMonitor implements Closeable
 
         private final int code;
 
-        private ProtocolCode(int code)
+        ProtocolCode(int code)
         {
             this.code = code;
         }

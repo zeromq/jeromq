@@ -196,7 +196,7 @@ public class ZProxy
         boolean custom(Socket pipe, String cmd, Socket frontend, Socket backend, Socket capture, Object... args);
 
         // this may be useful
-        public abstract static class SimpleProxy implements Proxy
+        abstract class SimpleProxy implements Proxy
         {
             @Override
             public boolean restart(ZMsg cfg, Socket socket, Plug place, Object... args) throws IOException

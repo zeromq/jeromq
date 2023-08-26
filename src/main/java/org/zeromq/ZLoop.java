@@ -21,7 +21,7 @@ public class ZLoop
 {
     public interface IZLoopHandler
     {
-        public int handle(ZLoop loop, PollItem item, Object arg);
+        int handle(ZLoop loop, PollItem item, Object arg);
     }
 
     private class SPoller

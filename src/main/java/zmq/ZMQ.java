@@ -269,7 +269,7 @@ public class ZMQ
      */
     public interface EventConsummer
     {
-        public void consume(Event ev);
+        void consume(Event ev);
 
         /**
          * An optional method to close the monitor if needed
