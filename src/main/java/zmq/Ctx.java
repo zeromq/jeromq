@@ -725,13 +725,7 @@ public class Ctx
         endpointsSync.lock();
 
         try {
-            Iterator<Entry<String, Endpoint>> it = endpoints.entrySet().iterator();
-            while (it.hasNext()) {
-                Entry<String, Endpoint> e = it.next();
-                if (e.getValue().socket == socket) {
-                    it.remove();
-                }
-            }
+            endpoints.entrySet().removeIf(e -> e.getValue().socket == socket);
         }
         finally {
             endpointsSync.unlock();
