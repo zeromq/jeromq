@@ -108,7 +108,7 @@ public class lbbroker2
                 items.register(backend, Poller.POLLIN);
 
                 //  Poll front-end only if we have available workers
-                if (workerQueue.size() > 0)
+                if (!workerQueue.isEmpty())
                     items.register(frontend, Poller.POLLIN);
 
                 if (items.poll() < 0)

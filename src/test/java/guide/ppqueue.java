@@ -94,7 +94,7 @@ public class ppqueue
             poller.register(frontend, Poller.POLLIN);
 
             while (true) {
-                boolean workersAvailable = workers.size() > 0;
+                boolean workersAvailable = !workers.isEmpty();
                 int rc = poller.poll(HEARTBEAT_INTERVAL);
                 if (rc == -1)
                     break; //  Interrupted

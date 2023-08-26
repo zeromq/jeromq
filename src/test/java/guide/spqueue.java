@@ -33,7 +33,7 @@ public class spqueue
 
             //  The body of this example is exactly the same as lruqueue2.
             while (true) {
-                boolean workersAvailable = workers.size() > 0;
+                boolean workersAvailable = !workers.isEmpty();
                 int rc = poller.poll(-1);
 
                 //  Poll frontend only if we have available workers
@@ -66,7 +66,7 @@ public class spqueue
             }
 
             //  When we're done, clean up properly
-            while (workers.size() > 0) {
+            while (!workers.isEmpty()) {
                 ZFrame frame = workers.remove(0);
                 frame.destroy();
             }

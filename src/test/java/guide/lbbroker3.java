@@ -100,7 +100,7 @@ public class lbbroker3
                 msg.send(arg.backend);
 
                 //  Cancel reader on frontend if we went from 1 to 0 workers
-                if (arg.workers.size() == 0) {
+                if (arg.workers.isEmpty()) {
                     loop.removePoller(new PollItem(arg.frontend, 0));
                 }
             }

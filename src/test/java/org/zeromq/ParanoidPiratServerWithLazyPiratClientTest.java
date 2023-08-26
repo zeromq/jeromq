@@ -125,7 +125,7 @@ public class ParanoidPiratServerWithLazyPiratClientTest
             poller.register(frontend, Poller.POLLIN);
 
             while (active.get()) {
-                final boolean workersAvailable = workers.size() > 0;
+                final boolean workersAvailable = !workers.isEmpty();
                 final int rc = poller.poll(HEARTBEAT_INTERVAL);
                 if (rc == -1) {
                     break; //  Interrupted

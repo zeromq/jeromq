@@ -172,7 +172,7 @@ public class ZMsg implements Iterable<ZFrame>, Deque<ZFrame>
             throw new IllegalArgumentException("socket is null");
         }
 
-        if (frames.size() == 0) {
+        if (frames.isEmpty()) {
             return true;
         }
 

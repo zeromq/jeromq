@@ -394,7 +394,7 @@ public class Options
             if (filterStr == null) {
                 tcpAcceptFilters.clear();
             }
-            else if (filterStr.length() == 0 || filterStr.length() > 255) {
+            else if (filterStr.isEmpty() || filterStr.length() > 255) {
                 throw new IllegalArgumentException("tcp_accept_filter " + optval);
             }
             else {

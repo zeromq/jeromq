@@ -239,7 +239,7 @@ public class peering2
                 }
             }
             //  When we're done, clean up properly
-            while (workers.size() > 0) {
+            while (!workers.isEmpty()) {
                 ZFrame frame = workers.remove(0);
                 frame.destroy();
             }

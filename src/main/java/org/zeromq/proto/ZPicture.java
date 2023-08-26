@@ -323,7 +323,7 @@ public class ZPicture
             }
             case 'm': {
                 ZMsg msgParm = (ZMsg) args[argIndex];
-                while (msgParm.size() > 0) {
+                while (!msgParm.isEmpty()) {
                     msg.add(msgParm.pop());
                 }
                 break;

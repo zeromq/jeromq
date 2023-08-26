@@ -440,7 +440,7 @@ public class ZContext implements Closeable
      */
     public boolean isEmpty()
     {
-        return shadows.size() == 0 && sockets.size() == 0 && selectors.size() == 0;
+        return shadows.isEmpty() && sockets.isEmpty() && selectors.isEmpty();
     }
 
     /**

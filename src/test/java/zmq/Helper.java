@@ -134,7 +134,7 @@ public class Helper
         public Msg pullMsg()
         {
             System.out.println("session.read " + out);
-            if (out.size() == 0) {
+            if (out.isEmpty()) {
                 return null;
             }
 

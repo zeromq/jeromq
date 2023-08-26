@@ -254,7 +254,7 @@ public class ZConfig
     {
         visit(this, (node, level) -> {
             // First print comments
-            if (node.comments.size() > 0) {
+            if (!node.comments.isEmpty()) {
                 for (String comment : node.comments) {
                     writer.append("# ").append(comment).append('\n');
                 }

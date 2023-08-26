@@ -184,7 +184,7 @@ public class ZMetadata
 
     public static ZMetadata read(String meta)
     {
-        if (meta == null || meta.length() == 0) {
+        if (meta == null || meta.isEmpty()) {
             return null;
         }
         try {

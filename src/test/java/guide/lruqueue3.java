@@ -98,7 +98,7 @@ class FrontendHandler implements ZLoop.IZLoopHandler
             msg.send(arg.backend);
 
             //  Cancel reader on frontend if we went from 1 to 0 workers
-            if (arg.workers.size() == 0) {
+            if (arg.workers.isEmpty()) {
                 PollItem poller = new PollItem(arg.frontend, ZMQ.Poller.POLLIN);
                 loop.removePoller(poller);
             }

@@ -179,7 +179,7 @@ public class mdbroker
      */
     private void processWorker(ZFrame sender, ZMsg msg)
     {
-        assert (msg.size() >= 1); // At least, command
+        assert (!msg.isEmpty()); // At least, command
 
         ZFrame command = msg.pop();
 
