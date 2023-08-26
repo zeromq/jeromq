@@ -66,7 +66,7 @@ public class ByteBuffersTest
     }
 
     @Test
-    public void testByteBufferRecv() throws InterruptedException, IOException, CharacterCodingException
+    public void testByteBufferRecv() throws InterruptedException, IOException
     {
         int port = Utils.findOpenPort();
         ZMQ.Context context = ZMQ.context(1);
@@ -113,7 +113,7 @@ public class ByteBuffersTest
     }
 
     @Test
-    public void testByteBufferLarge() throws InterruptedException, IOException, CharacterCodingException
+    public void testByteBufferLarge() throws InterruptedException, IOException
     {
         int port = Utils.findOpenPort();
         ZMQ.Context context = ZMQ.context(1);
@@ -173,7 +173,7 @@ public class ByteBuffersTest
     }
 
     @Test
-    public void testByteBufferLargeDirect() throws InterruptedException, IOException, CharacterCodingException
+    public void testByteBufferLargeDirect() throws InterruptedException, IOException
     {
         int port = Utils.findOpenPort();
         ZMQ.Context context = ZMQ.context(1);
