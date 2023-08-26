@@ -389,10 +389,6 @@ public class ZMsgTest
             assertThat(msg2.contentSize(), is(60L));
 
         }
-        catch (FileNotFoundException e) {
-            e.printStackTrace();
-            fail();
-        }
         catch (IOException e) {
             e.printStackTrace();
             fail();

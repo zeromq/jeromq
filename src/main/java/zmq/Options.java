@@ -645,10 +645,7 @@ public class Options
             Class<? extends MsgAllocator> msgAllocator = clazz.asSubclass(MsgAllocator.class);
             return msgAllocator.newInstance();
         }
-        catch (InstantiationException e) {
-            throw new IllegalArgumentException(e);
-        }
-        catch (IllegalAccessException e) {
+        catch (InstantiationException | IllegalAccessException e) {
             throw new IllegalArgumentException(e);
         }
     }
