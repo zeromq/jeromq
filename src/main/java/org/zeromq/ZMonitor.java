@@ -135,12 +135,7 @@ public class ZMonitor implements Closeable
          */
         public static Event findByCode(int event)
         {
-            if (MAP.containsKey(event)) {
-                return MAP.get(event);
-            }
-            else {
-                return ALL;
-            }
+            return MAP.getOrDefault(event, ALL);
         }
     }
 

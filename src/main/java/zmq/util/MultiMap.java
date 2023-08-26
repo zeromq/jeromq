@@ -92,11 +92,7 @@ public final class MultiMap<K extends Comparable<? super K>, V>
 
     private List<V> getValues(K key)
     {
-        List<V> list = data.get(key);
-        if (list == null) {
-            list = new ArrayList<>();
-            data.put(key, list);
-        }
+        List<V> list = data.computeIfAbsent(key, k -> new ArrayList<>());
         return list;
     }
 
