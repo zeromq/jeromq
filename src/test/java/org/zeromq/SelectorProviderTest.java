@@ -18,7 +18,7 @@ public class SelectorProviderTest
 {
     public static class DefaultSelectorProviderChooser implements SelectorProviderChooser
     {
-        public AtomicInteger choosen = new AtomicInteger(0);
+        public final AtomicInteger choosen = new AtomicInteger(0);
         @Override
         public SelectorProvider choose(IZAddress addr, Options options)
         {

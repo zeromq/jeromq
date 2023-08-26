@@ -24,7 +24,7 @@ public class CustomDecoderTest
         private final Step readHeader = this::readHeader;
         private final Step readBody   = this::readBody;
 
-        ByteBuffer header = ByteBuffer.allocate(10);
+        final ByteBuffer header = ByteBuffer.allocate(10);
         Msg        msg;
         int        size   = -1;
 

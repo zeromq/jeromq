@@ -26,9 +26,9 @@ public class ZLoop
 
     private static class SPoller
     {
-        PollItem      item;
-        IZLoopHandler handler;
-        Object        arg;
+        final PollItem      item;
+        final IZLoopHandler handler;
+        final Object        arg;
         int           errors; //  If too many errors, kill poller
 
         protected SPoller(PollItem item, IZLoopHandler handler, Object arg)
@@ -43,10 +43,10 @@ public class ZLoop
 
     private static class STimer
     {
-        int           delay;
+        final int           delay;
         int           times;
-        IZLoopHandler handler;
-        Object        arg;
+        final IZLoopHandler handler;
+        final Object        arg;
         long          when;   //  Clock time when alarm goes off
 
         public STimer(int delay, int times, IZLoopHandler handler, Object arg)

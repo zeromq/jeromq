@@ -106,11 +106,11 @@ public class ProxyTcpTest
         private final Step readHeader = this::readHeader;
         private final Step readBody   = this::readBody;
 
-        byte[]  header       = new byte[4];
+        final byte[]  header       = new byte[4];
         Msg     msg;
         int     size         = -1;
         boolean identitySent = false;
-        Msg     bottom;
+        final Msg     bottom;
 
         public ProxyDecoder(int bufsize, long maxmsgsize)
         {
@@ -154,7 +154,7 @@ public class ProxyTcpTest
         private final Runnable writeHeader = this::writeHeader;
         private final Runnable writeBody   = this::writeBody;
 
-        ByteBuffer header = ByteBuffer.allocate(4);
+        final ByteBuffer header = ByteBuffer.allocate(4);
         Msg        msg;
         int        size   = -1;
         boolean    messageReady;

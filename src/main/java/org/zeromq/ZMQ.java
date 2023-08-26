@@ -4686,8 +4686,8 @@ public class ZMQ
      */
     public static class CancellationToken
     {
-        protected AtomicBoolean canceled;
-        SocketBase socket;
+        protected final AtomicBoolean canceled;
+        final SocketBase socket;
 
         protected CancellationToken(SocketBase socket)
         {

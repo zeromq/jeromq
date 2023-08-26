@@ -14,7 +14,7 @@ public class TestShutdownStress
 
     static class Worker implements Runnable
     {
-        SocketBase s;
+        final SocketBase s;
 
         Worker(SocketBase s) throws IOException
         {

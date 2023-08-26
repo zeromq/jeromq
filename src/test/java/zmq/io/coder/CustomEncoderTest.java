@@ -38,7 +38,7 @@ public class CustomEncoderTest
         private final Runnable      readHeader  = this::readHeader;
         private final Runnable      readBody    = this::readBody;
 
-        ByteBuffer header = ByteBuffer.allocate(10);
+        final ByteBuffer header = ByteBuffer.allocate(10);
 
         public CustomEncoder(int bufsize, long maxmsgsize)
         {

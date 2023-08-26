@@ -29,8 +29,8 @@ public class mdbroker
     private static class Service
     {
         public final String name;     // Service name
-        Deque<ZMsg>         requests; // List of client requests
-        Deque<Worker>       waiting;  // List of waiting workers
+        final Deque<ZMsg>         requests; // List of client requests
+        final Deque<Worker>       waiting;  // List of waiting workers
 
         public Service(String name)
         {
@@ -45,8 +45,8 @@ public class mdbroker
      */
     private static class Worker
     {
-        String  identity;// Identity of worker
-        ZFrame  address; // Address frame to route to
+        final String  identity;// Identity of worker
+        final ZFrame  address; // Address frame to route to
         Service service; // Owning service, if known
         long    expiry;  // Expires at unless heartbeat
 

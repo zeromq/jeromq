@@ -25,9 +25,9 @@ public class ppqueue
     //  as constructor, destructor, and methods on worker objects:
     private static class Worker
     {
-        ZFrame address;  //  Address of worker
-        String identity; //  Printable identity
-        long   expiry;   //  Expires at this time
+        final ZFrame address;  //  Address of worker
+        final String identity; //  Printable identity
+        final long   expiry;   //  Expires at this time
 
         protected Worker(ZFrame address)
         {

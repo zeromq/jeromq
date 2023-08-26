@@ -11,7 +11,7 @@ public class TestTimeo
 {
     static class Worker implements Runnable
     {
-        Ctx ctx;
+        final Ctx ctx;
 
         Worker(Ctx ctx)
         {

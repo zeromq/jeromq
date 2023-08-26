@@ -22,7 +22,7 @@ import zmq.util.Errno;
 
 public class Helper
 {
-    public static AtomicInteger counter = new AtomicInteger(2);
+    public static final AtomicInteger counter = new AtomicInteger(2);
 
     private Helper()
     {
@@ -78,7 +78,7 @@ public class Helper
 
     }
 
-    public static DummyCtx ctx = new DummyCtx();
+    public static final DummyCtx ctx = new DummyCtx();
 
     public static class DummyIOThread extends IOThread
     {
@@ -110,7 +110,7 @@ public class Helper
 
     public static class DummySession extends SessionBase
     {
-        public List<Msg> out = new ArrayList<>();
+        public final List<Msg> out = new ArrayList<>();
 
         public DummySession()
         {
