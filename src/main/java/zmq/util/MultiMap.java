@@ -46,7 +46,7 @@ public final class MultiMap<K extends Comparable<? super K>, V>
     public Collection<Entry<V, K>> entries()
     {
         List<Entry<V, K>> list = new ArrayList<>(inverse.entrySet());
-        Collections.sort(list, comparator);
+        list.sort(comparator);
         return list;
     }
 
