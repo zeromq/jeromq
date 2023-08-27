@@ -68,7 +68,7 @@ public class mdbroker
     private final Map<String, Worker>  workers;    // known workers
     private final Deque<Worker>        waiting;    // idle workers
 
-    private boolean   verbose;                    // Print activity to stdout
+    private final boolean   verbose;               // Print activity to stdout
     private final Formatter log     = new Formatter(System.out);
 
     // ---------------------------------------------------------------------
