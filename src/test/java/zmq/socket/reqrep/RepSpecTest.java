@@ -4,7 +4,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -22,7 +21,7 @@ import zmq.socket.AbstractSpecTest;
 public class RepSpecTest extends AbstractSpecTest
 {
     @Test
-    public void testSpecFairQueueIn() throws IOException, InterruptedException
+    public void testSpecFairQueueIn()
     {
         Ctx ctx = ZMQ.createContext();
         List<String> binds = Arrays.asList("inproc://a", "tcp://127.0.0.1:*");
@@ -37,7 +36,7 @@ public class RepSpecTest extends AbstractSpecTest
     }
 
     @Test
-    public void testSpecEnvelope() throws IOException, InterruptedException
+    public void testSpecEnvelope()
     {
         Ctx ctx = ZMQ.createContext();
         List<String> binds = Arrays.asList("inproc://a", "tcp://127.0.0.1:*");
@@ -56,7 +55,6 @@ public class RepSpecTest extends AbstractSpecTest
     }
 
     private void envelope(Ctx ctx, String address, int bindType, int connectType)
-            throws IOException, InterruptedException
     {
         SocketBase rep = ZMQ.socket(ctx, bindType);
         boolean rc = ZMQ.bind(rep, address);
@@ -91,7 +89,6 @@ public class RepSpecTest extends AbstractSpecTest
     }
 
     private void fairQueueIn(Ctx ctx, String address, int bindType, int connectType)
-            throws IOException, InterruptedException
     {
         //  Server socket will accept connections
         SocketBase rep = ZMQ.socket(ctx, bindType);

@@ -4,8 +4,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-import java.io.IOException;
-
 import org.junit.Test;
 
 import zmq.Config;
@@ -17,7 +15,7 @@ import zmq.ZMQ;
 public class StreamEngineTest
 {
     @Test
-    public void testEncoderFlipIssue520() throws IOException
+    public void testEncoderFlipIssue520()
     {
         Ctx ctx = ZMQ.createContext();
         assertThat(ctx, notNullValue());

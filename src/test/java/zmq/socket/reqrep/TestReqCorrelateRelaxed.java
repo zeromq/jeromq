@@ -27,10 +27,9 @@ public class TestReqCorrelateRelaxed
      *
      * Doing it this way so order is guaranteed.
      *
-     * @throws Exception
      */
     @Test
-    public void overallSetup() throws Exception
+    public void overallSetup()
     {
         Ctx ctx = ZMQ.init(1);
         assertThat(ctx, notNullValue());
@@ -68,10 +67,9 @@ public class TestReqCorrelateRelaxed
      *
      * @param dealer
      * @param reqClient
-     * @throws Exception
      * @return the request ID that was received
      */
-    public byte[] testReqSentFrames(SocketBase dealer, SocketBase reqClient) throws Exception
+    public byte[] testReqSentFrames(SocketBase dealer, SocketBase reqClient)
     {
         // Send simple payload over REQ socket
         Msg request = new Msg(PAYLOAD.getBytes());
@@ -122,9 +120,8 @@ public class TestReqCorrelateRelaxed
      * @param reqClient
      * @param origRequestId the request ID that was sent by the REQ socket
      * earlier
-     * @throws Exception
      */
-    public void testReqRecvGoodRequestId(SocketBase dealer, SocketBase reqClient, byte[] origRequestId) throws Exception
+    public void testReqRecvGoodRequestId(SocketBase dealer, SocketBase reqClient, byte[] origRequestId)
     {
         Msg requestId = new Msg(origRequestId);
         Msg empty = new Msg();
@@ -150,9 +147,8 @@ public class TestReqCorrelateRelaxed
      * @param dealer
      * @param reqClient
      * @param origRequestId
-     * @throws Exception
      */
-    public void testReqRecvBadRequestId(SocketBase dealer, SocketBase reqClient, byte[] origRequestId) throws Exception
+    public void testReqRecvBadRequestId(SocketBase dealer, SocketBase reqClient, byte[] origRequestId)
     {
         Msg badRequestId = new Msg("gobbledygook".getBytes());
         Msg goodRequestId = new Msg(origRequestId);

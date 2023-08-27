@@ -10,7 +10,7 @@ import zmq.util.Utils;
 public class DiffServerTest
 {
     @Test
-    public void test() throws IOException, InterruptedException
+    public void test() throws IOException
     {
         int port = Utils.findOpenPort();
         String host = "tcp://localhost:" + port;

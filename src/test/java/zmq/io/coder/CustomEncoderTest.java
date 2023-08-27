@@ -3,7 +3,6 @@ package zmq.io.coder;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 
 import org.junit.Test;
@@ -23,13 +22,7 @@ public class CustomEncoderTest
 
     private int write(ByteBuffer out)
     {
-        try {
-            return sock.write(out);
-        }
-        catch (IOException e) {
-            e.printStackTrace();
-            return -1;
-        }
+        return sock.write(out);
     }
 
     static class CustomEncoder extends EncoderBase

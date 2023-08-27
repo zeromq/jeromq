@@ -68,7 +68,7 @@ public class ZConfigTest
     }
 
     @Test
-    public void testPutKeyDoubleSlash() throws IOException
+    public void testPutKeyDoubleSlash()
     {
         ZConfig config = new ZConfig("root", null);
         config.putValue("inproc://test", "one");

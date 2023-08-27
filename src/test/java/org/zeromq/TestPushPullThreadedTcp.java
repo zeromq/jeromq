@@ -107,7 +107,7 @@ public class TestPushPullThreadedTcp
         test(20000);
     }
 
-    private void test(int count) throws IOException, InterruptedException
+    private void test(int count) throws InterruptedException
     {
         long start = System.currentTimeMillis();
 

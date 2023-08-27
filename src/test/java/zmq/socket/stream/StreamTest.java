@@ -4,7 +4,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 
 import org.junit.Test;
@@ -17,7 +16,7 @@ import zmq.ZMQ;
 public class StreamTest
 {
     @Test
-    public void testStream2dealer() throws IOException, InterruptedException
+    public void testStream2dealer()
     {
         final byte[] standardGreeting = new byte[64];
         standardGreeting[0] = (byte) 0xff;
@@ -211,7 +210,7 @@ public class StreamTest
     }
 
     @Test
-    public void testStream2stream() throws IOException, InterruptedException
+    public void testStream2stream()
     {
         String host = "tcp://localhost:*";
 

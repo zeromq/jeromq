@@ -5,14 +5,12 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-import java.io.IOException;
-
 import org.junit.Test;
 
 public class ConnectRidTest
 {
     @Test
-    public void testStream2stream() throws IOException, InterruptedException
+    public void testStream2stream()
     {
         System.out.println("Test Stream 2 stream");
         String host = "tcp://localhost:*";
@@ -75,20 +73,20 @@ public class ConnectRidTest
     }
 
     @Test
-    public void testRouter2routerNamed() throws IOException, InterruptedException
+    public void testRouter2routerNamed()
     {
         System.out.println("Test Router 2 Router named");
         testRouter2router(true);
     }
 
     @Test
-    public void testRouter2routerUnnamed() throws IOException, InterruptedException
+    public void testRouter2routerUnnamed()
     {
         System.out.println("Test Router 2 Router unnamed");
         testRouter2router(false);
     }
 
-    private void testRouter2router(boolean named) throws IOException, InterruptedException
+    private void testRouter2router(boolean named)
     {
         String host = "tcp://localhost:*";
 
@@ -186,7 +184,7 @@ public class ConnectRidTest
     }
 
     @Test
-    public void testRouter2routerWhileReceiving() throws IOException, InterruptedException
+    public void testRouter2routerWhileReceiving()
     {
         System.out.println("Test Router 2 router while receiving");
         String wildcardAddress = "tcp://localhost:*";

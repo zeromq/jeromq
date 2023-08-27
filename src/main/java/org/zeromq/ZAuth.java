@@ -75,12 +75,8 @@ public class ZAuth implements Closeable
                                   passwordsFile.getAbsolutePath());
             }
 
-            try {
-                loadPasswords(true);
-            }
-            catch (IOException e) {
-                // Ignore the exception, just don't read the file
-            }
+            loadPasswords(true);
+
             return true;
         }
 
@@ -89,12 +85,7 @@ public class ZAuth implements Closeable
         {
             // assert (request.username != null);
             // Refresh the passwords map if the file changed
-            try {
-                loadPasswords(false);
-            }
-            catch (IOException e) {
-                // Ignore the exception, just don't read the file
-            }
+            loadPasswords(false);
 
             String password = passwords.getProperty(request.username);
             if (password != null && password.equals(request.password)) {
@@ -113,7 +104,7 @@ public class ZAuth implements Closeable
             }
         }
 
-        private void loadPasswords(boolean initial) throws IOException
+        private void loadPasswords(boolean initial)
         {
             if (!initial) {
                 final long lastModified = passwordsFile.lastModified();
@@ -586,7 +577,7 @@ public class ZAuth implements Closeable
      * Destructor.
      */
     @Override
-    public void close() throws IOException
+    public void close()
     {
         destroy();
     }

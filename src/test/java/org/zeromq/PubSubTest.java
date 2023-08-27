@@ -127,7 +127,7 @@ public class PubSubTest
         final Callable<Integer> sub = new Callable<Integer>()
         {
             @Override
-            public Integer call() throws Exception
+            public Integer call()
             {
                 final ZMQ.Context ctx = ZMQ.context(1);
                 assertThat(ctx, notNullValue());

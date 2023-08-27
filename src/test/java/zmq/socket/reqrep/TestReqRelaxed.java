@@ -18,7 +18,7 @@ import zmq.ZMQ;
 public class TestReqRelaxed
 {
     @Test
-    public void testReqRelaxed() throws Exception
+    public void testReqRelaxed()
     {
         Ctx ctx = ZMQ.init(1);
         assertThat(ctx, notNullValue());

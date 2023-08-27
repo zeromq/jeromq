@@ -4,7 +4,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -23,7 +22,7 @@ import zmq.socket.AbstractSpecTest;
 public class RouterSpecTest extends AbstractSpecTest
 {
     @Test
-    public void testFairQueueIn() throws IOException, InterruptedException
+    public void testFairQueueIn()
     {
         Ctx ctx = ZMQ.createContext();
         List<String> binds = Arrays.asList("inproc://a", "tcp://127.0.0.1:*");
@@ -39,7 +38,7 @@ public class RouterSpecTest extends AbstractSpecTest
 
     @Test
     @Ignore
-    public void testDestroyQueueOnDisconnect() throws IOException, InterruptedException
+    public void testDestroyQueueOnDisconnect()
     {
         Ctx ctx = ZMQ.createContext();
         List<String> binds = Arrays.asList("inproc://a", "tcp://127.0.0.1:*");
@@ -56,7 +55,6 @@ public class RouterSpecTest extends AbstractSpecTest
     }
 
     private void fairQueueIn(Ctx ctx, String address, int bindType, int connectType)
-            throws IOException, InterruptedException
     {
         //  Server socket will accept connections
         SocketBase receiver = ZMQ.socket(ctx, bindType);

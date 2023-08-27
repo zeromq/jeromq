@@ -1,7 +1,5 @@
 package zmq.pipe;
 
-import java.io.IOException;
-
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -13,7 +11,7 @@ import zmq.ZMQ;
 public class ConflateTest
 {
     @Test
-    public void test() throws IOException, InterruptedException
+    public void test() throws InterruptedException
     {
         Ctx ctx = ZMQ.init(1);
         assert (ctx != null);

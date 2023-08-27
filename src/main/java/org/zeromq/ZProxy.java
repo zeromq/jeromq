@@ -198,7 +198,7 @@ public class ZProxy
         abstract class SimpleProxy implements Proxy
         {
             @Override
-            public boolean restart(ZMsg cfg, Socket socket, Plug place, Object... args) throws IOException
+            public boolean restart(ZMsg cfg, Socket socket, Plug place, Object... args)
             {
                 return true;
             }

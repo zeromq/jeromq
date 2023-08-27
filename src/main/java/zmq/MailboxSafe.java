@@ -3,7 +3,6 @@ package zmq;
 import zmq.pipe.YPipe;
 import zmq.util.Errno;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
@@ -126,7 +125,7 @@ public class MailboxSafe implements IMailbox
     }
 
     @Override
-    public void close() throws IOException
+    public void close()
     {
         // Work around problem that other threads might still be in our
         // send() method, by waiting on the mutex before disappearing.

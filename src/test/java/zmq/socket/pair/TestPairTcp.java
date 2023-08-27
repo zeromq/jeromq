@@ -43,7 +43,7 @@ public class TestPairTcp
     }
 
     @Test
-    public void testPairConnectSecondClientIssue285() throws IOException
+    public void testPairConnectSecondClientIssue285()
     {
         String host = "tcp://127.0.0.1:*";
 
@@ -101,7 +101,7 @@ public class TestPairTcp
     }
 
     @Test
-    public void testPairMonitorBindConnect() throws InterruptedException, IOException
+    public void testPairMonitorBindConnect() throws IOException
     {
         int port = Utils.findOpenPort();
         String host = "tcp://127.0.0.1:" + port;
@@ -142,7 +142,7 @@ public class TestPairTcp
     }
 
     @Test
-    public void testPairMonitorIssue291() throws InterruptedException, IOException
+    public void testPairMonitorIssue291() throws IOException
     {
         int port = Utils.findOpenPort();
         String host = "tcp://127.0.0.1:" + port;

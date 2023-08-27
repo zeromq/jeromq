@@ -1,7 +1,6 @@
 package org.zeromq;
 
 import java.io.Closeable;
-import java.io.IOException;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.Selector;
 import java.util.Collection;
@@ -928,7 +927,7 @@ public class ZPoller implements Closeable
      * Destroys the poller. Does actually nothing.
      */
     @Override
-    public void close() throws IOException
+    public void close()
     {
         destroy();
     }

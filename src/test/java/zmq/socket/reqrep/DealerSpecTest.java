@@ -4,7 +4,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -21,7 +20,7 @@ import zmq.socket.AbstractSpecTest;
 public class DealerSpecTest extends AbstractSpecTest
 {
     @Test
-    public void testSpecFairQueueIn() throws IOException, InterruptedException
+    public void testSpecFairQueueIn()
     {
         Ctx ctx = ZMQ.createContext();
         List<String> binds = Arrays.asList("inproc://a", "tcp://127.0.0.1:*");
@@ -36,7 +35,7 @@ public class DealerSpecTest extends AbstractSpecTest
     }
 
     @Test
-    public void testSpecRoundRobinOut() throws IOException, InterruptedException
+    public void testSpecRoundRobinOut()
     {
         Ctx ctx = ZMQ.createContext();
         List<String> binds = Arrays.asList("inproc://a", "tcp://127.0.0.1:*");
@@ -51,7 +50,7 @@ public class DealerSpecTest extends AbstractSpecTest
     }
 
     @Test
-    public void testSpecBlockOnSendNoPeers() throws IOException, InterruptedException
+    public void testSpecBlockOnSendNoPeers()
     {
         Ctx ctx = ZMQ.createContext();
         List<String> binds = Arrays.asList("inproc://a", "tcp://127.0.0.1:*");
@@ -66,7 +65,7 @@ public class DealerSpecTest extends AbstractSpecTest
 
     @Test
     @Ignore
-    public void testSpecDestroyQueueOnDisconnect() throws IOException, InterruptedException
+    public void testSpecDestroyQueueOnDisconnect()
     {
         Ctx ctx = ZMQ.createContext();
         List<String> binds = Arrays.asList("inproc://a", "tcp://127.0.0.1:*");
@@ -82,7 +81,7 @@ public class DealerSpecTest extends AbstractSpecTest
         ZMQ.term(ctx);
     }
 
-    private void blockOnSendNoPeers(Ctx ctx, String address, int bindType) throws IOException, InterruptedException
+    private void blockOnSendNoPeers(Ctx ctx, String address, int bindType)
     {
         SocketBase dealer = ZMQ.socket(ctx, bindType);
 
@@ -113,7 +112,6 @@ public class DealerSpecTest extends AbstractSpecTest
     }
 
     private void roundRobinOut(Ctx ctx, String address, int bindType, int connectType)
-            throws IOException, InterruptedException
     {
         SocketBase dealer = ZMQ.socket(ctx, bindType);
         boolean rc = ZMQ.bind(dealer, address);
@@ -162,7 +160,6 @@ public class DealerSpecTest extends AbstractSpecTest
     }
 
     private void fairQueueIn(Ctx ctx, String address, int bindType, int connectType)
-            throws IOException, InterruptedException
     {
         //  Server socket will accept connections
         SocketBase receiver = ZMQ.socket(ctx, bindType);

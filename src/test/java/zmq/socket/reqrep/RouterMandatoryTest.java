@@ -15,7 +15,7 @@ import zmq.ZMQ;
 public class RouterMandatoryTest
 {
     @Test
-    public void testRouterMandatory() throws Exception
+    public void testRouterMandatory()
     {
         int sent;
         boolean rc;
@@ -83,7 +83,7 @@ public class RouterMandatoryTest
     private static final int BUF_SIZE = 65636;
 
     @Test
-    public void testRouterMandatoryHwm() throws Exception
+    public void testRouterMandatoryHwm()
     {
         boolean rc;
 

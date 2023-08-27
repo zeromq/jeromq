@@ -45,7 +45,7 @@ public class ZAuthTest
     }
 
     @Test(timeout = 5000)
-    public void testNull() throws IOException
+    public void testNull()
     {
         try (ZContext ctx = new ZContext();
             ZAuth auth = new ZAuth(ctx)) {
@@ -81,7 +81,7 @@ public class ZAuthTest
     }
 
     @Test(timeout = 5000)
-    public void testNullAllowed() throws IOException
+    public void testNullAllowed()
     {
         try (ZContext ctx = new ZContext();
              ZAuth auth = new ZAuth(ctx)) {
@@ -118,7 +118,7 @@ public class ZAuthTest
     }
 
     @Test(timeout = 5000)
-    public void testNullWithNoDomain() throws IOException
+    public void testNullWithNoDomain()
     {
         try (ZContext ctx = new ZContext();
              ZAuth auth = new ZAuth(ctx)) {
@@ -154,7 +154,7 @@ public class ZAuthTest
     }
 
     @Test(timeout = 5000)
-    public void testPlainWithPassword() throws IOException
+    public void testPlainWithPassword()
     {
         try (ZContext ctx = new ZContext();
              ZAuth auth = new ZAuth(ctx)) {
@@ -199,7 +199,7 @@ public class ZAuthTest
     }
 
     @Test(timeout = 5000)
-    public void testPlainWithPasswordDenied() throws IOException
+    public void testPlainWithPasswordDenied()
     {
         try (ZContext ctx = new ZContext();
              ZAuth auth = new ZAuth(ctx);
@@ -240,7 +240,7 @@ public class ZAuthTest
     }
 
     @Test(timeout = 5000)
-    public void testCurveAnyClient() throws IOException
+    public void testCurveAnyClient()
     {
         // accept any client-certificate
         try (ZContext ctx = new ZContext();
@@ -354,7 +354,7 @@ public class ZAuthTest
     }
 
     @Test(timeout = 5000)
-    public void testBlacklistDenied() throws IOException
+    public void testBlacklistDenied()
     {
         try (ZContext ctx = new ZContext();
              ZAuth auth = new ZAuth(ctx, new ZCertStore.Timestamper());
@@ -394,7 +394,7 @@ public class ZAuthTest
     }
 
     @Test(timeout = 5000)
-    public void testBlacklistAllowed() throws IOException
+    public void testBlacklistAllowed()
     {
         try (ZContext ctx = new ZContext();
              ZAuth auth = new ZAuth(ctx, new ZCertStore.Hasher());
@@ -434,7 +434,7 @@ public class ZAuthTest
     }
 
     @Test(timeout = 5000)
-    public void testWhitelistDenied() throws IOException
+    public void testWhitelistDenied()
     {
         try (ZContext ctx = new ZContext();
              ZAuth auth = new ZAuth(ctx, new ZCertStore.Hasher());
@@ -474,7 +474,7 @@ public class ZAuthTest
     }
 
     @Test(timeout = 5000)
-    public void testWhitelistAllowed() throws IOException
+    public void testWhitelistAllowed()
     {
         try (ZContext ctx = new ZContext();
              ZAuth auth = new ZAuth(ctx, new ZCertStore.Hasher());
@@ -514,7 +514,7 @@ public class ZAuthTest
     }
 
     @Test(timeout = 5000)
-    public void testCurveFail() throws IOException
+    public void testCurveFail()
     {
         // this is the same test but here we do not save the client's certificate into the certstore's folder
         try (ZContext ctx = new ZContext();
@@ -573,7 +573,7 @@ public class ZAuthTest
     }
 
     @Test(timeout = 5000)
-    public void testNoReplies() throws IOException
+    public void testNoReplies()
     {
         try (ZContext ctx = new ZContext();
              ZAuth auth = new ZAuth(ctx, new ZCertStore.Hasher())) {

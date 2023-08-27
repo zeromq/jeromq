@@ -9,7 +9,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 public class TestDisconnectMsg
 {
-    void test(String address) throws Exception
+    void test(String address)
     {
         Ctx context = ZMQ.createContext();
         assertThat(context, notNullValue());
@@ -62,7 +62,7 @@ public class TestDisconnectMsg
     }
 
     @Test
-    public void testInproc() throws Exception
+    public void testInproc()
     {
         System.out.println("Scenario 2");
 

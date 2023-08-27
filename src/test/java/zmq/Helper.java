@@ -54,7 +54,7 @@ public class Helper
         }
 
         @Override
-        public void close() throws IOException
+        public void close()
         {
         }
 
@@ -65,7 +65,7 @@ public class Helper
         }
 
         @Override
-        public int write(ByteBuffer src) throws IOException
+        public int write(ByteBuffer src)
         {
             int remaining = src.remaining();
             if (remaining > bufsize) {

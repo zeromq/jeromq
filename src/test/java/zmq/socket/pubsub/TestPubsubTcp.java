@@ -14,7 +14,7 @@ import zmq.ZMQ;
 public class TestPubsubTcp
 {
     @Test
-    public void testPubsubTcp() throws Exception
+    public void testPubsubTcp()
     {
         Ctx ctx = ZMQ.createContext();
         assertThat(ctx, notNullValue());

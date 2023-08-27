@@ -11,7 +11,7 @@ import org.zeromq.ZContext;
 public class psenvpub
 {
 
-    public static void main(String[] args) throws Exception
+    public static void main(String[] args)
     {
         // Prepare our context and publisher
         try (ZContext context = new ZContext()) {

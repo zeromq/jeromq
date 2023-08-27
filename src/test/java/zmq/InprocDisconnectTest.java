@@ -13,7 +13,7 @@ import zmq.poll.PollItem;
 public class InprocDisconnectTest
 {
     @Test
-    public void testDisconnectInproc() throws Exception
+    public void testDisconnectInproc()
     {
         Ctx context = ZMQ.createContext();
         Selector selector = context.createSelector();
@@ -26,7 +26,7 @@ public class InprocDisconnectTest
         ZMQ.term(context);
     }
 
-    private void testDisconnectInproc(Ctx context, Selector selector) throws Exception
+    private void testDisconnectInproc(Ctx context, Selector selector)
     {
         int publicationsReceived = 0;
         boolean isSubscribed = false;

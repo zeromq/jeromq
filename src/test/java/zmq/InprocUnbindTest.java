@@ -4,14 +4,12 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-import java.io.IOException;
-
 import org.junit.Test;
 
 public class InprocUnbindTest
 {
     @Test
-    public void testUnbindInproc() throws IOException, InterruptedException
+    public void testUnbindInproc()
     {
         Ctx ctx = ZMQ.init(1);
         assert (ctx != null);

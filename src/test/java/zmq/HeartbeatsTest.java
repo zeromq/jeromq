@@ -101,7 +101,7 @@ public class HeartbeatsTest
 
     // Tests sequentiality of received messages while heartbeating
     @Test
-    public void testSequentialityReceivedMessagesSingleThread() throws IOException, InterruptedException
+    public void testSequentialityReceivedMessagesSingleThread() throws IOException
     {
         final int port = Utils.findOpenPort();
         final String host = "localhost";
@@ -145,7 +145,7 @@ public class HeartbeatsTest
 
     // this checks for heartbeat in REQ socket.
     @Test
-    public void testHeartbeatReq() throws IOException
+    public void testHeartbeatReq()
     {
         final int heartbeatInterval = 100;
 
@@ -194,18 +194,18 @@ public class HeartbeatsTest
     // where the peer never responds to PINGS). There should be an accepted event
     // then a disconnect event.
     @Test
-    public void testHeartbeatTimeout() throws IOException, InterruptedException
+    public void testHeartbeatTimeout() throws IOException
     {
         testHeartbeatTimeout(false);
     }
 
     @Test
-    public void testHeartbeatTimeoutWithContext() throws IOException, InterruptedException
+    public void testHeartbeatTimeoutWithContext() throws IOException
     {
         testHeartbeatTimeout(true);
     }
 
-    private void testHeartbeatTimeout(boolean mockPing) throws IOException, InterruptedException
+    private void testHeartbeatTimeout(boolean mockPing) throws IOException
     {
         Ctx ctx = ZMQ.createContext();
         assertThat(ctx, notNullValue());
@@ -251,7 +251,7 @@ public class HeartbeatsTest
     // if the server disconnects the client, then we know the TTL did
     // its thing correctly.
     @Test
-    public void testHeartbeatTtl() throws IOException, InterruptedException
+    public void testHeartbeatTtl()
     {
         Ctx ctx = ZMQ.createContext();
         assertThat(ctx, notNullValue());
@@ -301,24 +301,24 @@ public class HeartbeatsTest
     // exchanged normally. There should be an accepted event on the server,
     // and then no event afterwards.
     @Test
-    public void testHeartbeatNoTimeoutWithCurve() throws IOException, InterruptedException
+    public void testHeartbeatNoTimeoutWithCurve()
     {
         testHeartbeatNoTimeout(true, new byte[0]);
     }
 
     @Test
-    public void testHeartbeatNoTimeoutWithoutCurve() throws IOException, InterruptedException
+    public void testHeartbeatNoTimeoutWithoutCurve()
     {
         testHeartbeatNoTimeout(false, new byte[0]);
     }
 
     @Test
-    public void testHeartbeatNoTimeoutWithoutCurveWithPingContext() throws IOException, InterruptedException
+    public void testHeartbeatNoTimeoutWithoutCurveWithPingContext()
     {
         testHeartbeatNoTimeout(false, "context".getBytes(ZMQ.CHARSET));
     }
 
-    private void testHeartbeatNoTimeout(boolean curve, byte[] context) throws IOException, InterruptedException
+    private void testHeartbeatNoTimeout(boolean curve, byte[] context)
     {
         Ctx ctx = ZMQ.createContext();
         assertThat(ctx, notNullValue());

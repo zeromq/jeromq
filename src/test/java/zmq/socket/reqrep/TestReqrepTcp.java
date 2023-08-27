@@ -14,7 +14,7 @@ import zmq.ZMQ;
 public class TestReqrepTcp
 {
     @Test
-    public void testReqrepTcp() throws Exception
+    public void testReqrepTcp()
     {
         Ctx ctx = ZMQ.init(1);
         assertThat(ctx, notNullValue());

@@ -30,7 +30,7 @@ import zmq.ZError;
 public class ZMsgTest
 {
     @Test
-    public void testRecvFrame() throws Exception
+    public void testRecvFrame()
     {
         ZMQ.Context ctx = ZMQ.context(0);
         ZMQ.Socket socket = ctx.socket(SocketType.PULL);
@@ -43,7 +43,7 @@ public class ZMsgTest
     }
 
     @Test
-    public void testRecvMsg() throws Exception
+    public void testRecvMsg()
     {
         ZMQ.Context ctx = ZMQ.context(0);
         ZMQ.Socket socket = ctx.socket(SocketType.PULL);
@@ -55,7 +55,7 @@ public class ZMsgTest
     }
 
     @Test
-    public void testRecvNullByteMsg() throws Exception
+    public void testRecvNullByteMsg()
     {
         ZMQ.Context ctx = ZMQ.context(0);
         ZMQ.Socket sender = ctx.socket(SocketType.PUSH);

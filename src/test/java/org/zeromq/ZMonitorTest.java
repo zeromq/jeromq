@@ -3,7 +3,6 @@ package org.zeromq;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -20,7 +19,7 @@ import zmq.io.mechanism.curve.Curve;
 public class ZMonitorTest
 {
     @Test
-    public void testZMonitorImpossibleWorkflows() throws IOException
+    public void testZMonitorImpossibleWorkflows()
     {
         final ZContext ctx = new ZContext();
         final Socket socket = ctx.createSocket(SocketType.DEALER);
@@ -44,7 +43,7 @@ public class ZMonitorTest
     }
 
     @Test
-    public void testZMonitor() throws IOException
+    public void testZMonitor()
     {
         final ZContext ctx = new ZContext();
         final Socket client = ctx.createSocket(SocketType.DEALER);
@@ -97,7 +96,7 @@ public class ZMonitorTest
     }
 
     @Test(timeout = 5000)
-    public void testZMonitorCurveOK() throws IOException
+    public void testZMonitorCurveOK()
     {
         final List<ZEvent> receivedEventsClient = new ArrayList<>();
         final List<ZEvent> receivedEventsServer = new ArrayList<>();
@@ -172,7 +171,7 @@ public class ZMonitorTest
     }
 
     @Test(timeout = 5000)
-    public void testZMonitorCurveKo() throws IOException, InterruptedException
+    public void testZMonitorCurveKo() throws InterruptedException
     {
         final List<ZEvent> receivedEventsClient = new ArrayList<>();
         final List<ZEvent> receivedEventsServer = new ArrayList<>();
@@ -250,7 +249,7 @@ public class ZMonitorTest
     }
 
     @Test(timeout = 5000)
-    public void testPlainKo() throws IOException, InterruptedException
+    public void testPlainKo()
     {
         final List<ZEvent> receivedEventsClient = new ArrayList<>();
         final List<ZEvent> receivedEventsServer = new ArrayList<>();

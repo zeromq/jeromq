@@ -1,7 +1,6 @@
 package org.zeromq;
 
 import java.io.Closeable;
-import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -222,7 +221,7 @@ public class ZMonitor implements Closeable
      * When returning from that call, ZMonitor will be no more active.
      */
     @Override
-    public final void close() throws IOException
+    public final void close()
     {
         destroy();
     }
