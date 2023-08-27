@@ -245,7 +245,8 @@ public class TcpListener extends Listener
                 try {
                     sock.close();
                 }
-                catch (IOException e) {
+                catch (IOException ignored) {
+                    // Ignored
                 }
                 return null;
             }

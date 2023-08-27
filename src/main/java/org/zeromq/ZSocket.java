@@ -281,11 +281,7 @@ public class ZSocket implements AutoCloseable
 
     private void setOption(int option, Object value)
     {
-        try {
-            socketBase.setSocketOpt(option, value);
-        }
-        catch (ZMQException e) {
-        }
+        socketBase.setSocketOpt(option, value);
     }
 
     private Object getOption(int option)
