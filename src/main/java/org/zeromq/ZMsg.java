@@ -10,6 +10,7 @@ import java.util.Collection;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import org.zeromq.ZMQ.Socket;
 
@@ -768,15 +769,7 @@ public class ZMsg implements Iterable<ZFrame>, Deque<ZFrame>
     @Override
     public String toString()
     {
-        StringBuilder out = new StringBuilder("[ ");
-        Iterator<ZFrame> frameIterator = frames.iterator();
-        while (frameIterator.hasNext()) {
-            out.append(frameIterator.next());
-            if (frameIterator.hasNext()) {
-                out.append(", "); // skip last iteration
-            }
-        }
-        out.append(" ]");
-        return out.toString();
+        String joined = frames.stream().map(ZFrame::toString).collect(Collectors.joining(", "));
+        return new StringBuilder("[ ").append(joined).append(" ]").toString();
     }
 }
