@@ -26,7 +26,7 @@ public class ZAuthTest
     private static final boolean VERBOSE_MODE = true;
 
     @Rule
-    public TemporaryFolder folder = new TemporaryFolder();
+    public final TemporaryFolder folder = new TemporaryFolder();
 
     private String  certificateFolder;
     private String  passwordsFile;
