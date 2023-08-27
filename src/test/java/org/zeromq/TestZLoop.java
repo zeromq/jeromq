@@ -116,7 +116,7 @@ public class TestZLoop
     @Test
     public void testZLoop()
     {
-        int rc = 0;
+        int rc;
 
         // setUp() should create the context
         assert (ctx != null);
@@ -151,7 +151,7 @@ public class TestZLoop
     @Test
     public void testZLoopAddTimerFromTimer()
     {
-        int rc = 0;
+        int rc;
 
         ZLoop loop = new ZLoop(ctx);
         assert (loop != null);
@@ -194,7 +194,7 @@ public class TestZLoop
     @Test(timeout = 1000)
     public void testZLoopAddTimerFromSocketHandler()
     {
-        int rc = 0;
+        int rc;
 
         ZLoop loop = new ZLoop(ctx);
         assert (loop != null);
@@ -235,7 +235,7 @@ public class TestZLoop
     @Test(timeout = 1000)
     public void testZLoopEndReactorFromTimer()
     {
-        int rc = 0;
+        int rc;
 
         ZLoop loop = new ZLoop(ctx);
         assert (loop != null);

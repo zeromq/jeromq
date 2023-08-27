@@ -55,7 +55,7 @@ public class XPubNodropTest
         }
 
         int recvCount = 0;
-        Msg msg = null;
+        Msg msg;
         do {
             //  Receive the message in the subscriber
             msg = ZMQ.recv(subConnect, ZMQ.ZMQ_DONTWAIT);
@@ -72,7 +72,6 @@ public class XPubNodropTest
         ZMQ.setSocketOption(pubBind, ZMQ.ZMQ_SNDTIMEO, timeout);
         recvCount = 0;
         sendCount = 0;
-        hwmlimit = hwm;
 
         while (ZMQ.send(pubBind, "", 0) == 0) {
             sendCount++;

@@ -44,7 +44,7 @@ public class ZLoopTest
     @Test
     public void testZLoop()
     {
-        int rc = 0;
+        int rc;
 
         ZLoop loop = new ZLoop(ctx);
         assertThat(loop, notNullValue());
@@ -76,7 +76,7 @@ public class ZLoopTest
     @Test
     public void testZLoopAddTimerFromTimer()
     {
-        int rc = 0;
+        int rc;
 
         ZLoop loop = new ZLoop(ctx);
         assertThat(loop, notNullValue());
@@ -119,7 +119,7 @@ public class ZLoopTest
     @Test(timeout = 1000)
     public void testZLoopAddTimerFromSocketHandler()
     {
-        int rc = 0;
+        int rc;
 
         ZLoop loop = new ZLoop(ctx);
         assertThat(loop, notNullValue());
@@ -160,7 +160,7 @@ public class ZLoopTest
     @Test(timeout = 1000)
     public void testZLoopEndReactorFromTimer()
     {
-        int rc = 0;
+        int rc;
 
         ZLoop loop = new ZLoop(ctx);
         assertThat(loop, notNullValue());

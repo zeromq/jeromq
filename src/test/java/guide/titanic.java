@@ -300,7 +300,7 @@ public class titanic
             ZMsg reply = client.send(serviceName, request);
             if (reply != null) {
                 filename = replyFilename(uuid);
-                DataOutputStream ofile = null;
+                DataOutputStream ofile;
                 try {
                     ofile = new DataOutputStream(Files.newOutputStream(Paths.get(filename)));
                     ZMsg.save(reply, ofile);

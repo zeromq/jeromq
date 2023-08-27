@@ -108,7 +108,6 @@ public class TestZActor
         ZActor actor = new ZActor(context, acting, UUID.randomUUID().toString(), Collections.singletonList("TEST").toArray());
         ZAgent agent = actor.agent();
 
-        agent = actor;
         agent = actor.agent();
 
         Socket pipe = agent.pipe();

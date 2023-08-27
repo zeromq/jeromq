@@ -15,7 +15,7 @@ public class ByteBuffersTest
 {
     static class Client extends Thread
     {
-        private int port = -1;
+        private int port;
 
         public Client(int port)
         {

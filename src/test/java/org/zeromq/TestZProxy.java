@@ -234,7 +234,7 @@ public class TestZProxy
                                        "ABRACADABRA", Collections.singletonList("TEST"));
 
         final boolean async = false;
-        String status = null;
+        String status;
         status = proxy.status(async);
         Assert.assertEquals("async status before any operation is not good!", ZProxy.ALIVE, status);
 
@@ -280,7 +280,7 @@ public class TestZProxy
                                        "ABRACADABRA", Collections.singletonList("TEST"));
 
         final boolean sync = true;
-        String status = null;
+        String status;
 
         status = proxy.status(sync);
         Assert.assertEquals("sync status before any operation is not good!", ZProxy.STOPPED, status);
@@ -324,7 +324,7 @@ public class TestZProxy
     private void testStateSync(ZContext ctx)
     {
         final boolean sync = true;
-        String status = null;
+        String status;
         ZProxy proxy = ZProxy.newProxy(
                                        ctx,
                                        "ProxyStateSync" + (ctx == null ? "Null" : ""),
@@ -365,7 +365,7 @@ public class TestZProxy
     private void testStateSyncPause(ZContext ctx)
     {
         final boolean sync = true;
-        String status = null;
+        String status;
         ZProxy proxy = ZProxy.newProxy(
                                        ctx,
                                        "ProxyStatePauseSync" + (ctx == null ? "Null" : ""),
@@ -408,7 +408,7 @@ public class TestZProxy
     private void testStateASync(ZContext ctx)
     {
         final boolean sync = false;
-        String status = null;
+        String status;
         ZProxy proxy = ZProxy.newProxy(
                                        ctx,
                                        "ProxyStateASync" + (ctx == null ? "Null" : ""),

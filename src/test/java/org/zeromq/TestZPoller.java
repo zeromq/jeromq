@@ -175,7 +175,7 @@ public class TestZPoller
         SelectableChannel channel = null;
         Socket socket = null; // ctx.createSocket(ZMQ.SUB);
 
-        boolean rc = false;
+        boolean rc;
         rc = poller.register(socket, ZPoller.IN);
         assertThat("Registering a null socket was successful", rc, is(false));
         rc = poller.register(channel, ZPoller.OUT);

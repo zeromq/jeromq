@@ -117,7 +117,7 @@ public class XPub extends SocketBase
         Msg sub;
         while ((sub = pipe.read()) != null) {
             //  Apply the subscription to the trie
-            boolean subscribe = false;
+            boolean subscribe;
             int size = sub.size();
             if (size > 0 && (sub.get(0) == 0 || sub.get(0) == 1)) {
                 subscribe = sub.get(0) == 1;

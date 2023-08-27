@@ -106,7 +106,7 @@ public class Options
     final List<IpcAddress.IpcAddressMask> ipcAcceptFilters = new ArrayList<>();
 
     //  Security mechanism for all connections on this socket
-    public Mechanisms mechanism = Mechanisms.NULL;
+    public Mechanisms mechanism;
 
     //  If peer is acting as server for PLAIN or CURVE mechanisms
     public boolean asServer;

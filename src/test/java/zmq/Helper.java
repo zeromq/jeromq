@@ -240,7 +240,7 @@ public class Helper
     //  Example: s_send_seq (req, "ABC", 0, "DEF", SEQ_END);
     public static void sendSeq(SocketBase socket, String... data)
     {
-        int rc = 0;
+        int rc;
         for (int idx = 0; idx < data.length - 1; ++idx) {
             rc = sendMore(socket, data[idx]);
             assert (rc == data[idx].length());

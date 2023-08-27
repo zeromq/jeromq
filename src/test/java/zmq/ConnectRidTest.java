@@ -138,7 +138,7 @@ public class ConnectRidTest
         ret = ZMQ.send(connect, msg, 0);
         assertThat(ret, is(4));
 
-        Msg recv = null;
+        Msg recv;
         //  Receive the name.
         Msg name = ZMQ.recv(bind, 0);
         assertThat(name, notNullValue());
@@ -263,7 +263,7 @@ public class ConnectRidTest
         assertThat(name, notNullValue());
         assertThat(name.data()[0], is((byte) 'X'));
 
-        Msg recv = null;
+        Msg recv;
         recv = ZMQ.recv(z, 0);
         assertThat(recv, notNullValue());
         assertThat(recv.data()[0], is((byte) 'h'));

@@ -208,7 +208,7 @@ public class peering2
                 while (capacity > 0) {
                     rc = frontends.poll(0);
                     assert (rc >= 0);
-                    int reroutable = 0;
+                    int reroutable;
                     //  We'll do peer brokers first, to prevent starvation
                     if (frontends.pollin(1)) {
                         msg = ZMsg.recvMsg(cloudfe);

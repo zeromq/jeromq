@@ -259,7 +259,7 @@ public class ProxyTest
             boolean run = true;
             Random random = new Random();
 
-            Msg msg = null;
+            Msg msg;
             started.countDown();
             while (run) {
                 msg = ZMQ.recv(control, ZMQ.ZMQ_DONTWAIT);
@@ -268,7 +268,6 @@ public class ProxyTest
                 }
                 if (msg != null) {
                     if (Arrays.equals(msg.data(), ZMQ.PROXY_TERMINATE)) {
-                        run = false;
                         break;
                     }
                 }

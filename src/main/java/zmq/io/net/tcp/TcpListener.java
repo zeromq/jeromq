@@ -105,7 +105,7 @@ public class TcpListener extends Listener
         //        socket.setFd(channel);
 
         //  Create the engine object for this connection.
-        StreamEngine engine = null;
+        StreamEngine engine;
         try {
             engine = new StreamEngine(channel, options, endpoint);
         }

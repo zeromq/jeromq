@@ -163,7 +163,7 @@ public class TestReqRelaxed
 
     private void bounce(SocketBase socket)
     {
-        boolean more = false;
+        boolean more;
         do {
             Msg msg = socket.recv(0);
             assertThat(msg, notNullValue());

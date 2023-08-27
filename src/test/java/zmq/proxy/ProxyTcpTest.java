@@ -81,7 +81,7 @@ public class ProxyTcpTest
                 System.out.println("DEALER " + name + " received " + msg);
                 String data = new String(msg.data(), 0, msg.size(), ZMQ.CHARSET);
 
-                Msg response = null;
+                Msg response;
                 if ((i % 3) == 2) {
                     response = new Msg(msg.size() + 3);
                     response.put("OK ".getBytes(ZMQ.CHARSET)).put(msg.data());

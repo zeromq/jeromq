@@ -261,7 +261,6 @@ public class clonesrv6
 
             port = 5556;
             peer = 5566;
-            primary1 = true;
         }
         else {
             bStar = new bstar(false, "tcp://*:5004", "tcp://localhost:5003");
@@ -269,7 +268,6 @@ public class clonesrv6
 
             port = 5566;
             peer = 5556;
-            primary1 = false;
         }
 
         //  Primary server will become first active

@@ -69,7 +69,7 @@ public class XPubManualTest
         }
 
         int recvCount = 0;
-        Msg msg = null;
+        Msg msg;
         do {
             //  Receive the message in the subscriber
             msg = ZMQ.recv(subConnect, ZMQ.ZMQ_DONTWAIT);

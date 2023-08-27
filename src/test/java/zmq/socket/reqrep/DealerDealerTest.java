@@ -47,7 +47,7 @@ public class DealerDealerTest
         rc = ZMQ.bind(receiver, addr);
         assertThat(rc, is(true));
 
-        int nbytes = 0;
+        int nbytes;
         do {
             Msg msg = ZMQ.recv(receiver, 0);
             nbytes = msg.size();

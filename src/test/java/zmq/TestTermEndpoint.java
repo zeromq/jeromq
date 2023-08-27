@@ -160,8 +160,8 @@ public class TestTermEndpoint
         SocketBase push = ZMQ.socket(ctx, ZMQ.ZMQ_PUSH);
         assertThat(push, notNullValue());
 
-        String ep = null;
-        boolean rc = false;
+        String ep;
+        boolean rc;
 
         do {
             ep = endpointNormal();
@@ -205,8 +205,8 @@ public class TestTermEndpoint
         SocketBase push = ZMQ.socket(ctx, ZMQ.ZMQ_PUSH);
         assertThat(push, notNullValue());
 
-        String ep = null;
-        boolean rc = false;
+        String ep;
+        boolean rc;
 
         do {
             ep = endpointNormal();

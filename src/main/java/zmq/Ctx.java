@@ -503,7 +503,7 @@ public class Ctx
 
     public SocketBase createSocket(int type)
     {
-        SocketBase s = null;
+        SocketBase s;
         slotSync.lock();
         try {
             if (starting.compareAndSet(true, false)) {
@@ -692,7 +692,7 @@ public class Ctx
     {
         endpointsSync.lock();
 
-        Endpoint inserted = null;
+        Endpoint inserted;
         try {
             inserted = endpoints.put(addr, endpoint);
         }
@@ -733,7 +733,7 @@ public class Ctx
 
     Endpoint findEndpoint(String addr)
     {
-        Endpoint endpoint = null;
+        Endpoint endpoint;
         endpointsSync.lock();
 
         try {

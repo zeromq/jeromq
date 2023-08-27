@@ -505,7 +505,6 @@ public class ZStar implements ZAgent
 
                     // we are not in a hurry at this point when cleaning up the remains of a good show ...
                     star.party(chef);
-                    star = null;
                     if (entourage != null) {
                         entourage.party(chef);
                     }
