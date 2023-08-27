@@ -45,8 +45,7 @@ public class ZPicture
      *                <tr><td>m</td><td>ZMsg</td><td>type = "msg" <b>Has to be the last element of the picture</b></td></tr>
      *                </table>
      * @param args    Arguments according to the picture
-     * @return true when it has been queued on the socket and ØMQ has assumed responsibility for the message.
-     * This does not indicate that the message has been transmitted to the network.
+     * @return a new {@link ZMsg} that encode the arguments
      * @api.note Does not change or take ownership of any arguments.
      */
     @Draft
