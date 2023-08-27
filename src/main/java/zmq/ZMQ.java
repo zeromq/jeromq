@@ -632,13 +632,7 @@ public class ZMQ
     public static Msg recv(SocketBase s, int flags)
     {
         checkSocket(s);
-        Msg msg = recvMsg(s, flags);
-
-        //  At the moment an oversized message is silently truncated.
-        //  TODO: Build in a notification mechanism to report the overflows.
-        //int to_copy = nbytes < len_ ? nbytes : len_;
-
-        return msg;
+        return recvMsg(s, flags);
     }
 
     // Receive a multi-part message

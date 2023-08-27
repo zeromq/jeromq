@@ -91,8 +91,7 @@ public final class MultiMap<K extends Comparable<? super K>, V>
 
     private List<V> getValues(K key)
     {
-        List<V> list = data.computeIfAbsent(key, k -> new ArrayList<>());
-        return list;
+        return data.computeIfAbsent(key, k -> new ArrayList<>());
     }
 
     public boolean insert(K key, V value)
