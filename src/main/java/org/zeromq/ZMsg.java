@@ -12,6 +12,7 @@ import java.util.Iterator;
 import java.util.Objects;
 
 import org.zeromq.ZMQ.Socket;
+
 import zmq.util.Draft;
 import zmq.util.function.Consumer;
 
@@ -748,8 +749,12 @@ public class ZMsg implements Iterable<ZFrame>, Deque<ZFrame>
         if (msg == null) {
             return this;
         }
-        for (ZFrame frame : msg.frames) {
-            add(frame);
+        // Tests explicitly check appending a ZMsg to itself, protect that
+        if (msg != this) {
+            frames.addAll(msg.frames);
+        }
+        else {
+            frames.addAll(msg.frames.clone());
         }
         return this;
     }
