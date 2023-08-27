@@ -165,7 +165,7 @@ public class ZProxy
 
         /**
          * Configures the proxy with a custom message.
-         *
+         * <p>
          * Note: you need to send one (1) mandatory custom response message with the pipe before the end of this call.
          *
          * @param pipe      the control pipe
@@ -180,7 +180,7 @@ public class ZProxy
 
         /**
          * Handles a custom command not recognized by the proxy.
-         *
+         * <p>
          * Note: you need to send the current state at the end of the call.
          *
          * @param pipe      the control pipe

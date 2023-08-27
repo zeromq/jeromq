@@ -24,7 +24,7 @@ public class TestReqCorrelateRelaxed
 
     /**
      * Prepares sockets and runs actual tests.
-     *
+     * <p>
      * Doing it this way so order is guaranteed.
      *
      */

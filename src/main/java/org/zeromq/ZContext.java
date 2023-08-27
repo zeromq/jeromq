@@ -18,7 +18,7 @@ import zmq.util.function.BiFunction;
 
 /**
  * ZContext provides a high-level ZeroMQ context management class
- *
+ * <p>
  * It manages open sockets in the context and automatically closes these before terminating the context.
  * It provides a simple way to set the linger timeout on sockets, and configure contexts for number of I/O threads.
  * Sets-up signal (interrupt) handling for the process.

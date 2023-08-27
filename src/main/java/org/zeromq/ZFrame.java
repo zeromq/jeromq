@@ -10,7 +10,7 @@ import zmq.SocketBase;
 
 /**
  * ZFrame
- *
+ * <p>
  * The ZFrame class provides methods to send and receive single message
  * frames across 0MQ sockets. A 'frame' corresponds to one underlying zmq_msg_t in the libzmq code.
  * When you read a frame from a socket, the more() method indicates if the frame is part of an

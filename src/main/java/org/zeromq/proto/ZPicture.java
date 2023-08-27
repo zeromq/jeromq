@@ -13,7 +13,7 @@ import zmq.util.Draft;
 
 /**
  * De/serialization of data within a message.
- *
+ * <p>
  * This is a DRAFT class, and may change without notice.
  */
 @Draft
@@ -272,7 +272,7 @@ public class ZPicture
      *                offered as a convenience to the sender, which may or may not already
      *                have data in a ZFrame or ZMsg. Does not change or take ownership of
      *                any arguments.
-     *
+     * <p>
      *                Also see {@link #recvPicture(Socket, String)}} how to recv a
      *                multiframe picture.
      * @param args    Arguments according to the picture

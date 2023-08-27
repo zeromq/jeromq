@@ -53,22 +53,22 @@ import zmq.util.function.Consumer;
  * <br>
  * In practice this means applications can create a socket in one thread with * {@link ZMQ.Context#socket(SocketType)}
  * and then pass it to a newly created thread as part of thread initialization.
- *
+ * <p>
  * <h3>Multiple contexts</h3>
  * Multiple contexts may coexist within a single application.
  * <br>
  * Thus, an application can use ØMQ directly and at the same time make use of any number of additional libraries
  * or components which themselves make use of ØMQ as long as the above guidelines regarding thread safety are adhered to.
- *
+ * <p>
  * <h2>Messages</h2>
  * A ØMQ message is a discrete unit of data passed between applications or components of the same application.
  * ØMQ messages have no internal structure and from the point of view of ØMQ itself
  * they are considered to be opaque binary data.
- *
+ * <p>
  * <h2>Sockets</h2>
  * {@link ZMQ.Socket ØMQ sockets} present an abstraction of a asynchronous message queue,
  * with the exact queueing semantics depending on the socket type in use.
- *
+ * <p>
  * <h2>Transports</h2>
  * <p>A ØMQ socket can use multiple different underlying transport mechanisms.
  * Each transport mechanism is suited to a particular purpose and has its own advantages and drawbacks.</p>
@@ -3567,7 +3567,7 @@ public class ZMQ
          *                offered as a convenience to the sender, which may or may not already
          *                have data in a ZFrame or ZMsg. Does not change or take ownership of
          *                any arguments.
-         *
+         * <p>
          *                Also see {@link #recvPicture(String)}} how to recv a
          *                multiframe picture.
          * @param args    Arguments according to the picture
@@ -4522,7 +4522,7 @@ public class ZMQ
 
         /**
          * Return the argument as an integer or a Enum of the appropriate type if available.
-         *
+         * <p>
          * It returns objects of type:
          * <ul>
          * <li> {@link org.zeromq.ZMonitor.ProtocolCode} for a handshake protocol error.</li>

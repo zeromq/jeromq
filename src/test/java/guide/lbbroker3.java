@@ -11,7 +11,7 @@ import org.zeromq.ZMQ.Socket;
 /**
  * Load-balancing broker
  * Demonstrates use of the ZLoop API and reactor style
- *
+ * <p>
  * The client and worker tasks are identical from the previous example.
  */
 public class lbbroker3

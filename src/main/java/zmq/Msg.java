@@ -245,7 +245,7 @@ public class Msg
 
     /**
      * Returns the message data.
-     *
+     * <p>
      * If possible, a reference to the data is returned, without copy.
      * Otherwise a new byte array will be allocated and the data will be copied.
      *
