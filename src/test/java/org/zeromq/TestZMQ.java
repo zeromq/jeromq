@@ -105,10 +105,6 @@ public class TestZMQ
 
         boolean rc = pull.setReceiveTimeOut(50);
         assertThat(rc, is(true));
-        //        rc = push.setImmediate(false);
-        //        assertThat(rc, is(true));
-        //        rc = pull.setImmediate(false);
-        //        assertThat(rc, is(true));
         int port = push.bindToRandomPort("tcp://127.0.0.1");
         rc = pull.connect("tcp://127.0.0.1:" + port);
         assertThat(rc, is(true));

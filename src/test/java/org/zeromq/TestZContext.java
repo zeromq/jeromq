@@ -79,8 +79,7 @@ public class TestZContext
     @Test(timeout = 5000)
     public void testAddingSockets() throws ZMQException
     {
-        ZContext ctx = new ZContext();
-        try {
+        try (ZContext ctx = new ZContext()) {
             Socket s = ctx.createSocket(SocketType.PUB);
             assertThat(s, notNullValue());
             assertThat(s.getSocketType(), is(SocketType.PUB));
@@ -88,9 +87,6 @@ public class TestZContext
             assertThat(s1, notNullValue());
             assertThat(s1.getSocketType(), is(SocketType.REQ));
             assertThat(ctx.getSockets().size(), is(2));
-        }
-        finally {
-            ctx.close();
         }
     }
 

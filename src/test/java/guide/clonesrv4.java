@@ -1,6 +1,5 @@
 package guide;
 
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -16,7 +15,7 @@ import org.zeromq.ZMQ.Socket;
  */
 public class clonesrv4
 {
-    private static Map<String, kvsimple> kvMap = new LinkedHashMap<String, kvsimple>();
+    private static final Map<String, kvsimple> kvMap = new LinkedHashMap<>();
 
     public void run()
     {
@@ -67,14 +66,9 @@ public class clonesrv4
 
                     String subtree = snapshot.recvStr();
 
-                    Iterator<Entry<String, kvsimple>> iter = kvMap.entrySet()
-                                                                  .iterator();
-                    while (iter.hasNext()) {
-                        Entry<String, kvsimple> entry = iter.next();
+                    for (Entry<String, kvsimple> entry : kvMap.entrySet()) {
                         kvsimple msg = entry.getValue();
-                        System.out.println(
-                            "Sending message " + entry.getValue().getSequence()
-                        );
+                        System.out.println("Sending message " + entry.getValue().getSequence());
                         this.sendMessage(msg, identity, subtree, snapshot);
                     }
 

@@ -13,9 +13,9 @@ public class mdwrkapi
 
     private static final int HEARTBEAT_LIVENESS = 3; // 3-5 is reasonable
 
-    private String   broker;
-    private ZContext ctx;
-    private String   service;
+    private final String   broker;
+    private final ZContext ctx;
+    private final String   service;
 
     private ZMQ.Socket worker;           // Socket to broker
     private long       heartbeatAt;      // When to send HEARTBEAT
@@ -26,9 +26,8 @@ public class mdwrkapi
     // Internal state
     private boolean expectReply = false; // false only at start
 
-    private long      timeout = 2500;
-    private boolean   verbose;                            // Print activity to stdout
-    private Formatter log     = new Formatter(System.out);
+    private final boolean   verbose;                            // Print activity to stdout
+    private final Formatter log     = new Formatter(System.out);
 
     // Return address, if any
     private ZFrame replyTo;
@@ -113,6 +112,7 @@ public class mdwrkapi
             // Poll socket for a reply, with timeout
             ZMQ.Poller items = ctx.createPoller(1);
             items.register(worker, ZMQ.Poller.POLLIN);
+            long timeout = 2500;
             if (items.poll(timeout) == -1)
                 break; // Interrupted
 

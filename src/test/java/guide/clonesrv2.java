@@ -1,7 +1,6 @@
 package guide;
 
 import java.nio.ByteBuffer;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -42,8 +41,7 @@ public class clonesrv2
                 ByteBuffer b = ByteBuffer.allocate(4);
                 b.asIntBuffer().put(body);
 
-                kvsimple kvMsg = new kvsimple(
-                    key + "", currentSequenceNumber, b.array()
+                kvsimple kvMsg = new kvsimple(String.valueOf(key), currentSequenceNumber, b.array()
                 );
                 kvMsg.send(publisher);
                 kvMsg.send(updates); // send a message to State Manager thread.
@@ -61,7 +59,7 @@ public class clonesrv2
 
     public static class StateManager implements IAttachedRunnable
     {
-        private static Map<String, kvsimple> kvMap = new LinkedHashMap<String, kvsimple>();
+        private static final Map<String, kvsimple> kvMap = new LinkedHashMap<>();
 
         @Override
         public void run(Object[] args, ZContext ctx, Socket pipe)
@@ -101,9 +99,7 @@ public class clonesrv2
                         break;
                     }
 
-                    Iterator<Entry<String, kvsimple>> iter = kvMap.entrySet().iterator();
-                    while (iter.hasNext()) {
-                        Entry<String, kvsimple> entry = iter.next();
+                    for (Entry<String, kvsimple> entry : kvMap.entrySet()) {
                         kvsimple msg = entry.getValue();
                         System.out.println("Sending message " + entry.getValue().getSequence());
                         this.sendMessage(msg, identity, snapshot);

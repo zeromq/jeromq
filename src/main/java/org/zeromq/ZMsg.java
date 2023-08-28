@@ -9,8 +9,11 @@ import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Deque;
 import java.util.Iterator;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 import org.zeromq.ZMQ.Socket;
+
 import zmq.util.Draft;
 import zmq.util.function.Consumer;
 
@@ -171,7 +174,7 @@ public class ZMsg implements Iterable<ZFrame>, Deque<ZFrame>
             throw new IllegalArgumentException("socket is null");
         }
 
-        if (frames.size() == 0) {
+        if (frames.isEmpty()) {
             return true;
         }
 
@@ -286,7 +289,7 @@ public class ZMsg implements Iterable<ZFrame>, Deque<ZFrame>
 
     /**
      * Save message to an open data output stream.
-     *
+     * <p>
      * Data saved as:
      *      4 bytes: number of frames
      *  For every frame:
@@ -391,7 +394,7 @@ public class ZMsg implements Iterable<ZFrame>, Deque<ZFrame>
         while (e1.hasNext() && e2.hasNext()) {
             ZFrame o1 = e1.next();
             ZFrame o2 = e2.next();
-            if (!(o1 == null ? o2 == null : o1.equals(o2))) {
+            if (!(Objects.equals(o1, o2))) {
                 return false;
             }
         }
@@ -424,7 +427,7 @@ public class ZMsg implements Iterable<ZFrame>, Deque<ZFrame>
             PrintWriter pw = new PrintWriter(sw);
             pw.printf("--------------------------------------\n");
             for (ZFrame frame : frames) {
-                pw.printf("[%03d] %s\n", frame.size(), frame.toString());
+                pw.printf("[%03d] %s\n", frame.size(), frame);
             }
             out.append(sw.getBuffer());
             sw.close();
@@ -747,8 +750,12 @@ public class ZMsg implements Iterable<ZFrame>, Deque<ZFrame>
         if (msg == null) {
             return this;
         }
-        for (ZFrame frame : msg.frames) {
-            add(frame);
+        // Tests explicitly check appending a ZMsg to itself, protect that
+        if (msg != this) {
+            frames.addAll(msg.frames);
+        }
+        else {
+            frames.addAll(msg.frames.clone());
         }
         return this;
     }
@@ -762,15 +769,7 @@ public class ZMsg implements Iterable<ZFrame>, Deque<ZFrame>
     @Override
     public String toString()
     {
-        StringBuilder out = new StringBuilder("[ ");
-        Iterator<ZFrame> frameIterator = frames.iterator();
-        while (frameIterator.hasNext()) {
-            out.append(frameIterator.next());
-            if (frameIterator.hasNext()) {
-                out.append(", "); // skip last iteration
-            }
-        }
-        out.append(" ]");
-        return out.toString();
+        String joined = frames.stream().map(ZFrame::toString).collect(Collectors.joining(", "));
+        return new StringBuilder("[ ").append(joined).append(" ]").toString();
     }
 }

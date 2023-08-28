@@ -15,10 +15,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Iterator;
 
 import org.junit.Test;
@@ -32,7 +30,7 @@ import zmq.ZError;
 public class ZMsgTest
 {
     @Test
-    public void testRecvFrame() throws Exception
+    public void testRecvFrame()
     {
         ZMQ.Context ctx = ZMQ.context(0);
         ZMQ.Socket socket = ctx.socket(SocketType.PULL);
@@ -45,7 +43,7 @@ public class ZMsgTest
     }
 
     @Test
-    public void testRecvMsg() throws Exception
+    public void testRecvMsg()
     {
         ZMQ.Context ctx = ZMQ.context(0);
         ZMQ.Socket socket = ctx.socket(SocketType.PULL);
@@ -57,7 +55,7 @@ public class ZMsgTest
     }
 
     @Test
-    public void testRecvNullByteMsg() throws Exception
+    public void testRecvNullByteMsg()
     {
         ZMQ.Context ctx = ZMQ.context(0);
         ZMQ.Socket sender = ctx.socket(SocketType.PUSH);
@@ -136,7 +134,7 @@ public class ZMsgTest
         StringBuilder out = new StringBuilder();
         msg.dump(out);
 
-        System.out.println(msg.toString());
+        System.out.println(msg);
 
         assertThat(out.toString(), endsWith("[000] \n[001] AA\n"));
     }
@@ -375,12 +373,12 @@ public class ZMsgTest
         try {
             // Save msg to a file
             File f = new File(TemporaryFolderFinder.resolve("zmsg.test"));
-            DataOutputStream dos = new DataOutputStream(new FileOutputStream(f));
+            DataOutputStream dos = new DataOutputStream(Files.newOutputStream(f.toPath()));
             assertThat(ZMsg.save(msg, dos), is(true));
             dos.close();
 
             // Read msg out of the file
-            DataInputStream dis = new DataInputStream(new FileInputStream(f));
+            DataInputStream dis = new DataInputStream(Files.newInputStream(f.toPath()));
             ZMsg msg2 = ZMsg.load(dis);
             dis.close();
             f.delete();
@@ -388,10 +386,6 @@ public class ZMsgTest
             assertThat(msg2.size(), is(10));
             assertThat(msg2.contentSize(), is(60L));
 
-        }
-        catch (FileNotFoundException e) {
-            e.printStackTrace();
-            fail();
         }
         catch (IOException e) {
             e.printStackTrace();

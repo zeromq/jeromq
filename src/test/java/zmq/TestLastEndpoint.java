@@ -45,7 +45,7 @@ public class TestLastEndpoint
     }
 
     @Test
-    public void testLastEndpointWildcardIpc() throws IOException
+    public void testLastEndpointWildcardIpc()
     {
         //  Create the infrastructure
         Ctx ctx = ZMQ.init(1);
@@ -70,7 +70,7 @@ public class TestLastEndpoint
     }
 
     @Test
-    public void testLastEndpointWildcardTcp() throws IOException
+    public void testLastEndpointWildcardTcp()
     {
         //  Create the infrastructure
         Ctx ctx = ZMQ.init(1);
@@ -92,7 +92,7 @@ public class TestLastEndpoint
     }
 
     @Test
-    public void testLastEndpointAllWildcards() throws IOException
+    public void testLastEndpointAllWildcards()
     {
         //  Create the infrastructure
         Ctx ctx = ZMQ.init(1);

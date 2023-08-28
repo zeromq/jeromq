@@ -11,14 +11,14 @@ import org.zeromq.ZMQ.Socket;
 /**
  * Load-balancing broker
  * Demonstrates use of the ZLoop API and reactor style
- *
+ * <p>
  * The client and worker tasks are identical from the previous example.
  */
 public class lbbroker3
 {
     private static final int NBR_CLIENTS  = 10;
     private static final int NBR_WORKERS  = 3;
-    private static byte[]    WORKER_READY = { '\001' };
+    private static final byte[]    WORKER_READY = { '\001' };
 
     /**
      * Basic request-reply client using REQ socket
@@ -80,7 +80,7 @@ public class lbbroker3
         Socket        frontend; //  Listen to clients
         Socket        backend;  //  Listen to workers
         Queue<ZFrame> workers;  //  List of ready workers
-    };
+    }
 
     /**
      * In the reactor design, each time a message arrives on a socket, the
@@ -100,7 +100,7 @@ public class lbbroker3
                 msg.send(arg.backend);
 
                 //  Cancel reader on frontend if we went from 1 to 0 workers
-                if (arg.workers.size() == 0) {
+                if (arg.workers.isEmpty()) {
                     loop.removePoller(new PollItem(arg.frontend, 0));
                 }
             }
@@ -163,7 +163,7 @@ public class lbbroker3
                 ZThread.start(new WorkerTask());
 
             //  Queue of available workers
-            arg.workers = new LinkedList<ZFrame>();
+            arg.workers = new LinkedList<>();
 
             //  Prepare reactor and fire it up
             ZLoop reactor = new ZLoop(context);

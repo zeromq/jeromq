@@ -21,14 +21,14 @@ public class ZLoop
 {
     public interface IZLoopHandler
     {
-        public int handle(ZLoop loop, PollItem item, Object arg);
+        int handle(ZLoop loop, PollItem item, Object arg);
     }
 
-    private class SPoller
+    private static class SPoller
     {
-        PollItem      item;
-        IZLoopHandler handler;
-        Object        arg;
+        final PollItem      item;
+        final IZLoopHandler handler;
+        final Object        arg;
         int           errors; //  If too many errors, kill poller
 
         protected SPoller(PollItem item, IZLoopHandler handler, Object arg)
@@ -41,12 +41,12 @@ public class ZLoop
 
     }
 
-    private class STimer
+    private static class STimer
     {
-        int           delay;
+        final int           delay;
         int           times;
-        IZLoopHandler handler;
-        Object        arg;
+        final IZLoopHandler handler;
+        final Object        arg;
         long          when;   //  Clock time when alarm goes off
 
         public STimer(int delay, int times, IZLoopHandler handler, Object arg)
@@ -228,7 +228,7 @@ public class ZLoop
         //  list, and process that list when we're done executing timers.
         zombies.add(arg);
         if (verbose) {
-            System.out.printf("I: zloop: cancel timer\n");
+            System.out.print("I: zloop: cancel timer\n");
         }
 
         return 0;

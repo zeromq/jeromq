@@ -12,7 +12,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Deque;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -130,7 +129,7 @@ public class Ctx
     private final Lock endpointsSync;
 
     //  Maximum socket ID.
-    private static AtomicInteger maxSocketId = new AtomicInteger(0);
+    private static final AtomicInteger maxSocketId = new AtomicInteger(0);
 
     //  Maximum number of sockets that can be opened at the same time.
     private int maxSockets;
@@ -504,7 +503,7 @@ public class Ctx
 
     public SocketBase createSocket(int type)
     {
-        SocketBase s = null;
+        SocketBase s;
         slotSync.lock();
         try {
             if (starting.compareAndSet(true, false)) {
@@ -693,17 +692,14 @@ public class Ctx
     {
         endpointsSync.lock();
 
-        Endpoint inserted = null;
+        Endpoint inserted;
         try {
             inserted = endpoints.put(addr, endpoint);
         }
         finally {
             endpointsSync.unlock();
         }
-        if (inserted != null) {
-            return false;
-        }
-        return true;
+        return inserted == null;
     }
 
     boolean unregisterEndpoint(String addr, SocketBase socket)
@@ -728,13 +724,7 @@ public class Ctx
         endpointsSync.lock();
 
         try {
-            Iterator<Entry<String, Endpoint>> it = endpoints.entrySet().iterator();
-            while (it.hasNext()) {
-                Entry<String, Endpoint> e = it.next();
-                if (e.getValue().socket == socket) {
-                    it.remove();
-                }
-            }
+            endpoints.entrySet().removeIf(e -> e.getValue().socket == socket);
         }
         finally {
             endpointsSync.unlock();
@@ -743,7 +733,7 @@ public class Ctx
 
     Endpoint findEndpoint(String addr)
     {
-        Endpoint endpoint = null;
+        Endpoint endpoint;
         endpointsSync.lock();
 
         try {
@@ -882,7 +872,7 @@ public class Ctx
                 forwardHolder = new ChannelForwardHolder();
             }
         }
-        WeakReference<SelectableChannel> ref = new WeakReference<SelectableChannel>(channel, forwardHolder.queue);
+        WeakReference<SelectableChannel> ref = new WeakReference<>(channel, forwardHolder.queue);
         int handle = forwardHolder.handleSource.getAndIncrement();
         forwardHolder.map.put(handle, ref);
         forwardHolder.reversemap.put(ref, handle);

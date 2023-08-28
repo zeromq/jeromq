@@ -25,13 +25,11 @@ final class Reaper extends ZObject implements IPollEvents, Closeable
     //  If true, we were already asked to terminate.
     private final AtomicBoolean terminating = new AtomicBoolean();
 
-    private final String name;
-
     Reaper(Ctx ctx, int tid)
     {
         super(ctx, tid);
         socketsReaping = 0;
-        name = "reaper-" + tid;
+        String name = "reaper-" + tid;
         poller = new Poller(ctx, name);
 
         mailbox = new Mailbox(ctx, name, tid);

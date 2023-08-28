@@ -120,12 +120,9 @@ public class YPipe<T> implements YPipeBase<T>
         //  During pipe's lifetime r should never be NULL, however,
         //  it can happen during pipe shutdown when items
         //  are being deallocated.
-        if (h == r || r == -1) {
-            return false;
-        }
+        return h != r && r != -1;
 
         //  There was at least one value prefetched.
-        return true;
     }
 
     //  Reads an item from the pipe. Returns null if there is no value.

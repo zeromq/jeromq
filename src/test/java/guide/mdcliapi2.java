@@ -11,12 +11,12 @@ import org.zeromq.*;
 public class mdcliapi2
 {
 
-    private String     broker;
-    private ZContext   ctx;
+    private final String     broker;
+    private final ZContext   ctx;
     private ZMQ.Socket client;
     private long       timeout = 2500;
-    private boolean    verbose;
-    private Formatter  log     = new Formatter(System.out);
+    private final boolean    verbose;
+    private final Formatter  log     = new Formatter(System.out);
 
     public long getTimeout()
     {
@@ -42,7 +42,7 @@ public class mdcliapi2
     void reconnectToBroker()
     {
         if (client != null) {
-            client.close();;
+            client.close();
         }
         client = ctx.createSocket(SocketType.DEALER);
         client.connect(broker);

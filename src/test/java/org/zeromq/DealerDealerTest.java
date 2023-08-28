@@ -16,7 +16,7 @@ import org.zeromq.ZMQ.Context;
 
 public class DealerDealerTest
 {
-    private final class Client implements Runnable
+    private static final class Client implements Runnable
     {
         private final Context       context;
         private final boolean       verbose;
@@ -94,26 +94,21 @@ public class DealerDealerTest
         final Deque<String> queue = new LinkedBlockingDeque<>();
         final String host = "tcp://localhost:" + Utils.findOpenPort();
 
-        final Runnable server = new Runnable()
-        {
-            @Override
-            public void run()
-            {
-                final ZMQ.Socket server = context.socket(SocketType.DEALER);
-                server.bind(host);
-                int msg = messagesCount;
+        final Runnable server = () -> {
+            final ZMQ.Socket server1 = context.socket(SocketType.DEALER);
+            server1.bind(host);
+            int msg = messagesCount;
 
-                while (msg-- > 0) {
-                    final String payload = Integer.toString(msg);
-                    queue.add(payload);
-                    if (!server.send(payload)) {
-                        System.out.println("Send failed");
-                    }
-
-                    zmq.ZMQ.msleep(10);
+            while (msg-- > 0) {
+                final String payload = Integer.toString(msg);
+                queue.add(payload);
+                if (!server1.send(payload)) {
+                    System.out.println("Send failed");
                 }
-                server.close();
+
+                zmq.ZMQ.msleep(10);
             }
+            server1.close();
         };
 
         final Client client = new Client(context, verbose, host, messagesCount, queue);

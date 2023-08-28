@@ -14,7 +14,7 @@ import org.zeromq.ZThread.IAttachedRunnable;
 public class suisnail
 {
     private static final long MAX_ALLOWED_DELAY = 1000; //  msecs
-    private static Random rand = new Random(System.currentTimeMillis());
+    private static final Random rand = new Random(System.currentTimeMillis());
 
     //  This is our subscriber. It connects to the publisher and subscribes to
     //  everything. It sleeps for a short time between messages to simulate

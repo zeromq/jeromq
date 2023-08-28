@@ -6,10 +6,10 @@ import zmq.util.function.Supplier;
 
 /**
  * Manages set of timers.
- *
+ * <p>
  * Timers can be added with a given interval, when the interval of time expires after addition, handler method is executed with given arguments.
  * Timer is repetitive and will be executed over time until canceled.
- *
+ * <p>
  * This is a DRAFT class, and may change without notice.
  */
 @Draft
@@ -29,7 +29,7 @@ public final class ZTimer
 
         /**
          * Changes the interval of the timer.
-         *
+         * <p>
          * This method is slow, canceling existing and adding a new timer yield better performance.
          * @param interval the new interval of the time.
          * @return true if set, otherwise false.
@@ -41,7 +41,7 @@ public final class ZTimer
 
         /**
          * Reset the timer.
-         *
+         * <p>
          * This method is slow, canceling existing and adding a new timer yield better performance.
          * @return true if reset, otherwise false.
          */

@@ -8,10 +8,10 @@ import zmq.util.function.Supplier;
 
 /**
  * Manages set of timers.
- *
+ * <p>
  * Timers can be added with a given interval, when the interval of time expires after addition, handler method is executed with given arguments.
  * Timer is repetitive and will be executed over time until canceled.
- *
+ * <p>
  * This is a DRAFT class, and may change without notice.
  */
 @Draft

@@ -5,7 +5,6 @@ import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.zeromq.SocketType;
-import org.zeromq.ZMQ;
 import org.zeromq.ZMQ.Socket;
 import org.zeromq.ZContext;
 
@@ -17,7 +16,7 @@ import org.zeromq.ZContext;
  */
 public class clonesrv1
 {
-    private static AtomicLong sequence = new AtomicLong();
+    private static final AtomicLong sequence = new AtomicLong();
 
     public void run()
     {
@@ -42,8 +41,7 @@ public class clonesrv1
                 ByteBuffer b = ByteBuffer.allocate(4);
                 b.asIntBuffer().put(body);
 
-                kvsimple kvMsg = new kvsimple(
-                    key + "", currentSequenceNumber, b.array()
+                kvsimple kvMsg = new kvsimple(String.valueOf(key), currentSequenceNumber, b.array()
                 );
                 kvMsg.send(publisher);
                 System.out.println("sending " + kvMsg);

@@ -29,14 +29,14 @@ public class mdbroker
     private static class Service
     {
         public final String name;     // Service name
-        Deque<ZMsg>         requests; // List of client requests
-        Deque<Worker>       waiting;  // List of waiting workers
+        final Deque<ZMsg>         requests; // List of client requests
+        final Deque<Worker>       waiting;  // List of waiting workers
 
         public Service(String name)
         {
             this.name = name;
-            this.requests = new ArrayDeque<ZMsg>();
-            this.waiting = new ArrayDeque<Worker>();
+            this.requests = new ArrayDeque<>();
+            this.waiting = new ArrayDeque<>();
         }
     }
 
@@ -45,8 +45,8 @@ public class mdbroker
      */
     private static class Worker
     {
-        String  identity;// Identity of worker
-        ZFrame  address; // Address frame to route to
+        final String  identity;// Identity of worker
+        final ZFrame  address; // Address frame to route to
         Service service; // Owning service, if known
         long    expiry;  // Expires at unless heartbeat
 
@@ -60,16 +60,16 @@ public class mdbroker
 
     // ---------------------------------------------------------------------
 
-    private ZContext   ctx;    // Our context
-    private ZMQ.Socket socket; // Socket for clients & workers
+    private final ZContext   ctx;    // Our context
+    private final ZMQ.Socket socket; // Socket for clients & workers
 
     private long                 heartbeatAt;// When to send HEARTBEAT
-    private Map<String, Service> services;   // known services
-    private Map<String, Worker>  workers;    // known workers
-    private Deque<Worker>        waiting;    // idle workers
+    private final Map<String, Service> services;   // known services
+    private final Map<String, Worker>  workers;    // known workers
+    private final Deque<Worker>        waiting;    // idle workers
 
-    private boolean   verbose = false;                    // Print activity to stdout
-    private Formatter log     = new Formatter(System.out);
+    private final boolean   verbose;               // Print activity to stdout
+    private final Formatter log     = new Formatter(System.out);
 
     // ---------------------------------------------------------------------
 
@@ -90,9 +90,9 @@ public class mdbroker
     public mdbroker(boolean verbose)
     {
         this.verbose = verbose;
-        this.services = new HashMap<String, Service>();
-        this.workers = new HashMap<String, Worker>();
-        this.waiting = new ArrayDeque<Worker>();
+        this.services = new HashMap<>();
+        this.workers = new HashMap<>();
+        this.waiting = new ArrayDeque<>();
         this.heartbeatAt = System.currentTimeMillis() + HEARTBEAT_INTERVAL;
         this.ctx = new ZContext();
         this.socket = ctx.createSocket(SocketType.ROUTER);
@@ -179,7 +179,7 @@ public class mdbroker
      */
     private void processWorker(ZFrame sender, ZMsg msg)
     {
-        assert (msg.size() >= 1); // At least, command
+        assert (!msg.isEmpty()); // At least, command
 
         ZFrame command = msg.pop();
 

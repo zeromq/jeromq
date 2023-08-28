@@ -16,7 +16,7 @@ public class lbbroker2
 {
     private static final int NBR_CLIENTS  = 10;
     private static final int NBR_WORKERS  = 3;
-    private static byte[]    WORKER_READY = { '\001' }; //  Signals worker is ready
+    private static final byte[]    WORKER_READY = { '\001' }; //  Signals worker is ready
 
     /**
      * Basic request-reply client using REQ socket
@@ -94,7 +94,7 @@ public class lbbroker2
                 ZThread.start(new WorkerTask());
 
             //  Queue of available workers
-            Queue<ZFrame> workerQueue = new LinkedList<ZFrame>();
+            Queue<ZFrame> workerQueue = new LinkedList<>();
 
             //  Here is the main loop for the load-balancer. It works the same
             //  way as the previous example, but is a lot shorter because ZMsg
@@ -108,7 +108,7 @@ public class lbbroker2
                 items.register(backend, Poller.POLLIN);
 
                 //  Poll front-end only if we have available workers
-                if (workerQueue.size() > 0)
+                if (!workerQueue.isEmpty())
                     items.register(frontend, Poller.POLLIN);
 
                 if (items.poll() < 0)

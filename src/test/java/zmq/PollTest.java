@@ -25,7 +25,7 @@ import zmq.poll.PollItem;
 
 public class PollTest
 {
-    static interface TxRx<R>
+    interface TxRx<R>
     {
         R apply(ByteBuffer bb) throws IOException;
     }

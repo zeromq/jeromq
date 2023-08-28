@@ -14,8 +14,8 @@ public class TestHwm
         Ctx ctx = ZMQ.init(1);
         assertThat(ctx, notNullValue());
 
-        int rc = 0;
-        boolean brc = false;
+        int rc;
+        boolean brc;
         //  Create pair of socket, each with high watermark of 2. Thus the total
         //  buffer space should be 4 messages.
         SocketBase sb = ZMQ.socket(ctx, ZMQ.ZMQ_PULL);

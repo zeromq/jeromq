@@ -13,8 +13,8 @@ public class InprocLat
 
     static class Worker implements Runnable
     {
-        private Ctx ctx;
-        private int roundtripCount;
+        private final Ctx ctx;
+        private final int roundtripCount;
 
         Worker(Ctx ctx, int roundtripCount)
         {
@@ -94,8 +94,8 @@ public class InprocLat
 
         Msg smsg = ZMQ.msgInitWithSize(messageSize);
 
-        printf("message size: %d [B]\n", (int) messageSize);
-        printf("roundtrip count: %d\n", (int) roundtripCount);
+        printf("message size: %d [B]\n", messageSize);
+        printf("roundtrip count: %d\n", roundtripCount);
 
         long watch = ZMQ.startStopwatch();
 
@@ -122,7 +122,7 @@ public class InprocLat
 
         localThread.join();
 
-        printf("average latency: %.3f [us]\n", (double) latency);
+        printf("average latency: %.3f [us]\n", latency);
 
         ZMQ.close(s);
 
@@ -141,6 +141,6 @@ public class InprocLat
 
     private static void printf(String string, Object... args)
     {
-        System.out.println(String.format(string, args));
+        System.out.printf((string) + "%n", args);
     }
 }

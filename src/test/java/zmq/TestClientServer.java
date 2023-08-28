@@ -12,7 +12,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class TestClientServer
 {
     @Test
-    public void testInproc() throws Exception
+    public void testInproc()
     {
         System.out.println("Scenario 1");
 
@@ -116,9 +116,9 @@ public class TestClientServer
     }
 
     //  Client threads loop on send/recv until told to exit
-    class ClientThread extends Thread
+    static class ClientThread extends Thread
     {
-        SocketBase client;
+        final SocketBase client;
 
         ClientThread(SocketBase client)
         {

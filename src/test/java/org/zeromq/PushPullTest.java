@@ -15,7 +15,7 @@ public class PushPullTest
 {
     private static final int REPETITIONS = 10;
 
-    class Sender implements Runnable
+    static class Sender implements Runnable
     {
         private final CountDownLatch latch;
         private final int            port;
@@ -61,7 +61,7 @@ public class PushPullTest
         }
     }
 
-    class Receiver implements Runnable
+    static class Receiver implements Runnable
     {
         private final CountDownLatch latch;
         private final int            port;

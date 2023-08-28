@@ -25,9 +25,9 @@ public class ppqueue
     //  as constructor, destructor, and methods on worker objects:
     private static class Worker
     {
-        ZFrame address;  //  Address of worker
-        String identity; //  Printable identity
-        long   expiry;   //  Expires at this time
+        final ZFrame address;  //  Address of worker
+        final String identity; //  Printable identity
+        final long   expiry;   //  Expires at this time
 
         protected Worker(ZFrame address)
         {
@@ -55,8 +55,7 @@ public class ppqueue
         {
             Worker worker = workers.remove(0);
             assert (worker != null);
-            ZFrame frame = worker.address;
-            return frame;
+            return worker.address;
         }
 
         //  The purge method looks for and kills expired workers. We hold workers
@@ -72,7 +71,7 @@ public class ppqueue
                 it.remove();
             }
         }
-    };
+    }
 
     //  The main task is an LRU queue with heartbeating on workers so we can
     //  detect crashed or blocked worker tasks:
@@ -85,7 +84,7 @@ public class ppqueue
             backend.bind("tcp://*:5556"); //  For workers
 
             //  List of available workers
-            ArrayList<Worker> workers = new ArrayList<Worker>();
+            ArrayList<Worker> workers = new ArrayList<>();
 
             //  Send out heartbeats at regular intervals
             long heartbeat_at = System.currentTimeMillis() + HEARTBEAT_INTERVAL;
@@ -95,7 +94,7 @@ public class ppqueue
             poller.register(frontend, Poller.POLLIN);
 
             while (true) {
-                boolean workersAvailable = workers.size() > 0;
+                boolean workersAvailable = !workers.isEmpty();
                 int rc = poller.poll(HEARTBEAT_INTERVAL);
                 if (rc == -1)
                     break; //  Interrupted

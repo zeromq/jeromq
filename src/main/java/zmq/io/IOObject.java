@@ -128,6 +128,6 @@ public class IOObject implements IPollEvents
     @Override
     public String toString()
     {
-        return "" + handler;
+        return String.valueOf(handler);
     }
 }

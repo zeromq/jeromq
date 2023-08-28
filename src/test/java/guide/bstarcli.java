@@ -60,11 +60,11 @@ public class bstarcli
                         else System.out.printf("E: bad reply from server: %s\n", reply);
                     }
                     else {
-                        System.out.printf("W: no response from server, failing over\n");
+                        System.out.print("W: no response from server, failing over\n");
 
                         //  Old socket is confused; close it and open a new one
                         poller.unregister(client);
-                        client.close();;
+                        client.close();
                         serverNbr = (serverNbr + 1) % 2;
                         Thread.sleep(SETTLE_DELAY);
                         System.out.printf("I: connecting to server at %s...\n", server[serverNbr]);

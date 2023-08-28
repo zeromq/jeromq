@@ -22,7 +22,7 @@ import zmq.util.Errno;
 
 public class Helper
 {
-    public static AtomicInteger counter = new AtomicInteger(2);
+    public static final AtomicInteger counter = new AtomicInteger(2);
 
     private Helper()
     {
@@ -34,8 +34,8 @@ public class Helper
 
     public static class DummySocketChannel implements WritableByteChannel
     {
-        private int    bufsize;
-        private byte[] buf;
+        private final int    bufsize;
+        private final byte[] buf;
 
         public DummySocketChannel()
         {
@@ -54,7 +54,7 @@ public class Helper
         }
 
         @Override
-        public void close() throws IOException
+        public void close()
         {
         }
 
@@ -65,7 +65,7 @@ public class Helper
         }
 
         @Override
-        public int write(ByteBuffer src) throws IOException
+        public int write(ByteBuffer src)
         {
             int remaining = src.remaining();
             if (remaining > bufsize) {
@@ -78,7 +78,7 @@ public class Helper
 
     }
 
-    public static DummyCtx ctx = new DummyCtx();
+    public static final DummyCtx ctx = new DummyCtx();
 
     public static class DummyIOThread extends IOThread
     {
@@ -110,7 +110,7 @@ public class Helper
 
     public static class DummySession extends SessionBase
     {
-        public List<Msg> out = new ArrayList<Msg>();
+        public final List<Msg> out = new ArrayList<>();
 
         public DummySession()
         {
@@ -134,12 +134,11 @@ public class Helper
         public Msg pullMsg()
         {
             System.out.println("session.read " + out);
-            if (out.size() == 0) {
+            if (out.isEmpty()) {
                 return null;
             }
-            Msg msg = out.remove(0);
 
-            return msg;
+            return out.remove(0);
         }
 
     }
@@ -241,7 +240,7 @@ public class Helper
     //  Example: s_send_seq (req, "ABC", 0, "DEF", SEQ_END);
     public static void sendSeq(SocketBase socket, String... data)
     {
-        int rc = 0;
+        int rc;
         for (int idx = 0; idx < data.length - 1; ++idx) {
             rc = sendMore(socket, data[idx]);
             assert (rc == data[idx].length());
@@ -257,9 +256,9 @@ public class Helper
     public static void recvSeq(SocketBase socket, String... data)
     {
         String rc;
-        for (int idx = 0; idx < data.length; ++idx) {
+        for (String datum : data) {
             rc = recv(socket);
-            assert (data[idx].equals(rc));
+            assert (datum.equals(rc));
         }
     }
 
@@ -288,14 +287,14 @@ public class Helper
             toRead -= rc;
             System.out.println("read " + rc + " total_read " + read + " toRead " + toRead);
         }
-        System.out.println(String.format("%02x %02x %02x %02x", buf[0], buf[1], buf[2], buf[3]));
+        System.out.printf("%02x %02x %02x %02x%n", buf[0], buf[1], buf[2], buf[3]);
         try {
             Thread.sleep(1000);
         }
         catch (InterruptedException e) {
             e.printStackTrace();
         }
-        reslen = Integer.valueOf(new String(buf, 0, 4, ZMQ.CHARSET));
+        reslen = Integer.parseInt(new String(buf, 0, 4, ZMQ.CHARSET));
 
         in.read(buf, 0, reslen);
         System.out.println("recv " + reslen + " " + new String(buf, 0, reslen, ZMQ.CHARSET));

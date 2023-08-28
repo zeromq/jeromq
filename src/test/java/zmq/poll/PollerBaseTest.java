@@ -9,7 +9,7 @@ import org.junit.Test;
 
 public class PollerBaseTest
 {
-    private IPollEvents sink = new PollEvents();
+    private final IPollEvents sink = new PollEvents();
 
     @Test
     public void testNoTimer()

@@ -33,7 +33,7 @@ class MechanismTester
         SocketBase server;
         SocketBase client;
         SocketBase zapHandler;
-        String host = "tcp://127.0.0.1:*";
+        final String host = "tcp://127.0.0.1:*";
     }
 
     static <C extends TestContext> Boolean runTest(C testCtx, boolean withzap, Function<C, Boolean> tested,

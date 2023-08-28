@@ -29,7 +29,7 @@ import zmq.util.function.BiFunction;
 
 public class TestZPoller
 {
-    private final class EventsHandlerCounter implements BiFunction<SelectableChannel, Integer, Boolean>
+    private static final class EventsHandlerCounter implements BiFunction<SelectableChannel, Integer, Boolean>
     {
         private final AtomicInteger count;
 
@@ -54,7 +54,7 @@ public class TestZPoller
         }
     }
 
-    private final class EventsHandlerErrorCounter implements BiFunction<SelectableChannel, Integer, Boolean>
+    private static final class EventsHandlerErrorCounter implements BiFunction<SelectableChannel, Integer, Boolean>
     {
         private final AtomicInteger error;
 
@@ -120,13 +120,7 @@ public class TestZPoller
             }
             socket.close();
 
-            try {
-                poller.close();
-            }
-            catch (IOException e) {
-                e.printStackTrace();
-                fail("error while closing poller " + e.getMessage());
-            }
+            poller.close();
         }
     }
 
@@ -137,7 +131,7 @@ public class TestZPoller
 
         try (ZContext context = new ZContext();
              ZPoller poller = new ZPoller(context);
-             ZMQ.Socket receiver = context.createSocket(SocketType.PULL);) {
+             ZMQ.Socket receiver = context.createSocket(SocketType.PULL)) {
             context.setLinger(5000);
             final Server client = new Server(context, port);
             client.start();
@@ -172,7 +166,7 @@ public class TestZPoller
     }
 
     @Test(timeout = 5000)
-    public void testUseNull() throws IOException
+    public void testUseNull()
     {
         final ZContext context = new ZContext();
 
@@ -181,7 +175,7 @@ public class TestZPoller
         SelectableChannel channel = null;
         Socket socket = null; // ctx.createSocket(ZMQ.SUB);
 
-        boolean rc = false;
+        boolean rc;
         rc = poller.register(socket, ZPoller.IN);
         assertThat("Registering a null socket was successful", rc, is(false));
         rc = poller.register(channel, ZPoller.OUT);
@@ -218,7 +212,7 @@ public class TestZPoller
     }
 
     @Test(timeout = 5000)
-    public void testZPollerNew() throws IOException
+    public void testZPollerNew()
     {
         ZContext ctx = new ZContext();
         ZPoller poller = new ZPoller(ctx);
@@ -237,7 +231,7 @@ public class TestZPoller
     }
 
     @Test(timeout = 5000)
-    public void testGlobalHandler() throws IOException
+    public void testGlobalHandler()
     {
         ZContext ctx = new ZContext();
         ZPoller poller = new ZPoller(ctx);
@@ -254,7 +248,7 @@ public class TestZPoller
     }
 
     @Test(timeout = 5000)
-    public void testItemEqualsBasic() throws IOException
+    public void testItemEqualsBasic()
     {
         ZContext ctx = new ZContext();
 
@@ -277,7 +271,7 @@ public class TestZPoller
     }
 
     @Test(timeout = 5000)
-    public void testItemEquals() throws IOException
+    public void testItemEquals()
     {
         ZContext ctx = new ZContext();
         ItemCreator itemCreator = new ZPoller.SimpleCreator();
@@ -311,7 +305,7 @@ public class TestZPoller
     }
 
     @Test(timeout = 5000)
-    public void testReadable() throws IOException
+    public void testReadable()
     {
         ZContext ctx = new ZContext();
         ZPoller poller = new ZPoller(ctx);
@@ -335,7 +329,7 @@ public class TestZPoller
     }
 
     @Test(timeout = 5000)
-    public void testWritable() throws IOException
+    public void testWritable()
     {
         ZContext ctx = new ZContext();
         ZPoller poller = new ZPoller(ctx);
@@ -359,7 +353,7 @@ public class TestZPoller
     }
 
     @Test(timeout = 5000)
-    public void testError() throws IOException
+    public void testError()
     {
         ZContext ctx = new ZContext();
         ZPoller poller = new ZPoller(ctx);
@@ -383,7 +377,7 @@ public class TestZPoller
     }
 
     @Test(timeout = 5000)
-    public void testRegister() throws IOException
+    public void testRegister()
     {
         ZContext ctx = new ZContext();
         ZPoller poller = new ZPoller(ctx);
@@ -400,7 +394,7 @@ public class TestZPoller
     }
 
     @Test(timeout = 5000)
-    public void testItems() throws IOException
+    public void testItems()
     {
         ZContext ctx = new ZContext();
         ZPoller poller = new ZPoller(ctx);
@@ -474,7 +468,7 @@ public class TestZPoller
     }
 
     @Test(timeout = 5000)
-    public void testIssue729() throws InterruptedException, IOException
+    public void testIssue729() throws IOException
     {
         int port = Utils.findOpenPort();
         ZContext ctx = new ZContext();
@@ -489,21 +483,16 @@ public class TestZPoller
         try {
             zPoller.register(new ZPoller.ZPollItem(sub, null, ZPoller.POLLIN));
 
-            Thread server = new Thread(new Runnable()
-            {
-                @Override
-                public void run()
-                {
-                    while (true) {
-                        try {
-                            pub.send("hello");
-                            Thread.sleep(100);
-                        }
-                        catch (InterruptedException ignored) {
-                        }
-                        catch (ZMQException exc) {
-                            assertThat(exc.getErrorCode(), is(ZError.ETERM));
-                        }
+            Thread server = new Thread(() -> {
+                while (true) {
+                    try {
+                        pub.send("hello");
+                        Thread.sleep(100);
+                    }
+                    catch (InterruptedException ignored) {
+                    }
+                    catch (ZMQException exc) {
+                        assertThat(exc.getErrorCode(), is(ZError.ETERM));
                     }
                 }
             });

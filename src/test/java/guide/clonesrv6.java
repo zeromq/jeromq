@@ -18,17 +18,15 @@ import org.zeromq.ZMQ.Socket;
 //  Clone server - Model Six
 public class clonesrv6
 {
-    private ZContext           ctx;        //  Context wrapper
+    private final ZContext           ctx;        //  Context wrapper
     private Map<String, kvmsg> kvmap;      //  Key-value store
-    private bstar              bStar;      //  Bstar reactor core
+    private final bstar              bStar;      //  Bstar reactor core
     private long               sequence;   //  How many updates we're at
-    private int                port;       //  Main port we're working on
-    private int                peer;       //  Main port of our peer
-    private Socket             publisher;  //  Publish updates and hugz
-    private Socket             collector;  //  Collect updates from clients
-    private Socket             subscriber; //  Get updates from peer
-    private List<kvmsg>        pending;    //  Pending updates from clients
-    private boolean            primary;    //  TRUE if we're primary
+    private final int                peer;       //  Main port of our peer
+    private final Socket             publisher;  //  Publish updates and hugz
+    private final Socket             collector;  //  Collect updates from clients
+    private final Socket             subscriber; //  Get updates from peer
+    private final List<kvmsg>        pending;    //  Pending updates from clients
     private boolean            active;     //  TRUE if we're active
     private boolean            passive;    //  TRUE if we're passive
 
@@ -48,7 +46,7 @@ public class clonesrv6
                 if (request.equals("ICANHAZ?")) {
                     subtree = socket.recvStr();
                 }
-                else System.out.printf("E: bad request, aborting\n");
+                else System.out.print("E: bad request, aborting\n");
 
                 if (subtree != null) {
                     //  Send state socket to client
@@ -130,7 +128,7 @@ public class clonesrv6
         {
             clonesrv6 srv = (clonesrv6) arg;
             if (srv.kvmap != null) {
-                for (kvmsg msg : new ArrayList<kvmsg>(srv.kvmap.values())) {
+                for (kvmsg msg : new ArrayList<>(srv.kvmap.values())) {
                     srv.flushSingle(msg);
                 }
             }
@@ -202,7 +200,7 @@ public class clonesrv6
 
             //  Get state snapshot if necessary
             if (srv.kvmap == null) {
-                srv.kvmap = new HashMap<String, kvmsg>();
+                srv.kvmap = new HashMap<>();
                 Socket snapshot = srv.ctx.createSocket(SocketType.DEALER);
                 snapshot.connect(String.format("tcp://localhost:%d", srv.peer));
 
@@ -253,13 +251,16 @@ public class clonesrv6
 
     public clonesrv6(boolean primary)
     {
+        //  TRUE if we're primary
+        boolean primary1;
+        //  Main port we're working on
+        int port;
         if (primary) {
             bStar = new bstar(true, "tcp://*:5003", "tcp://localhost:5004");
             bStar.voter("tcp://*:5556", SocketType.ROUTER, new Snapshots(), this);
 
             port = 5556;
             peer = 5566;
-            this.primary = true;
         }
         else {
             bStar = new bstar(false, "tcp://*:5004", "tcp://localhost:5003");
@@ -267,15 +268,14 @@ public class clonesrv6
 
             port = 5566;
             peer = 5556;
-            this.primary = false;
         }
 
         //  Primary server will become first active
         if (primary)
-            kvmap = new HashMap<String, kvmsg>();
+            kvmap = new HashMap<>();
 
         ctx = new ZContext();
-        pending = new ArrayList<kvmsg>();
+        pending = new ArrayList<>();
         bStar.setVerbose(true);
 
         //  Set up our clone server sockets
@@ -392,7 +392,7 @@ public class clonesrv6
             srv = new clonesrv6(false);
         }
         else {
-            System.out.printf("Usage: clonesrv4 { -p | -b }\n");
+            System.out.print("Usage: clonesrv4 { -p | -b }\n");
             System.exit(0);
         }
         srv.run();

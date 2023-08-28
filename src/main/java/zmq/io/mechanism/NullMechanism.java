@@ -32,7 +32,7 @@ class NullMechanism extends Mechanism
 
         //  NULL mechanism only uses ZAP if there's a domain defined
         //  This prevents ZAP requests on naive sockets
-        if (options.zapDomain != null && options.zapDomain.length() > 0 && session.zapConnect() == 0) {
+        if (options.zapDomain != null && !options.zapDomain.isEmpty() && session.zapConnect() == 0) {
             zapConnected = true;
         }
     }

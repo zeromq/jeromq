@@ -18,7 +18,7 @@ import zmq.util.function.BiFunction;
 
 /**
  * ZContext provides a high-level ZeroMQ context management class
- *
+ * <p>
  * It manages open sockets in the context and automatically closes these before terminating the context.
  * It provides a simple way to set the linger timeout on sockets, and configure contexts for number of I/O threads.
  * Sets-up signal (interrupt) handling for the process.
@@ -327,7 +327,6 @@ public class ZContext implements Closeable
     @Deprecated
     public void setIoThreads(int ioThreads)
     {
-        return;
     }
 
     /**
@@ -441,7 +440,7 @@ public class ZContext implements Closeable
      */
     public boolean isEmpty()
     {
-        return shadows.size() == 0 && sockets.size() == 0 && selectors.size() == 0;
+        return shadows.isEmpty() && sockets.isEmpty() && selectors.isEmpty();
     }
 
     /**
@@ -451,7 +450,6 @@ public class ZContext implements Closeable
     @Deprecated
     public void setMain(boolean main)
     {
-        return;
     }
 
     /**
@@ -469,7 +467,6 @@ public class ZContext implements Closeable
     @Deprecated
     public void setContext(Context ctx)
     {
-        return;
     }
 
     /**

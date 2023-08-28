@@ -81,7 +81,6 @@ public class ppworker
                         if (cycles > 3 && rand.nextInt(5) == 0) {
                             System.out.println("I: simulating a crash\n");
                             msg.destroy();
-                            msg = null;
                             break;
                         }
                         else if (cycles > 3 && rand.nextInt(5) == 0) {

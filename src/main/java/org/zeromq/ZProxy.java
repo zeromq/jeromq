@@ -113,7 +113,6 @@ import zmq.SocketBase;
  *
  */
 // Proxy for 0MQ.
-@SuppressWarnings("deprecation")
 public class ZProxy
 {
     /**
@@ -166,7 +165,7 @@ public class ZProxy
 
         /**
          * Configures the proxy with a custom message.
-         *
+         * <p>
          * Note: you need to send one (1) mandatory custom response message with the pipe before the end of this call.
          *
          * @param pipe      the control pipe
@@ -181,7 +180,7 @@ public class ZProxy
 
         /**
          * Handles a custom command not recognized by the proxy.
-         *
+         * <p>
          * Note: you need to send the current state at the end of the call.
          *
          * @param pipe      the control pipe
@@ -196,10 +195,10 @@ public class ZProxy
         boolean custom(Socket pipe, String cmd, Socket frontend, Socket backend, Socket capture, Object... args);
 
         // this may be useful
-        public abstract static class SimpleProxy implements Proxy
+        abstract class SimpleProxy implements Proxy
         {
             @Override
-            public boolean restart(ZMsg cfg, Socket socket, Plug place, Object... args) throws IOException
+            public boolean restart(ZMsg cfg, Socket socket, Plug place, Object... args)
             {
                 return true;
             }

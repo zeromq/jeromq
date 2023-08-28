@@ -2,7 +2,6 @@ package zmq;
 
 import org.junit.Test;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -13,7 +12,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class TestRaw
 {
     @Test
-    public void testRaw2dealer() throws IOException, InterruptedException
+    public void testRaw2dealer()
     {
         final byte[] standardGreeting = new byte[64];
         standardGreeting[0] = (byte) 0xff;
@@ -179,7 +178,7 @@ public class TestRaw
     }
 
     @Test
-    public void testRaw2Raw() throws IOException, InterruptedException
+    public void testRaw2Raw()
     {
         String host = "tcp://localhost:*";
 

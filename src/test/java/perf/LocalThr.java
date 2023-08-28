@@ -83,10 +83,10 @@ public class LocalThr
         megabits = (double) (throughput * messageSize * 8) / 1000000;
 
         printf("message elapsed: %.3f \n", (double) elapsed / 1000000L);
-        printf("message size: %d [B]\n", (int) messageSize);
+        printf("message size: %d [B]\n", messageSize);
         printf("message count: %d\n", (int) messageCount);
         printf("mean throughput: %d [msg/s]\n", (int) throughput);
-        printf("mean throughput: %.3f [Mb/s]\n", (double) megabits);
+        printf("mean throughput: %.3f [Mb/s]\n", megabits);
 
         ZMQ.close(s);
 
@@ -96,17 +96,17 @@ public class LocalThr
     private static void printf(String str, Object... args)
     {
         // TODO Auto-generated method stub
-        System.out.println(String.format(str, args));
+        System.out.printf((str) + "%n", args);
     }
 
     private static int atoi(String string)
     {
-        return Integer.valueOf(string);
+        return Integer.parseInt(string);
     }
 
     private static long atol(String string)
     {
-        return Long.valueOf(string);
+        return Long.parseLong(string);
     }
 
     private static void printf(String string)

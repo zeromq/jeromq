@@ -5,7 +5,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -146,7 +145,7 @@ public class AsyncServerTest
         }
 
         @Override
-        public boolean configure(Socket socket, Plug place, Object... args) throws IOException
+        public boolean configure(Socket socket, Plug place, Object... args)
         {
             switch (place) {
             case FRONT:

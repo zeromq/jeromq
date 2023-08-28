@@ -143,7 +143,7 @@ public class peering2
 
             //  Least recently used queue of available workers
             int capacity = 0;
-            ArrayList<ZFrame> workers = new ArrayList<ZFrame>();
+            ArrayList<ZFrame> workers = new ArrayList<>();
 
             Poller backends = ctx.createPoller(2);
             backends.register(localbe, Poller.POLLIN);
@@ -208,7 +208,7 @@ public class peering2
                 while (capacity > 0) {
                     rc = frontends.poll(0);
                     assert (rc >= 0);
-                    int reroutable = 0;
+                    int reroutable;
                     //  We'll do peer brokers first, to prevent starvation
                     if (frontends.pollin(1)) {
                         msg = ZMsg.recvMsg(cloudfe);
@@ -239,7 +239,7 @@ public class peering2
                 }
             }
             //  When we're done, clean up properly
-            while (workers.size() > 0) {
+            while (!workers.isEmpty()) {
                 ZFrame frame = workers.remove(0);
                 frame.destroy();
             }

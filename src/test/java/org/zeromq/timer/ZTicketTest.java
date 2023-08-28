@@ -18,26 +18,16 @@ import org.zeromq.timer.ZTicket.Ticket;
 public class ZTicketTest
 {
     final AtomicLong      time    = new AtomicLong();
-    private ZTicket       tickets = new ZTicket(() -> time.get());
+    private ZTicket       tickets = new ZTicket(time::get);
     private AtomicInteger invoked = new AtomicInteger();
 
-    private final TimerHandler handler = new TimerHandler()
-    {
-        @Override
-        public void time(Object... args)
-        {
-            AtomicInteger invoked = (AtomicInteger) args[0];
-            invoked.incrementAndGet();
-        }
+    private final TimerHandler handler = args -> {
+        AtomicInteger invoked = (AtomicInteger) args[0];
+        invoked.incrementAndGet();
     };
 
-    private static final TimerHandler NOOP = new TimerHandler()
-    {
-        @Override
-        public void time(Object... args)
-        {
-            // do nothing
-        }
+    private static final TimerHandler NOOP = args -> {
+        // do nothing
     };
 
     @Before
@@ -228,7 +218,7 @@ public class ZTicketTest
     public void testCancelledTimerIsRemoved()
     {
         ArrayList<Ticket> list = new ArrayList<>();
-        tickets = new ZTicket(() -> time.get(), list);
+        tickets = new ZTicket(time::get, list);
 
         ZTicket.Ticket ticket100 = tickets.add(100, handler, invoked);
         ZTicket.Ticket ticket1000 = tickets.add(1000, handler, invoked);
@@ -308,18 +298,16 @@ public class ZTicketTest
         }
         long end = System.currentTimeMillis();
         long elapsed = end - start;
-        System.out.println(
-                           String.format(
-                                         "ZTicket Add: %s millisec spent on %s iterations: %s microsecs",
-                                         elapsed,
-                                         max,
-                                         1000 * elapsed / ((double) max)));
+        System.out.printf("ZTicket Add: %s millisec spent on %s iterations: %s microsecs%n",
+                      elapsed,
+                      max,
+                      1000 * elapsed / ((double) max));
 
         start = System.currentTimeMillis();
         long timeout = this.tickets.timeout();
         end = System.currentTimeMillis();
         elapsed = end - start;
-        System.out.println(String.format("ZTicket Timeout: %s millisec ", elapsed));
+        System.out.printf("ZTicket Timeout: %s millisec %n", elapsed);
 
         this.time.set(this.time.get() + timeout);
         start = System.currentTimeMillis();
@@ -327,7 +315,7 @@ public class ZTicketTest
         end = System.currentTimeMillis();
         elapsed = end - start;
         assertThat(rc > 0, is(true));
-        System.out.println(String.format("ZTicket Execute: %s millisec ", elapsed));
+        System.out.printf("ZTicket Execute: %s millisec %n", elapsed);
 
         start = System.currentTimeMillis();
         for (Ticket t : tickets) {
@@ -335,12 +323,10 @@ public class ZTicketTest
         }
         end = System.currentTimeMillis();
         elapsed = end - start;
-        System.out.println(
-                           String.format(
-                                         "ZTicket Reset: %s millisec spent on %s iterations: %s microsecs",
-                                         elapsed,
-                                         max,
-                                         1000 * elapsed / ((double) max)));
+        System.out.printf("ZTicket Reset: %s millisec spent on %s iterations: %s microsecs%n",
+                      elapsed,
+                      max,
+                      1000 * elapsed / ((double) max));
 
         start = System.currentTimeMillis();
         for (Ticket t : tickets) {
@@ -348,11 +334,9 @@ public class ZTicketTest
         }
         end = System.currentTimeMillis();
         elapsed = end - start;
-        System.out.println(
-                           String.format(
-                                         "ZTicket Cancel: %s millisec spent on %s iterations: %s microsecs",
-                                         elapsed,
-                                         max,
-                                         1000 * elapsed / ((double) max)));
+        System.out.printf("ZTicket Cancel: %s millisec spent on %s iterations: %s microsecs%n",
+                      elapsed,
+                      max,
+                      1000 * elapsed / ((double) max));
     }
 }

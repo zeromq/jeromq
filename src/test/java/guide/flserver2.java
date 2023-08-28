@@ -10,7 +10,7 @@ public class flserver2
     public static void main(String[] args)
     {
         if (args.length < 1) {
-            System.out.printf("I: syntax: flserver2 <endpoint>\n");
+            System.out.print("I: syntax: flserver2 <endpoint>\n");
             System.exit(0);
         }
 
@@ -37,7 +37,7 @@ public class flserver2
             }
 
             if (Thread.currentThread().isInterrupted())
-                System.out.printf("W: interrupted\n");
+                System.out.print("W: interrupted\n");
         }
     }
 }

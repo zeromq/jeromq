@@ -13,7 +13,7 @@ import zmq.util.Draft;
 
 /**
  * De/serialization of data within a message.
- *
+ * <p>
  * This is a DRAFT class, and may change without notice.
  */
 @Draft
@@ -45,8 +45,7 @@ public class ZPicture
      *                <tr><td>m</td><td>ZMsg</td><td>type = "msg" <b>Has to be the last element of the picture</b></td></tr>
      *                </table>
      * @param args    Arguments according to the picture
-     * @return true when it has been queued on the socket and ØMQ has assumed responsibility for the message.
-     * This does not indicate that the message has been transmitted to the network.
+     * @return a new {@link ZMsg} that encode the arguments
      * @api.note Does not change or take ownership of any arguments.
      */
     @Draft
@@ -272,7 +271,7 @@ public class ZPicture
      *                offered as a convenience to the sender, which may or may not already
      *                have data in a ZFrame or ZMsg. Does not change or take ownership of
      *                any arguments.
-     *
+     * <p>
      *                Also see {@link #recvPicture(Socket, String)}} how to recv a
      *                multiframe picture.
      * @param args    Arguments according to the picture
@@ -323,7 +322,7 @@ public class ZPicture
             }
             case 'm': {
                 ZMsg msgParm = (ZMsg) args[argIndex];
-                while (msgParm.size() > 0) {
+                while (!msgParm.isEmpty()) {
                     msg.add(msgParm.pop());
                 }
                 break;
@@ -384,15 +383,15 @@ public class ZPicture
                 break;
             }
             case '1': {
-                elements[index] = (0xff) & Integer.valueOf(socket.recvStr());
+                elements[index] = (0xff) & Integer.parseInt(socket.recvStr());
                 break;
             }
             case '2': {
-                elements[index] = (0xffff) & Integer.valueOf(socket.recvStr());
+                elements[index] = (0xffff) & Integer.parseInt(socket.recvStr());
                 break;
             }
             case '4': {
-                elements[index] = (0xffffffff) & Integer.valueOf(socket.recvStr());
+                elements[index] = (0xffffffff) & Integer.parseInt(socket.recvStr());
                 break;
             }
             case '8': {

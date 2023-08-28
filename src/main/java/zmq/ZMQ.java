@@ -9,6 +9,7 @@ import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
@@ -245,7 +246,7 @@ public class ZMQ
     public static final byte[] SUBSCRIPTION_ALL = new byte[0];
 
     // Android compatibility: not using StandardCharsets (API 19+)
-    public static final Charset CHARSET = Charset.forName("UTF-8");
+    public static final Charset CHARSET = StandardCharsets.UTF_8;
 
     public static final byte[] PROXY_PAUSE     = "PAUSE".getBytes(ZMQ.CHARSET);
     public static final byte[] PROXY_RESUME    = "RESUME".getBytes(ZMQ.CHARSET);
@@ -255,12 +256,7 @@ public class ZMQ
     static {
         String preferIPv4Stack = System.getProperty("java.net.preferIPv4Stack");
         String preferIPv6Addresses = System.getProperty("java.net.preferIPv6Addresses");
-        if ("false".equalsIgnoreCase(preferIPv4Stack) || "true".equalsIgnoreCase(preferIPv6Addresses)) {
-            PREFER_IPV6 = true;
-        }
-        else {
-            PREFER_IPV6 = false;
-        }
+        PREFER_IPV6 = "false".equalsIgnoreCase(preferIPv4Stack) || "true".equalsIgnoreCase(preferIPv6Addresses);
     }
 
     /**
@@ -268,7 +264,7 @@ public class ZMQ
      */
     public interface EventConsummer
     {
-        public void consume(Event ev);
+        void consume(Event ev);
 
         /**
          * An optional method to close the monitor if needed
@@ -636,16 +632,7 @@ public class ZMQ
     public static Msg recv(SocketBase s, int flags)
     {
         checkSocket(s);
-        Msg msg = recvMsg(s, flags);
-        if (msg == null) {
-            return null;
-        }
-
-        //  At the moment an oversized message is silently truncated.
-        //  TODO: Build in a notification mechanism to report the overflows.
-        //int to_copy = nbytes < len_ ? nbytes : len_;
-
-        return msg;
+        return recvMsg(s, flags);
     }
 
     // Receive a multi-part message
@@ -820,7 +807,7 @@ public class ZMQ
         long now = 0L;
         long end = 0L;
 
-        HashMap<SelectableChannel, SelectionKey> saved = new HashMap<SelectableChannel, SelectionKey>();
+        HashMap<SelectableChannel, SelectionKey> saved = new HashMap<>();
         for (SelectionKey key : selector.keys()) {
             if (key.isValid()) {
                 saved.put(key.channel(), key);

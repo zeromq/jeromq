@@ -98,7 +98,7 @@ public class TestUtils
     }
 
     @Test
-    public void testDump() throws IOException
+    public void testDump()
     {
         byte[] array = new byte[10];
         ByteBuffer buffer = ByteBuffer.wrap(array);
@@ -107,7 +107,7 @@ public class TestUtils
     }
 
     @Test
-    public void testBytes() throws IOException
+    public void testBytes()
     {
         byte[] array = new byte[10];
         ByteBuffer buffer = ByteBuffer.wrap(array);

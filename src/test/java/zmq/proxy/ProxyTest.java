@@ -44,7 +44,7 @@ import zmq.util.Utils;
 // run several client tasks in parallel, each with a different random ID.
 public class ProxyTest
 {
-    private final class Client implements Callable<Boolean>
+    private static final class Client implements Callable<Boolean>
     {
         private final String  host;
         private final String  controlEndpoint;
@@ -102,7 +102,7 @@ public class ProxyTest
 
                         String payload = new String(msgrsp.data(), ZMQ.CHARSET);
                         if (verbose) {
-                            System.out.println(String.format("%1$s Client received %2$s", identity, payload));
+                            System.out.printf("%1$s Client received %2$s%n", identity, payload);
                         }
 
                         //  Check that message is still the same
@@ -126,7 +126,7 @@ public class ProxyTest
                 int sent = ZMQ.send(client, msgout, 0);
                 assertThat(sent, is(msgout.size()));
                 if (verbose) {
-                    System.out.println(String.format("%1$s Sent payload %2$s", identity, payload));
+                    System.out.printf("%1$s Sent payload %2$s%n", identity, payload);
                 }
             }
             ctx.closeSelector(selector);
@@ -141,7 +141,7 @@ public class ProxyTest
 
     private static final String BACKEND = "inproc://backend";
 
-    private final class Server implements Callable<Boolean>
+    private static final class Server implements Callable<Boolean>
     {
         private final String  host;
         private final String  controlEndpoint;
@@ -220,7 +220,7 @@ public class ProxyTest
     // Each worker task works on one request at a time and sends a random number
     // of replies back, with random delays between replies:
     // The comments in the first column, if suppressed, makes it a poller version
-    private final class Worker implements Callable<Boolean>
+    private static final class Worker implements Callable<Boolean>
     {
         private final boolean verbose;
         private final int     idx;
@@ -259,7 +259,7 @@ public class ProxyTest
             boolean run = true;
             Random random = new Random();
 
-            Msg msg = null;
+            Msg msg;
             started.countDown();
             while (run) {
                 msg = ZMQ.recv(control, ZMQ.ZMQ_DONTWAIT);
@@ -268,7 +268,6 @@ public class ProxyTest
                 }
                 if (msg != null) {
                     if (Arrays.equals(msg.data(), ZMQ.PROXY_TERMINATE)) {
-                        run = false;
                         break;
                     }
                 }
@@ -280,7 +279,7 @@ public class ProxyTest
                 if (identity != null) {
                     msg = ZMQ.recv(worker, 0);
                     if (verbose) {
-                        System.out.println(String.format("Worker #%1$s received %2$s", idx, msg));
+                        System.out.printf("Worker #%1$s received %2$s%n", idx, msg);
                     }
 
                     // Send 0..4 replies back

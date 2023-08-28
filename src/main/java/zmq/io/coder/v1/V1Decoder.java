@@ -38,7 +38,7 @@ public class V1Decoder extends Decoder
         }
         else {
             //  There has to be at least one byte (the flags) in the message).
-            if (size <= 0) {
+            if (size == 0) {
                 errno(ZError.EPROTO);
                 return Step.Result.ERROR;
             }

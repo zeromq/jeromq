@@ -11,18 +11,9 @@ public interface IDecoder
     {
         enum Result
         {
-            MORE_DATA(0),
-            DECODED(1),
-            ERROR(-1);
-
-            @SuppressWarnings("unused")
-            // reminder for c++ equivalent
-            private final int code;
-
-            Result(int code)
-            {
-                this.code = code;
-            }
+            MORE_DATA,
+            DECODED,
+            ERROR;
         }
 
         Result apply();

@@ -4,8 +4,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-import java.io.IOException;
-
 import org.junit.Test;
 
 import zmq.Ctx;
@@ -19,7 +17,7 @@ public class XPubNodropTest
     //  Create REQ/ROUTER wiring.
 
     @Test
-    public void testXpubNoDrop() throws IOException
+    public void testXpubNoDrop()
     {
         Ctx ctx = ZMQ.init(1);
         assertThat(ctx, notNullValue());
@@ -57,7 +55,7 @@ public class XPubNodropTest
         }
 
         int recvCount = 0;
-        Msg msg = null;
+        Msg msg;
         do {
             //  Receive the message in the subscriber
             msg = ZMQ.recv(subConnect, ZMQ.ZMQ_DONTWAIT);
@@ -74,7 +72,6 @@ public class XPubNodropTest
         ZMQ.setSocketOption(pubBind, ZMQ.ZMQ_SNDTIMEO, timeout);
         recvCount = 0;
         sendCount = 0;
-        hwmlimit = hwm;
 
         while (ZMQ.send(pubBind, "", 0) == 0) {
             sendCount++;

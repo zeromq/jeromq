@@ -25,7 +25,7 @@ public class TestReqRouterThreadedTcp
      * A very simple server for one reply only.
      *
      */
-    private class Server implements Runnable
+    private static class Server implements Runnable
     {
         private final int port;
 
@@ -62,7 +62,7 @@ public class TestReqRouterThreadedTcp
         }
     }
 
-    private class Client implements Runnable
+    private static class Client implements Runnable
     {
         private final int port;
 
@@ -114,25 +114,13 @@ public class TestReqRouterThreadedTcp
         }
     }
 
-    private class ClientPoll extends Client
+    private static class ClientPoll extends Client
     {
         public ClientPoll(int port)
         {
             super(port);
         }
 
-        // same results
-        //        @Override
-        //        protected void inBetween(ZContext ctx, Socket client)
-        //        {
-        //            // Poll socket for a reply, with timeout
-        //            PollItem items[] = { new PollItem(client, ZMQ.Poller.POLLIN) };
-        //            int rc = ZMQ.poll(items, 1, REQUEST_TIMEOUT);
-        //            assertThat(rc, is(1));
-        //            boolean readable = items[0].isReadable();
-        //            assertThat(readable, is(true));
-        //        }
-        //
         /**
          * Here we use a poller to check for readability of the message.
          * This should activate the prefetching mechanism.

@@ -29,7 +29,7 @@ public class rrbroker
             items.register(frontend, Poller.POLLIN);
             items.register(backend, Poller.POLLIN);
 
-            boolean more = false;
+            boolean more;
             byte[] message;
 
             //  Switch messages between sockets

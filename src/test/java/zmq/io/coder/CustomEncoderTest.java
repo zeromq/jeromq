@@ -3,7 +3,6 @@ package zmq.io.coder;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 
 import org.junit.Test;
@@ -19,40 +18,20 @@ import zmq.util.ValueReference;
 
 public class CustomEncoderTest
 {
-    private Helper.DummySocketChannel sock = new Helper.DummySocketChannel();
+    private final Helper.DummySocketChannel sock = new Helper.DummySocketChannel();
 
     private int write(ByteBuffer out)
     {
-        try {
-            return sock.write(out);
-        }
-        catch (IOException e) {
-            e.printStackTrace();
-            return -1;
-        }
+        return sock.write(out);
     }
 
     static class CustomEncoder extends EncoderBase
     {
         public static final boolean RAW_ENCODER = true;
-        private final Runnable      readHeader  = new Runnable()
-                                                {
-                                                    @Override
-                                                    public void run()
-                                                    {
-                                                        readHeader();
-                                                    }
-                                                };
-        private final Runnable      readBody    = new Runnable()
-                                                {
-                                                    @Override
-                                                    public void run()
-                                                    {
-                                                        readBody();
-                                                    }
-                                                };
+        private final Runnable      readHeader  = this::readHeader;
+        private final Runnable      readBody    = this::readBody;
 
-        ByteBuffer header = ByteBuffer.allocate(10);
+        final ByteBuffer header = ByteBuffer.allocate(10);
 
         public CustomEncoder(int bufsize, long maxmsgsize)
         {

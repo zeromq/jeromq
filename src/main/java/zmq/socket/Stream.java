@@ -34,9 +34,9 @@ public class Stream extends SocketBase
     //  Holds the prefetched message.
     private Msg prefetchedMsg;
 
-    private class Outpipe
+    private static class Outpipe
     {
-        private Pipe    pipe;
+        private final Pipe    pipe;
         private boolean active;
 
         public Outpipe(Pipe pipe, boolean active)
@@ -47,7 +47,7 @@ public class Stream extends SocketBase
     }
 
     //  Outbound pipes indexed by the peer IDs.
-    private Map<Blob, Outpipe> outpipes = new HashMap<>();
+    private final Map<Blob, Outpipe> outpipes = new HashMap<>();
 
     //  The pipe we are currently writing to.
     private Pipe currentOut;

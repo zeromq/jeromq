@@ -17,7 +17,7 @@ import zmq.util.Utils;
 public class RouterProbeTest
 {
     @Test
-    public void testProbeRouter() throws IOException, InterruptedException
+    public void testProbeRouter() throws IOException
     {
         int port = Utils.findOpenPort();
         String host = "tcp://127.0.0.1:" + port;

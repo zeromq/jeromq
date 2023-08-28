@@ -2,7 +2,6 @@ package zmq.util;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -46,7 +45,7 @@ public final class MultiMap<K extends Comparable<? super K>, V>
     public Collection<Entry<V, K>> entries()
     {
         List<Entry<V, K>> list = new ArrayList<>(inverse.entrySet());
-        Collections.sort(list, comparator);
+        list.sort(comparator);
         return list;
     }
 
@@ -92,12 +91,7 @@ public final class MultiMap<K extends Comparable<? super K>, V>
 
     private List<V> getValues(K key)
     {
-        List<V> list = data.get(key);
-        if (list == null) {
-            list = new ArrayList<>();
-            data.put(key, list);
-        }
-        return list;
+        return data.computeIfAbsent(key, k -> new ArrayList<>());
     }
 
     public boolean insert(K key, V value)

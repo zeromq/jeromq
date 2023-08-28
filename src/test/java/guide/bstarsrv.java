@@ -52,18 +52,18 @@ public class bstarsrv
         //  ACTIVE or PASSIVE depending on events we get from our peer:
         if (state == State.STATE_PRIMARY) {
             if (event == Event.PEER_BACKUP) {
-                System.out.printf("I: connected to backup (passive), ready active\n");
+                System.out.print("I: connected to backup (passive), ready active\n");
                 state = State.STATE_ACTIVE;
             }
             else if (event == Event.PEER_ACTIVE) {
-                System.out.printf("I: connected to backup (active), ready passive\n");
+                System.out.print("I: connected to backup (active), ready passive\n");
                 state = State.STATE_PASSIVE;
             }
             //  Accept client connections
         }
         else if (state == State.STATE_BACKUP) {
             if (event == Event.PEER_ACTIVE) {
-                System.out.printf("I: connected to primary (active), ready passive\n");
+                System.out.print("I: connected to primary (active), ready passive\n");
                 state = State.STATE_PASSIVE;
             }
             else
@@ -77,7 +77,7 @@ public class bstarsrv
         if (state == State.STATE_ACTIVE) {
             if (event == Event.PEER_ACTIVE) {
                 //  Two actives would mean split-brain
-                System.out.printf("E: fatal error - dual actives, aborting\n");
+                System.out.print("E: fatal error - dual actives, aborting\n");
                 exception = true;
             }
         }
@@ -87,17 +87,17 @@ public class bstarsrv
         if (state == State.STATE_PASSIVE) {
             if (event == Event.PEER_PRIMARY) {
                 //  Peer is restarting - become active, peer will go passive
-                System.out.printf("I: primary (passive) is restarting, ready active\n");
+                System.out.print("I: primary (passive) is restarting, ready active\n");
                 state = State.STATE_ACTIVE;
             }
             else if (event == Event.PEER_BACKUP) {
                 //  Peer is restarting - become active, peer will go passive
-                System.out.printf("I: backup (passive) is restarting, ready active\n");
+                System.out.print("I: backup (passive) is restarting, ready active\n");
                 state = State.STATE_ACTIVE;
             }
             else if (event == Event.PEER_PASSIVE) {
                 //  Two passives would mean cluster would be non-responsive
-                System.out.printf("E: fatal error - dual passives, aborting\n");
+                System.out.print("E: fatal error - dual passives, aborting\n");
                 exception = true;
             }
             else if (event == Event.CLIENT_REQUEST) {
@@ -106,7 +106,7 @@ public class bstarsrv
                 assert (peerExpiry > 0);
                 if (System.currentTimeMillis() >= peerExpiry) {
                     //  If peer is dead, switch to the active state
-                    System.out.printf("I: failover successful, ready active\n");
+                    System.out.print("I: failover successful, ready active\n");
                     state = State.STATE_ACTIVE;
                 }
                 else
@@ -137,21 +137,21 @@ public class bstarsrv
             bstarsrv fsm = new bstarsrv();
 
             if (argv.length == 1 && argv[0].equals("-p")) {
-                System.out.printf("I: Primary active, waiting for backup (passive)\n");
+                System.out.print("I: Primary active, waiting for backup (passive)\n");
                 frontend.bind("tcp://*:5001");
                 statepub.bind("tcp://*:5003");
                 statesub.connect("tcp://localhost:5004");
                 fsm.state = State.STATE_PRIMARY;
             }
             else if (argv.length == 1 && argv[0].equals("-b")) {
-                System.out.printf("I: Backup passive, waiting for primary (active)\n");
+                System.out.print("I: Backup passive, waiting for primary (active)\n");
                 frontend.bind("tcp://*:5002");
                 statepub.bind("tcp://*:5004");
                 statesub.connect("tcp://localhost:5003");
                 fsm.state = State.STATE_BACKUP;
             }
             else {
-                System.out.printf("Usage: bstarsrv { -p | -b }\n");
+                System.out.print("Usage: bstarsrv { -p | -b }\n");
                 ctx.destroy();
                 System.exit(0);
             }
@@ -177,7 +177,7 @@ public class bstarsrv
                     //  Have a client request
                     ZMsg msg = ZMsg.recvMsg(frontend);
                     fsm.event = Event.CLIENT_REQUEST;
-                    if (fsm.stateMachine() == false)
+                    if (!fsm.stateMachine())
                         //  Answer client by echoing request back
                         msg.send(frontend);
                     else msg.destroy();
@@ -198,7 +198,7 @@ public class bstarsrv
             }
 
             if (Thread.currentThread().isInterrupted())
-                System.out.printf("W: interrupted\n");
+                System.out.print("W: interrupted\n");
         }
     }
 }

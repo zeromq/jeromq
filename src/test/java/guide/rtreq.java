@@ -3,7 +3,6 @@ package guide;
 import java.util.Random;
 
 import org.zeromq.SocketType;
-import org.zeromq.ZMQ;
 import org.zeromq.ZMQ.Socket;
 import org.zeromq.ZContext;
 
@@ -12,7 +11,7 @@ import org.zeromq.ZContext;
  */
 public class rtreq
 {
-    private static Random    rand        = new Random();
+    private static final Random    rand        = new Random();
     private static final int NBR_WORKERS = 10;
 
     private static class Worker extends Thread
@@ -56,7 +55,7 @@ public class rtreq
      * it easier to start and stop the example. Each thread has its own
      * context and conceptually acts as a separate process.
      */
-    public static void main(String[] args) throws Exception
+    public static void main(String[] args)
     {
         try (ZContext context = new ZContext()) {
             Socket broker = context.createSocket(SocketType.ROUTER);

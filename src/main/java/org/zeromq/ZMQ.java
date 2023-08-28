@@ -8,7 +8,6 @@ import java.nio.channels.Selector;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -54,22 +53,22 @@ import zmq.util.function.Consumer;
  * <br>
  * In practice this means applications can create a socket in one thread with * {@link ZMQ.Context#socket(SocketType)}
  * and then pass it to a newly created thread as part of thread initialization.
- *
+ * <p>
  * <h3>Multiple contexts</h3>
  * Multiple contexts may coexist within a single application.
  * <br>
  * Thus, an application can use ØMQ directly and at the same time make use of any number of additional libraries
  * or components which themselves make use of ØMQ as long as the above guidelines regarding thread safety are adhered to.
- *
+ * <p>
  * <h2>Messages</h2>
  * A ØMQ message is a discrete unit of data passed between applications or components of the same application.
  * ØMQ messages have no internal structure and from the point of view of ØMQ itself
  * they are considered to be opaque binary data.
- *
+ * <p>
  * <h2>Sockets</h2>
  * {@link ZMQ.Socket ØMQ sockets} present an abstraction of a asynchronous message queue,
  * with the exact queueing semantics depending on the socket type in use.
- *
+ * <p>
  * <h2>Transports</h2>
  * <p>A ØMQ socket can use multiple different underlying transport mechanisms.
  * Each transport mechanism is suited to a particular purpose and has its own advantages and drawbacks.</p>
@@ -505,7 +504,7 @@ public class ZMQ
         Error(int code)
         {
             this.code = code;
-            this.message = "errno " + Integer.toString(code);
+            this.message = "errno " + code;
         }
 
         Error(int code, String message)
@@ -3568,7 +3567,7 @@ public class ZMQ
          *                offered as a convenience to the sender, which may or may not already
          *                have data in a ZFrame or ZMsg. Does not change or take ownership of
          *                any arguments.
-         *
+         * <p>
          *                Also see {@link #recvPicture(String)}} how to recv a
          *                multiframe picture.
          * @param args    Arguments according to the picture
@@ -3892,7 +3891,7 @@ public class ZMQ
          */
         public boolean setEventHook(ZEvent.ZEventConsummer consumer, int events)
         {
-            return base.setEventHook(consumer::consume, events);
+            return base.setEventHook(consumer, events);
         }
 
         protected void mayRaise()
@@ -3982,7 +3981,7 @@ public class ZMQ
         private final Selector selector;
         private final Context  context;
 
-        private List<PollItem> items;
+        private final List<PollItem> items;
 
         private long timeout;
 
@@ -4124,12 +4123,7 @@ public class ZMQ
          */
         private void unregisterInternal(Object socket)
         {
-            for (Iterator<PollItem> it = items.iterator(); it.hasNext(); ) {
-                PollItem item = it.next();
-                if (item.socket == socket || item.getRawSocket() == socket) {
-                    it.remove();
-                }
-            }
+            items.removeIf(item -> item.socket == socket || item.getRawSocket() == socket);
         }
 
         /**
@@ -4382,11 +4376,7 @@ public class ZMQ
                 return true;
             }
 
-            if (getRawSocket() != null && getRawSocket() == target.getRawSocket()) {
-                return true;
-            }
-
-            return false;
+            return getRawSocket() != null && getRawSocket() == target.getRawSocket();
         }
     }
 
@@ -4532,7 +4522,7 @@ public class ZMQ
 
         /**
          * Return the argument as an integer or a Enum of the appropriate type if available.
-         *
+         * <p>
          * It returns objects of type:
          * <ul>
          * <li> {@link org.zeromq.ZMonitor.ProtocolCode} for a handshake protocol error.</li>
@@ -4686,8 +4676,8 @@ public class ZMQ
      */
     public static class CancellationToken
     {
-        protected AtomicBoolean canceled;
-        SocketBase socket;
+        protected final AtomicBoolean canceled;
+        final SocketBase socket;
 
         protected CancellationToken(SocketBase socket)
         {

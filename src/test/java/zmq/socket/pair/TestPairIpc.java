@@ -28,12 +28,12 @@ public class TestPairIpc
         UUID random;
         do {
             random = UUID.randomUUID();
-        } while (!ZMQ.bind(pairBind, "ipc:///tmp/tester/" + random.toString()));
+        } while (!ZMQ.bind(pairBind, "ipc:///tmp/tester/" + random));
 
         SocketBase pairConnect = ZMQ.socket(ctx, ZMQ.ZMQ_PAIR);
         assertThat(pairConnect, notNullValue());
 
-        boolean brc = ZMQ.connect(pairConnect, "ipc:///tmp/tester/" + random.toString());
+        boolean brc = ZMQ.connect(pairConnect, "ipc:///tmp/tester/" + random);
         assertThat(brc, is(true));
 
         Helper.bounce(pairBind, pairConnect);

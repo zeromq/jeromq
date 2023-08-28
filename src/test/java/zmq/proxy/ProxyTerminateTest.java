@@ -5,7 +5,6 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.io.IOException;
-import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
@@ -23,7 +22,7 @@ public class ProxyTerminateTest
         private final Ctx    ctx;
         private final CompletableFuture<Boolean> resultHander;
         private final String hostFrontend;
-        private String       hostBackend;
+        private final String       hostBackend;
 
         public ServerTask(Ctx ctx, String hostFrontend, String hostBackend, CompletableFuture<Boolean> resultHander)
         {
@@ -94,14 +93,7 @@ public class ProxyTerminateTest
 
         CompletableFuture<Boolean> resultHander = new CompletableFuture<>();
         Thread thread = new Thread(new ServerTask(ctx, frontend, backend, resultHander));
-        thread.setUncaughtExceptionHandler(new UncaughtExceptionHandler()
-        {
-            @Override
-            public void uncaughtException(Thread t, Throwable e)
-            {
-                resultHander.completeExceptionally(e);
-            }
-        });
+        thread.setUncaughtExceptionHandler((t, e) -> resultHander.completeExceptionally(e));
         thread.start();
 
         Thread.sleep(500);

@@ -21,24 +21,10 @@ public class CustomDecoderTest
 {
     static class CustomDecoder extends Decoder
     {
-        private final Step readHeader = new Step()
-                                      {
-                                          @Override
-                                          public Step.Result apply()
-                                          {
-                                              return readHeader();
-                                          }
-                                      };
-        private final Step readBody   = new Step()
-                                      {
-                                          @Override
-                                          public Step.Result apply()
-                                          {
-                                              return readBody();
-                                          }
-                                      };
+        private final Step readHeader = this::readHeader;
+        private final Step readBody   = this::readBody;
 
-        ByteBuffer header = ByteBuffer.allocate(10);
+        final ByteBuffer header = ByteBuffer.allocate(10);
         Msg        msg;
         int        size   = -1;
 

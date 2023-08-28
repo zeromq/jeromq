@@ -32,7 +32,7 @@ import zmq.util.Objects;
  * Note: Corbeille is a french word designing the most privileged seats in the theater,
  * 1st floor, just above the orchestra (Wikipedia...).
  * It was the place where the King was standing during the shows, with the best seat of course!
- *
+ * <p>
  * Fast users who would want to communicate with the distant {@link Actor} can use
  * {@link #send(ZMsg)} or {@link #recv()} from the ZActor as the ZActor is itself an agent!</li>
  *

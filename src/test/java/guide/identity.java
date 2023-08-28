@@ -10,7 +10,7 @@ import org.zeromq.ZContext;
  */
 public class identity
 {
-    public static void main(String[] args) throws InterruptedException
+    public static void main(String[] args)
     {
         try (ZContext context = new ZContext()) {
             Socket sink = context.createSocket(SocketType.ROUTER);

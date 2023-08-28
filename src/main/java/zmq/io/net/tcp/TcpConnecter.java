@@ -291,13 +291,6 @@ public class TcpConnecter extends Own implements IPollEvents
         }
 
         // TODO V4 Set a source address for conversations
-        if (resolved.sourceAddress() != null) {
-            //            SocketChannel bind = channel.bind(resolved.sourceAddress());
-            //            if (bind == null) {
-            //                return false;
-            //            }
-        }
-
         //  Connect to the remote peer.
         boolean rc;
         try {

@@ -18,7 +18,7 @@ public class SelectorProviderTest
 {
     public static class DefaultSelectorProviderChooser implements SelectorProviderChooser
     {
-        public AtomicInteger choosen = new AtomicInteger(0);
+        public final AtomicInteger choosen = new AtomicInteger(0);
         @Override
         public SelectorProvider choose(IZAddress addr, Options options)
         {
@@ -35,7 +35,7 @@ public class SelectorProviderTest
         try (
              ZContext ctx = new ZContext();
              Socket pull = ctx.createSocket(SocketType.PULL);
-             Socket push = ctx.createSocket(SocketType.PUSH);) {
+             Socket push = ctx.createSocket(SocketType.PUSH)) {
             DefaultSelectorProviderChooser chooser = new DefaultSelectorProviderChooser();
             pull.setSelectorChooser(chooser);
             push.setSelectorChooser(chooser);

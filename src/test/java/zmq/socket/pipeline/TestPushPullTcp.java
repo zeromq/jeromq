@@ -4,8 +4,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-import java.io.IOException;
-
 import org.junit.Test;
 
 import zmq.Ctx;
@@ -16,7 +14,7 @@ import zmq.ZMQ;
 public class TestPushPullTcp
 {
     @Test
-    public void testPushPullTcp() throws IOException
+    public void testPushPullTcp()
     {
         Ctx ctx = ZMQ.init(1);
         assertThat(ctx, notNullValue());

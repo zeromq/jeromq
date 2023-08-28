@@ -18,7 +18,7 @@ import org.zeromq.ZConfig;
 public class ZConfigTest
 {
     private static final String TEST_FOLDER = "target/testCertFolder";
-    private static ZConfig      conf        = new ZConfig("root", null);
+    private static final ZConfig      conf        = new ZConfig("root", null);
 
     private String  testFolder = TEST_FOLDER;
 
@@ -68,7 +68,7 @@ public class ZConfigTest
     }
 
     @Test
-    public void testPutKeyDoubleSlash() throws IOException
+    public void testPutKeyDoubleSlash()
     {
         ZConfig config = new ZConfig("root", null);
         config.putValue("inproc://test", "one");

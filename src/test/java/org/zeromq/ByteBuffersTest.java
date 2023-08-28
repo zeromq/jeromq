@@ -6,7 +6,6 @@ import static org.junit.Assert.assertEquals;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.charset.CharacterCodingException;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -16,7 +15,7 @@ public class ByteBuffersTest
 {
     static class Client extends Thread
     {
-        private int port = -1;
+        private final int port;
 
         public Client(int port)
         {
@@ -45,11 +44,7 @@ public class ByteBuffersTest
         int port = Utils.findOpenPort();
         ZMQ.Context context = ZMQ.context(1);
         ByteBuffer bb = ByteBuffer.allocate(4).order(ByteOrder.nativeOrder());
-        ZMQ.Socket push = null;
-        ZMQ.Socket pull = null;
-        try {
-            push = context.socket(SocketType.PUSH);
-            pull = context.socket(SocketType.PULL);
+        try (Socket push = context.socket(SocketType.PUSH); Socket pull = context.socket(SocketType.PULL)) {
             pull.bind("tcp://*:" + port);
             push.connect("tcp://localhost:" + port);
 
@@ -64,16 +59,6 @@ public class ByteBuffersTest
         }
         finally {
             try {
-                push.close();
-            }
-            catch (Exception ignore) {
-            }
-            try {
-                pull.close();
-            }
-            catch (Exception ignore) {
-            }
-            try {
                 context.term();
             }
             catch (Exception ignore) {
@@ -82,7 +67,7 @@ public class ByteBuffersTest
     }
 
     @Test
-    public void testByteBufferRecv() throws InterruptedException, IOException, CharacterCodingException
+    public void testByteBufferRecv() throws InterruptedException, IOException
     {
         int port = Utils.findOpenPort();
         ZMQ.Context context = ZMQ.context(1);
@@ -129,7 +114,7 @@ public class ByteBuffersTest
     }
 
     @Test
-    public void testByteBufferLarge() throws InterruptedException, IOException, CharacterCodingException
+    public void testByteBufferLarge() throws IOException
     {
         int port = Utils.findOpenPort();
         ZMQ.Context context = ZMQ.context(1);
@@ -189,7 +174,7 @@ public class ByteBuffersTest
     }
 
     @Test
-    public void testByteBufferLargeDirect() throws InterruptedException, IOException, CharacterCodingException
+    public void testByteBufferLargeDirect() throws IOException
     {
         int port = Utils.findOpenPort();
         ZMQ.Context context = ZMQ.context(1);

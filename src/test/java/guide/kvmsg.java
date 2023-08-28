@@ -31,13 +31,13 @@ public class kvmsg
     private static final int KVMSG_FRAMES = 5;
 
     //  Presence indicators for each frame
-    private boolean[] present = new boolean[KVMSG_FRAMES];
+    private final boolean[] present = new boolean[KVMSG_FRAMES];
     //  Corresponding 0MQ message frames, if any
-    private byte[][] frame = new byte[KVMSG_FRAMES][];
+    private final byte[][] frame = new byte[KVMSG_FRAMES][];
     //  Key, copied into safe string
     private String key;
     //  List of properties, as name=value strings
-    private Properties props;
+    private final Properties props;
     private int        props_size;
 
     //  .split property encoding
@@ -64,7 +64,7 @@ public class kvmsg
         if (msg.length == 0)
             return;
 
-        System.out.println("" + msg.length + " :" + new String(msg, ZMQ.CHARSET));
+        System.out.println(msg.length + " :" + new String(msg, ZMQ.CHARSET));
         for (String prop : new String(msg, ZMQ.CHARSET).split("\n")) {
             String[] split = prop.split("=");
             props.setProperty(split[0], split[1]);
@@ -105,7 +105,7 @@ public class kvmsg
                 break;
             }
             //  Verify multipart framing
-            boolean rcvmore = (frameNbr < KVMSG_FRAMES - 1) ? true : false;
+            boolean rcvmore = frameNbr < KVMSG_FRAMES - 1;
             if (socket.hasReceiveMore() != rcvmore) {
                 self.destroy();
                 break;
@@ -307,16 +307,16 @@ public class kvmsg
         System.err.printf("[getKey:%s]", getKey());
         //  .until
         System.err.printf("[size:%d] ", size);
-        System.err.printf("[");
+        System.err.print("[");
         for (String key : props.stringPropertyNames()) {
             System.err.printf("%s=%s;", key, props.getProperty(key));
         }
-        System.err.printf("]");
+        System.err.print("]");
 
         //  .skip
         for (int charNbr = 0; charNbr < size; charNbr++)
             System.err.printf("%02X", body[charNbr]);
-        System.err.printf("\n");
+        System.err.print("\n");
     }
 
     //  .until
@@ -326,7 +326,7 @@ public class kvmsg
     //  for the uuid and property features of {{kvmsg}}:
     public void test(boolean verbose)
     {
-        System.out.printf(" * kvmsg: ");
+        System.out.print(" * kvmsg: ");
 
         //  Prepare our context and sockets
         try (ZContext ctx = new ZContext()) {
@@ -335,7 +335,7 @@ public class kvmsg
             Socket input = ctx.createSocket(SocketType.DEALER);
             input.connect("ipc://kvmsg_selftest.ipc");
 
-            Map<String, kvmsg> kvmap = new HashMap<String, kvmsg>();
+            Map<String, kvmsg> kvmap = new HashMap<>();
 
             //  .until
             //  Test send and receive of simple message
@@ -376,7 +376,7 @@ public class kvmsg
             kvmsg.destroy();
         }
 
-        System.out.printf("OK\n");
+        System.out.print("OK\n");
     }
     //  .until
 }

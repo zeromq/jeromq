@@ -392,8 +392,9 @@ public class ZStar implements ZAgent
             producer = chef;
         }
 
-        this.context = chef;
-        assert (this.context != null);
+        // context of the star. never null
+        ZContext context1 = chef;
+        assert (context1 != null);
 
         // retrieve the last optional set and entourage given in input
         Set set = null;
@@ -425,9 +426,6 @@ public class ZStar implements ZAgent
 
         this.agent = agent.apply(phone, motdelafin);
     }
-
-    // context of the star. never null
-    private final ZContext context;
 
     // communicating agent with the star for the Corbeille side
     private final ZAgent agent;
@@ -507,7 +505,6 @@ public class ZStar implements ZAgent
 
                     // we are not in a hurry at this point when cleaning up the remains of a good show ...
                     star.party(chef);
-                    star = null;
                     if (entourage != null) {
                         entourage.party(chef);
                     }

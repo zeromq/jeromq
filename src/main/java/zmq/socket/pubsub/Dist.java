@@ -48,14 +48,13 @@ public class Dist
         if (more) {
             pipes.add(pipe);
             Collections.swap(pipes, eligible, pipes.size() - 1);
-            eligible++;
         }
         else {
             pipes.add(pipe);
             Collections.swap(pipes, active, pipes.size() - 1);
             active++;
-            eligible++;
         }
+        eligible++;
     }
 
     //  Mark the pipe as matching. Subsequent call to sendToMatching

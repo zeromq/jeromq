@@ -27,7 +27,7 @@ public class ProxyTcpTest
 {
     static class Client extends Thread
     {
-        private int port;
+        private final int port;
 
         public Client(int port)
         {
@@ -81,7 +81,7 @@ public class ProxyTcpTest
                 System.out.println("DEALER " + name + " received " + msg);
                 String data = new String(msg.data(), 0, msg.size(), ZMQ.CHARSET);
 
-                Msg response = null;
+                Msg response;
                 if ((i % 3) == 2) {
                     response = new Msg(msg.size() + 3);
                     response.put("OK ".getBytes(ZMQ.CHARSET)).put(msg.data());
@@ -103,28 +103,14 @@ public class ProxyTcpTest
 
     public static class ProxyDecoder extends Decoder
     {
-        private final Step readHeader = new Step()
-                                      {
-                                          @Override
-                                          public Step.Result apply()
-                                          {
-                                              return readHeader();
-                                          }
-                                      };
-        private final Step readBody   = new Step()
-                                      {
-                                          @Override
-                                          public Step.Result apply()
-                                          {
-                                              return readBody();
-                                          }
-                                      };
+        private final Step readHeader = this::readHeader;
+        private final Step readBody   = this::readBody;
 
-        byte[]  header       = new byte[4];
+        final byte[]  header       = new byte[4];
         Msg     msg;
         int     size         = -1;
         boolean identitySent = false;
-        Msg     bottom;
+        final Msg     bottom;
 
         public ProxyDecoder(int bufsize, long maxmsgsize)
         {
@@ -155,9 +141,6 @@ public class ProxyTcpTest
                 identitySent = true;
             }
 
-            //            push(bottom);
-            //            push(msg);
-
             nextStep(header, 4, readHeader);
             return Step.Result.DECODED;
         }
@@ -165,24 +148,10 @@ public class ProxyTcpTest
 
     public static class ProxyEncoder extends EncoderBase
     {
-        private final Runnable writeHeader = new Runnable()
-                                           {
-                                               @Override
-                                               public void run()
-                                               {
-                                                   writeHeader();
-                                               }
-                                           };
-        private final Runnable writeBody   = new Runnable()
-                                           {
-                                               @Override
-                                               public void run()
-                                               {
-                                                   writeBody();
-                                               }
-                                           };
+        private final Runnable writeHeader = this::writeHeader;
+        private final Runnable writeBody   = this::writeBody;
 
-        ByteBuffer header = ByteBuffer.allocate(4);
+        final ByteBuffer header = ByteBuffer.allocate(4);
         Msg        msg;
         int        size   = -1;
         boolean    messageReady;
@@ -191,7 +160,7 @@ public class ProxyTcpTest
         public ProxyEncoder(int bufsize, long unused)
         {
             super(new Errno(), bufsize);
-            nextStep((Msg) null, writeHeader, true);
+            nextStep(null, writeHeader, true);
             messageReady = false;
             identityReceived = false;
         }
@@ -228,15 +197,14 @@ public class ProxyTcpTest
             header.put(String.format("%04d", msg.size()).getBytes(ZMQ.CHARSET));
             header.flip();
             nextStep(header, header.limit(), writeBody, false);
-            return;
         }
     }
 
     static class Proxy extends Thread
     {
-        private Ctx ctx;
-        private int routerPort;
-        private int dealerPort;
+        private final Ctx ctx;
+        private final int routerPort;
+        private final int dealerPort;
 
         Proxy(Ctx ctx, int routerPort, int dealerPort)
         {

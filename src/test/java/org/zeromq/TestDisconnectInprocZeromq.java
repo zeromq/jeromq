@@ -8,7 +8,7 @@ import org.junit.Test;
 public class TestDisconnectInprocZeromq
 {
     @Test
-    public void testDisconnectInproc() throws Exception
+    public void testDisconnectInproc()
     {
         int publicationsReceived = 0;
         boolean isSubscribed = false;

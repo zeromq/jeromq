@@ -105,8 +105,8 @@ public class Radio extends SocketBase
 
         List<Pipe> range = subscriptions.get(msg.getGroup());
         if (range != null) {
-            for (int i = 0; i < range.size(); i++) {
-                dist.match(range.get(i));
+            for (Pipe pipe : range) {
+                dist.match(pipe);
             }
         }
 
@@ -122,12 +122,6 @@ public class Radio extends SocketBase
 
         //  Messages cannot be received from RADIO socket.
         throw new UnsupportedOperationException();
-    }
-
-    @Override
-    protected boolean xhasIn()
-    {
-        return false;
     }
 
     @Override

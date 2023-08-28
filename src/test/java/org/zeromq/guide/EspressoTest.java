@@ -200,7 +200,7 @@ public class EspressoTest
         }
 
         @Override
-        public boolean configure(Socket socket, Plug place, Object... args) throws IOException
+        public boolean configure(Socket socket, Plug place, Object... args)
         {
             switch (place) {
             case FRONT:

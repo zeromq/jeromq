@@ -106,7 +106,7 @@ public class Options
     final List<IpcAddress.IpcAddressMask> ipcAcceptFilters = new ArrayList<>();
 
     //  Security mechanism for all connections on this socket
-    public Mechanisms mechanism = Mechanisms.NULL;
+    public Mechanisms mechanism;
 
     //  If peer is acting as server for PLAIN or CURVE mechanisms
     public boolean asServer;
@@ -394,7 +394,7 @@ public class Options
             if (filterStr == null) {
                 tcpAcceptFilters.clear();
             }
-            else if (filterStr.length() == 0 || filterStr.length() > 255) {
+            else if (filterStr.isEmpty() || filterStr.length() > 255) {
                 throw new IllegalArgumentException("tcp_accept_filter " + optval);
             }
             else {
@@ -645,10 +645,7 @@ public class Options
             Class<? extends MsgAllocator> msgAllocator = clazz.asSubclass(MsgAllocator.class);
             return msgAllocator.newInstance();
         }
-        catch (InstantiationException e) {
-            throw new IllegalArgumentException(e);
-        }
-        catch (IllegalAccessException e) {
+        catch (InstantiationException | IllegalAccessException e) {
             throw new IllegalArgumentException(e);
         }
     }

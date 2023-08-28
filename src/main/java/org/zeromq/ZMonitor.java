@@ -1,7 +1,6 @@
 package org.zeromq;
 
 import java.io.Closeable;
-import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -123,7 +122,7 @@ public class ZMonitor implements Closeable
 
         private final int code;
 
-        private Event(int code)
+        Event(int code)
         {
             this.code = code;
         }
@@ -135,12 +134,7 @@ public class ZMonitor implements Closeable
          */
         public static Event findByCode(int event)
         {
-            if (MAP.containsKey(event)) {
-                return MAP.get(event);
-            }
-            else {
-                return ALL;
-            }
+            return MAP.getOrDefault(event, ALL);
         }
     }
 
@@ -182,7 +176,7 @@ public class ZMonitor implements Closeable
 
         private final int code;
 
-        private ProtocolCode(int code)
+        ProtocolCode(int code)
         {
             this.code = code;
         }
@@ -227,7 +221,7 @@ public class ZMonitor implements Closeable
      * When returning from that call, ZMonitor will be no more active.
      */
     @Override
-    public final void close() throws IOException
+    public final void close()
     {
         destroy();
     }
@@ -391,7 +385,7 @@ public class ZMonitor implements Closeable
         {
             assert (socket != null);
             this.monitored = socket;
-            this.address = String.format("inproc://zmonitor-%s-%s", socket.hashCode(), UUID.randomUUID().toString());
+            this.address = String.format("inproc://zmonitor-%s-%s", socket.hashCode(), UUID.randomUUID());
         }
 
         @Override

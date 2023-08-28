@@ -75,12 +75,8 @@ public class ZAuth implements Closeable
                                   passwordsFile.getAbsolutePath());
             }
 
-            try {
-                loadPasswords(true);
-            }
-            catch (IOException e) {
-                // Ignore the exception, just don't read the file
-            }
+            loadPasswords(true);
+
             return true;
         }
 
@@ -89,12 +85,7 @@ public class ZAuth implements Closeable
         {
             // assert (request.username != null);
             // Refresh the passwords map if the file changed
-            try {
-                loadPasswords(false);
-            }
-            catch (IOException e) {
-                // Ignore the exception, just don't read the file
-            }
+            loadPasswords(false);
 
             String password = passwords.getProperty(request.username);
             if (password != null && password.equals(request.password)) {
@@ -113,7 +104,7 @@ public class ZAuth implements Closeable
             }
         }
 
-        private void loadPasswords(boolean initial) throws IOException
+        private void loadPasswords(boolean initial)
         {
             if (!initial) {
                 final long lastModified = passwordsFile.lastModified();
@@ -128,15 +119,11 @@ public class ZAuth implements Closeable
             }
 
             passwordsModified = passwordsFile.lastModified();
-            Reader br = new BufferedReader(new FileReader(passwordsFile));
-            try {
+            try (Reader br = new BufferedReader(new FileReader(passwordsFile))) {
                 passwords.load(br);
             }
             catch (IOException | IllegalArgumentException ex) {
                 // Ignore the exception, just don't read the file
-            }
-            finally {
-                br.close();
             }
         }
     }
@@ -590,7 +577,7 @@ public class ZAuth implements Closeable
      * Destructor.
      */
     @Override
-    public void close() throws IOException
+    public void close()
     {
         destroy();
     }
@@ -646,7 +633,7 @@ public class ZAuth implements Closeable
             assert (actorName != null);
             this.actorName = actorName;
             this.auths.putAll(auths);
-            this.repliesAddress = "inproc://zauth-replies-" + UUID.randomUUID().toString();
+            this.repliesAddress = "inproc://zauth-replies-" + UUID.randomUUID();
         }
 
         private ZAgent createAgent(ZContext ctx)

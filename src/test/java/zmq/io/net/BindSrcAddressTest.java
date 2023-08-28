@@ -29,9 +29,6 @@ public class BindSrcAddressTest
         rc = ZMQ.connect(socket, "tcp://localhost:" + port3 + ";localhost:" + port2);
         assert (rc);
 
-        //        rc = ZMQ.connect(socket, "tcp://lo:" + port3 + ";localhost:" + port2);
-        //        assert (rc);
-
         ZMQ.close(socket);
 
         ZMQ.term(ctx);

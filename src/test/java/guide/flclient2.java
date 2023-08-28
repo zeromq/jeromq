@@ -2,7 +2,6 @@ package guide;
 
 import org.zeromq.SocketType;
 import org.zeromq.ZContext;
-import org.zeromq.ZMQ;
 import org.zeromq.ZMQ.Poller;
 import org.zeromq.ZMQ.Socket;
 import org.zeromq.ZMsg;
@@ -18,8 +17,8 @@ public class flclient2
     //  Here is the {{flclient}} class implementation. Each instance has a
     //  context, a DEALER socket it uses to talk to the servers, a counter
     //  of how many servers it's connected to, and a request getSequence number:
-    private ZContext ctx;      //  Our context wrapper
-    private Socket   socket;   //  DEALER socket talking to servers
+    private final ZContext ctx;      //  Our context wrapper
+    private final Socket   socket;   //  DEALER socket talking to servers
     private int      servers;  //  How many servers we have connected to
     private int      sequence; //  Number of requests ever sent
 
@@ -84,7 +83,7 @@ public class flclient2
     public static void main(String[] argv)
     {
         if (argv.length == 0) {
-            System.out.printf("I: syntax: flclient2 <endpoint> ...\n");
+            System.out.print("I: syntax: flclient2 <endpoint> ...\n");
             System.exit(0);
         }
 
@@ -104,7 +103,7 @@ public class flclient2
             request.add("random name");
             ZMsg reply = client.request(request);
             if (reply == null) {
-                System.out.printf("E: name service not available, aborting\n");
+                System.out.print("E: name service not available, aborting\n");
                 break;
             }
             reply.destroy();

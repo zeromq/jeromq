@@ -48,7 +48,7 @@ public class TestHelloMsg
     }
 
     @Test
-    public void testInproc() throws Exception
+    public void testInproc()
     {
         System.out.println("Scenario 2");
 
@@ -85,7 +85,7 @@ public class TestHelloMsg
     }
 
     @Test
-    public void testInprocLateBind() throws Exception
+    public void testInprocLateBind()
     {
         System.out.println("Scenario 3");
 

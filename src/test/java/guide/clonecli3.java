@@ -18,7 +18,7 @@ import org.zeromq.ZMQ.Socket;
  */
 public class clonecli3
 {
-    private static Map<String, kvsimple> kvMap = new HashMap<String, kvsimple>();
+    private static final Map<String, kvsimple> kvMap = new HashMap<>();
 
     public void run()
     {
@@ -85,7 +85,7 @@ public class clonecli3
                     ByteBuffer b = ByteBuffer.allocate(4);
                     b.asIntBuffer().put(body);
 
-                    kvsimple kvUpdateMsg = new kvsimple(key + "", 0, b.array());
+                    kvsimple kvUpdateMsg = new kvsimple(String.valueOf(key), 0, b.array());
                     kvUpdateMsg.send(push);
                     alarm = System.currentTimeMillis() + 1000;
                 }

@@ -66,7 +66,7 @@ public class kvsimple
         data = updates.recv(0);
         if (data == null || !updates.hasReceiveMore())
             return null;
-        Long sequence = ByteBuffer.wrap(data).getLong();
+        long sequence = ByteBuffer.wrap(data).getLong();
         byte[] body = updates.recv(0);
         if (body == null || updates.hasReceiveMore())
             return null;
@@ -109,9 +109,7 @@ public class kvsimple
         }
         else if (!key.equals(other.key))
             return false;
-        if (sequence != other.sequence)
-            return false;
-        return true;
+        return sequence == other.sequence;
     }
 
 }

@@ -13,7 +13,7 @@ public class TestZCancellationToken
     public void cancelReceiveThreadSafe()
     {
         try (ZContext context = new ZContext();
-             ZMQ.Socket socket = context.createSocket(SocketType.CLIENT);) {
+             ZMQ.Socket socket = context.createSocket(SocketType.CLIENT)) {
             ZMQ.CancellationToken cancellationToken = socket.createCancellationToken();
 
             Thread t = new Thread(() -> {
@@ -41,7 +41,7 @@ public class TestZCancellationToken
     public void cancelSendThreadSafe()
     {
         try (ZContext context = new ZContext();
-             ZMQ.Socket socket = context.createSocket(SocketType.CLIENT);) {
+             ZMQ.Socket socket = context.createSocket(SocketType.CLIENT)) {
             ZMQ.CancellationToken cancellationToken = socket.createCancellationToken();
 
             Thread t = new Thread(() -> {
@@ -69,7 +69,7 @@ public class TestZCancellationToken
     public void cancelReceive()
     {
         try (ZContext context = new ZContext();
-             ZMQ.Socket socket = context.createSocket(SocketType.DEALER);) {
+             ZMQ.Socket socket = context.createSocket(SocketType.DEALER)) {
             ZMQ.CancellationToken cancellationToken = socket.createCancellationToken();
 
             Thread t = new Thread(() -> {
@@ -97,7 +97,7 @@ public class TestZCancellationToken
     public void cancelSend()
     {
         try (ZContext context = new ZContext();
-             ZMQ.Socket socket = context.createSocket(SocketType.DEALER);) {
+             ZMQ.Socket socket = context.createSocket(SocketType.DEALER)) {
             ZMQ.CancellationToken cancellationToken = socket.createCancellationToken();
 
             Thread t = new Thread(() -> {

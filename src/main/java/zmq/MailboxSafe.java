@@ -3,7 +3,6 @@ package zmq;
 import zmq.pipe.YPipe;
 import zmq.util.Errno;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
@@ -34,7 +33,7 @@ public class MailboxSafe implements IMailbox
         this.cpipe = new YPipe<>(Config.COMMAND_PIPE_GRANULARITY.getValue());
         this.sync = sync;
         this.condition = this.sync.newCondition();
-        this.signalers = new ArrayList<Signaler>(10);
+        this.signalers = new ArrayList<>(10);
         this.name = name;
 
         //  Get the pipe into passive state. That way, if the users starts by
@@ -70,8 +69,8 @@ public class MailboxSafe implements IMailbox
             if (!ok) {
                 condition.signalAll();
 
-                for (int i = 0; i < signalers.size(); i++) {
-                    signalers.get(i).send();
+                for (Signaler signaler : signalers) {
+                    signaler.send();
                 }
             }
         }
@@ -126,7 +125,7 @@ public class MailboxSafe implements IMailbox
     }
 
     @Override
-    public void close() throws IOException
+    public void close()
     {
         // Work around problem that other threads might still be in our
         // send() method, by waiting on the mutex before disappearing.

@@ -73,11 +73,7 @@ public class TestProxy
             }
             msg = socket.recvStr(0);
             System.out.println(name + " received " + msg);
-            if (msg == null || !msg.startsWith("OK world")) {
-                return false;
-            }
-
-            return true;
+            return msg != null && msg.startsWith("OK world");
         }
     }
 

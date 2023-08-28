@@ -4,19 +4,17 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-import java.io.IOException;
-
 import org.junit.Test;
 
 public class TestShutdownStress
 {
     private static final int THREAD_COUNT = 100;
 
-    class Worker implements Runnable
+    static class Worker implements Runnable
     {
-        SocketBase s;
+        final SocketBase s;
 
-        Worker(SocketBase s) throws IOException
+        Worker(SocketBase s)
         {
             this.s = s;
         }

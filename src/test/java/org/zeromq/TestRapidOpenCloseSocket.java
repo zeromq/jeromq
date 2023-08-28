@@ -28,7 +28,7 @@ public class TestRapidOpenCloseSocket
     Socket processMsgSock = ctx.createSocket(SocketType.PUSH);
     processMsgSock.bind("inproc://process-msg");
 
-    List<Socket> workerSocks = new ArrayList<Socket>();
+    List<Socket> workerSocks = new ArrayList<>();
     for (int i = 0; i < 5; i++) {
       Socket workerSock = ctx.createSocket(SocketType.PULL);
       workerSock.connect("inproc://process-msg");
@@ -41,19 +41,14 @@ public class TestRapidOpenCloseSocket
     proxyThr.start();
 
     for (final Socket workerSock : workerSocks) {
-      Thread workerThr = new Thread(new Runnable()
-      {
-        @Override
-        public void run()
-        {
-          try {
-            while (true) {
-              byte[] msg = workerSock.recv();
-              // Process the msg!
-            }
+      Thread workerThr = new Thread(() -> {
+        try {
+          while (true) {
+            byte[] msg = workerSock.recv();
+            // Process the msg!
           }
-          catch (Exception e) {
-          }
+        }
+        catch (Exception e) {
         }
       });
       workerThr.setName("A worker thread");

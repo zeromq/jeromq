@@ -11,7 +11,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class TestPeer
 {
     @Test
-    public void testInproc() throws Exception
+    public void testInproc()
     {
         System.out.println("Scenario 1");
 

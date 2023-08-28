@@ -11,7 +11,7 @@ import org.zeromq.ZStar.Star;
 
 public class TestZStar
 {
-    private final class BlackHole implements ZStar.Fortune
+    private static final class BlackHole implements ZStar.Fortune
     {
         @Override
         public String premiere(Socket mic, Object... args)
@@ -41,7 +41,7 @@ public class TestZStar
         }
     }
 
-    private final class NoNo implements ZStar.Star
+    private static final class NoNo implements ZStar.Star
     {
         @Override
         public void prepare()

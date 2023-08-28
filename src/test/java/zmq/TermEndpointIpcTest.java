@@ -1,6 +1,5 @@
 package zmq;
 
-import java.io.IOException;
 import java.util.UUID;
 
 public class TermEndpointIpcTest extends TestTermEndpoint
@@ -12,8 +11,8 @@ public class TermEndpointIpcTest extends TestTermEndpoint
     }
 
     @Override
-    protected String endpointNormal() throws IOException
+    protected String endpointNormal()
     {
-        return "ipc://" + UUID.randomUUID().toString();
+        return "ipc://" + UUID.randomUUID();
     }
 }

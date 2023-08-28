@@ -1,6 +1,6 @@
 package org.zeromq;
 
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -20,7 +20,7 @@ public class TestZActor
             public List<Socket> createSockets(ZContext ctx, Object... args)
             {
                 assert ("TEST".equals(args[0]));
-                return Arrays.asList(ctx.createSocket(SocketType.PUB));
+                return Collections.singletonList(ctx.createSocket(SocketType.PUB));
             }
 
             @Override
@@ -39,7 +39,7 @@ public class TestZActor
         };
         final ZContext context = new ZContext();
         final ZActor.Duo duo = new ZActor.Duo(acting, new ZActor.SimpleActor());
-        final ZActor actor = new ZActor(context, duo, "LOCK", Arrays.asList("TEST").toArray());
+        final ZActor actor = new ZActor(context, duo, "LOCK", Collections.singletonList("TEST").toArray());
         final Socket pipe = actor.pipe();
         boolean rc = pipe.send("HELLO");
         Assert.assertTrue("Unable to send a message through pipe", rc);
@@ -105,10 +105,9 @@ public class TestZActor
             }
         };
         ZContext context = new ZContext();
-        ZActor actor = new ZActor(context, acting, UUID.randomUUID().toString(), Arrays.asList("TEST").toArray());
+        ZActor actor = new ZActor(context, acting, UUID.randomUUID().toString(), Collections.singletonList("TEST").toArray());
         ZAgent agent = actor.agent();
 
-        agent = actor;
         agent = actor.agent();
 
         Socket pipe = agent.pipe();

@@ -19,7 +19,7 @@ import org.zeromq.ZMQ.Socket;
  */
 public class TestPushPullThreadedTcp
 {
-    private class Worker implements Runnable
+    private static class Worker implements Runnable
     {
         private final int    count;
         private final AtomicBoolean  finished = new AtomicBoolean();
@@ -48,7 +48,7 @@ public class TestPushPullThreadedTcp
         }
     }
 
-    private class Client implements Runnable
+    private static class Client implements Runnable
     {
         private final Socket sender;
 
@@ -107,7 +107,7 @@ public class TestPushPullThreadedTcp
         test(20000);
     }
 
-    private void test(int count) throws IOException, InterruptedException
+    private void test(int count) throws InterruptedException
     {
         long start = System.currentTimeMillis();
 
@@ -157,18 +157,13 @@ public class TestPushPullThreadedTcp
 
             final ExecutorService executor = Executors.newFixedThreadPool(1);
             final int messagesNumber = 300000;
-            Runnable receiver = new Runnable()
-            {
-                @Override
-                public void run()
-                {
-                    String actual = null;
-                    int count = messagesNumber;
-                    while (count-- > 0) {
-                        actual = pull.receiveStringUtf8();
-                    }
-                    System.out.println("last message: " + actual);
+            Runnable receiver = () -> {
+                String actual = null;
+                int count = messagesNumber;
+                while (count-- > 0) {
+                    actual = pull.receiveStringUtf8();
                 }
+                System.out.println("last message: " + actual);
             };
             executor.submit(receiver);
 

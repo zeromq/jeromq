@@ -79,7 +79,7 @@ class LRUQueueArg
     Socket        frontend; //  Listen to clients
     Socket        backend;  //  Listen to workers
     Queue<ZFrame> workers;  //  List of ready workers
-};
+}
 
 //In the reactor design, each time a message arrives on a socket, the
 //reactor passes it to a handler function. We have two handlers; one
@@ -98,7 +98,7 @@ class FrontendHandler implements ZLoop.IZLoopHandler
             msg.send(arg.backend);
 
             //  Cancel reader on frontend if we went from 1 to 0 workers
-            if (arg.workers.size() == 0) {
+            if (arg.workers.isEmpty()) {
                 PollItem poller = new PollItem(arg.frontend, ZMQ.Poller.POLLIN);
                 loop.removePoller(poller);
             }
@@ -167,7 +167,7 @@ public class lruqueue3
                 new WorkerThread3().start();
 
             //  Queue of available workers
-            arg.workers = new LinkedList<ZFrame>();
+            arg.workers = new LinkedList<>();
 
             //  Prepare reactor and fire it up
             ZLoop reactor = new ZLoop(context);

@@ -80,15 +80,15 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
     private boolean active;
 
     //  If true, associated context was already terminated.
-    private AtomicBoolean ctxTerminated;
+    private final AtomicBoolean ctxTerminated;
 
     // If processCommand function was called from InEvent function.
-    private ThreadLocal<Boolean> isInEventThreadLocal;
+    private final ThreadLocal<Boolean> isInEventThreadLocal;
 
     //  If true, object should have been already destroyed. However,
     //  destruction is delayed while we unwind the stack to the point
     //  where it doesn't intersect the object being destroyed.
-    private AtomicBoolean destroyed;
+    private final AtomicBoolean destroyed;
 
     //  Socket's mailbox object.
     private final IMailbox mailbox;
@@ -1409,9 +1409,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
     private void extractFlags(Msg msg)
     {
         //  Test whether IDENTITY flag is valid for this socket type.
-        if (msg.isIdentity()) {
-            assert (options.recvIdentity);
-        }
+        assert !msg.isIdentity() || (options.recvIdentity);
 
         //  Remove MORE flag.
         rcvmore = msg.hasMore();

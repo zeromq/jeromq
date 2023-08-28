@@ -5,7 +5,6 @@ import zmq.Ctx;
 import zmq.Msg;
 import zmq.SocketBase;
 import zmq.ZMQ;
-import java.io.IOException;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -14,7 +13,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class XPubManualTest
 {
     @Test
-    public void testXpubManual() throws IOException
+    public void testXpubManual()
     {
         Ctx ctx = ZMQ.init(1);
         assertThat(ctx, notNullValue());
@@ -70,7 +69,7 @@ public class XPubManualTest
         }
 
         int recvCount = 0;
-        Msg msg = null;
+        Msg msg;
         do {
             //  Receive the message in the subscriber
             msg = ZMQ.recv(subConnect, ZMQ.ZMQ_DONTWAIT);

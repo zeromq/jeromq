@@ -102,7 +102,7 @@ public class TestPoller
     @Test(timeout = 5000)
     public void testExitPollerIssue580() throws InterruptedException, ExecutionException
     {
-        Future<Integer> future = null;
+        Future<Integer> future;
 
         ExecutorService service = Executors.newSingleThreadExecutor();
         try (

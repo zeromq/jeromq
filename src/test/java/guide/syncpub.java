@@ -1,7 +1,6 @@
 package guide;
 
 import org.zeromq.SocketType;
-import org.zeromq.ZMQ;
 import org.zeromq.ZMQ.Socket;
 import org.zeromq.ZContext;
 
@@ -13,7 +12,7 @@ public class syncpub
     /**
      * We wait for 10 subscribers
      */
-    protected static int SUBSCRIBERS_EXPECTED = 10;
+    protected static final int SUBSCRIBERS_EXPECTED = 10;
 
     public static void main(String[] args)
     {

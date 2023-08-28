@@ -141,8 +141,7 @@ public class TestMsg
             buffer.put((byte) idx);
         }
         buffer.position(0);
-        final Msg msg = new Msg(buffer);
-        return msg;
+        return new Msg(buffer);
     }
 
     // Check that data returned by Msg#getBytes(int, byte[], int, int) and Msg#get(int) are

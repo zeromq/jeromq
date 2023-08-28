@@ -14,14 +14,7 @@ class ManagedContext
 {
     static {
         // Release ManagedSocket resources when catching SIGINT
-        Runtime.getRuntime().addShutdownHook(new Thread()
-        {
-            @Override
-            public void run()
-            {
-                getInstance().close();
-            }
-        });
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> getInstance().close()));
     }
 
     private final Lock            lock;
@@ -55,12 +48,8 @@ class ManagedContext
 
     void destroy(SocketBase socketBase)
     {
-        try {
-            socketBase.setSocketOpt(ZMQ.ZMQ_LINGER, 0);
-            socketBase.close();
-        }
-        catch (Exception e) {
-        }
+        socketBase.setSocketOpt(ZMQ.ZMQ_LINGER, 0);
+        socketBase.close();
         lock.lock();
         try {
             sockets.remove(socketBase);

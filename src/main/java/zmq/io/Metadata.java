@@ -59,12 +59,12 @@ public class Metadata
     {
         // Ensure a conversion of each entry to a String.
         // No need to check for nul values as the Properties class ignore null and don't stores them
-        dictionary.entrySet().forEach(e -> this.dictionary.put(e.getKey().toString(), e.getValue().toString()));
+        dictionary.forEach((key, value) -> this.dictionary.put(key.toString(), value.toString()));
     }
 
     public Metadata(Map<String, String> dictionary)
     {
-        dictionary.entrySet().forEach(e -> this.dictionary.put(e.getKey(), Optional.ofNullable(e.getValue()).orElse("")));
+        dictionary.forEach((key, value) -> this.dictionary.put(key, Optional.ofNullable(value).orElse("")));
     }
 
     /**

@@ -13,7 +13,7 @@ import org.zeromq.ZContext;
 //
 public class wuserver
 {
-    public static void main(String[] args) throws Exception
+    public static void main(String[] args)
     {
         //  Prepare our context and publisher
         try (ZContext context = new ZContext()) {

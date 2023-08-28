@@ -72,47 +72,37 @@ public class TestZLoop
         final AtomicInteger counter = new AtomicInteger();
         final AtomicBoolean done = new AtomicBoolean();
 
-        loop.addPoller(new PollItem(udpIn, ZMQ.Poller.POLLIN), new IZLoopHandler()
-        {
-            @Override
-            public int handle(ZLoop loop, PollItem item, Object arg)
-            {
-                DatagramChannel udpIn = (DatagramChannel) arg;
-                ByteBuffer bb = ByteBuffer.allocate(3);
-                try {
-                    udpIn.receive(bb);
-                    String read = new String(bb.array(), 0, bb.limit(), ZMQ.CHARSET);
-                    assertThat(read, is("udp"));
-                    done.set(true);
-                    counter.incrementAndGet();
-                }
-                catch (IOException e) {
-                    e.printStackTrace();
-                    fail();
-                }
-                return -1;
+        loop.addPoller(new PollItem(udpIn, ZMQ.Poller.POLLIN), (loop12, item, arg) -> {
+            DatagramChannel udpIn1 = (DatagramChannel) arg;
+            ByteBuffer bb = ByteBuffer.allocate(3);
+            try {
+                udpIn1.receive(bb);
+                String read = new String(bb.array(), 0, bb.limit(), ZMQ.CHARSET);
+                assertThat(read, is("udp"));
+                done.set(true);
+                counter.incrementAndGet();
             }
+            catch (IOException e) {
+                e.printStackTrace();
+                fail();
+            }
+            return -1;
         }, udpIn);
-        loop.addPoller(new PollItem(udpOut, ZMQ.Poller.POLLOUT), new IZLoopHandler()
-        {
-            @Override
-            public int handle(ZLoop loop, PollItem item, Object arg)
-            {
-                DatagramChannel udpOut = (DatagramChannel) arg;
-                try {
-                    ByteBuffer bb = ByteBuffer.allocate(3);
-                    bb.put("udp".getBytes(ZMQ.CHARSET));
-                    bb.flip();
-                    int written = udpOut.send(bb, addr);
-                    assertThat(written, is(3));
-                    counter.incrementAndGet();
-                }
-                catch (IOException e) {
-                    e.printStackTrace();
-                    fail();
-                }
-                return 0;
+        loop.addPoller(new PollItem(udpOut, ZMQ.Poller.POLLOUT), (loop1, item, arg) -> {
+            DatagramChannel udpOut1 = (DatagramChannel) arg;
+            try {
+                ByteBuffer bb = ByteBuffer.allocate(3);
+                bb.put("udp".getBytes(ZMQ.CHARSET));
+                bb.flip();
+                int written = udpOut1.send(bb, addr);
+                assertThat(written, is(3));
+                counter.incrementAndGet();
             }
+            catch (IOException e) {
+                e.printStackTrace();
+                fail();
+            }
+            return 0;
         }, udpOut);
         loop.start();
 
@@ -126,7 +116,7 @@ public class TestZLoop
     @Test
     public void testZLoop()
     {
-        int rc = 0;
+        int rc;
 
         // setUp() should create the context
         assert (ctx != null);
@@ -134,25 +124,15 @@ public class TestZLoop
         ZLoop loop = new ZLoop(ctx);
         assert (loop != null);
 
-        ZLoop.IZLoopHandler timerEvent = new ZLoop.IZLoopHandler()
-        {
-            @Override
-            public int handle(ZLoop loop, PollItem item, Object arg)
-            {
-                ((Socket) arg).send("PING", 0);
-                return 0;
-            }
+        ZLoop.IZLoopHandler timerEvent = (loop12, item, arg) -> {
+            ((Socket) arg).send("PING", 0);
+            return 0;
         };
 
-        ZLoop.IZLoopHandler socketEvent = new ZLoop.IZLoopHandler()
-        {
-            @Override
-            public int handle(ZLoop loop, PollItem item, Object arg)
-            {
-                received = ((Socket) arg).recvStr(0);
-                //  Just end the reactor
-                return -1;
-            }
+        ZLoop.IZLoopHandler socketEvent = (loop1, item, arg) -> {
+            received = ((Socket) arg).recvStr(0);
+            //  Just end the reactor
+            return -1;
         };
 
         //  After 10 msecs, send a ping message to output
@@ -171,43 +151,28 @@ public class TestZLoop
     @Test
     public void testZLoopAddTimerFromTimer()
     {
-        int rc = 0;
+        int rc;
 
         ZLoop loop = new ZLoop(ctx);
         assert (loop != null);
 
-        ZLoop.IZLoopHandler timerEvent = new ZLoop.IZLoopHandler()
-        {
-            @Override
-            public int handle(ZLoop loop, PollItem item, Object arg)
-            {
-                final long now = System.currentTimeMillis();
+        ZLoop.IZLoopHandler timerEvent = (loop13, item, arg) -> {
+            final long now = System.currentTimeMillis();
 
-                ZLoop.IZLoopHandler timerEvent2 = new ZLoop.IZLoopHandler()
-                {
-                    @Override
-                    public int handle(ZLoop loop, PollItem item, Object arg)
-                    {
-                        final long now2 = System.currentTimeMillis();
-                        assert (now2 >= now + 10);
-                        ((Socket) arg).send("PING", 0);
-                        return 0;
-                    }
-                };
-                loop.addTimer(10, 1, timerEvent2, arg);
+            IZLoopHandler timerEvent2 = (loop12, item1, arg1) -> {
+                final long now2 = System.currentTimeMillis();
+                assert (now2 >= now + 10);
+                ((Socket) arg1).send("PING", 0);
                 return 0;
-            }
+            };
+            loop13.addTimer(10, 1, timerEvent2, arg);
+            return 0;
         };
 
-        ZLoop.IZLoopHandler socketEvent = new ZLoop.IZLoopHandler()
-        {
-            @Override
-            public int handle(ZLoop loop, PollItem item, Object arg)
-            {
-                received = ((Socket) arg).recvStr(0);
-                //  Just end the reactor
-                return -1;
-            }
+        ZLoop.IZLoopHandler socketEvent = (loop1, item, arg) -> {
+            received = ((Socket) arg).recvStr(0);
+            //  Just end the reactor
+            return -1;
         };
 
         //  After 10 msecs, fire a timer that registers
@@ -229,43 +194,28 @@ public class TestZLoop
     @Test(timeout = 1000)
     public void testZLoopAddTimerFromSocketHandler()
     {
-        int rc = 0;
+        int rc;
 
         ZLoop loop = new ZLoop(ctx);
         assert (loop != null);
 
-        ZLoop.IZLoopHandler timerEvent = new ZLoop.IZLoopHandler()
-        {
-            @Override
-            public int handle(ZLoop loop, PollItem item, Object arg)
-            {
-                ((Socket) arg).send("PING", 0);
-                return 0;
-            }
+        ZLoop.IZLoopHandler timerEvent = (loop13, item, arg) -> {
+            ((Socket) arg).send("PING", 0);
+            return 0;
         };
 
-        ZLoop.IZLoopHandler socketEvent = new ZLoop.IZLoopHandler()
-        {
-            @Override
-            public int handle(ZLoop loop, PollItem item, Object arg)
-            {
-                final long now = System.currentTimeMillis();
-                ZLoop.IZLoopHandler timerEvent2 = new ZLoop.IZLoopHandler()
-                {
-                    @Override
-                    public int handle(ZLoop loop, PollItem item, Object arg)
-                    {
-                        final long now2 = System.currentTimeMillis();
-                        Assert.assertTrue(now2 >= now + 10);
-                        received = ((Socket) arg).recvStr(0);
-                        //  Just end the reactor
-                        return -1;
-                    }
-                };
-                //  After 10 msec fire a timer that ends the reactor
-                loop.addTimer(10, 1, timerEvent2, arg);
-                return 0;
-            }
+        ZLoop.IZLoopHandler socketEvent = (loop12, item, arg) -> {
+            final long now = System.currentTimeMillis();
+            IZLoopHandler timerEvent2 = (loop1, item1, arg1) -> {
+                final long now2 = System.currentTimeMillis();
+                Assert.assertTrue(now2 >= now + 10);
+                received = ((Socket) arg1).recvStr(0);
+                //  Just end the reactor
+                return -1;
+            };
+            //  After 10 msec fire a timer that ends the reactor
+            loop12.addTimer(10, 1, timerEvent2, arg);
+            return 0;
         };
 
         //  Fire a timer that sends the ping message
@@ -285,40 +235,25 @@ public class TestZLoop
     @Test(timeout = 1000)
     public void testZLoopEndReactorFromTimer()
     {
-        int rc = 0;
+        int rc;
 
         ZLoop loop = new ZLoop(ctx);
         assert (loop != null);
 
-        ZLoop.IZLoopHandler timerEvent = new ZLoop.IZLoopHandler()
-        {
-            @Override
-            public int handle(ZLoop loop, PollItem item, Object arg)
-            {
-                ((Socket) arg).send("PING", 0);
-                return 0;
-            }
+        ZLoop.IZLoopHandler timerEvent = (loop13, item, arg) -> {
+            ((Socket) arg).send("PING", 0);
+            return 0;
         };
 
-        ZLoop.IZLoopHandler socketEvent = new ZLoop.IZLoopHandler()
-        {
-            @Override
-            public int handle(ZLoop loop, PollItem item, Object arg)
-            {
-                //  After 10 msecs, fire an event that ends the reactor
-                ZLoop.IZLoopHandler shutdownEvent = new ZLoop.IZLoopHandler()
-                {
-                    @Override
-                    public int handle(ZLoop loop, PollItem item, Object arg)
-                    {
-                        received = ((Socket) arg).recvStr(0);
-                        //  Just end the reactor
-                        return -1;
-                    }
-                };
-                loop.addTimer(10, 1, shutdownEvent, arg);
-                return 0;
-            }
+        ZLoop.IZLoopHandler socketEvent = (loop12, item, arg) -> {
+            //  After 10 msecs, fire an event that ends the reactor
+            IZLoopHandler shutdownEvent = (loop1, item1, arg1) -> {
+                received = ((Socket) arg1).recvStr(0);
+                //  Just end the reactor
+                return -1;
+            };
+            loop12.addTimer(10, 1, shutdownEvent, arg);
+            return 0;
         };
 
         //  Fire event that sends a ping message to output

@@ -13,5 +13,5 @@ import zmq.Options;
  */
 public interface SelectorProviderChooser
 {
-    public SelectorProvider choose(Address.IZAddress addr, Options options);
+    SelectorProvider choose(Address.IZAddress addr, Options options);
 }

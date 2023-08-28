@@ -20,9 +20,9 @@ public class Server extends SocketBase
     //  Fair queuing object for inbound pipes.
     private final FQ fq;
 
-    class Outpipe
+    static class Outpipe
     {
-        private Pipe pipe;
+        private final Pipe pipe;
         private boolean active;
 
         public Outpipe(Pipe pipe, boolean active)
