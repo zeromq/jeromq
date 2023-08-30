@@ -14,6 +14,7 @@ public class Peer extends Server
         options.type = ZMQ.ZMQ_PEER;
         options.canSendHelloMsg = true;
         options.canReceiveDisconnectMsg = true;
+        options.canReceiveHiccupMsg = true;
     }
 
     @Override
