@@ -96,7 +96,7 @@ public class Ctx
     private final AtomicBoolean starting = new AtomicBoolean(true);
 
     //  If true, zmq_term was already called.
-    private boolean terminating;
+    private volatile boolean terminating;
 
     //  Synchronization of accesses to global slot-related data:
     //  sockets, emptySlots, terminating. It also synchronizes
