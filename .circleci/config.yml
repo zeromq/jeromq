@@ -155,6 +155,10 @@ jobs:
                     mv -n /tmp/ws/home/circleci/project/.??* /home/circleci/project/
             - run:
                 command: |
+                    if [ -n "$SECRING_GPG_ASC_BASE64" ] ; then
+                        echo "$SECRING_GPG_ASC_BASE64" | base64 --decode | gpg --batch --no-tty --import --yes
+                        GPGSIGN="-P gpgsign"
+                    fi
                     # If no symbolic name, it's a PR, will not publish results
                     # If not the official github, it's a fork, don't publish either
                     if [ -n "$(git symbolic-ref HEAD 2>/dev/null )"  -a "$CIRCLE_REPOSITORY_URL" == "git@github.com:zeromq/jeromq.git" ] ; then
@@ -163,7 +167,7 @@ jobs:
                         PUBLISH="install"
                     fi
                     echo "publishing jobs: $PUBLISH"
-                    mvn -B $PUBLISH -Pskip -Dmaven.test.skip=true -Dmaven.javadoc.skip=false -s .circleci/settings.xml
+                    mvn -B $PUBLISH -Pskip $GPGSIGN -Dmaven.test.skip=true -Dmaven.javadoc.skip=false -s .circleci/settings.xml
                 environment:
                     JAVA_HOME: /usr/local/openjdk-17
                     MAVEN_OPTS: "-Xmx2048m"
