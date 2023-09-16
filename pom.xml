@@ -3,7 +3,7 @@
   <groupId>org.zeromq</groupId>
   <artifactId>jeromq</artifactId>
   <packaging>jar</packaging>
-  <version>0.5.4-SNAPSHOT</version>
+  <version>0.5.4</version>
   <name>JeroMQ</name>
   <description>Pure Java implementation of libzmq</description>
   <url>https://github.com/zeromq/jeromq</url>
@@ -17,7 +17,7 @@
     <url>git@github.com:zeromq/jeromq.git</url>
     <connection>scm:git:git@github.com:zeromq/jeromq.git</connection>
     <developerConnection>scm:git:git@github.com:zeromq/jeromq.git</developerConnection>
-    <tag>HEAD</tag>
+    <tag>v0.5.4</tag>
   </scm>
   <developers>
     <developer />
@@ -274,11 +274,6 @@
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-release-plugin</artifactId>
           <version>2.5.3</version>
-        </plugin>
-        <plugin>
-          <groupId>org.sonatype.plugins</groupId>
-          <artifactId>nexus-staging-maven-plugin</artifactId>
-          <version>1.6.8</version>
         </plugin>
       </plugins>
     </pluginManagement>

@@ -1,8 +1,10 @@
 # Changelog
 
-## v0.5.4 (202x-xx-xx)
+## v0.5.4 (2023-09-26)
 
 ### Changed
+
+* new GPG signature for artifact, id 9C925EE1.
 
 * [#935](https://github.com/zeromq/jeromq/pull/935): With 
   org.zeromq.ZMQ.Event.recv(socket, DONTWAIT), if there is no more,
