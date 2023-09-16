@@ -68,15 +68,13 @@ The Maven Release Plugin will take care of bumping version numbers and
 tagging the release build. It will also push those changes to your
 chosen SCM.
 
-To perform a release, issue the following command.
+When you commit this changes, CircleCI will pick them and publish in the stagging
+repositories at [OSS Sonatype](https://oss.sonatype.org), with a valid GPG signature.
+There is a list of known keys that have been used to sign tagged JeroMQ releases [here](public-keys.md).
 
-```
-$ mvn release:perform
-```
+To publish it to the Central Repository, one can follow the procedure at 
+[Publish my artifact](https://central.sonatype.org/publish/release/).
 
-This will upload the artifacts to OSS Sonatype and release to Maven Central in
-one go, and will require you to sign the build. There is a list of known keys
-that have been used to sign tagged JeroMQ releases [here](public-keys.md).
 
 # Making an Announcement on the ZeroMQ Mailing list when it has been successfully synced.
 

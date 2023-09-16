@@ -389,13 +389,7 @@
     </profile>
     <profile>
       <!-- Used to sign a release -->
-      <id>release</id>
-      <activation>
-        <property>
-          <name>performRelease</name>
-          <value>true</value>
-        </property>
-      </activation>
+      <id>gpgsign</id>
       <build>
         <plugins>
           <plugin>
