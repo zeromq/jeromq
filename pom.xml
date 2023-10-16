@@ -19,10 +19,10 @@
     <developerConnection>scm:git:git@github.com:zeromq/jeromq.git</developerConnection>
     <tag>HEAD</tag>
   </scm>
-  <developers>
-    <developer />
-  </developers>
+  <developers/>
   <properties>
+    <!-- Required by reproducible builds: https://maven.apache.org/guides/mini/guide-reproducible-builds.html -->
+    <project.build.outputTimestamp>0</project.build.outputTimestamp>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <jdk.target>8</jdk.target>
     <!-- Indirection needed to keep optional jacoco settings and external argument lines-->
@@ -87,33 +87,28 @@
         </executions>
       </plugin>
       <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-jar-plugin</artifactId>
-        <configuration>
-          <archive>
-            <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
-            <manifestEntries>
-              <Automatic-Module-Name>${groupId}.${artifactId}</Automatic-Module-Name>
-            </manifestEntries>
-          </archive>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.felix</groupId>
-        <artifactId>maven-bundle-plugin</artifactId>
+        <groupId>biz.aQute.bnd</groupId>
+        <artifactId>bnd-maven-plugin</artifactId>
+        <version>6.4.0</version>
         <extensions>true</extensions>
-        <configuration>
-          <instructions>
-            <Export-Package>*</Export-Package>
-          </instructions>
-        </configuration>
         <executions>
           <execution>
-            <id>bundle-manifest</id>
-            <phase>process-classes</phase>
+            <id>default-jar</id>
             <goals>
-              <goal>manifest</goal>
+              <goal>jar</goal>
             </goals>
+            <configuration>
+              <bnd>
+                Bundle-SymbolicName: $[project.groupId].$[project.artifactId]
+                Export-Package: \
+                  zmq.*, \
+                  org.zeromq.*
+                Import-Package: \
+                  com.neilalexander.*;resolution:=optional, \
+                  *
+                -jpms-module-info: $[Bundle-SymbolicName];access=0
+              </bnd>
+            </configuration>
           </execution>
         </executions>
       </plugin>
