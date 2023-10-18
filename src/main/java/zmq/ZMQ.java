@@ -15,6 +15,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 
 import zmq.io.Metadata;
+import zmq.io.mechanism.Mechanisms;
+import zmq.io.net.SelectorProviderChooser;
+import zmq.msg.MsgAllocator;
+import zmq.msg.MsgAllocatorThreshold;
 import zmq.poll.PollItem;
 import zmq.util.Clock;
 import zmq.util.Utils;
@@ -252,7 +256,182 @@ public class ZMQ
     public static final byte[] PROXY_RESUME    = "RESUME".getBytes(ZMQ.CHARSET);
     public static final byte[] PROXY_TERMINATE = "TERMINATE".getBytes(ZMQ.CHARSET);
 
+    // Default values for options
+    /**
+     * Default value for {@link ZMQ#ZMQ_AFFINITY}
+     */
+    public static final int DEFAULT_AFFINITY = 0;
+    /**
+     * Default value for {@link ZMQ#ZMQ_SERVER}
+     */
+    public static final boolean DEFAULT_AS_SERVER = false;
+    /**
+     * Default value for {@link ZMQ#ZMQ_AS_TYPE}
+     */
+    public static final int DEFAULT_AS_TYPE = -1;
+    /**
+     * Default value for {@link ZMQ#ZMQ_BACKLOG}
+     */
+    public static final int DEFAULT_BACKLOG = 100;
+    /**
+     * Default value for {@link ZMQ#ZMQ_CONFLATE}
+     */
+    public static final boolean DEFAULT_CONFLATE = false;
+    /**
+     * Default value for {@link ZMQ#ZMQ_DISCONNECT_MSG}
+     */
+    public static final Msg DEFAULT_DISCONNECT_MSG = null;
+    /**
+     * Default value for {@link ZMQ#ZMQ_GSSAPI_PLAINTEXT}
+     */
+    public static final boolean DEFAULT_GSS_PLAINTEXT = false;
+    /**
+     * Default value for {@link ZMQ#ZMQ_HANDSHAKE_IVL}
+     */
+    public static final int DEFAULT_HANDSHAKE_IVL = 30000;
+    /**
+     * Default value for {@link ZMQ#ZMQ_HEARTBEAT_CONTEXT}
+     */
+    public static final byte[] DEFAULT_HEARTBEAT_CONTEXT = new byte[0];
+    /**
+     * Default value for {@link ZMQ#ZMQ_HEARTBEAT_IVL}
+     */
+    public static final int DEFAULT_HEARTBEAT_INTERVAL = 0;
+    /**
+     * Default value for {@link ZMQ#ZMQ_HEARTBEAT_TIMEOUT}
+     */
+    public static final int DEFAULT_HEARTBEAT_TIMEOUT = -1;
+    /**
+     * Default value for {@link ZMQ#ZMQ_HEARTBEAT_TTL}
+     */
+    public static final int DEFAULT_HEARTBEAT_TTL = 0;
+    /**
+     * Default value for {@link ZMQ#ZMQ_HELLO_MSG}
+     */
+    public static final Msg DEFAULT_HELLO_MSG = null;
+    /**
+     * Default value for {@link ZMQ#ZMQ_HICCUP_MSG}
+     */
+    public static final Msg DEFAULT_HICCUP_MSG = null;
+    /**
+     * Default value for {@link ZMQ#ZMQ_IDENTITY}
+     */
+    public static final byte[] DEFAULT_IDENTITY = new byte[0];
+    /**
+     * Default value for {@link ZMQ#ZMQ_IMMEDIATE}
+     */
+    public static final boolean DEFAULT_IMMEDIATE = true;
+    /**
+     * Default value for {@link ZMQ#ZMQ_IPV6}
+     */
+    public static final boolean DEFAULT_IPV6 = ZMQ.PREFER_IPV6;
+    /**
+     * Default value for {@link ZMQ#ZMQ_LINGER}
+     */
+    public static final int DEFAULT_LINGER = -1;
+    /**
+     * Default value for {@link ZMQ#ZMQ_MAXMSGSIZE}
+     */
+    public static final long DEFAULT_MAX_MSG_SIZE = -1;
+    /**
+     * Default value for {@link ZMQ#ZMQ_MECHANISM}
+     */
+    public static final Mechanisms DEFAULT_MECHANISM = Mechanisms.NULL;
+    /**
+     * Default value for {@link ZMQ#ZMQ_MSG_ALLOCATION_HEAP_THRESHOLD}
+     */
+    public static final int DEFAULT_ALLOCATION_HEAP_THRESHOLD = Config.MSG_ALLOCATION_HEAP_THRESHOLD.getValue();
+    /**
+     * Default value for {@link ZMQ#ZMQ_MSG_ALLOCATOR}
+     */
+    public static final MsgAllocator DEFAULT_MSG_ALLOCATOR = new MsgAllocatorThreshold(DEFAULT_ALLOCATION_HEAP_THRESHOLD);
+    /**
+     * Default value for {@link ZMQ#ZMQ_RECONNECT_IVL}
+     */
+    public static final int DEFAULT_RECONNECT_IVL = 100;
+    /**
+     * Default value for {@link ZMQ#ZMQ_RECONNECT_IVL_MAX}
+     */
+    public static final int DEFAULT_RECONNECT_IVL_MAX = 0;
+    /**
+     * Default value for {@link ZMQ#ZMQ_RCVHWM}
+     */
+    public static final int DEFAULT_RECV_HWM = 1000;
+    /**
+     * Default value for {@link ZMQ#ZMQ_RCVTIMEO}
+     */
+    public static final int DEFAULT_RECV_TIMEOUT = -1;
+    /**
+     * Default value for {@link ZMQ#ZMQ_RCVBUF}
+     */
+    public static final int DEFAULT_RCVBUF = 0;
+    /**
+     * Default value for {@link ZMQ#ZMQ_RATE}
+     */
+    public static final int DEFAULT_RATE = 100;
+    /**
+     * Default value for {@link ZMQ#ZMQ_RECOVERY_IVL}
+     */
+    public static final int DEFAULT_RECOVERY_IVL = 10000;
+    /**
+     * Default value for {@link ZMQ#ZMQ_SELFADDR_PROPERTY_NAME}
+     */
+    public static final String DEFAULT_SELF_ADDRESS_PROPERTY_NAME = null;
+    /**
+     * Default value for {@link ZMQ#ZMQ_SNDHWM}
+     */
+    public static final int DEFAULT_SEND_HWM = 1000;
+    /**
+     * Default value for {@link ZMQ#ZMQ_SNDTIMEO}
+     */
+    public static final int DEFAULT_SEND_TIMEOUT = -1;
+    /**
+     * Default value for {@link ZMQ#ZMQ_SELECTOR_PROVIDERCHOOSER}
+     */
+    public static final SelectorProviderChooser DEFAULT_SELECTOR_CHOOSER = null;
+    /**
+     * Default value for {@link ZMQ#ZMQ_SNDBUF}
+     */
+    public static final int DEFAULT_SNDBUF = 0;
+    /**
+     * Default value for {@link ZMQ#ZMQ_SOCKS_PROXY}
+     */
+    public static final String DEFAULT_SOCKS_PROXY_ADDRESS = null;
+    /**
+     * Default value for {@link ZMQ#ZMQ_TCP_KEEPALIVE}
+     */
+    public static final int DEFAULT_TCP_KEEP_ALIVE = -1;
+    /**
+     * Default value for {@link ZMQ#ZMQ_TCP_KEEPALIVE_CNT}
+     */
+    public static final int DEFAULT_TCP_KEEP_ALIVE_CNT = -1;
+    /**
+     * Default value for {@link ZMQ#ZMQ_TCP_KEEPALIVE_IDLE}
+     */
+    public static final int DEFAULT_TCP_KEEP_ALIVE_IDLE = -1;
+    /**
+     * Default value for {@link ZMQ#ZMQ_TCP_KEEPALIVE_INTVL}
+     */
+    public static final int DEFAULT_TCP_KEEP_ALIVE_INTVL = -1;
+    /**
+     * Default value for {@link ZMQ#ZMQ_TOS}
+     */
+    public static final int DEFAULT_TOS = 0;
+    /**
+     * Default value for {@link ZMQ#ZMQ_TYPE}
+     */
+    public static final int DEFAULT_TYPE = -1;
+    /**
+     * Default value for {@link ZMQ#ZMQ_MULTICAST_HOPS}
+     */
+    public static final int DEFAULT_MULTICAST_HOPS = 1;
+    /**
+     * Default value for {@link ZMQ#ZMQ_ZAP_DOMAIN}
+     */
+    public static final String DEFAULT_ZAP_DOMAIN = "";
+
     public static final boolean PREFER_IPV6;
+
     static {
         String preferIPv4Stack = System.getProperty("java.net.preferIPv4Stack");
         String preferIPv6Addresses = System.getProperty("java.net.preferIPv6Addresses");
