@@ -20,241 +20,173 @@ import zmq.util.Z85;
 public class Options
 {
     //  High-water marks for message pipes.
-    public int sendHwm;
-    public int recvHwm;
+    public int sendHwm = ZMQ.DEFAULT_SEND_HWM;
+    public int recvHwm = ZMQ.DEFAULT_RECV_HWM;
 
     //  I/O thread affinity.
-    public long affinity;
+    public long affinity = ZMQ.DEFAULT_AFFINITY;
 
     //  Socket identity
-    public short  identitySize;
-    public byte[] identity;
-
-    // Last socket endpoint resolved URI
-    String lastEndpoint;
+    public short  identitySize = (short) ZMQ.DEFAULT_IDENTITY.length;
+    public byte[] identity = ZMQ.DEFAULT_IDENTITY;
 
     //  Maximum tranfer rate [kb/s]. Default 100kb/s.
-    int rate;
+    int rate = ZMQ.DEFAULT_RATE;
 
     //  Reliability time interval [ms]. Default 10 seconds.
-    int recoveryIvl;
+    int recoveryIvl = ZMQ.DEFAULT_RECOVERY_IVL;
 
     // Sets the time-to-live field in every multicast packet sent.
-    int multicastHops;
+    int multicastHops = ZMQ.DEFAULT_MULTICAST_HOPS;
 
     // SO_SNDBUF and SO_RCVBUF to be passed to underlying transport sockets.
-    public int sndbuf;
-    public int rcvbuf;
+    public int sndbuf = ZMQ.DEFAULT_SNDBUF;
+    public int rcvbuf = ZMQ.DEFAULT_RCVBUF;
 
     // Type of service (containing DSCP and ECN socket options)
-    public int tos;
+    public int tos = ZMQ.DEFAULT_TOS;
 
     //  Socket type.
-    public int type;
+    public int type = ZMQ.DEFAULT_TYPE;
 
     //  Linger time, in milliseconds.
-    public int linger;
+    public int linger = ZMQ.DEFAULT_LINGER;
 
     //  Minimum interval between attempts to reconnect, in milliseconds.
     //  Default 100ms
-    public int reconnectIvl;
+    public int reconnectIvl = ZMQ.DEFAULT_RECONNECT_IVL;
     //  Maximum interval between attempts to reconnect, in milliseconds.
     //  Default 0 (unused)
-    public int reconnectIvlMax;
+    public int reconnectIvlMax = ZMQ.DEFAULT_RECONNECT_IVL_MAX;
 
     //  Maximum backlog for pending connections.
-    public int backlog;
+    public int backlog = ZMQ.DEFAULT_BACKLOG;
 
     //  Maximal size of message to handle.
-    public long maxMsgSize;
+    public long maxMsgSize = ZMQ.DEFAULT_MAX_MSG_SIZE;
 
     // The timeout for send/recv operations for this socket.
-    int recvTimeout;
-    int sendTimeout;
+    int recvTimeout = ZMQ.DEFAULT_RECV_TIMEOUT;
+    int sendTimeout = ZMQ.DEFAULT_SEND_TIMEOUT;
 
     //  If true, IPv6 is enabled (as well as IPv4)
-    public boolean ipv6;
+    public boolean ipv6 = ZMQ.DEFAULT_IPV6;
 
     //  If false, connecting pipes are not attached immediately, meaning a send()
     //  on a socket with only connecting pipes would block
-    public boolean immediate;
-
-    //  If 1, (X)SUB socket should filter the messages. If 0, it should not.
-    public boolean filter;
-
-    //  If true, the identity message is forwarded to the socket.
-    public boolean recvIdentity;
-
-    // if true, router socket accepts non-zmq tcp connections
-    public boolean rawSocket;
+    public boolean immediate = ZMQ.DEFAULT_IMMEDIATE;
 
     //  Addres of SOCKS proxy
-    public String socksProxyAddress;
+    public String socksProxyAddress = ZMQ.DEFAULT_SOCKS_PROXY_ADDRESS;
 
     //  TCP keep-alive settings.
     //  Defaults to -1 = do not change socket options
-    public int tcpKeepAlive;
-    public int tcpKeepAliveCnt;
-    public int tcpKeepAliveIdle;
-    public int tcpKeepAliveIntvl;
-
-    // TCP accept() filters
-    //typedef std::vector <tcp_address_mask_t> tcp_accept_filters_t;
-    public final List<TcpAddress.TcpAddressMask> tcpAcceptFilters = new ArrayList<>();
-
-    // IPC accept() filters
-    final List<IpcAddress.IpcAddressMask> ipcAcceptFilters = new ArrayList<>();
+    public int tcpKeepAlive = ZMQ.DEFAULT_TCP_KEEP_ALIVE;
+    public int tcpKeepAliveCnt = ZMQ.DEFAULT_TCP_KEEP_ALIVE_CNT;
+    public int tcpKeepAliveIdle = ZMQ.DEFAULT_TCP_KEEP_ALIVE_IDLE;
+    public int tcpKeepAliveIntvl = ZMQ.DEFAULT_TCP_KEEP_ALIVE_INTVL;
 
     //  Security mechanism for all connections on this socket
-    public Mechanisms mechanism;
+    public Mechanisms mechanism = ZMQ.DEFAULT_MECHANISM;
 
     //  If peer is acting as server for PLAIN or CURVE mechanisms
-    public boolean asServer;
+    public boolean asServer = ZMQ.DEFAULT_AS_SERVER;
 
     //  ZAP authentication domain
-    public String zapDomain = "";
+    public String zapDomain = ZMQ.DEFAULT_ZAP_DOMAIN;
 
     //  Security credentials for PLAIN mechanism
-    public String plainUsername;
-    public String plainPassword;
+    public String plainUsername = null;
+    public String plainPassword = null;
 
     //  Security credentials for CURVE mechanism
     //  Normal base 256 key is 32 bytes
     public static final int CURVE_KEYSIZE = 32;
     //  Key encoded using Z85 is 40 bytes
     public static final int CURVE_KEYSIZE_Z85 = 40;
-    public byte[]           curvePublicKey;
-    public byte[]           curveSecretKey;
-    public byte[]           curveServerKey;
+    // No default, as an array can't really be a static final
+    public byte[]           curvePublicKey = new byte[CURVE_KEYSIZE];
+    public byte[]           curveSecretKey = new byte[CURVE_KEYSIZE];
+    public byte[]           curveServerKey = new byte[CURVE_KEYSIZE];
 
     //  Principals for GSSAPI mechanism
-    String gssPrincipal;
-    String gssServicePrincipal;
+    String gssPrincipal = null;
+    String gssServicePrincipal = null;
     //  If true, gss encryption will be disabled
-    boolean gssPlaintext;
-
-    //  ID of the socket.
-    public int socketId;
+    boolean gssPlaintext = ZMQ.DEFAULT_GSS_PLAINTEXT;
 
     //  If true, socket conflates outgoing/incoming messages.
     //  Applicable to dealer, push/pull, pub/sub socket types.
     //  Cannot receive multi-part messages.
     //  Ignores hwm
-    public boolean conflate;
+    public boolean conflate = ZMQ.DEFAULT_CONFLATE;
 
     //  If connection handshake is not done after this many milliseconds,
     //  close socket.  Default is 30 secs.  0 means no handshake timeout.
-    public int handshakeIvl;
+    public int handshakeIvl = ZMQ.DEFAULT_HANDSHAKE_IVL;
 
     //  If remote peer receives a PING message and doesn't receive another
     //  message within the ttl value, it should close the connection
     //  (measured in tenths of a second)
-    public int heartbeatTtl;
+    public int heartbeatTtl = ZMQ.DEFAULT_HEARTBEAT_TTL;
     //  Time in milliseconds between sending heartbeat PING messages.
-    public int heartbeatInterval;
+    public int heartbeatInterval = ZMQ.DEFAULT_HEARTBEAT_INTERVAL;
     //  Time in milliseconds to wait for a PING response before disconnecting
-    public int heartbeatTimeout;
+    public int heartbeatTimeout = ZMQ.DEFAULT_HEARTBEAT_TIMEOUT;
     // the ping context that will be sent with each ping message.
-    public byte[] heartbeatContext;
-
-    public Class<? extends IDecoder> decoder;
-    public Class<? extends IEncoder> encoder;
+    public byte[] heartbeatContext = ZMQ.DEFAULT_HEARTBEAT_CONTEXT;
 
     // threshold to allocate byte buffers on direct memory instead of heap.
     // Set to <= 0 to disable this system.
-    public MsgAllocator allocator;
+    public MsgAllocator allocator = ZMQ.DEFAULT_MSG_ALLOCATOR;
 
-    public SelectorProviderChooser selectorChooser;
+    public SelectorProviderChooser selectorChooser = ZMQ.DEFAULT_SELECTOR_CHOOSER;
 
     // Hello msg to send to peer upon connecting
-    public Msg helloMsg;
-    public boolean canSendHelloMsg;
+    public Msg helloMsg = ZMQ.DEFAULT_HELLO_MSG;
+    public boolean canSendHelloMsg = false;
 
     // Disconnect message to receive when peer disconnect
-    public Msg disconnectMsg;
-    public boolean canReceiveDisconnectMsg;
+    public Msg disconnectMsg = ZMQ.DEFAULT_DISCONNECT_MSG;
+    public boolean canReceiveDisconnectMsg = false;
 
     // Hiccup message to receive when the connecting peer experience an hiccup in the connection
-    public Msg hiccupMsg;
-    public boolean canReceiveHiccupMsg;
+    public Msg hiccupMsg = ZMQ.DEFAULT_HICCUP_MSG;
+    public boolean canReceiveHiccupMsg = false;
 
     //  As Socket type on the network.
-    public int asType;
+    public int asType = ZMQ.DEFAULT_AS_TYPE;
 
-    //  Last connected routing id for PEER socket
-    public int peerLastRoutingId;
+    // A metadata record name where the self address will be stored if defined
+    public String selfAddressPropertyName = ZMQ.DEFAULT_SELF_ADDRESS_PROPERTY_NAME;
+
+    // Last socket endpoint resolved URI
+    String lastEndpoint = null;
 
     public final Errno errno = new Errno();
 
-    // A metadata record name where the self address will be stored if defined
-    public String selfAddressPropertyName;
+    // TCP accept() filters
+    public final List<TcpAddress.TcpAddressMask> tcpAcceptFilters = new ArrayList<>();
 
-    public Options()
-    {
-        sendHwm = 1000;
-        recvHwm = 1000;
-        affinity = 0;
-        rate = 100;
-        recoveryIvl = 10000;
-        multicastHops = 1;
-        sndbuf = 0;
-        rcvbuf = 0;
-        tos = 0;
-        type = -1;
-        linger = -1;
-        reconnectIvl = 100;
-        reconnectIvlMax = 0;
-        backlog = 100;
-        maxMsgSize = -1;
-        recvTimeout = -1;
-        sendTimeout = -1;
-        ipv6 = ZMQ.PREFER_IPV6;
-        immediate = true;
-        filter = false;
-        recvIdentity = false;
-        rawSocket = false;
-        tcpKeepAlive = -1;
-        tcpKeepAliveCnt = -1;
-        tcpKeepAliveIdle = -1;
-        tcpKeepAliveIntvl = -1;
-        mechanism = Mechanisms.NULL;
-        asServer = false;
-        gssPlaintext = false;
-        socketId = 0;
-        conflate = false;
-        handshakeIvl = 30000;
+    // IPC accept() filters
+    final List<IpcAddress.IpcAddressMask> ipcAcceptFilters = new ArrayList<>();
 
-        heartbeatTtl = 0;
-        heartbeatInterval = 0;
-        heartbeatTimeout = -1;
-        heartbeatContext = new byte[0];
+    //  Last connected routing id for PEER socket
+    public int peerLastRoutingId = 0;
 
-        identity = new byte[0];
-        identitySize = 0;
+    //  ID of the socket.
+    public int socketId = 0;
 
-        curvePublicKey = new byte[CURVE_KEYSIZE];
-        curveSecretKey = new byte[CURVE_KEYSIZE];
-        curveServerKey = new byte[CURVE_KEYSIZE];
+    //  If 1, (X)SUB socket should filter the messages. If 0, it should not.
+    public boolean filter = false;
 
-        allocator = new MsgAllocatorThreshold(Config.MSG_ALLOCATION_HEAP_THRESHOLD.getValue());
+    //  If true, the identity message is forwarded to the socket.
+    public boolean recvIdentity = false;
 
-        selectorChooser = null;
-
-        canSendHelloMsg = false;
-        helloMsg = null;
-
-        canReceiveDisconnectMsg = false;
-        disconnectMsg = null;
-
-        canReceiveHiccupMsg = false;
-        hiccupMsg = null;
-
-        asType = -1;
-
-        peerLastRoutingId = 0;
-
-        selfAddressPropertyName = null;
-    }
+    // if true, router socket accepts non-zmq tcp connections
+    public boolean rawSocket = false;
+    public Class<? extends IDecoder> decoder = null;
+    public Class<? extends IEncoder> encoder = null;
 
     @SuppressWarnings("deprecation")
     public boolean setSocketOpt(int option, Object optval)
