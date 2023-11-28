@@ -41,13 +41,10 @@ public class ZAuth implements Closeable
          */
         boolean configure(ZMsg msg, boolean verbose);
 
-        /**
-         * Callback for authorizing a connection.
-         * @param request
-         * @param verbose
-         * @return true if the connection is authorized, false otherwise.
-         */
-        boolean authorize(ZapRequest request, boolean verbose);
+        boolean handleAuth(ZapRequest request, boolean verbose);
+
+
+
     }
 
     public static class SimplePlainAuth implements Auth
@@ -55,6 +52,29 @@ public class ZAuth implements Closeable
         private final Properties passwords = new Properties(); // PLAIN passwords, if loaded
         private File             passwordsFile;
         private long             passwordsModified;
+
+
+
+
+        @Override
+        public boolean handleAuth(ZapRequest request, boolean verbose) {
+            loadPasswords(false);  // Load or refresh passwords
+
+            String password = passwords.getProperty(request.username);
+            if (password != null && password.equals(request.password)) {
+                if (verbose) {
+                    System.out.printf("ZAuth: Allowed (PLAIN) username=%s\n", request.username);
+                }
+                request.userId = request.username;
+                return true;
+            } else {
+                if (verbose) {
+                    System.out.printf("ZAuth: Denied (PLAIN) username=%s\n", request.username);
+                }
+                return false;
+            }
+        }
+
 
         @Override
         public boolean configure(ZMsg msg, boolean verbose)
@@ -71,8 +91,8 @@ public class ZAuth implements Closeable
 
             if (verbose) {
                 System.out.printf(
-                                  "ZAuth: activated plain-mechanism with password-file: %s%n",
-                                  passwordsFile.getAbsolutePath());
+                        "ZAuth: activated plain-mechanism with password-file: %s%n",
+                        passwordsFile.getAbsolutePath());
             }
 
             loadPasswords(true);
@@ -80,29 +100,6 @@ public class ZAuth implements Closeable
             return true;
         }
 
-        @Override
-        public boolean authorize(ZapRequest request, boolean verbose)
-        {
-            // assert (request.username != null);
-            // Refresh the passwords map if the file changed
-            loadPasswords(false);
-
-            String password = passwords.getProperty(request.username);
-            if (password != null && password.equals(request.password)) {
-                if (verbose) {
-                    System.out.printf("ZAuth: Allowed (PLAIN) username=%s\n", request.username);
-                }
-                request.userId = request.username;
-                return true;
-            }
-            else {
-                if (verbose) {
-                    System.out.printf("ZAuth: Denied (PLAIN) username=%s\n", request.username);
-                }
-
-                return false;
-            }
-        }
 
         private void loadPasswords(boolean initial)
         {
@@ -137,8 +134,41 @@ public class ZAuth implements Closeable
 
         public SimpleCurveAuth()
         {
-            this(new ZCertStore.Hasher());
+
+            //this(new ZCertStore.Hasher());
+
+
+            this.fingerprinter = new ZCertStore.Hasher();
         }
+
+
+
+
+        @Override
+        public boolean handleAuth(ZapRequest request, boolean verbose) {
+            if (allowAny) {
+                if (verbose) {
+                    System.out.println("ZAuth: allowed (CURVE allow any client)");
+                }
+                request.userId = request.clientKey; // Or another suitable user ID
+                return true;
+            } else {
+                if (certStore != null && certStore.containsPublicKey(request.clientKey)) {
+                    if (verbose) {
+                        System.out.printf("ZAuth: Allowed (CURVE) client_key=%s\n", request.clientKey);
+                    }
+                    request.userId = request.clientKey;
+                    request.metadata = certStore.getMetadata(request.clientKey);
+                    return true;
+                } else {
+                    if (verbose) {
+                        System.out.printf("ZAuth: Denied (CURVE) client_key=%s\n", request.clientKey);
+                    }
+                    return false;
+                }
+            }
+        }
+
 
         public SimpleCurveAuth(ZCertStore.Fingerprinter fingerprinter)
         {
@@ -148,7 +178,7 @@ public class ZAuth implements Closeable
         @Override
         public boolean configure(ZMsg configuration, boolean verbose)
         {
-            //  If location is CURVE_ALLOW_ANY, allow all clients. Otherwise
+            //  If location is CURVE_ALLOW_ANY, allow all clients. Otherwise,
             //  treat location as a directory that holds the certificates.
             final String location = configuration.popString();
             allowAny = location.equals(CURVE_ALLOW_ANY);
@@ -166,37 +196,7 @@ public class ZAuth implements Closeable
             return true;
         }
 
-        @Override
-        public boolean authorize(ZapRequest request, boolean verbose)
-        {
-            if (allowAny) {
-                if (verbose) {
-                    System.out.println("ZAuth: allowed (CURVE allow any client)");
-                }
-                return true;
-            }
-            else {
-                if (certStore != null) {
-                    if (certStore.containsPublicKey(request.clientKey)) {
-                        // login allowed
-                        if (verbose) {
-                            System.out.printf("ZAuth: Allowed (CURVE) client_key=%s\n", request.clientKey);
-                        }
-                        request.userId = request.clientKey;
-                        request.metadata = certStore.getMetadata(request.clientKey);
-                        return true;
-                    }
-                    else {
-                        // login not allowed. couldn't find certificate
-                        if (verbose) {
-                            System.out.printf("ZAuth: Denied (CURVE) client_key=%s\n", request.clientKey);
-                        }
-                        return false;
-                    }
-                }
-            }
-            return false;
-        }
+
     }
 
     public static class SimpleNullAuth implements Auth
@@ -207,11 +207,13 @@ public class ZAuth implements Closeable
             return true;
         }
 
+
+
         @Override
-        public boolean authorize(ZapRequest request, boolean verbose)
-        {
-            return true;
+        public boolean handleAuth(ZapRequest request, boolean verbose) {
+            return true;  // NULL authentication always authorizes
         }
+
     }
 
     private static final String ZAP_VERSION = "1.0";
@@ -489,6 +491,7 @@ public class ZAuth implements Closeable
         agent.recv().destroy();
         replies = actor.createAgent(ctx);
     }
+
     /**
      * Enable verbose tracing of commands and activity
      * @param verbose
@@ -843,7 +846,8 @@ public class ZAuth implements Closeable
                     return false;
                 }
                 else {
-                    allowed = auth.authorize(request, verbose);
+
+                    allowed = auth.handleAuth(request, verbose);
                 }
             }
 
