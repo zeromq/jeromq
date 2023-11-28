@@ -255,7 +255,7 @@ public class ZBeacon
 
     public void startServer()
     {
-        if (!broadcastServer.isRunning) {
+        if (!broadcastServer.running) {
             if (listener.get() != null) {
                 if (broadcastServer.thread == null) {
                     broadcastServer.thread = new Thread(broadcastServer);
@@ -405,10 +405,10 @@ public class ZBeacon
      */
     private class BroadcastServer implements Runnable
     {
-        private final DatagramChannel datagramChannel;            // Socket for send/recv
+        private final DatagramChannel datagramChannel;            // Renamed from handle
         private final boolean         ignoreLocalAddress;
         private Thread                thread;
-        private boolean               isRunning;
+        private boolean               running; // Renamed from isRunning
 
         public BroadcastServer(int port, boolean ignoreLocalAddress)
         {
@@ -430,39 +430,37 @@ public class ZBeacon
         {
             ByteBuffer buffer = ByteBuffer.allocate(65535);
             SocketAddress sender;
-            isRunning = true;
+            running = true;
             try {
-                while (!Thread.interrupted() && isRunning) {
+                while (!Thread.interrupted() && running) {
                     buffer.clear();
                     try {
                         sender = datagramChannel.receive(buffer);
                         InetAddress senderAddress = ((InetSocketAddress) sender).getAddress();
 
-                        if (ignoreLocalAddress
-                                && (InetAddress.getLocalHost().getHostAddress().equals(senderAddress.getHostAddress())
-                                || senderAddress.isAnyLocalAddress() || senderAddress.isLoopbackAddress())) {
-                            continue;
-                        }
+                        // Change
 
-                        handleMessage(buffer, senderAddress);
+                        if (shouldProcessMessage(senderAddress)) { // Decomposed conditional
+                            processIncomingMessage(buffer, senderAddress); // Extracted method
+                        }
                     }
                     catch (ClosedChannelException ioException) {
                         break;
                     }
                     catch (IOException ioException) {
-                        isRunning = false;
+                        running = false;
                         throw new RuntimeException(ioException);
                     }
                 }
             }
             finally {
                 datagramChannel.socket().close();
-                isRunning = false;
+                running = false;
                 thread = null;
             }
         }
 
-        private void handleMessage(ByteBuffer buffer, InetAddress from)
+        private void processIncomingMessage(ByteBuffer buffer, InetAddress from)
         {
             byte[] prefix = ZBeacon.this.prefix.get();
             if (buffer.remaining() < prefix.length) {
@@ -477,17 +475,19 @@ public class ZBeacon
                 byte[] content = new byte[buffer.remaining()];
                 buffer.get(content);
                 listener.get().onBeacon(from, content);
-           }
+            }
         }
+
+
+        private boolean shouldProcessMessage(InetAddress senderAddress) throws UnknownHostException {
+            return !(ignoreLocalAddress
+                    && (InetAddress.getLocalHost().getHostAddress().equals(senderAddress.getHostAddress())
+                    || senderAddress.isAnyLocalAddress() || senderAddress.isLoopbackAddress()));
+        }
+
+
     }
 
-    public long getBroadcastInterval()
-    {
-        return broadcastInterval.get();
-    }
 
-    public void setBroadcastInterval(long broadcastInterval)
-    {
-        this.broadcastInterval.set(broadcastInterval);
-    }
+
 }
