@@ -360,39 +360,44 @@ public class ZBeacon
         }
 
         @Override
-        public void run()
-        {
+        public void run() {
             try (DatagramChannel broadcastChannel = DatagramChannel.open()) {
-                broadcastChannel.socket().setBroadcast(true);
-                broadcastChannel.socket().setReuseAddress(true);
-                broadcastChannel.socket().bind(new InetSocketAddress(interfaceAddress, 0));
-                broadcastChannel.connect(broadcastAddress);
+                setupBroadcastChannel(broadcastChannel); // Extracted method for setting up the channel
 
                 isRunning = true;
                 while (!Thread.interrupted() && isRunning) {
                     try {
-                        broadcastChannel.send(ByteBuffer.wrap(beacon.get()), broadcastAddress);
+                        broadcastBeacon(broadcastChannel); // Extracted method for broadcasting beacon
                         Thread.sleep(broadcastInterval.get());
-                    }
-                    catch (InterruptedException | ClosedByInterruptException interruptedException) {
-                        // Re-interrupt the thread so the caller can handle it.
+                    } catch (InterruptedException | ClosedByInterruptException interruptedException) {
                         Thread.currentThread().interrupt();
                         break;
-                    }
-                    catch (Exception exception) {
+                    } catch (Exception exception) {
                         throw new RuntimeException(exception);
                     }
                 }
-            }
-            catch (IOException ioException) {
+            } catch (IOException ioException) {
                 throw new RuntimeException(ioException);
-            }
-            finally {
+            } finally {
                 isRunning = false;
                 thread = null;
             }
         }
 
+        private void setupBroadcastChannel(DatagramChannel broadcastChannel) throws IOException {
+            // Implementation for setting up the broadcast channel
+
+            broadcastChannel.socket().setBroadcast(true);
+            broadcastChannel.socket().setReuseAddress(true);
+            broadcastChannel.socket().bind(new InetSocketAddress(interfaceAddress, 0));
+            broadcastChannel.connect(broadcastAddress);
+        }
+
+
+        private void broadcastBeacon(DatagramChannel broadcastChannel) throws IOException {
+            byte[] beaconData = beacon.get(); // Introducing explaining variable
+            broadcastChannel.send(ByteBuffer.wrap(beaconData), broadcastAddress);
+        }
     }
 
     /**
