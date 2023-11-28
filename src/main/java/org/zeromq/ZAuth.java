@@ -426,9 +426,26 @@ public class ZAuth implements Closeable
         this(ctx, "ZAuth", curveVariant(fingerprinter));
     }
 
-    public ZAuth(ZContext ctx, String actorName)
+    public ZAuth(final ZContext ctx, String actorName)
     {
-        this(ctx, actorName, makeSimpleAuths());
+
+//        this(ctx, actorName, makeSimpleAuths());
+
+
+        Objects.requireNonNull(ctx, "ZAuth works only with a provided ZContext");
+        Objects.requireNonNull(actorName, "Actor name shall be defined");
+        final AuthActor actor = new AuthActor(actorName);
+        actor.addAuthenticator(Mechanism.PLAIN.name(), new SimplePlainAuth());
+        actor.addAuthenticator(Mechanism.CURVE.name(), new SimpleCurveAuth());
+        actor.addAuthenticator(Mechanism.NULL.name(), new SimpleNullAuth());
+
+        final ZActor zactor = new ZActor(ctx, actor, UUID.randomUUID().toString());
+        agent = zactor.agent();
+        exit = zactor.exit();
+
+        // wait for the start of the actor
+        agent.recv().destroy();
+        replies = actor.createAgent(ctx);
     }
 
     private static Map<String, Auth> makeSimpleAuths()
@@ -454,7 +471,16 @@ public class ZAuth implements Closeable
         Objects.requireNonNull(ctx, "ZAuth works only with a provided ZContext");
         Objects.requireNonNull(actorName, "Actor name shall be defined");
         Objects.requireNonNull(auths, "Authenticators shall be supplied as non-null map");
-        final AuthActor actor = new AuthActor(actorName, auths);
+
+        //commenting the existing changes
+        //  final AuthActor actor = new AuthActor(actorName, auths);
+
+        final AuthActor actor = new AuthActor(actorName);
+        actor.addAuthenticator(Mechanism.PLAIN.name(), new SimplePlainAuth());
+        actor.addAuthenticator(Mechanism.CURVE.name(), new SimpleCurveAuth());
+        actor.addAuthenticator(Mechanism.NULL.name(), new SimpleNullAuth());
+
+
         final ZActor zactor = new ZActor(ctx, actor, UUID.randomUUID().toString());
         agent = zactor.agent();
         exit = zactor.exit();
@@ -463,7 +489,6 @@ public class ZAuth implements Closeable
         agent.recv().destroy();
         replies = actor.createAgent(ctx);
     }
-
     /**
      * Enable verbose tracing of commands and activity
      * @param verbose
@@ -627,13 +652,19 @@ public class ZAuth implements Closeable
         private Socket       replies;        // replies pipe
         private boolean      verbose;        // trace behavior
 
-        private AuthActor(String actorName, Map<String, Auth> auths)
+        private AuthActor(String actorName)
         {
             assert (auths != null);
             assert (actorName != null);
             this.actorName = actorName;
             this.auths.putAll(auths);
             this.repliesAddress = "inproc://zauth-replies-" + UUID.randomUUID();
+        }
+        // Method to add an authenticator
+        public void addAuthenticator(String mechanism, Auth authenticator) {
+            Objects.requireNonNull(mechanism, "Mechanism cannot be null");
+            Objects.requireNonNull(authenticator, "Authenticator cannot be null");
+            auths.put(mechanism, authenticator);
         }
 
         private ZAgent createAgent(ZContext ctx)
