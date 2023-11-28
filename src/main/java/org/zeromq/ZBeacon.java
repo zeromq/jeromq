@@ -405,7 +405,7 @@ public class ZBeacon
      */
     private class BroadcastServer implements Runnable
     {
-        private final DatagramChannel handle;            // Socket for send/recv
+        private final DatagramChannel datagramChannel;            // Socket for send/recv
         private final boolean         ignoreLocalAddress;
         private Thread                thread;
         private boolean               isRunning;
@@ -415,10 +415,10 @@ public class ZBeacon
             this.ignoreLocalAddress = ignoreLocalAddress;
             try {
                 // Create UDP socket
-                handle = DatagramChannel.open();
-                handle.configureBlocking(true);
-                handle.socket().setReuseAddress(true);
-                handle.socket().bind(new InetSocketAddress(port));
+                datagramChannel = DatagramChannel.open();
+                datagramChannel.configureBlocking(true);
+                datagramChannel.socket().setReuseAddress(true);
+                datagramChannel.socket().bind(new InetSocketAddress(port));
             }
             catch (IOException ioException) {
                 throw new RuntimeException(ioException);
@@ -435,7 +435,7 @@ public class ZBeacon
                 while (!Thread.interrupted() && isRunning) {
                     buffer.clear();
                     try {
-                        sender = handle.receive(buffer);
+                        sender = datagramChannel.receive(buffer);
                         InetAddress senderAddress = ((InetSocketAddress) sender).getAddress();
 
                         if (ignoreLocalAddress
@@ -456,7 +456,7 @@ public class ZBeacon
                 }
             }
             finally {
-                handle.socket().close();
+                datagramChannel.socket().close();
                 isRunning = false;
                 thread = null;
             }
