@@ -359,6 +359,10 @@ public class ZBeacon
             this.interfaceAddress = interfaceAddress;
         }
 
+
+        // Updated Method run
+
+
         @Override
         public void run() {
             try (DatagramChannel broadcastChannel = DatagramChannel.open()) {
@@ -475,7 +479,7 @@ public class ZBeacon
                 byte[] content = new byte[buffer.remaining()];
                 buffer.get(content);
                 listener.get().onBeacon(from, content);
-            }
+           }
         }
 
 
@@ -488,6 +492,6 @@ public class ZBeacon
 
     }
 
-
+    // getBroadcastInterval and setBroadcastInterval methods are unused so removing these methods.
 
 }

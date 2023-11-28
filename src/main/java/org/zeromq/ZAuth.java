@@ -91,8 +91,8 @@ public class ZAuth implements Closeable
 
             if (verbose) {
                 System.out.printf(
-                        "ZAuth: activated plain-mechanism with password-file: %s%n",
-                        passwordsFile.getAbsolutePath());
+                                  "ZAuth: activated plain-mechanism with password-file: %s%n",
+                                  passwordsFile.getAbsolutePath());
             }
 
             loadPasswords(true);
@@ -475,7 +475,7 @@ public class ZAuth implements Closeable
         Objects.requireNonNull(auths, "Authenticators shall be supplied as non-null map");
 
         //commenting the existing changes
-        //  final AuthActor actor = new AuthActor(actorName, auths);
+      //  final AuthActor actor = new AuthActor(actorName, auths);
 
         final AuthActor actor = new AuthActor(actorName);
         actor.addAuthenticator(Mechanism.PLAIN.name(), new SimplePlainAuth());
