@@ -79,10 +79,11 @@ public class IpcListener extends AbstractSocketListener<IpcAddress>
             fd.close();
         }
         finally {
-            assert (this.boundSocketPath != null);
             Path socketPath = this.boundSocketPath;
             this.boundSocketPath = null;
-            Files.deleteIfExists(socketPath);
+            if (socketPath != null) {
+                Files.deleteIfExists(socketPath);
+            }
         }
     }
 }
