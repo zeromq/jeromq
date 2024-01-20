@@ -30,11 +30,13 @@ public class IpcAddress implements Address.IZAddress
         }
     }
 
-    public static boolean isIpcAddress(SocketAddress address) {
+    public static boolean isIpcAddress(SocketAddress address)
+    {
         return address instanceof UnixDomainSocketAddress;
     }
 
-    public static String getAddress(SocketAddress address) {
+    public static String getAddress(SocketAddress address)
+    {
         assert (isIpcAddress(address));
         var unixDomainSocketAddress = (UnixDomainSocketAddress) address;
         return unixDomainSocketAddress.getPath().toString();

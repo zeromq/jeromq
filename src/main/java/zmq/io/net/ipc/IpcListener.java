@@ -11,6 +11,7 @@ import zmq.io.net.tcp.TcpListener;
 public class IpcListener extends TcpListener
 {
     private IpcAddress address;
+
     public IpcListener(IOThread ioThread, SocketBase socket, final Options options)
     {
         super(ioThread, socket, options);

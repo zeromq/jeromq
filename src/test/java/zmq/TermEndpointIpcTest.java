@@ -13,7 +13,8 @@ public class TermEndpointIpcTest extends TestTermEndpoint
     }
 
     @Override
-    protected String endpointNormal() throws IOException {
+    protected String endpointNormal() throws IOException
+    {
         Path temp = Files.createTempFile("zmq-test-", ".sock");
         Files.delete(temp);
         return "ipc://" + temp;

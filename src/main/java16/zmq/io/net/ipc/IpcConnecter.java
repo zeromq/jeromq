@@ -28,6 +28,6 @@ public class IpcConnecter extends AbstractSocketConnecter
     @Override
     protected void tuneConnectedChannel(SocketChannel channel) throws IOException
     {
-
+        // no-op
     }
 }

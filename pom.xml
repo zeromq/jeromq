@@ -365,6 +365,7 @@
                 <configuration>
                   <consoleOutput>true</consoleOutput>
                   <includeTestSourceDirectory>true</includeTestSourceDirectory>
+                  <sourceDirectories>${project.basedir}/src/main/java,${project.basedir}/src/main/java16</sourceDirectories>
                   <configLocation>${project.basedir}/src/checkstyle/checks.xml</configLocation>
                   <failOnViolation>true</failOnViolation>
                   <excludes>**/guide/*</excludes>

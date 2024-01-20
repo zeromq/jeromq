@@ -31,11 +31,13 @@ public class IpcAddress implements Address.IZAddress
         }
     }
 
-    public static boolean isIpcAddress(SocketAddress address) {
+    public static boolean isIpcAddress(SocketAddress address)
+    {
         return false;
     }
 
-    public static String getAddress(SocketAddress address) {
+    public static String getAddress(SocketAddress address)
+    {
         throw new IllegalArgumentException("Address is not unix domain socket address.");
     }
 
@@ -112,10 +114,11 @@ public class IpcAddress implements Address.IZAddress
     {
         Class<? extends InetAddress> addressClass = ZMQ.PREFER_IPV6 ? Inet6Address.class : Inet4Address.class;
         try {
-            for (Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces(); interfaces
-                    .hasMoreElements();) {
+            Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+            while (interfaces.hasMoreElements()) {
                 NetworkInterface net = interfaces.nextElement();
-                for (Enumeration<InetAddress> addresses = net.getInetAddresses(); addresses.hasMoreElements();) {
+                Enumeration<InetAddress> addresses = net.getInetAddresses();
+                while (addresses.hasMoreElements()) {
                     InetAddress inetAddress = addresses.nextElement();
                     if (inetAddress.isLoopbackAddress() && addressClass.isInstance(inetAddress)) {
                         return inetAddress;
