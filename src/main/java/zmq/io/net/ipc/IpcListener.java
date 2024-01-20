@@ -1,89 +1,40 @@
 package zmq.io.net.ipc;
 
-import java.io.IOException;
-import java.net.UnixDomainSocketAddress;
-import java.nio.channels.ServerSocketChannel;
-import java.nio.channels.SocketChannel;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.net.InetSocketAddress;
 
 import zmq.Options;
 import zmq.SocketBase;
 import zmq.io.IOThread;
-import zmq.io.net.AbstractSocketListener;
+import zmq.io.net.Address;
+import zmq.io.net.tcp.TcpListener;
 
-public class IpcListener extends AbstractSocketListener<IpcAddress>
+// fake Unix domain socket
+public class IpcListener extends TcpListener
 {
-    // bind will create this socket file but close will not remove it, so we need to do that ourselves on close.
-    private Path boundSocketPath;
-
     public IpcListener(IOThread ioThread, SocketBase socket, final Options options)
     {
         super(ioThread, socket, options);
+
     }
 
     // Get the bound address for use with wildcards
     @Override
     public String getAddress()
     {
-        // TODO
-        return super.getZAddress().toString(-1);
+        Address.IZAddress address = super.getZAddress();
+        if (((InetSocketAddress) address.address()).getPort() == 0) {
+            return address(address);
+        }
+        return address.toString();
     }
 
     //  Set address to listen on.
     @Override
     public boolean setAddress(String addr)
     {
-        return super.setZAddress(new IpcAddress(addr));
-    }
+        IpcAddress address = new IpcAddress(addr);
 
-    @Override
-    protected ServerSocketChannel openServer(IpcAddress address) throws IOException
-    {
-        if (options.selectorChooser == null) {
-            return ServerSocketChannel.open(address.family());
-        }
-        else {
-            return options.selectorChooser.choose(address, options).openServerSocketChannel(address.family());
-        }
-    }
-
-    @Override
-    protected void bindServer(ServerSocketChannel fd, IpcAddress address) throws IOException
-    {
-        fd.configureBlocking(false);
-
-        UnixDomainSocketAddress socketAddress = address.address();
-        fd.bind(socketAddress, options.backlog);
-
-        assert (this.boundSocketPath == null);
-        this.boundSocketPath = socketAddress.getPath();
-    }
-
-    @Override
-    protected SocketChannel accept(ServerSocketChannel fd) throws IOException
-    {
-        return fd.accept();
-    }
-
-    @Override
-    protected void tuneAcceptedChannel(SocketChannel channel) throws IOException
-    {
-        // no-op
-    }
-
-    @Override
-    protected void closeServerChannel(ServerSocketChannel fd) throws IOException
-    {
-        try {
-            fd.close();
-        }
-        finally {
-            Path socketPath = this.boundSocketPath;
-            this.boundSocketPath = null;
-            if (socketPath != null) {
-                Files.deleteIfExists(socketPath);
-            }
-        }
+        InetSocketAddress sock = (InetSocketAddress) address.address();
+        return super.setAddress(sock);
     }
 }

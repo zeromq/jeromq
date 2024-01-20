@@ -1,9 +1,10 @@
 package zmq.io.net;
 
+import zmq.io.net.ipc.IpcAddress;
+
 import java.net.InetSocketAddress;
 import java.net.ProtocolFamily;
 import java.net.SocketAddress;
-import java.net.UnixDomainSocketAddress;
 
 public class Address
 {
@@ -61,9 +62,8 @@ public class Address
             protocol = NetProtocol.tcp;
             resolved = null;
         }
-        else if (socketAddress instanceof UnixDomainSocketAddress) {
-            UnixDomainSocketAddress sockAddr = (UnixDomainSocketAddress) socketAddress;
-            this.address = sockAddr.getPath().toString();
+        else if (IpcAddress.isIpcAddress(socketAddress)) {
+            this.address = IpcAddress.getAddress(socketAddress);
             protocol = NetProtocol.ipc;
             resolved = null;
         }
