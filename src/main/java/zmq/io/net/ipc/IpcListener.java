@@ -5,12 +5,12 @@ import java.net.InetSocketAddress;
 import zmq.Options;
 import zmq.SocketBase;
 import zmq.io.IOThread;
-import zmq.io.net.Address;
 import zmq.io.net.tcp.TcpListener;
 
 // fake Unix domain socket
 public class IpcListener extends TcpListener
 {
+    private IpcAddress address;
     public IpcListener(IOThread ioThread, SocketBase socket, final Options options)
     {
         super(ioThread, socket, options);
@@ -21,7 +21,6 @@ public class IpcListener extends TcpListener
     @Override
     public String getAddress()
     {
-        Address.IZAddress address = super.getZAddress();
         if (((InetSocketAddress) address.address()).getPort() == 0) {
             return address(address);
         }
@@ -32,7 +31,7 @@ public class IpcListener extends TcpListener
     @Override
     public boolean setAddress(String addr)
     {
-        IpcAddress address = new IpcAddress(addr);
+        address = new IpcAddress(addr);
 
         InetSocketAddress sock = (InetSocketAddress) address.address();
         return super.setAddress(sock);
