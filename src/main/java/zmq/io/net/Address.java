@@ -1,7 +1,9 @@
 package zmq.io.net;
 
 import java.net.InetSocketAddress;
+import java.net.ProtocolFamily;
 import java.net.SocketAddress;
+import java.net.UnixDomainSocketAddress;
 
 public class Address
 {
@@ -11,11 +13,11 @@ public class Address
 
         String toString(int port);
 
-        InetSocketAddress resolve(String name, boolean ipv6, boolean local);
+        // TODO this is really only used internally, the one external use is specific to re-trying local resolution
+        // for tcp. Doesn't really belong in this interface.
+        //        SocketAddress resolve(String name, boolean ipv6, boolean local);
 
         SocketAddress address();
-
-        SocketAddress sourceAddress();
     }
 
     private final NetProtocol protocol;
@@ -57,6 +59,12 @@ public class Address
             InetSocketAddress sockAddr = (InetSocketAddress) socketAddress;
             this.address = sockAddr.getAddress().getHostAddress() + ":" + sockAddr.getPort();
             protocol = NetProtocol.tcp;
+            resolved = null;
+        }
+        else if (socketAddress instanceof UnixDomainSocketAddress) {
+            UnixDomainSocketAddress sockAddr = (UnixDomainSocketAddress) socketAddress;
+            this.address = sockAddr.getPath().toString();
+            protocol = NetProtocol.ipc;
             resolved = null;
         }
         else {

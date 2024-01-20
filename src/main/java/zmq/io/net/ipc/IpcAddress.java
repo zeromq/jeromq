@@ -1,23 +1,22 @@
 package zmq.io.net.ipc;
 
-import java.net.Inet4Address;
-import java.net.Inet6Address;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.NetworkInterface;
+import java.io.IOException;
+import java.net.ProtocolFamily;
 import java.net.SocketAddress;
-import java.net.SocketException;
-import java.util.Enumeration;
+import java.net.StandardProtocolFamily;
+import java.net.UnixDomainSocketAddress;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
-import zmq.ZMQ;
+import org.zeromq.ZMQException;
+
+import zmq.ZError;
 import zmq.io.net.Address;
-import zmq.io.net.ProtocolFamily;
-import zmq.io.net.StandardProtocolFamily;
 import zmq.io.net.tcp.TcpAddress;
-import zmq.util.Utils;
 
 public class IpcAddress implements Address.IZAddress
 {
+    // TODO unused?
     public static class IpcAddressMask extends TcpAddress
     {
         public IpcAddressMask(String addr, boolean ipv6)
@@ -31,65 +30,53 @@ public class IpcAddress implements Address.IZAddress
         }
     }
 
-    private String                  name;
-    private final InetSocketAddress address;
-    private final SocketAddress     sourceAddress;
+    private String                        name;
+    private final UnixDomainSocketAddress address;
 
     public IpcAddress(String addr)
     {
-        String[] strings = addr.split(";");
-
-        address = resolve(strings[0], ZMQ.PREFER_IPV6, true);
-        if (strings.length == 2 && !"".equals(strings[1])) {
-            sourceAddress = resolve(strings[1], ZMQ.PREFER_IPV6, true);
-        }
-        else {
-            sourceAddress = null;
-        }
+        // TODO inline?
+        this.address = this.resolve(addr);
     }
 
     @Override
     public String toString()
     {
+        // TODO possible?
         if (name == null) {
             return "";
         }
 
-        return "ipc://" + name;
+        return "ipc://" + this.address.toString();
     }
 
     @Override
     public String toString(int port)
     {
-        if ("*".equals(name)) {
-            String suffix = Utils.unhash(port - 10000);
-            return "ipc://" + suffix;
-        }
+        // TODO why is port in the interface?
         return toString();
     }
 
-    @Override
-    public InetSocketAddress resolve(String name, boolean ipv6, boolean loopback)
+    private UnixDomainSocketAddress resolve(String name)
     {
         this.name = name;
 
-        int hash = name.hashCode();
-        if ("*".equals(name)) {
-            hash = 0;
-        }
-        else {
-            if (hash < 0) {
-                hash = -hash;
-            }
-            hash = hash % 55536;
-            hash += 10000;
+        if (!"*".equals(name)) {
+            return UnixDomainSocketAddress.of(name);
         }
 
-        return new InetSocketAddress(findAddress(ipv6, loopback), hash);
+        try {
+            Path temp = Files.createTempFile("zmq-", ".sock");
+            Files.delete(temp);
+            return UnixDomainSocketAddress.of(temp);
+        }
+        catch (IOException e) {
+            throw new ZMQException(e.getMessage(), ZError.EADDRNOTAVAIL, e);
+        }
     }
 
     @Override
-    public SocketAddress address()
+    public UnixDomainSocketAddress address()
     {
         return address;
     }
@@ -97,33 +84,6 @@ public class IpcAddress implements Address.IZAddress
     @Override
     public ProtocolFamily family()
     {
-        return StandardProtocolFamily.INET;
-    }
-
-    @Override
-    public SocketAddress sourceAddress()
-    {
-        return sourceAddress;
-    }
-
-    private InetAddress findAddress(boolean ipv6, boolean loopback)
-    {
-        Class<? extends InetAddress> addressClass = ipv6 ? Inet6Address.class : Inet4Address.class;
-        try {
-            for (Enumeration<NetworkInterface> interfaces = NetworkInterface
-                    .getNetworkInterfaces(); interfaces.hasMoreElements(); ) {
-                NetworkInterface net = interfaces.nextElement();
-                for (Enumeration<InetAddress> addresses = net.getInetAddresses(); addresses.hasMoreElements(); ) {
-                    InetAddress inetAddress = addresses.nextElement();
-                    if (inetAddress.isLoopbackAddress() == loopback && addressClass.isInstance(inetAddress)) {
-                        return inetAddress;
-                    }
-                }
-            }
-        }
-        catch (SocketException e) {
-            throw new IllegalArgumentException(e);
-        }
-        throw new IllegalArgumentException("no address found " + (ipv6 ? "IPV6" : "IPV4") + (loopback ? "local" : ""));
+        return StandardProtocolFamily.UNIX;
     }
 }

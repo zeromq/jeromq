@@ -17,6 +17,7 @@ import zmq.io.net.Address;
 import zmq.io.net.Address.IZAddress;
 import zmq.io.net.Listener;
 import zmq.io.net.NetProtocol;
+import zmq.io.net.tcp.TcpAddress;
 import zmq.pipe.Pipe;
 import zmq.poll.IPollEvents;
 import zmq.poll.Poller;
@@ -29,7 +30,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
 {
     private static class EndpointPipe
     {
-        private final Own endpoint;
+        private final Own  endpoint;
         private final Pipe pipe;
 
         public EndpointPipe(Own endpoint, Pipe pipe)
@@ -97,7 +98,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
     private final Set<Pipe> pipes;
 
     //  Reaper's poller and handle of this socket within it.
-    private Poller poller;
+    private Poller        poller;
     private Poller.Handle handle;
 
     //  Timestamp of when commands were processed the last time.
@@ -536,13 +537,13 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
             }
 
             //  Create a bi-directional pipe to connect the peers.
-            ZObject[] parents = {this, peer.socket == null ? this : peer.socket};
+            ZObject[] parents = { this, peer.socket == null ? this : peer.socket };
 
             boolean conflate = options.conflate && (options.type == ZMQ.ZMQ_DEALER || options.type == ZMQ.ZMQ_PULL
                     || options.type == ZMQ.ZMQ_PUSH || options.type == ZMQ.ZMQ_PUB || options.type == ZMQ.ZMQ_SUB);
 
-            int[] hwms = {conflate ? -1 : sndhwm, conflate ? -1 : rcvhwm};
-            boolean[] conflates = {conflate, conflate};
+            int[] hwms = { conflate ? -1 : sndhwm, conflate ? -1 : rcvhwm };
+            boolean[] conflates = { conflate, conflate };
             Pipe[] pipes = Pipe.pair(parents, hwms, conflates);
 
             //  Attach local end of the pipe to this socket object.
@@ -658,12 +659,12 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
 
         if (options.immediate || subscribe2all) {
             //  Create a bi-directional pipe.
-            ZObject[] parents = {this, session};
+            ZObject[] parents = { this, session };
             boolean conflate = options.conflate && (options.type == ZMQ.ZMQ_DEALER || options.type == ZMQ.ZMQ_PULL
                     || options.type == ZMQ.ZMQ_PUSH || options.type == ZMQ.ZMQ_PUB || options.type == ZMQ.ZMQ_SUB);
 
-            int[] hwms = {conflate ? -1 : options.sendHwm, conflate ? -1 : options.recvHwm};
-            boolean[] conflates = {conflate, conflate};
+            int[] hwms = { conflate ? -1 : options.sendHwm, conflate ? -1 : options.recvHwm };
+            boolean[] conflates = { conflate, conflate };
             Pipe[] pipes = Pipe.pair(parents, hwms, conflates);
 
             //  Attach local end of the pipe to the socket object.
@@ -758,7 +759,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
                     endpoint = endpoints.hasValues(resolvedAddress);
                     if (!endpoint) {
                         // no luck, try with local resolution
-                        InetSocketAddress socketAddress = address.resolve(uri.getAddress(), options.ipv6, true);
+                        InetSocketAddress socketAddress = TcpAddress.resolve(uri.getAddress(), options.ipv6, true);
                         resolvedAddress = socketAddress.toString();
                     }
                 }

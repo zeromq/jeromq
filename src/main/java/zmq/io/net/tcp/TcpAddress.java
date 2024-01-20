@@ -4,15 +4,15 @@ import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.ProtocolFamily;
 import java.net.SocketAddress;
+import java.net.StandardProtocolFamily;
 import java.net.UnknownHostException;
 
 import org.zeromq.ZMQException;
 
 import zmq.ZError;
 import zmq.io.net.Address;
-import zmq.io.net.ProtocolFamily;
-import zmq.io.net.StandardProtocolFamily;
 
 public class TcpAddress implements Address.IZAddress
 {
@@ -30,7 +30,6 @@ public class TcpAddress implements Address.IZAddress
     }
 
     private final InetSocketAddress address;
-    private final SocketAddress     sourceAddress;
 
     public TcpAddress(String addr, boolean ipv6)
     {
@@ -38,17 +37,13 @@ public class TcpAddress implements Address.IZAddress
 
         address = resolve(strings[0], ipv6, false);
         if (strings.length == 2 && !"".equals(strings[1])) {
-            sourceAddress = resolve(strings[1], ipv6, false);
-        }
-        else {
-            sourceAddress = null;
+            resolve(strings[1], ipv6, false);
         }
     }
 
     protected TcpAddress(InetSocketAddress address)
     {
         this.address = address;
-        sourceAddress = null;
     }
 
     @Override
@@ -87,15 +82,7 @@ public class TcpAddress implements Address.IZAddress
         }
     }
 
-    /**
-     * @param name
-     * @param ipv6
-     * @param local ignored
-     * @return the resolved address
-     * @see zmq.io.net.Address.IZAddress#resolve(java.lang.String, boolean, boolean)
-     */
-    @Override
-    public InetSocketAddress resolve(String name, boolean ipv6, boolean local)
+    public static InetSocketAddress resolve(String name, boolean ipv6, boolean local)
     {
         //  Find the ':' at end that separates address from the port number.
         int delimiter = name.lastIndexOf(':');
@@ -172,11 +159,5 @@ public class TcpAddress implements Address.IZAddress
     public SocketAddress address()
     {
         return address;
-    }
-
-    @Override
-    public SocketAddress sourceAddress()
-    {
-        return sourceAddress;
     }
 }
