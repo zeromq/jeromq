@@ -1,4 +1,4 @@
-package zmq.io.net.ipc;
+package zmq.io.net.ipc.loopback;
 
 import java.net.InetSocketAddress;
 

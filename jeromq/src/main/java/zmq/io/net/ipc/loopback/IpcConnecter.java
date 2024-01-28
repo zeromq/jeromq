@@ -1,4 +1,4 @@
-package zmq.io.net.ipc;
+package zmq.io.net.ipc.loopback;
 
 import zmq.Options;
 import zmq.io.IOThread;

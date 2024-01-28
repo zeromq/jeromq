@@ -1,10 +1,10 @@
 package zmq.io.net;
 
-import zmq.io.net.ipc.IpcAddress;
-
 import java.net.InetSocketAddress;
 import java.net.ProtocolFamily;
 import java.net.SocketAddress;
+
+import zmq.io.net.ipc.IpcImpl;
 
 public class Address
 {
@@ -62,8 +62,8 @@ public class Address
             protocol = NetProtocol.tcp;
             resolved = null;
         }
-        else if (IpcAddress.isIpcAddress(socketAddress)) {
-            this.address = IpcAddress.getAddress(socketAddress);
+        else if (IpcImpl.get().isIpcAddress(socketAddress)) {
+            this.address = IpcImpl.get().getAddress(socketAddress);
             protocol = NetProtocol.ipc;
             resolved = null;
         }

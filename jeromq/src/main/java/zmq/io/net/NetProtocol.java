@@ -9,8 +9,7 @@ import zmq.Options;
 import zmq.SocketBase;
 import zmq.io.IOThread;
 import zmq.io.net.Address.IZAddress;
-import zmq.io.net.ipc.IpcAddress;
-import zmq.io.net.ipc.IpcListener;
+import zmq.io.net.ipc.IpcImpl;
 import zmq.io.net.tcp.TcpAddress;
 import zmq.io.net.tcp.TcpListener;
 import zmq.io.net.tipc.TipcListener;
@@ -25,7 +24,7 @@ public enum NetProtocol
         public Listener getListener(IOThread ioThread, SocketBase socket,
                                     Options options)
         {
-            return new IpcListener(ioThread, socket, options);
+            return IpcImpl.get().createListener(ioThread, socket, options);
         }
 
         @Override
@@ -37,7 +36,7 @@ public enum NetProtocol
         @Override
         public IZAddress zresolve(String addr, boolean ipv6)
         {
-            return new IpcAddress(addr);
+            return IpcImpl.get().createAddress(addr);
         }
 
     },

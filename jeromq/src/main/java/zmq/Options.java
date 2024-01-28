@@ -8,7 +8,6 @@ import zmq.io.coder.IDecoder;
 import zmq.io.coder.IEncoder;
 import zmq.io.mechanism.Mechanisms;
 import zmq.io.net.SelectorProviderChooser;
-import zmq.io.net.ipc.IpcAddress;
 import zmq.io.net.tcp.TcpAddress;
 import zmq.io.net.tcp.TcpAddress.TcpAddressMask;
 import zmq.msg.MsgAllocator;
@@ -167,9 +166,6 @@ public class Options
 
     // TCP accept() filters
     public final List<TcpAddress.TcpAddressMask> tcpAcceptFilters = new ArrayList<>();
-
-    // IPC accept() filters
-    final List<IpcAddress.IpcAddressMask> ipcAcceptFilters = new ArrayList<>();
 
     //  Last connected routing id for PEER socket
     public int peerLastRoutingId = 0;

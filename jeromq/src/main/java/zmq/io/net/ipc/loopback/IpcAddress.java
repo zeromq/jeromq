@@ -1,4 +1,4 @@
-package zmq.io.net.ipc;
+package zmq.io.net.ipc.loopback;
 
 import java.net.Inet4Address;
 import java.net.Inet6Address;
@@ -13,39 +13,10 @@ import java.util.Enumeration;
 
 import zmq.ZMQ;
 import zmq.io.net.Address;
-import zmq.io.net.tcp.TcpAddress;
 import zmq.util.Utils;
 
 public class IpcAddress implements Address.IZAddress
 {
-    public static class IpcAddressMask extends TcpAddress
-    {
-        public IpcAddressMask(String addr, boolean ipv6)
-        {
-            super(addr, ipv6);
-        }
-
-        public boolean matchAddress(SocketAddress addr)
-        {
-            return address().equals(addr);
-        }
-    }
-
-    public static boolean isIpcAddress(SocketAddress address)
-    {
-        return false;
-    }
-
-    public static String getAddress(SocketAddress address)
-    {
-        throw new IllegalArgumentException("Address is not unix domain socket address.");
-    }
-
-    public static boolean isImplementedViaTcpLoopback()
-    {
-        return true;
-    }
-
     private String                  name;
     private final InetSocketAddress address;
 

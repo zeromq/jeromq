@@ -15,7 +15,7 @@ import zmq.io.StreamEngine.ErrorReason;
 import zmq.io.mechanism.Mechanisms;
 import zmq.io.net.Address;
 import zmq.io.net.NetProtocol;
-import zmq.io.net.ipc.IpcConnecter;
+import zmq.io.net.ipc.IpcImpl;
 import zmq.io.net.norm.NormEngine;
 import zmq.io.net.pgm.PgmReceiver;
 import zmq.io.net.pgm.PgmSender;
@@ -309,8 +309,8 @@ public class SessionBase extends Own implements Pipe.IPipeEvents, IPollEvents
                 errno.set(ZError.ECONNREFUSED);
                 return ZError.ECONNREFUSED;
             }
-            if (peer.options.type != ZMQ.ZMQ_REP && peer.options.type != ZMQ.ZMQ_ROUTER &&
-                        peer.options.type != ZMQ.ZMQ_SERVER) {
+            if (peer.options.type != ZMQ.ZMQ_REP && peer.options.type != ZMQ.ZMQ_ROUTER
+                    && peer.options.type != ZMQ.ZMQ_SERVER) {
                 errno.set(ZError.ECONNREFUSED);
                 return ZError.ECONNREFUSED;
             }
@@ -536,7 +536,7 @@ public class SessionBase extends Own implements Pipe.IPipeEvents, IPollEvents
             }
             break;
         case ipc: {
-            IpcConnecter connecter = new IpcConnecter(ioThread, this, options, addr, wait);
+            Own connecter = IpcImpl.get().createConnector(ioThread, this, options, addr, wait);
             launchChild(connecter);
         }
             break;
