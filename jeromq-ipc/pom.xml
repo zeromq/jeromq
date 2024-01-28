@@ -13,7 +13,7 @@
 
     <properties>
         <rootDir>${project.basedir}/..</rootDir>
-        <jdk.target>16</jdk.target>
+        <maven.compiler.release>16</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 

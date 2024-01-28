@@ -101,4 +101,26 @@
       </plugin>
     </plugins>
   </build>
+
+  <profiles>
+    <profile>
+      <id>jdk8</id>
+      <activation>
+        <jdk>1.8</jdk>
+      </activation>
+      <properties>
+        <maven.compiler.source>${jdk.target}</maven.compiler.source>
+        <maven.compiler.target>${jdk.target}</maven.compiler.target>
+      </properties>
+    </profile>
+    <profile>
+      <id>jdk9+</id>
+      <activation>
+        <jdk>(1.8,)</jdk>
+      </activation>
+      <properties>
+        <maven.compiler.release>${jdk.target}</maven.compiler.release>
+      </properties>
+    </profile>
+  </profiles>
 </project>
