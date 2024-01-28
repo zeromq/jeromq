@@ -1,8 +1,12 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.zeromq</groupId>
-  <artifactId>jeromq</artifactId>
-  <packaging>jar</packaging>
+  <artifactId>jeromq-pom</artifactId>
+  <packaging>pom</packaging>
+  <modules>
+    <module>jeromq-ipc</module>
+    <module>jeromq</module>
+  </modules>
   <version>0.6.0-SNAPSHOT</version>
   <name>JeroMQ</name>
   <description>Pure Java implementation of libzmq</description>
@@ -21,15 +25,16 @@
   </scm>
   <developers/>
   <properties>
+    <rootDir>${project.basedir}</rootDir>
     <!-- Required by reproducible builds: https://maven.apache.org/guides/mini/guide-reproducible-builds.html -->
     <project.build.outputTimestamp>0</project.build.outputTimestamp>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <jdk.target>8</jdk.target>
     <!-- Indirection needed to keep optional jacoco settings and external argument lines-->
     <arg.line />
     <argLine>${arg.line}</argLine>
   </properties>
-  <dependencies>
+  <dependencyManagement>
+    <dependencies>
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
@@ -41,7 +46,8 @@
       <artifactId>jnacl</artifactId>
       <version>1.0.0</version>
     </dependency>
-  </dependencies>
+    </dependencies>
+  </dependencyManagement>
   <distributionManagement>
     <snapshotRepository>
       <id>ossrh</id>
@@ -53,114 +59,6 @@
     </repository>
   </distributionManagement>
   <build>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>compile-java-8</id>
-            <goals>
-              <goal>compile</goal>
-            </goals>
-          </execution>
-          <execution>
-            <id>compile-java-16</id>
-            <phase>compile</phase>
-            <goals>
-              <goal>compile</goal>
-            </goals>
-            <configuration>
-              <release>16</release>
-              <compileSourceRoots>
-                <compileSourceRoot>${project.basedir}/src/main/java16</compileSourceRoot>
-              </compileSourceRoots>
-              <multiReleaseOutput>true</multiReleaseOutput>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-jar-plugin</artifactId>
-        <configuration>
-          <archive>
-            <manifestEntries>
-              <Multi-Release>true</Multi-Release>
-            </manifestEntries>
-          </archive>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <configuration>
-          <useSystemClassLoader>false</useSystemClassLoader>
-          <rerunFailingTestsCount>5</rerunFailingTestsCount>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-source-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>attach-sources</id>
-            <goals>
-              <goal>jar</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-javadoc-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>attach-javadocs</id>
-            <goals>
-              <goal>jar</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>biz.aQute.bnd</groupId>
-        <artifactId>bnd-maven-plugin</artifactId>
-        <version>7.0.0</version>
-        <extensions>true</extensions>
-        <executions>
-          <execution>
-            <id>default-jar</id>
-            <goals>
-              <goal>jar</goal>
-            </goals>
-            <configuration>
-              <bnd>
-                Bundle-SymbolicName: $[project.groupId].$[project.artifactId]
-                Export-Package: \
-                  zmq.*, \
-                  org.zeromq.*
-                Import-Package: \
-                  com.neilalexander.*;resolution:=optional, \
-                  *
-                -jpms-module-info: $[Bundle-SymbolicName];access=0
-              </bnd>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-release-plugin</artifactId>
-        <configuration>
-          <tagNameFormat>v@{project.version}</tagNameFormat>
-          <autoVersionSubmodules>true</autoVersionSubmodules>
-          <useReleaseProfile>false</useReleaseProfile>
-          <releaseProfiles>release</releaseProfiles>
-          <goals>deploy</goals>
-        </configuration>
-      </plugin>
-    </plugins>
     <pluginManagement>
       <plugins>
         <plugin>
@@ -365,8 +263,7 @@
                 <configuration>
                   <consoleOutput>true</consoleOutput>
                   <includeTestSourceDirectory>true</includeTestSourceDirectory>
-                  <sourceDirectories>${project.basedir}/src/main/java,${project.basedir}/src/main/java16</sourceDirectories>
-                  <configLocation>${project.basedir}/src/checkstyle/checks.xml</configLocation>
+                  <configLocation>${rootDir}/src/checkstyle/checks.xml</configLocation>
                   <failOnViolation>true</failOnViolation>
                   <excludes>**/guide/*</excludes>
                 </configuration>
