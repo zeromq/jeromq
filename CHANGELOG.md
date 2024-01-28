@@ -2,6 +2,48 @@
 
 ## v0.6.0 (202x-xx-xx)
 
+### Added
+
+* [#964] https://github.com/zeromq/jeromq/pull/964
+  Exports all options default values as constant in ZMQ class. This will allow client libraries to use them.
+
+* [#963] (https://github.com/zeromq/jeromq/pull/963)
+  Replaces maven-bundle-plugin with the more up-to-date bnd-maven-plugin and configures it to generate a JPMS module 
+  descriptor besides the OSGi descriptor.
+
+* [#949] (https://github.com/zeromq/jeromq/pull/949)
+  Added a way to specify a custom monitor, that don’t need to communicate through a ZMQ socket. It allows to use monitor
+  for logging without hitting hard on the CPU with poller overload.
+  Improved in [#950] (https://github.com/zeromq/jeromq/pull/950)
+
+* [#942] (https://github.com/zeromq/jeromq/pull/942)
+  `zmq.Ctx` can now be provided a thread factory, that can used to tweaks threads. The main purpose of this is to be able to 
+  bind thread to CPU using external libraries like https://github.com/OpenHFT/Java-Thread-Affinity. The idea was 
+  suggested by issue #910.
+
+* Also adding a check that prevent modifications of some settings once they have been used by `zmq.Ctx` initialisation.
+
+### Changed
+
+* Many code smell removed using SonarLint.
+
+* [#941] (https://github.com/zeromq/jeromq/issues/940)
+  Fix to issue [#940](https://github.com/zeromq/jeromq/issues/940) by setting `key=null on setKey, added test
+
+* [#939] (https://github.com/zeromq/jeromq/issues/939)
+  Simplified Mailbox, always thread safe, so `MailboxSafe usages are removed and the class is marked at deprecated.
+
+* [#936] (https://github.com/zeromq/jeromq/pull/936)
+
+  `org.zeromq.ZSocket` and `org.zeromq.ZMQ.Socket` can now read and write `zmq.Msg` directly.
+
+  Updating `Metada` class to provide more data access and functions. `ZMetadata` is updated too. It internally now uses
+  `ConcurrentHashMap` instead of the old `Properties class`. The `Properties` class ignore null values, `ConcurrentHashMap`
+  reject them but ZMTP protocol allows empty values. So null values are transformed to empty strings.
+
+  `Metada#set` is deprecated and replaced by `Metada#put`, to be more consistent with Map API.
+
+  Lots of hostile final method declaration removed.
 
 ## v0.5.4 (2023-09-26)
 
