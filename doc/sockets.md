@@ -32,3 +32,4 @@ context is closed, the poller and selector resources are cleaned up properly.
 [create-socket]: http://static.javadoc.io/org.zeromq/jeromq/0.4.3/org/zeromq/ZContext.html#createSocket(int)
 [zmq-socket]: http://static.javadoc.io/org.zeromq/jeromq/0.4.3/org/zeromq/ZMQ.Socket.html
 [socket-base]: http://static.javadoc.io/org.zeromq/jeromq/0.4.3/zmq/SocketBase.html
+[zguide-polling]: http://zguide.zeromq.org/page:all#Handling-Multiple-Sockets
