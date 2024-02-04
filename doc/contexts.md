@@ -43,9 +43,9 @@ automatically.
 
 
 [ctx]: http://static.javadoc.io/org.zeromq/jeromq/0.4.3/zmq/Ctx.html
-[zmq-context]: http://static.javadoc.io/org.zeromq/jeromq/0.4.3/org/zeromq/ZMQ.Context.html
-[zcontext]: http://static.javadoc.io/org.zeromq/jeromq/0.4.3/org/zeromq/ZContext.html
-[closable]: https://docs.oracle.com/javase/7/docs/api/java/io/Closeable.html
+[zmq-context]: https://static.javadoc.io/org.zeromq/jeromq/0.6.0/org/zeromq/ZMQ.Context.html
+[zcontext]: https://static.javadoc.io/org.zeromq/jeromq/0.6.0/org/zeromq/ZContext.html
+[closable]: https://docs.oracle.com/javase/8/docs/api/java/io/Closeable.html
 [try-with-resources]: https://docs.oracle.com/javase/tutorial/essential/exceptions/tryResourceClose.html
-[zguide-contexts]: http://zguide.zeromq.org/page:all#Getting-the-Context-Right
-[zsocket]: http://static.javadoc.io/org.zeromq/jeromq/0.4.3/org/zeromq/ZSocket.html
+[zguide-contexts]: https://zguide.zeromq.org/docs/chapter1/#Getting-the-Context-Right
+[zsocket]: https://static.javadoc.io/org.zeromq/jeromq/0.6.0/org/zeromq/ZSocket.html

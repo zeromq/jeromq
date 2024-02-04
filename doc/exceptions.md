@@ -25,5 +25,5 @@ of these, it is an acknowledgment that a java.io.IOException has occurred, but
 it is not JeroMQ's responsibility to resolve it; it is up to the caller.
 
 
-[zerror]: http://static.javadoc.io/org.zeromq/jeromq/0.4.3/zmq/ZError.html
-[ioexception]: https://docs.oracle.com/javase/7/docs/api/java/io/IOException.html
+[zerror]: https://static.javadoc.io/org.zeromq/jeromq/0.6.0/zmq/ZError.html
+[ioexception]: https://docs.oracle.com/javase/8/docs/api/java/io/IOException.html
