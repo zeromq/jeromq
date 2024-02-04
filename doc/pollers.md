@@ -35,8 +35,8 @@ context is closed, the poller and selector resources are cleaned up properly.
   information about polling in ZeroMQ
 
 
-[zmq-poll-poller]: http://static.javadoc.io/org.zeromq/jeromq/0.4.3/zmq/poll/Poller.html
-[zmq-poller]: http://static.javadoc.io/org.zeromq/jeromq/0.4.3/org/zeromq/ZMQ.Poller.html
-[create-poller]: http://static.javadoc.io/org.zeromq/jeromq/0.4.3/org/zeromq/ZContext.html#createPoller(int)
-[zpoller]: http://static.javadoc.io/org.zeromq/jeromq/0.4.3/org/zeromq/ZPoller.html
-[zguide-polling]: http://zguide.zeromq.org/page:all#Handling-Multiple-Sockets
+[zmq-poll-poller]: https://static.javadoc.io/org.zeromq/jeromq/0.6.0/zmq/poll/Poller.html
+[zmq-poller]: https://static.javadoc.io/org.zeromq/jeromq/0.6.0/org/zeromq/ZMQ.Poller.html
+[create-poller]: https://static.javadoc.io/org.zeromq/jeromq/0.6.0/org/zeromq/ZContext.html#createPoller(int)
+[zpoller]: https://static.javadoc.io/org.zeromq/jeromq/0.6.0/org/zeromq/ZPoller.html
+[zguide-polling]: https://zguide.zeromq.org/docs/chapter2/#Handling-Multiple-Sockets

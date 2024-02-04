@@ -29,7 +29,7 @@ context is closed, the poller and selector resources are cleaned up properly.
   information about polling in ZeroMQ
 
 
-[create-socket]: http://static.javadoc.io/org.zeromq/jeromq/0.4.3/org/zeromq/ZContext.html#createSocket(int)
-[zmq-socket]: http://static.javadoc.io/org.zeromq/jeromq/0.4.3/org/zeromq/ZMQ.Socket.html
-[socket-base]: http://static.javadoc.io/org.zeromq/jeromq/0.4.3/zmq/SocketBase.html
-[zguide-polling]: http://zguide.zeromq.org/page:all#Handling-Multiple-Sockets
+[create-socket]: https://static.javadoc.io/org.zeromq/jeromq/0.6.0/org/zeromq/ZContext.html#createSocket(int)
+[zmq-socket]: https://static.javadoc.io/org.zeromq/jeromq/0.6.0/org/zeromq/ZMQ.Socket.html
+[socket-base]: https://static.javadoc.io/org.zeromq/jeromq/0.6.0/zmq/SocketBase.html
+[zguide-polling]: https://zguide.zeromq.org/docs/chapter2/#Handling-Multiple-Sockets
