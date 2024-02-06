@@ -19,7 +19,28 @@
     <developerConnection>scm:git:git@github.com:zeromq/jeromq.git</developerConnection>
     <tag>HEAD</tag>
   </scm>
-  <developers/>
+  <developers>
+    <developer>
+      <name>Trevor Bernard</name>
+      <id>trevorbernard</id>
+    </developer>
+    <developer>
+      <name>Dongmin Yu</name>
+      <id>miniway</id>
+    </developer>
+    <developer>
+      <name>Fabrice Bacchella</name>
+      <id>fbacchella</id>
+    </developer>
+    <developer>
+      <name>Dave Yarwood</name>
+      <id>daveyarwood</id>
+    </developer>
+    <developer>
+      <name>Frédéric Déléchamp</name>
+      <id>fredoboulo</id>
+    </developer>
+  </developers>
   <properties>
     <!-- Required by reproducible builds: https://maven.apache.org/guides/mini/guide-reproducible-builds.html -->
     <project.build.outputTimestamp>0</project.build.outputTimestamp>
