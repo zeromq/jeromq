@@ -45,7 +45,7 @@
     <!-- Required by reproducible builds: https://maven.apache.org/guides/mini/guide-reproducible-builds.html -->
     <project.build.outputTimestamp>0</project.build.outputTimestamp>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <jdk.target>8</jdk.target>
+    <maven.compiler.release>11</maven.compiler.release>
     <!-- Indirection needed to keep optional jacoco settings and external argument lines-->
     <arg.line />
     <argLine>${arg.line}</argLine>
@@ -153,7 +153,7 @@
           <version>3.4.1</version>
           <configuration>
             <detectJavaApiLink>true</detectJavaApiLink>
-            <source>${maven.compiler.source}</source>
+            <source>${maven.compiler.release}</source>
             <tags>
               <tag>
                 <name>api.note</name>
@@ -251,11 +251,6 @@
             </dependencies>
          </plugin>
          <plugin>
-           <groupId>org.codehaus.mojo</groupId>
-           <artifactId>animal-sniffer-maven-plugin</artifactId>
-           <version>1.22</version>
-         </plugin>
-         <plugin>
             <groupId>org.codehaus.mojo</groupId>
             <artifactId>versions-maven-plugin</artifactId>
             <version>2.14.2</version>
@@ -292,25 +287,6 @@
       </plugins>
   </reporting>
   <profiles>
-    <profile>
-      <id>jdk8</id>
-      <activation>
-        <jdk>1.8</jdk>
-      </activation>
-      <properties>
-        <maven.compiler.source>${jdk.target}</maven.compiler.source>
-        <maven.compiler.target>${jdk.target}</maven.compiler.target>
-      </properties>
-    </profile>
-    <profile>
-      <id>jdk9+</id>
-      <activation>
-        <jdk>(1.8,)</jdk>
-      </activation>
-      <properties>
-        <maven.compiler.release>${jdk.target}</maven.compiler.release>
-      </properties>
-    </profile>
     <profile>
       <!-- Used with the phase 'site' to check plugins and dependency versions -->
       <id>versions</id>
@@ -402,29 +378,6 @@
                 <phase>verify</phase>
                 <goals>
                   <goal>sign</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-    <profile>
-      <id>android</id>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>animal-sniffer-maven-plugin</artifactId>
-            <configuration>
-              <signature>net.sf.androidscents.signature:android-api-level-28:9_r6</signature>
-            </configuration>
-            <executions>
-              <execution>
-                <id>test</id>
-                <phase>test</phase>
-                <goals>
-                  <goal>check</goal>
                 </goals>
               </execution>
             </executions>

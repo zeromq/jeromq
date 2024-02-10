@@ -108,43 +108,6 @@ jobs:
             - store_test_results:
                 path: target/surefire-reports
             #don't persist_to_workspace, can't be done in parallel with testsj13
-    testsj8:
-        docker:
-            - image: cimg/openjdk:8.0
-        steps:
-            - attach_workspace:
-                at: /tmp/ws
-            - run:
-                command: |
-                    mv -n /tmp/ws/home/circleci/.m2 /home/circleci/
-                    mv -n /tmp/ws/home/circleci/.sonar /home/circleci/
-                    mv -n /tmp/ws/home/circleci/project/* /home/circleci/project/
-                    mv -n /tmp/ws/home/circleci/project/.??* /home/circleci/project/
-            - run:
-                command: |
-                    mvn -B test -Pskip -Darg.line="-Xmx2048m" -Djava.io.tmpdir="/tmp/$CIRCLE_JOB" -s .circleci/settings.xml
-                environment:
-                    MAVEN_OPTS: "-Xmx512m"
-            - store_test_results:
-                path: target/surefire-reports
-            #don't persist_to_workspace, can't be done in parallel with testsj13
-    testsandroid:
-        docker:
-            - image: cimg/openjdk:21.0
-        steps:
-            - attach_workspace:
-                at: /tmp/ws
-            - run:
-                command: |
-                    mv -n /tmp/ws/home/circleci/.m2 /home/circleci/
-                    mv -n /tmp/ws/home/circleci/.sonar /home/circleci/
-                    mv -n /tmp/ws/home/circleci/project/* /home/circleci/project/
-                    mv -n /tmp/ws/home/circleci/project/.??* /home/circleci/project/
-            - run:
-                command: |
-                    mvn -B test -Pskip,android -Darg.line="-Xmx2048m" -s .circleci/settings.xml -Dmaven.test.skip=true
-                environment:
-                    MAVEN_OPTS: "-Xmx2048m"
     publish:
         docker:
             - image: cimg/openjdk:21.0
@@ -206,9 +169,6 @@ workflows:
       - build:
           requires:
               - checkout
-      - testsj8:
-          requires:
-              - build
       - testsj11:
           requires:
               - build
@@ -218,16 +178,11 @@ workflows:
       - testsj21:
             requires:
                 - build
-      - testsandroid:
-          requires:
-              - build
       - publish:
           requires:
-              - testsj8
               - testsj11
               - testsj17
               - testsj21
-              - testsandroid
       - savecache:
           requires:
               - publish
