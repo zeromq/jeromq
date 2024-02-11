@@ -1,10 +1,12 @@
 package zmq.io.net;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
+import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -16,13 +18,6 @@ import zmq.io.IEngine;
 import zmq.io.IOThread;
 import zmq.io.SessionBase;
 import zmq.io.net.Address.IZAddress;
-import zmq.io.net.inproc.InprocNetworkProtocolProvider;
-import zmq.io.net.ipc.IpcNetworkProtocolProvider;
-import zmq.io.net.norm.NormNetworkProtocolProvider;
-import zmq.io.net.pgm.EpgmNetworkProtocolProvider;
-import zmq.io.net.pgm.PgmNetworkProtocolProvider;
-import zmq.io.net.tcp.TcpNetworkProtocolProvider;
-import zmq.io.net.tipc.TipcNetworkProtocolProvider;
 import zmq.socket.Sockets;
 
 public enum NetProtocol
@@ -69,16 +64,68 @@ public enum NetProtocol
     },
     vmci(true, true);
 
-    private static final Map<NetProtocol, NetworkProtocolProvider> providers;
-    static {
-        providers = new HashMap<>(NetProtocol.values().length);
-        providers.put(NetProtocol.tcp, new TcpNetworkProtocolProvider());
-        providers.put(NetProtocol.ipc, new IpcNetworkProtocolProvider());
-        providers.put(NetProtocol.tipc, new TipcNetworkProtocolProvider());
-        providers.put(NetProtocol.norm, new NormNetworkProtocolProvider());
-        providers.put(NetProtocol.inproc, new InprocNetworkProtocolProvider());
-        providers.put(NetProtocol.pgm, new PgmNetworkProtocolProvider());
-        providers.put(NetProtocol.epgm, new EpgmNetworkProtocolProvider());
+    private static final Map<NetProtocol, NetworkProtocolProvider> providers = new ConcurrentHashMap<>();
+
+    /**
+     * @param protocol name
+     * @throws IllegalArgumentException if the protocol name can be matched to an actual supported protocol
+     * @return {@link NetProtocol} resolved by name
+     */
+    public static NetProtocol getProtocol(String protocol)
+    {
+        try {
+            return valueOf(protocol.toLowerCase(Locale.ENGLISH));
+        }
+        catch (NullPointerException | IllegalArgumentException e) {
+            throw new IllegalArgumentException("Unknown protocol: \"" + protocol + "\"");
+        }
+    }
+
+    /**
+     * <p>Load a {@link NetworkProtocolProvider} and ensure that if a class loader is given, it will be used. If multiple
+     * instance are returned, the first one will be used.</p>
+     *
+     * <p>The purpose of this method is to be able to handle how a {@link NetworkProtocolProvider} service is resolver, by
+     * tweaking CLASSPATH and class loader.</p>
+     * @param proto The protocol to search
+     * @param cl The class loader used to resolve the {@link NetworkProtocolProvider} or null if not required.
+     */
+    public static void loadWithClassLoader(NetProtocol proto, ClassLoader cl)
+    {
+        Optional.ofNullable(resolveProtocol(proto, cl))
+                .ifPresent(npp -> providers.put(proto, npp));
+    }
+
+    private static NetworkProtocolProvider resolveProtocol(NetProtocol proto, ClassLoader cl)
+    {
+        ServiceLoader<NetworkProtocolProvider> serviceLoader = ServiceLoader.load(NetworkProtocolProvider.class, cl);
+        return serviceLoader.stream()
+                            .map(ServiceLoader.Provider::get)
+                            .filter(npp -> npp.isValid() && npp.handleProtocol(proto) && (cl == null || npp.getClass().getClassLoader() == cl))
+                            .findFirst()
+                            .orElse(null);
+    }
+
+    private static NetworkProtocolProvider resolveProtocol(NetProtocol proto)
+    {
+        return resolveProtocol(proto, null);
+    }
+
+    /**
+     * Install the requested {@link NetworkProtocolProvider}, overwriting the previously installed. Checks are done to
+     * ensure that the provided protocol is valid
+     * @param protocol The {@link NetProtocol}
+     * @param provider The {@link NetworkProtocolProvider} to be installed.
+     * @throws IllegalArgumentException if the provider is not usable for this protocol
+     */
+    public static void install(NetProtocol protocol, NetworkProtocolProvider provider)
+    {
+        if (provider.isValid() && provider.handleProtocol(protocol)) {
+            providers.put(protocol, provider);
+        }
+        else {
+            throw new IllegalArgumentException("The given provider can't handle " + protocol);
+        }
     }
 
     public final boolean  subscribe2all;
@@ -94,22 +141,9 @@ public enum NetProtocol
 
     public boolean isValid()
     {
-        return providers.containsKey(this) && providers.get(this).isValid();
-    }
-
-    /**
-     * @param protocol name
-     * @throws IllegalArgumentException if the protocol name can be matched to an actual supported protocol
-     * @return
-     */
-    public static NetProtocol getProtocol(String protocol)
-    {
-        try {
-            return valueOf(protocol.toLowerCase(Locale.ENGLISH));
-        }
-        catch (NullPointerException | IllegalArgumentException e) {
-            throw new IllegalArgumentException("Unknown protocol: \"" + protocol + "\"");
-        }
+        return Optional.ofNullable(providers.computeIfAbsent(this, NetProtocol::resolveProtocol))
+                       .map(NetworkProtocolProvider::isValid)
+                       .orElse(false);
     }
 
     public final boolean compatible(int type)
@@ -119,7 +153,7 @@ public enum NetProtocol
 
     public Listener getListener(IOThread ioThread, SocketBase socket, Options options)
     {
-        return providers.get(this).getListener(ioThread, socket, options);
+        return resolve().getListener(ioThread, socket, options);
     }
 
     public void resolve(Address paddr, boolean ipv6)
@@ -129,12 +163,21 @@ public enum NetProtocol
 
     public IZAddress zresolve(String addr, boolean ipv6)
     {
-        return providers.get(this).zresolve(addr, ipv6);
+        return resolve().zresolve(addr, ipv6);
     }
 
     public void startConnecting(Options options, IOThread ioThread, SessionBase session, Address addr,
                                          boolean delayedStart, Consumer<Own> launchChild, BiConsumer<SessionBase, IEngine> sendAttach)
     {
-        providers.get(this).startConnecting(options, ioThread, session, addr, delayedStart, launchChild, sendAttach);
+        resolve().startConnecting(options, ioThread, session, addr, delayedStart, launchChild, sendAttach);
+    }
+
+    private NetworkProtocolProvider resolve()
+    {
+        NetworkProtocolProvider protocolProvider = providers.computeIfAbsent(this, NetProtocol::resolveProtocol);
+        if (protocolProvider == null || ! protocolProvider.isValid()) {
+            throw new IllegalArgumentException("Unsupported network protocol " + this);
+        }
+        return protocolProvider;
     }
 }

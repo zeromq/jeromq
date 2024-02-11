@@ -1,9 +1,5 @@
 package zmq.io;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.MatcherAssert.assertThat;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -12,6 +8,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 import zmq.Ctx;
 import zmq.Msg;
@@ -21,9 +18,15 @@ import zmq.ZMQ;
 import zmq.ZMQ.Event;
 import zmq.util.TestUtils;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
+
 public abstract class AbstractProtocolVersion
 {
     protected static final int REPETITIONS = 1000;
+    private static final AtomicReference<Throwable> monitorFailure = new AtomicReference<>();
 
     static class SocketMonitor extends Thread
     {
@@ -35,6 +38,11 @@ public abstract class AbstractProtocolVersion
         {
             this.ctx = ctx;
             this.monitorAddr = monitorAddr;
+            monitorFailure.set(null);
+            this.setUncaughtExceptionHandler((t, ex) -> {
+                ex.printStackTrace();
+                monitorFailure.set(ex);
+            });
         }
 
         @Override
@@ -87,6 +95,7 @@ public abstract class AbstractProtocolVersion
         for (ByteBuffer raw : raws) {
             out.write(raw.array());
         }
+        assertThat(monitorFailure.get(), nullValue());
 
         Msg msg = ZMQ.recv(receiver, 0);
         assertThat(msg, notNullValue());
