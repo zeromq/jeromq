@@ -1,5 +1,7 @@
 package zmq.io.net.tcp;
 
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -57,5 +59,18 @@ public class TcpNetworkProtocolProvider implements NetworkProtocolProvider
     public boolean isValid()
     {
         return true;
+    }
+
+    @Override
+    public boolean handleAdress(SocketAddress socketAddress)
+    {
+        return socketAddress instanceof InetSocketAddress;
+    }
+
+    @Override
+    public String formatSocketAddress(SocketAddress socketAddress)
+    {
+        InetSocketAddress isa = (InetSocketAddress) socketAddress;
+        return isa.getAddress().getHostAddress() + ":" + isa.getPort();
     }
 }

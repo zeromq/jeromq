@@ -53,16 +53,10 @@ public class Address
      */
     public Address(SocketAddress socketAddress)
     {
-        if (socketAddress instanceof InetSocketAddress) {
-            InetSocketAddress sockAddr = (InetSocketAddress) socketAddress;
-            this.address = sockAddr.getAddress().getHostAddress() + ":" + sockAddr.getPort();
-            protocol = NetProtocol.tcp;
-            resolved = null;
-        }
-        else {
-            throw new IllegalArgumentException("Not a IP socket address");
-        }
-    }
+        protocol = NetProtocol.findByAddress(socketAddress);
+        address = protocol.formatSocketAddress(socketAddress);
+        resolved = null;
+     }
 
     @Override
     public String toString()

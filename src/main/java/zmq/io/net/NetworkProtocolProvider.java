@@ -1,5 +1,6 @@
 package zmq.io.net;
 
+import java.net.SocketAddress;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -18,5 +19,16 @@ public interface NetworkProtocolProvider
     IZAddress zresolve(String addr, boolean ipv6);
     void startConnecting(Options options, IOThread ioThread, SessionBase session, Address addr, boolean delayedStart,
             Consumer<Own> launchChild, BiConsumer<SessionBase, IEngine> sendAttach);
-    boolean isValid();
+    default boolean isValid()
+    {
+        return false;
+    }
+    default boolean handleAdress(SocketAddress socketAddress)
+    {
+        return false;
+    }
+    default String formatSocketAddress(SocketAddress socketAddress)
+    {
+        throw new IllegalArgumentException("Unhandled address protocol " + socketAddress);
+    }
 }

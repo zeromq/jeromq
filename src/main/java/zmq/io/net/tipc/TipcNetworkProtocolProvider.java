@@ -47,10 +47,4 @@ public class TipcNetworkProtocolProvider implements NetworkProtocolProvider
         TipcConnecter connecter = new TipcConnecter(ioThread, session, options, addr, delayedStart);
         launchChild.accept(connecter);
     }
-
-    @Override
-    public boolean isValid()
-    {
-        return false;
-    }
 }

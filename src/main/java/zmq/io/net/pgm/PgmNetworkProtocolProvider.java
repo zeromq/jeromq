@@ -72,10 +72,4 @@ public class PgmNetworkProtocolProvider implements NetworkProtocolProvider
     {
         return false;
     }
-
-    @Override
-    public boolean isValid()
-    {
-        return false;
-    }
 }

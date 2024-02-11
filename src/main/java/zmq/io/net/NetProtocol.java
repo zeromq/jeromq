@@ -1,5 +1,6 @@
 package zmq.io.net;
 
+import java.net.SocketAddress;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.Map;
@@ -128,6 +129,16 @@ public enum NetProtocol
         }
     }
 
+    public static NetProtocol findByAddress(SocketAddress socketAddress)
+    {
+        for (Map.Entry<NetProtocol, NetworkProtocolProvider> e : providers.entrySet()) {
+            if (e.getValue().handleAdress(socketAddress)) {
+                return e.getKey();
+            }
+        }
+        throw new IllegalArgumentException("Unhandled address protocol " + socketAddress);
+    }
+
     public final boolean  subscribe2all;
     public final boolean  isMulticast;
     private final Set<Integer> compatibles;
@@ -179,5 +190,10 @@ public enum NetProtocol
             throw new IllegalArgumentException("Unsupported network protocol " + this);
         }
         return protocolProvider;
+    }
+
+    String formatSocketAddress(SocketAddress socketAddress)
+    {
+        return resolve().formatSocketAddress(socketAddress);
     }
 }
