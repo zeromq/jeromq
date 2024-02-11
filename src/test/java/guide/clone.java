@@ -2,6 +2,7 @@ package guide;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 import org.zeromq.*;
 import org.zeromq.ZMQ.Poller;
@@ -206,9 +207,7 @@ public class clone
             else if (command.equals("GET")) {
                 String key = msg.popString();
                 String value = kvmap.get(key);
-                if (value != null)
-                    pipe.send(value);
-                else pipe.send("");
+                pipe.send(Objects.requireNonNullElse(value, ""));
             }
             msg.destroy();
 
