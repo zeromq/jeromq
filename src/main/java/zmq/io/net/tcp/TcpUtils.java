@@ -8,45 +8,13 @@ import java.nio.channels.NetworkChannel;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SocketChannel;
 
+import jdk.net.ExtendedSocketOptions;
 import zmq.ZError;
 import zmq.io.net.Address;
 import zmq.util.Utils;
 
 public class TcpUtils
 {
-    public static final boolean WITH_EXTENDED_KEEPALIVE = SocketOptionsProvider.WITH_EXTENDED_KEEPALIVE;
-
-    @SuppressWarnings("unchecked")
-    private static final class SocketOptionsProvider
-    {
-        // Wrapped in an inner class, to avoid the @SuppressWarnings for the whole class
-        private static final SocketOption<Integer> TCP_KEEPCOUNT;
-        private static final SocketOption<Integer> TCP_KEEPIDLE;
-        private static final SocketOption<Integer> TCP_KEEPINTERVAL;
-        private static final boolean WITH_EXTENDED_KEEPALIVE;
-        static {
-            SocketOption<Integer> tryCount = null;
-            SocketOption<Integer> tryIdle = null;
-            SocketOption<Integer> tryInterval = null;
-
-            boolean extendedKeepAlive = false;
-            try {
-                Class<?> eso = TcpUtils.class.getClassLoader().loadClass("jdk.net.ExtendedSocketOptions");
-                tryCount = (SocketOption<Integer>) eso.getField("TCP_KEEPCOUNT").get(null);
-                tryIdle = (SocketOption<Integer>) eso.getField("TCP_KEEPIDLE").get(null);
-                tryInterval = (SocketOption<Integer>) eso.getField("TCP_KEEPINTERVAL").get(null);
-                extendedKeepAlive = true;
-            }
-            catch (ClassNotFoundException | NoSuchFieldException | IllegalAccessException e) {
-                // If failing, will keep extendedKeepAlive to false
-            }
-            TCP_KEEPCOUNT = tryCount;
-            TCP_KEEPIDLE = tryIdle;
-            TCP_KEEPINTERVAL = tryInterval;
-            WITH_EXTENDED_KEEPALIVE = extendedKeepAlive;
-        }
-   }
-
     private TcpUtils()
     {
     }
@@ -67,15 +35,15 @@ public class TcpUtils
             if (channel instanceof SocketChannel) {
                 setOption(channel, StandardSocketOptions.SO_KEEPALIVE, tcpKeepAlive == 1);
             }
-            if (WITH_EXTENDED_KEEPALIVE && tcpKeepAlive == 1) {
+            if (tcpKeepAlive == 1) {
                 if (tcpKeepAliveCnt > 0) {
-                    setOption(channel, SocketOptionsProvider.TCP_KEEPCOUNT, tcpKeepAliveCnt);
+                    setOption(channel, ExtendedSocketOptions.TCP_KEEPCOUNT, tcpKeepAliveCnt);
                 }
                 if (tcpKeepAliveIdle > 0) {
-                    setOption(channel, SocketOptionsProvider.TCP_KEEPIDLE, tcpKeepAliveIdle);
+                    setOption(channel, ExtendedSocketOptions.TCP_KEEPIDLE, tcpKeepAliveIdle);
                 }
                 if (tcpKeepAliveIntvl > 0) {
-                    setOption(channel, SocketOptionsProvider.TCP_KEEPINTERVAL, tcpKeepAliveIntvl);
+                    setOption(channel, ExtendedSocketOptions.TCP_KEEPINTERVAL, tcpKeepAliveIntvl);
                 }
             }
         }
