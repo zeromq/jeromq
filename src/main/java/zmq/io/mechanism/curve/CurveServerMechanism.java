@@ -4,6 +4,7 @@ import static zmq.io.Metadata.IDENTITY;
 import static zmq.io.Metadata.SOCKET_TYPE;
 
 import java.nio.ByteBuffer;
+import java.util.Objects;
 
 import zmq.Msg;
 import zmq.Options;
@@ -510,12 +511,7 @@ public class CurveServerMechanism extends Mechanism
         assert (statusCode == null || statusCode.length() == 3);
 
         msg.putShortString("ERROR");
-        if (statusCode != null) {
-            msg.putShortString(statusCode);
-        }
-        else {
-            msg.putShortString("");
-        }
+        msg.putShortString(Objects.requireNonNullElse(statusCode, ""));
 
         return 0;
     }
