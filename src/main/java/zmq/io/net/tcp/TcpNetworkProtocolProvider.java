@@ -73,4 +73,10 @@ public class TcpNetworkProtocolProvider implements NetworkProtocolProvider
         InetSocketAddress isa = (InetSocketAddress) socketAddress;
         return isa.getAddress().getHostAddress() + ":" + isa.getPort();
     }
+
+    @Override
+    public boolean wantsIOThread()
+    {
+        return true;
+    }
 }

@@ -50,4 +50,10 @@ public class InprocNetworkProtocolProvider implements NetworkProtocolProvider
     {
         return true;
     }
+
+    @Override
+    public boolean wantsIOThread()
+    {
+        return false;
+    }
 }

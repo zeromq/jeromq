@@ -192,8 +192,13 @@ public enum NetProtocol
         return protocolProvider;
     }
 
-    String formatSocketAddress(SocketAddress socketAddress)
+    public String formatSocketAddress(SocketAddress socketAddress)
     {
         return resolve().formatSocketAddress(socketAddress);
+    }
+
+    public boolean wantsIOThread()
+    {
+        return resolve().wantsIOThread();
     }
 }

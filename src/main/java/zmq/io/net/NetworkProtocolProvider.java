@@ -31,4 +31,5 @@ public interface NetworkProtocolProvider
     {
         throw new IllegalArgumentException("Unhandled address protocol " + socketAddress);
     }
+    boolean wantsIOThread();
 }

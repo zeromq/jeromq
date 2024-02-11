@@ -72,4 +72,10 @@ public class PgmNetworkProtocolProvider implements NetworkProtocolProvider
     {
         return false;
     }
+
+    @Override
+    public boolean wantsIOThread()
+    {
+        return false;
+    }
 }

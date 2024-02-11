@@ -65,4 +65,10 @@ public class NormNetworkProtocolProvider implements NetworkProtocolProvider
             sendAttach.accept(session, normReceiver);
         }
     }
+
+    @Override
+    public boolean wantsIOThread()
+    {
+        return false;
+    }
 }

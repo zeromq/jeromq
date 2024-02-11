@@ -396,8 +396,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
                 return false;
             }
 
-            switch (protocol) {
-            case inproc: {
+            if (protocol == NetProtocol.inproc) {
                 Ctx.Endpoint endpoint = new Ctx.Endpoint(this, options);
                 boolean rc = registerEndpoint(addr, endpoint);
                 if (rc) {
@@ -410,21 +409,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
                 }
                 return rc;
             }
-            case pgm:
-                // continue
-            case epgm:
-                // continue
-            case norm:
-                //  For convenience's sake, bind can be used interchangeable with
-                //  connect for PGM, EPGM and NORM transports.
-                return connect(addr);
-            case tcp:
-                // continue
-            case ipc:
-                // continue
-            case tipc: {
-                //  Remaining transports require to be run in an I/O thread, so at this
-                //  point we'll choose one.
+            else if (protocol.wantsIOThread()) {
                 IOThread ioThread = chooseIoThread(options.affinity);
                 if (ioThread == null) {
                     errno.set(ZError.EMTHREAD);
@@ -445,8 +430,10 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
                 addEndpoint(options.lastEndpoint, listener, null);
                 return true;
             }
-            default:
-                throw new IllegalArgumentException(addr);
+            else {
+                //  For convenience's sake, bind can be used interchangeable with
+                //  connect for PGM, EPGM and NORM transports.
+                return connect(addr);
             }
         }
         finally {

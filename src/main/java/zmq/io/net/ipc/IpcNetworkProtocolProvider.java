@@ -51,4 +51,10 @@ public class IpcNetworkProtocolProvider implements NetworkProtocolProvider
     {
         return true;
     }
+
+    @Override
+    public boolean wantsIOThread()
+    {
+        return true;
+    }
 }
