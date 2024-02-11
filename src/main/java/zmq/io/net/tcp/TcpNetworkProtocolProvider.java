@@ -15,20 +15,24 @@ import zmq.io.net.Listener;
 import zmq.io.net.NetProtocol;
 import zmq.io.net.NetworkProtocolProvider;
 
-public class TcpNetworkProtocolProvider implements NetworkProtocolProvider {
+public class TcpNetworkProtocolProvider implements NetworkProtocolProvider
+{
     @Override
-    public boolean handleProtocol(NetProtocol protocol) {
+    public boolean handleProtocol(NetProtocol protocol)
+    {
         return protocol == NetProtocol.tcp;
     }
 
     @Override
     public Listener getListener(IOThread ioThread, SocketBase socket,
-                                Options options) {
+                                Options options)
+    {
         return new TcpListener(ioThread, socket, options);
     }
 
     @Override
-    public IZAddress zresolve(String addr, boolean ipv6) {
+    public IZAddress zresolve(String addr, boolean ipv6)
+    {
         return new TcpAddress(addr, ipv6);
     }
 
@@ -36,7 +40,8 @@ public class TcpNetworkProtocolProvider implements NetworkProtocolProvider {
     public void startConnecting(Options options, IOThread ioThread,
                                 SessionBase session, Address addr,
                                 boolean delayedStart, Consumer<Own> launchChild,
-                                BiConsumer<SessionBase, IEngine> sendAttach) {
+                                BiConsumer<SessionBase, IEngine> sendAttach)
+    {
         if (options.socksProxyAddress != null) {
             Address proxyAddress = new Address(NetProtocol.tcp, options.socksProxyAddress);
             SocksConnecter connecter = new SocksConnecter(ioThread, session, options, addr, proxyAddress, delayedStart);
@@ -49,7 +54,8 @@ public class TcpNetworkProtocolProvider implements NetworkProtocolProvider {
     }
 
     @Override
-    public boolean isValid() {
+    public boolean isValid()
+    {
         return true;
     }
 }

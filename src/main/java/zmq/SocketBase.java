@@ -539,7 +539,8 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
             ZObject[] parents = {this, peer.socket == null ? this : peer.socket};
 
             boolean conflate = options.conflate && (options.type == ZMQ.ZMQ_DEALER || options.type == ZMQ.ZMQ_PULL
-                                                            || options.type == ZMQ.ZMQ_PUSH || options.type == ZMQ.ZMQ_PUB || options.type == ZMQ.ZMQ_SUB);
+                                                    || options.type == ZMQ.ZMQ_PUSH || options.type == ZMQ.ZMQ_PUB
+                                                    || options.type == ZMQ.ZMQ_SUB);
 
             int[] hwms = {conflate ? -1 : sndhwm, conflate ? -1 : rcvhwm};
             boolean[] conflates = {conflate, conflate};
@@ -624,7 +625,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
         }
 
         boolean isSingleConnect = options.type == ZMQ.ZMQ_DEALER || options.type == ZMQ.ZMQ_SUB
-                                          || options.type == ZMQ.ZMQ_REQ;
+                                  || options.type == ZMQ.ZMQ_REQ;
 
         if (isSingleConnect) {
             if (endpoints.hasValues(addr)) {
@@ -660,7 +661,8 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
             //  Create a bi-directional pipe.
             ZObject[] parents = {this, session};
             boolean conflate = options.conflate && (options.type == ZMQ.ZMQ_DEALER || options.type == ZMQ.ZMQ_PULL
-                                                            || options.type == ZMQ.ZMQ_PUSH || options.type == ZMQ.ZMQ_PUB || options.type == ZMQ.ZMQ_SUB);
+                                                    || options.type == ZMQ.ZMQ_PUSH || options.type == ZMQ.ZMQ_PUB
+                                                    || options.type == ZMQ.ZMQ_SUB);
 
             int[] hwms = {conflate ? -1 : options.sendHwm, conflate ? -1 : options.recvHwm};
             boolean[] conflates = {conflate, conflate};

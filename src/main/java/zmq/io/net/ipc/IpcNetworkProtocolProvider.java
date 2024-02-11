@@ -15,20 +15,24 @@ import zmq.io.net.Listener;
 import zmq.io.net.NetProtocol;
 import zmq.io.net.NetworkProtocolProvider;
 
-public class IpcNetworkProtocolProvider implements NetworkProtocolProvider {
+public class IpcNetworkProtocolProvider implements NetworkProtocolProvider
+{
     @Override
-    public boolean handleProtocol(NetProtocol protocol) {
+    public boolean handleProtocol(NetProtocol protocol)
+    {
         return protocol == NetProtocol.ipc;
     }
 
     @Override
     public Listener getListener(IOThread ioThread, SocketBase socket,
-                                Options options) {
+                                Options options)
+    {
         return new IpcListener(ioThread, socket, options);
     }
 
     @Override
-    public IZAddress zresolve(String addr, boolean ipv6) {
+    public IZAddress zresolve(String addr, boolean ipv6)
+    {
         return new IpcAddress(addr);
     }
 
@@ -36,13 +40,15 @@ public class IpcNetworkProtocolProvider implements NetworkProtocolProvider {
     public void startConnecting(Options options, IOThread ioThread,
                                 SessionBase session, Address addr,
                                 boolean delayedStart, Consumer<Own> launchChild,
-                                BiConsumer<SessionBase, IEngine> sendAttach) {
+                                BiConsumer<SessionBase, IEngine> sendAttach)
+    {
         IpcConnecter connecter = new IpcConnecter(ioThread, session, options, addr, delayedStart);
         launchChild.accept(connecter);
     }
 
     @Override
-    public boolean isValid() {
+    public boolean isValid()
+    {
         return true;
     }
 }

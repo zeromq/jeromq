@@ -16,21 +16,24 @@ import zmq.io.net.Listener;
 import zmq.io.net.NetProtocol;
 import zmq.io.net.NetworkProtocolProvider;
 
-public class PgmNetworkProtocolProvider implements NetworkProtocolProvider {
-
+public class PgmNetworkProtocolProvider implements NetworkProtocolProvider
+{
     @Override
-    public boolean handleProtocol(NetProtocol protocol) {
+    public boolean handleProtocol(NetProtocol protocol)
+    {
         return protocol == NetProtocol.pgm;
     }
 
     @Override
     public Listener getListener(IOThread ioThread, SocketBase socket,
-                                Options options) {
+                                Options options)
+    {
         return null;
     }
 
     @Override
-    public IZAddress zresolve(String addr, boolean ipv6) {
+    public IZAddress zresolve(String addr, boolean ipv6)
+    {
         return null;
     }
 
@@ -38,7 +41,8 @@ public class PgmNetworkProtocolProvider implements NetworkProtocolProvider {
     public void startConnecting(Options options, IOThread ioThread,
                                 SessionBase session, Address addr,
                                 boolean delayedStart, Consumer<Own> launchChild,
-                                BiConsumer<SessionBase, IEngine> sendAttach) {
+                                BiConsumer<SessionBase, IEngine> sendAttach)
+    {
         assert (options.type == ZMQ.ZMQ_PUB || options.type == ZMQ.ZMQ_XPUB || options.type == ZMQ.ZMQ_SUB
                         || options.type == ZMQ.ZMQ_XSUB);
 
@@ -63,14 +67,15 @@ public class PgmNetworkProtocolProvider implements NetworkProtocolProvider {
                     sendAttach.accept(session, pgmReceiver);
                 }
     }
-    
-    protected boolean withUdpEncapsulation() {
+
+    protected boolean withUdpEncapsulation()
+    {
         return false;
     }
 
     @Override
-    public boolean isValid() {
+    public boolean isValid()
+    {
         return false;
     }
-
 }

@@ -15,21 +15,25 @@ import zmq.io.net.Listener;
 import zmq.io.net.NetProtocol;
 import zmq.io.net.NetworkProtocolProvider;
 
-public class TipcNetworkProtocolProvider implements NetworkProtocolProvider {
+public class TipcNetworkProtocolProvider implements NetworkProtocolProvider
+{
     @Override
-    public boolean handleProtocol(NetProtocol protocol) {
+    public boolean handleProtocol(NetProtocol protocol)
+    {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
     public Listener getListener(IOThread ioThread, SocketBase socket,
-                                Options options) {
+                                Options options)
+    {
         return new TipcListener(ioThread, socket, options);
     }
 
     @Override
-    public IZAddress zresolve(String addr, boolean ipv6) {
+    public IZAddress zresolve(String addr, boolean ipv6)
+    {
         // TODO Auto-generated method stub
         return null;
     }
@@ -38,14 +42,15 @@ public class TipcNetworkProtocolProvider implements NetworkProtocolProvider {
     public void startConnecting(Options options, IOThread ioThread,
                                 SessionBase session, Address addr,
                                 boolean delayedStart, Consumer<Own> launchChild,
-                                BiConsumer<SessionBase, IEngine> sendAttach) {
+                                BiConsumer<SessionBase, IEngine> sendAttach)
+    {
         TipcConnecter connecter = new TipcConnecter(ioThread, session, options, addr, delayedStart);
         launchChild.accept(connecter);
     }
 
     @Override
-    public boolean isValid() {
+    public boolean isValid()
+    {
         return false;
     }
-
 }

@@ -16,22 +16,26 @@ import zmq.io.net.Listener;
 import zmq.io.net.NetProtocol;
 import zmq.io.net.NetworkProtocolProvider;
 
-public class NormNetworkProtocolProvider implements NetworkProtocolProvider {
+public class NormNetworkProtocolProvider implements NetworkProtocolProvider
+{
     @Override
-    public boolean handleProtocol(NetProtocol protocol) {
+    public boolean handleProtocol(NetProtocol protocol)
+    {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
     public Listener getListener(IOThread ioThread, SocketBase socket,
-                                Options options) {
+                                Options options)
+    {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public IZAddress zresolve(String addr, boolean ipv6) {
+    public IZAddress zresolve(String addr, boolean ipv6)
+    {
         // TODO Auto-generated method stub
         return null;
     }
@@ -41,7 +45,8 @@ public class NormNetworkProtocolProvider implements NetworkProtocolProvider {
                                 SessionBase session, Address addr,
                                 boolean delayedStart,
                                 Consumer<Own> launchChild,
-                                BiConsumer<SessionBase, IEngine> sendAttach) {
+                                BiConsumer<SessionBase, IEngine> sendAttach)
+    {
         //  At this point we'll create message pipes to the session straight
         //  away. There's no point in delaying it as no concept of 'connect'
         //  exists with NORM anyway.
@@ -62,8 +67,8 @@ public class NormNetworkProtocolProvider implements NetworkProtocolProvider {
     }
 
     @Override
-    public boolean isValid() {
+    public boolean isValid()
+    {
         return false;
     }
-
 }

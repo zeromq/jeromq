@@ -67,10 +67,9 @@ public enum NetProtocol
             paddr.resolve(ipv6);
         }
     },
-    vmci(true, true),
-    ;
+    vmci(true, true);
 
-    private static final Map<NetProtocol,NetworkProtocolProvider > providers;
+    private static final Map<NetProtocol, NetworkProtocolProvider> providers;
     static {
         providers = new HashMap<>(NetProtocol.values().length);
         providers.put(NetProtocol.tcp, new TcpNetworkProtocolProvider());
@@ -93,7 +92,8 @@ public enum NetProtocol
         this.isMulticast = isMulticast;
     }
 
-    public boolean isValid() {
+    public boolean isValid()
+    {
         return providers.containsKey(this) && providers.get(this).isValid();
     }
 
@@ -133,7 +133,8 @@ public enum NetProtocol
     }
 
     public void startConnecting(Options options, IOThread ioThread, SessionBase session, Address addr,
-                                         boolean delayedStart, Consumer<Own> launchChild, BiConsumer<SessionBase, IEngine> sendAttach) {
+                                         boolean delayedStart, Consumer<Own> launchChild, BiConsumer<SessionBase, IEngine> sendAttach)
+    {
         providers.get(this).startConnecting(options, ioThread, session, addr, delayedStart, launchChild, sendAttach);
     }
 }

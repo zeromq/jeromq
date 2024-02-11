@@ -57,7 +57,9 @@ public class TcpAddress implements Address.IZAddress
         if (address.getAddress() instanceof Inet6Address) {
             return StandardProtocolFamily.INET6;
         }
-        return StandardProtocolFamily.INET;
+        else {
+            return StandardProtocolFamily.INET;
+        }
     }
 
     // The opposite to resolve()
