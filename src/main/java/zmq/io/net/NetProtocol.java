@@ -83,33 +83,34 @@ public enum NetProtocol
     }
 
     /**
-     * <p>Load a {@link NetworkProtocolProvider} and ensure that if a class loader is given, it will be used. If multiple
-     * instance are returned, the first one will be used.</p>
-     *
-     * <p>The purpose of this method is to be able to handle how a {@link NetworkProtocolProvider} service is resolver, by
-     * tweaking CLASSPATH and class loader.</p>
-     * @param proto The protocol to search
-     * @param cl The class loader used to resolve the {@link NetworkProtocolProvider} or null if not required.
+     * Preload some {@link NetworkProtocolProvider} provided by the specified class loader. Useful when you have a plugin
+     * mechanism handled by a custom class loader. Previously installed providers are replaced, so it should be used from
+     * the more generic to the more specific in case of complex hierarchy.
+     * @param cl The class loader used to resolve the {@link NetworkProtocolProvider}.
      */
-    public static void loadWithClassLoader(NetProtocol proto, ClassLoader cl)
-    {
-        Optional.ofNullable(resolveProtocol(proto, cl))
-                .ifPresent(npp -> providers.put(proto, npp));
-    }
-
-    private static NetworkProtocolProvider resolveProtocol(NetProtocol proto, ClassLoader cl)
+    public static void preloadWithClassLoader(ClassLoader cl)
     {
         ServiceLoader<NetworkProtocolProvider> serviceLoader = ServiceLoader.load(NetworkProtocolProvider.class, cl);
-        return serviceLoader.stream()
-                            .map(ServiceLoader.Provider::get)
-                            .filter(npp -> npp.isValid() && npp.handleProtocol(proto) && (cl == null || npp.getClass().getClassLoader() == cl))
-                            .findFirst()
-                            .orElse(null);
+        serviceLoader.stream()
+                     .map(ServiceLoader.Provider::get)
+                     .filter(npp -> npp.getClass().getClassLoader() == cl)
+                     .forEach(npp -> {
+                        for (NetProtocol np : NetProtocol.values()) {
+                            if (npp.handleProtocol(np)) {
+                                providers.put(np, npp);
+                            }
+                        }
+                     });
     }
 
     private static NetworkProtocolProvider resolveProtocol(NetProtocol proto)
     {
-        return resolveProtocol(proto, null);
+        ServiceLoader<NetworkProtocolProvider> serviceLoader = ServiceLoader.load(NetworkProtocolProvider.class);
+        return serviceLoader.stream()
+                            .map(ServiceLoader.Provider::get)
+                            .filter(npp -> npp.isValid() && npp.handleProtocol(proto))
+                            .findFirst()
+                            .orElse(null);
     }
 
     /**
