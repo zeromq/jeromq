@@ -1,107 +1,76 @@
 package zmq.io.net;
 
+import java.net.SocketAddress;
 import java.util.Arrays;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import zmq.Options;
+import zmq.Own;
 import zmq.SocketBase;
+import zmq.io.IEngine;
 import zmq.io.IOThread;
+import zmq.io.SessionBase;
 import zmq.io.net.Address.IZAddress;
-import zmq.io.net.ipc.IpcAddress;
-import zmq.io.net.ipc.IpcListener;
-import zmq.io.net.tcp.TcpAddress;
-import zmq.io.net.tcp.TcpListener;
-import zmq.io.net.tipc.TipcListener;
 import zmq.socket.Sockets;
 
 public enum NetProtocol
 {
-    inproc(true, false, false),
-    ipc(true, false, false)
+    inproc(false, false),
+    tcp(false, false)
     {
-        @Override
-        public Listener getListener(IOThread ioThread, SocketBase socket,
-                                    Options options)
-        {
-            return new IpcListener(ioThread, socket, options);
-        }
-
         @Override
         public void resolve(Address paddr, boolean ipv6)
         {
             paddr.resolve(ipv6);
         }
-
-        @Override
-        public IZAddress zresolve(String addr, boolean ipv6)
-        {
-            return new IpcAddress(addr);
-        }
-
     },
-    tcp(true, false, false)
+    udp(true, true)
     {
-        @Override
-        public Listener getListener(IOThread ioThread, SocketBase socket,
-                                    Options options)
-        {
-            return new TcpListener(ioThread, socket, options);
-        }
-
         @Override
         public void resolve(Address paddr, boolean ipv6)
         {
             paddr.resolve(ipv6);
         }
-
-        @Override
-        public IZAddress zresolve(String addr, boolean ipv6)
-        {
-            return  new TcpAddress(addr, ipv6);
-        }
-
     },
     //  PGM does not support subscription forwarding; ask for all data to be
     //  sent to this pipe. (same for NORM, currently?)
-    pgm(false, true, true, Sockets.PUB, Sockets.SUB, Sockets.XPUB, Sockets.XPUB),
-    epgm(false, true, true, Sockets.PUB, Sockets.SUB, Sockets.XPUB, Sockets.XPUB),
-    tipc(false, false, false)
+    pgm(true, true, Sockets.PUB, Sockets.SUB, Sockets.XPUB, Sockets.XPUB),
+    epgm(true, true, Sockets.PUB, Sockets.SUB, Sockets.XPUB, Sockets.XPUB),
+    norm(true, true),
+    ws(true, true),
+    wss(true, true),
+    ipc(false, false)
     {
-        @Override
-        public Listener getListener(IOThread ioThread, SocketBase socket,
-                                    Options options)
-        {
-            return new TipcListener(ioThread, socket, options);
-        }
-
         @Override
         public void resolve(Address paddr, boolean ipv6)
         {
             paddr.resolve(ipv6);
         }
-
     },
-    norm(false, true, true);
-
-    public final boolean  valid;
-    public final boolean  subscribe2all;
-    public final boolean  isMulticast;
-    private final Set<Integer> compatibles;
-
-    NetProtocol(boolean implemented, boolean subscribe2all, boolean isMulticast, Sockets... compatibles)
+    tipc(false, false)
     {
-        valid = implemented;
-        this.compatibles = Arrays.stream(compatibles).map(Sockets::ordinal).collect(Collectors.toSet());
-        this.subscribe2all = subscribe2all;
-        this.isMulticast = isMulticast;
-    }
+        @Override
+        public void resolve(Address paddr, boolean ipv6)
+        {
+            paddr.resolve(ipv6);
+        }
+    },
+    vmci(true, true);
+
+    private static final Map<NetProtocol, NetworkProtocolProvider> providers = new ConcurrentHashMap<>();
 
     /**
      * @param protocol name
      * @throws IllegalArgumentException if the protocol name can be matched to an actual supported protocol
-     * @return
+     * @return {@link NetProtocol} resolved by name
      */
     public static NetProtocol getProtocol(String protocol)
     {
@@ -113,6 +82,82 @@ public enum NetProtocol
         }
     }
 
+    /**
+     * Preload some {@link NetworkProtocolProvider} provided by the specified class loader. Useful when you have a plugin
+     * mechanism handled by a custom class loader. Previously installed providers are replaced, so it should be used from
+     * the more generic to the more specific in case of complex hierarchy.
+     * @param cl The class loader used to resolve the {@link NetworkProtocolProvider}.
+     */
+    public static void preloadWithClassLoader(ClassLoader cl)
+    {
+        ServiceLoader<NetworkProtocolProvider> serviceLoader = ServiceLoader.load(NetworkProtocolProvider.class, cl);
+        serviceLoader.stream()
+                     .map(ServiceLoader.Provider::get)
+                     .filter(npp -> npp.getClass().getClassLoader() == cl)
+                     .forEach(npp -> {
+                        for (NetProtocol np : NetProtocol.values()) {
+                            if (npp.handleProtocol(np)) {
+                                providers.put(np, npp);
+                            }
+                        }
+                     });
+    }
+
+    private static NetworkProtocolProvider resolveProtocol(NetProtocol proto)
+    {
+        ServiceLoader<NetworkProtocolProvider> serviceLoader = ServiceLoader.load(NetworkProtocolProvider.class);
+        return serviceLoader.stream()
+                            .map(ServiceLoader.Provider::get)
+                            .filter(npp -> npp.isValid() && npp.handleProtocol(proto))
+                            .findFirst()
+                            .orElse(null);
+    }
+
+    /**
+     * Install the requested {@link NetworkProtocolProvider}, overwriting the previously installed. Checks are done to
+     * ensure that the provided protocol is valid
+     * @param protocol The {@link NetProtocol}
+     * @param provider The {@link NetworkProtocolProvider} to be installed.
+     * @throws IllegalArgumentException if the provider is not usable for this protocol
+     */
+    public static void install(NetProtocol protocol, NetworkProtocolProvider provider)
+    {
+        if (provider.isValid() && provider.handleProtocol(protocol)) {
+            providers.put(protocol, provider);
+        }
+        else {
+            throw new IllegalArgumentException("The given provider can't handle " + protocol);
+        }
+    }
+
+    public static NetProtocol findByAddress(SocketAddress socketAddress)
+    {
+        for (Map.Entry<NetProtocol, NetworkProtocolProvider> e : providers.entrySet()) {
+            if (e.getValue().handleAdress(socketAddress)) {
+                return e.getKey();
+            }
+        }
+        throw new IllegalArgumentException("Unhandled address protocol " + socketAddress);
+    }
+
+    public final boolean  subscribe2all;
+    public final boolean  isMulticast;
+    private final Set<Integer> compatibles;
+
+    NetProtocol(boolean subscribe2all, boolean isMulticast, Sockets... compatibles)
+    {
+        this.compatibles = Arrays.stream(compatibles).map(Sockets::ordinal).collect(Collectors.toSet());
+        this.subscribe2all = subscribe2all;
+        this.isMulticast = isMulticast;
+    }
+
+    public boolean isValid()
+    {
+        return Optional.ofNullable(providers.computeIfAbsent(this, NetProtocol::resolveProtocol))
+                       .map(NetworkProtocolProvider::isValid)
+                       .orElse(false);
+    }
+
     public final boolean compatible(int type)
     {
         return compatibles.isEmpty() || compatibles.contains(type);
@@ -120,7 +165,7 @@ public enum NetProtocol
 
     public Listener getListener(IOThread ioThread, SocketBase socket, Options options)
     {
-        return null;
+        return resolve().getListener(ioThread, socket, options);
     }
 
     public void resolve(Address paddr, boolean ipv6)
@@ -130,6 +175,31 @@ public enum NetProtocol
 
     public IZAddress zresolve(String addr, boolean ipv6)
     {
-        return null;
+        return resolve().zresolve(addr, ipv6);
+    }
+
+    public void startConnecting(Options options, IOThread ioThread, SessionBase session, Address addr,
+                                         boolean delayedStart, Consumer<Own> launchChild, BiConsumer<SessionBase, IEngine> sendAttach)
+    {
+        resolve().startConnecting(options, ioThread, session, addr, delayedStart, launchChild, sendAttach);
+    }
+
+    private NetworkProtocolProvider resolve()
+    {
+        NetworkProtocolProvider protocolProvider = providers.computeIfAbsent(this, NetProtocol::resolveProtocol);
+        if (protocolProvider == null || ! protocolProvider.isValid()) {
+            throw new IllegalArgumentException("Unsupported network protocol " + this);
+        }
+        return protocolProvider;
+    }
+
+    public String formatSocketAddress(SocketAddress socketAddress)
+    {
+        return resolve().formatSocketAddress(socketAddress);
+    }
+
+    public boolean wantsIOThread()
+    {
+        return resolve().wantsIOThread();
     }
 }
