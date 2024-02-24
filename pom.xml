@@ -1,10 +1,10 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.zeromq</groupId>
-  <artifactId>jeromq</artifactId>
-  <packaging>jar</packaging>
+  <artifactId>jeromq-pom</artifactId>
+  <packaging>pom</packaging>
   <version>0.7.0-SNAPSHOT</version>
-  <name>JeroMQ</name>
+  <name>JeroMQ :: POM</name>
   <description>Pure Java implementation of libzmq</description>
   <url>https://github.com/zeromq/jeromq</url>
   <licenses>
@@ -49,18 +49,19 @@
     <!-- Indirection needed to keep optional jacoco settings and external argument lines-->
     <arg.line />
     <argLine>${arg.line}</argLine>
+    <checkstyle.file>${project.basedir}/src/checkstyle/checks.xml</checkstyle.file>
+    <maven.install.skip>false</maven.install.skip>
   </properties>
+  <modules>
+    <module>jeromq-core</module>
+    <module>jeromq</module>
+  </modules>
   <dependencies>
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <version>4.13.2</version>
       <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>eu.neilalexander</groupId>
-      <artifactId>jnacl</artifactId>
-      <version>1.0.0</version>
     </dependency>
   </dependencies>
   <distributionManagement>
@@ -82,18 +83,6 @@
           <useSystemClassLoader>false</useSystemClassLoader>
           <rerunFailingTestsCount>5</rerunFailingTestsCount>
         </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-source-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>attach-sources</id>
-            <goals>
-              <goal>jar</goal>
-            </goals>
-          </execution>
-        </executions>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -221,7 +210,14 @@
         <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-assembly-plugin</artifactId>
-            <version>3.4.1</version>
+            <version>3.6.0</version>
+            <dependencies>
+              <dependency>
+                <groupId>org.codehaus.plexus</groupId>
+                <artifactId>plexus-archiver</artifactId>
+                <version>4.9.1</version>
+              </dependency>
+            </dependencies>
         </plugin>
         <plugin>
           <groupId>org.apache.felix</groupId>
@@ -254,6 +250,11 @@
             <groupId>org.codehaus.mojo</groupId>
             <artifactId>versions-maven-plugin</artifactId>
             <version>2.14.2</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-shade-plugin</artifactId>
+          <version>3.5.2</version>
         </plugin>
         <plugin>
             <groupId>org.apache.maven.plugins</groupId>
@@ -325,7 +326,7 @@
                 <configuration>
                   <consoleOutput>true</consoleOutput>
                   <includeTestSourceDirectory>true</includeTestSourceDirectory>
-                  <configLocation>${project.basedir}/src/checkstyle/checks.xml</configLocation>
+                  <configLocation>${checkstyle.file}</configLocation>
                   <failOnViolation>true</failOnViolation>
                   <excludes>**/guide/*</excludes>
                 </configuration>

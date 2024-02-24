@@ -1,0 +1,144 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>org.zeromq</groupId>
+  <artifactId>jeromq</artifactId>
+  <packaging>jar</packaging>
+  <version>0.7.0-SNAPSHOT</version>
+  <name>JeroMQ :: packaging</name>
+  <description>Pure Java implementation of libzmq</description>
+  <url>https://github.com/zeromq/jeromq</url>
+  <licenses>
+    <license>
+      <name>Mozilla Public License version 2.0</name>
+      <url>https://www.mozilla.org/en-US/MPL/2.0</url>
+    </license>
+  </licenses>
+  <scm>
+    <url>git@github.com:zeromq/jeromq.git</url>
+    <connection>scm:git:git@github.com:zeromq/jeromq.git</connection>
+    <developerConnection>scm:git:git@github.com:zeromq/jeromq.git</developerConnection>
+    <tag>HEAD</tag>
+  </scm>
+  <developers>
+    <developer>
+      <name>Trevor Bernard</name>
+      <id>trevorbernard</id>
+    </developer>
+    <developer>
+      <name>Dongmin Yu</name>
+      <id>miniway</id>
+    </developer>
+    <developer>
+      <name>Fabrice Bacchella</name>
+      <id>fbacchella</id>
+    </developer>
+    <developer>
+      <name>Dave Yarwood</name>
+      <id>daveyarwood</id>
+    </developer>
+    <developer>
+      <name>Frédéric Déléchamp</name>
+      <id>fredoboulo</id>
+    </developer>
+  </developers>
+  <properties>
+    <!-- Required by reproducible builds: https://maven.apache.org/guides/mini/guide-reproducible-builds.html -->
+    <project.build.outputTimestamp>0</project.build.outputTimestamp>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.compiler.release>11</maven.compiler.release>
+    <!-- Indirection needed to keep optional jacoco settings and external argument lines-->
+    <arg.line />
+    <argLine>${arg.line}</argLine>
+    <maven.install.skip>false</maven.install.skip>
+  </properties>
+  <dependencies>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.13.2</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>eu.neilalexander</groupId>
+      <artifactId>jnacl</artifactId>
+      <version>1.0.0</version>
+    </dependency>
+  </dependencies>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <useSystemClassLoader>false</useSystemClassLoader>
+          <rerunFailingTestsCount>5</rerunFailingTestsCount>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-source-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>attach-sources</id>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>attach-javadocs</id>
+            <goals>
+              <goal>aggregate</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+            <configuration>
+              <transformers>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
+              </transformers>
+              <artifactSet>
+                <includes>
+                  <include>org.zeromq:jeromq-core</include>
+                </includes>
+              </artifactSet>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-release-plugin</artifactId>
+        <configuration>
+          <tagNameFormat>v@{project.version}</tagNameFormat>
+          <autoVersionSubmodules>true</autoVersionSubmodules>
+          <useReleaseProfile>false</useReleaseProfile>
+          <releaseProfiles>release</releaseProfiles>
+          <goals>deploy</goals>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+  <reporting>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-javadoc-plugin</artifactId>
+        </plugin>
+      </plugins>
+  </reporting>
+</project>

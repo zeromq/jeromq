@@ -1,0 +1,71 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.zeromq</groupId>
+    <artifactId>jeromq-pom</artifactId>
+    <version>0.7.0-SNAPSHOT</version>
+  </parent>
+  <artifactId>jeromq-core</artifactId>
+  <packaging>jar</packaging>
+  <name>JeroMQ :: Core</name>
+  <description>The core code of jeromq</description>
+  <url>https://github.com/zeromq/jeromq</url>
+  <properties>
+    <checkstyle.file>${project.basedir}/../src/checkstyle/checks.xml</checkstyle.file>
+    <maven.install.skip>true</maven.install.skip>
+  </properties>
+  <dependencies>
+    <dependency>
+      <groupId>eu.neilalexander</groupId>
+      <artifactId>jnacl</artifactId>
+      <version>1.0.0</version>
+    </dependency>
+  </dependencies>
+  <build>
+    <!--outputDirectory>${project.basedir}/../jeromq/target/classes</outputDirectory>
+    <testOutputDirectory>${project.basedir}/../jeromq/target/test-classes</testOutputDirectory-->
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <useSystemClassLoader>false</useSystemClassLoader>
+          <rerunFailingTestsCount>5</rerunFailingTestsCount>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>biz.aQute.bnd</groupId>
+        <artifactId>bnd-maven-plugin</artifactId>
+        <extensions>true</extensions>
+        <executions>
+          <execution>
+            <id>default-jar</id>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+            <configuration>
+              <bnd>
+                Bundle-SymbolicName: $[project.groupId].$[project.artifactId]
+                Export-Package: \
+                zmq.*, \
+                org.zeromq.*
+                Import-Package: \
+                com.neilalexander.*;resolution:=optional, \
+                *
+                -jpms-module-info: $[Bundle-SymbolicName];access=0
+              </bnd>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+  <reporting>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-javadoc-plugin</artifactId>
+        </plugin>
+      </plugins>
+  </reporting>
+</project>

@@ -35,7 +35,7 @@ jobs:
                 root: /
                 paths:
                     - home/circleci/.m2/repository
-                    - home/circleci/project/target
+                    - home/circleci/project
     testsj21:
         docker:
             - image: cimg/openjdk:21.0
