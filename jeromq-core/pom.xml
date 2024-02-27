@@ -22,8 +22,6 @@
     </dependency>
   </dependencies>
   <build>
-    <!--outputDirectory>${project.basedir}/../jeromq/target/classes</outputDirectory>
-    <testOutputDirectory>${project.basedir}/../jeromq/target/test-classes</testOutputDirectory-->
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -60,12 +58,4 @@
       </plugin>
     </plugins>
   </build>
-  <reporting>
-      <plugins>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-javadoc-plugin</artifactId>
-        </plugin>
-      </plugins>
-  </reporting>
 </project>

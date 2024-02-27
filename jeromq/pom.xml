@@ -1,5 +1,10 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.zeromq</groupId>
+    <artifactId>jeromq-pom</artifactId>
+    <version>0.7.0-SNAPSHOT</version>
+  </parent>
   <groupId>org.zeromq</groupId>
   <artifactId>jeromq</artifactId>
   <packaging>jar</packaging>
@@ -42,22 +47,10 @@
     </developer>
   </developers>
   <properties>
-    <!-- Required by reproducible builds: https://maven.apache.org/guides/mini/guide-reproducible-builds.html -->
-    <project.build.outputTimestamp>0</project.build.outputTimestamp>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <maven.compiler.release>11</maven.compiler.release>
-    <!-- Indirection needed to keep optional jacoco settings and external argument lines-->
-    <arg.line />
-    <argLine>${arg.line}</argLine>
+    <checkstyle.file>${project.basedir}/../src/checkstyle/checks.xml</checkstyle.file>
     <maven.install.skip>false</maven.install.skip>
   </properties>
   <dependencies>
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>4.13.2</version>
-      <scope>test</scope>
-    </dependency>
     <dependency>
       <groupId>eu.neilalexander</groupId>
       <artifactId>jnacl</artifactId>
@@ -67,21 +60,24 @@
   <build>
     <plugins>
       <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-surefire-plugin</artifactId>
+        <artifactId>maven-assembly-plugin</artifactId>
         <configuration>
-          <useSystemClassLoader>false</useSystemClassLoader>
-          <rerunFailingTestsCount>5</rerunFailingTestsCount>
+          <appendAssemblyId>false</appendAssemblyId>
+          <descriptors>
+            <descriptor>src/assembly/mrjar.xml</descriptor>
+          </descriptors>
+          <archive>
+            <manifestEntries>
+              <Multi-Release>true</Multi-Release>
+            </manifestEntries>
+          </archive>
         </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-source-plugin</artifactId>
         <executions>
           <execution>
-            <id>attach-sources</id>
+            <id>make-assembly</id>
+            <phase>package</phase>
             <goals>
-              <goal>jar</goal>
+              <goal>single</goal>
             </goals>
           </execution>
         </executions>
@@ -91,34 +87,30 @@
         <artifactId>maven-javadoc-plugin</artifactId>
         <executions>
           <execution>
-            <id>attach-javadocs</id>
+            <id>aggregate</id>
             <goals>
-              <goal>aggregate</goal>
+              <goal>aggregate-jar</goal>
             </goals>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-shade-plugin</artifactId>
-        <executions>
-          <execution>
             <phase>package</phase>
-            <goals>
-              <goal>shade</goal>
-            </goals>
             <configuration>
-              <transformers>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
-              </transformers>
-              <artifactSet>
-                <includes>
-                  <include>org.zeromq:jeromq-core</include>
-                </includes>
-              </artifactSet>
+              <sourcepath>${project.basedir}/../jeromq-core/src/main/java</sourcepath>
+              <detectJavaApiLink>true</detectJavaApiLink>
+              <source>${maven.compiler.release}</source>
+              <tags>
+                <tag>
+                  <name>api.note</name>
+                  <placement>a</placement>
+                  <head>API Note</head>
+                </tag>
+              </tags>
             </configuration>
           </execution>
         </executions>
+        <configuration>
+          <detectJavaApiLink>true</detectJavaApiLink>
+          <links>
+          </links>
+        </configuration>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
