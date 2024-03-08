@@ -213,7 +213,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
             NetProtocol proto = NetProtocol.getProtocol(protocol);
             if (!proto.isValid()) {
                 errno.set(ZError.EPROTONOSUPPORT);
-                return proto;
+                return null;
             }
 
             //  Check whether socket type and transport protocol match.
