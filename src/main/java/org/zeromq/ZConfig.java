@@ -16,6 +16,7 @@ import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.zeromq.util.ZMetadata;
 
 /**
  * <p>Lets applications load, work with, and save configuration files.
@@ -273,6 +274,18 @@ public class ZConfig
             }
         }, 0);
     }
+
+
+
+
+
+
+
+
+
+
+
+
 
     public static ZConfig load(String filename) throws IOException
     {

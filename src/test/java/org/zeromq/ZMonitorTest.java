@@ -255,15 +255,16 @@ public class ZMonitorTest
         final List<ZEvent> receivedEventsServer = new ArrayList<>();
 
         ZAuth.Auth plain = new ZAuth.Auth() {
-            @Override
-            public boolean authorize(ZapRequest request, boolean verbose)
-            {
-                return false;
-            }
+
             @Override
             public boolean configure(ZMsg msg, boolean verbose)
             {
                 return true;
+            }
+
+            @Override
+            public boolean handleAuth(ZapRequest request, boolean verbose) {
+                return false;
             }
         };
 
