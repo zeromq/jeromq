@@ -8,44 +8,9 @@
   <groupId>org.zeromq</groupId>
   <artifactId>jeromq</artifactId>
   <packaging>jar</packaging>
-  <version>0.7.0-SNAPSHOT</version>
-  <name>JeroMQ :: packaging</name>
+  <name>JeroMQ</name>
   <description>Pure Java implementation of libzmq</description>
   <url>https://github.com/zeromq/jeromq</url>
-  <licenses>
-    <license>
-      <name>Mozilla Public License version 2.0</name>
-      <url>https://www.mozilla.org/en-US/MPL/2.0</url>
-    </license>
-  </licenses>
-  <scm>
-    <url>git@github.com:zeromq/jeromq.git</url>
-    <connection>scm:git:git@github.com:zeromq/jeromq.git</connection>
-    <developerConnection>scm:git:git@github.com:zeromq/jeromq.git</developerConnection>
-    <tag>HEAD</tag>
-  </scm>
-  <developers>
-    <developer>
-      <name>Trevor Bernard</name>
-      <id>trevorbernard</id>
-    </developer>
-    <developer>
-      <name>Dongmin Yu</name>
-      <id>miniway</id>
-    </developer>
-    <developer>
-      <name>Fabrice Bacchella</name>
-      <id>fbacchella</id>
-    </developer>
-    <developer>
-      <name>Dave Yarwood</name>
-      <id>daveyarwood</id>
-    </developer>
-    <developer>
-      <name>Frédéric Déléchamp</name>
-      <id>fredoboulo</id>
-    </developer>
-  </developers>
   <properties>
     <checkstyle.file>${project.basedir}/../src/checkstyle/checks.xml</checkstyle.file>
     <maven.install.skip>false</maven.install.skip>
@@ -61,17 +26,6 @@
     <plugins>
       <plugin>
         <artifactId>maven-assembly-plugin</artifactId>
-        <configuration>
-          <appendAssemblyId>false</appendAssemblyId>
-          <descriptors>
-            <descriptor>src/assembly/mrjar.xml</descriptor>
-          </descriptors>
-          <archive>
-            <manifestEntries>
-              <Multi-Release>true</Multi-Release>
-            </manifestEntries>
-          </archive>
-        </configuration>
         <executions>
           <execution>
             <id>make-assembly</id>
@@ -79,6 +33,17 @@
             <goals>
               <goal>single</goal>
             </goals>
+            <configuration>
+              <appendAssemblyId>false</appendAssemblyId>
+              <descriptors>
+                <descriptor>src/assembly/mrjar.xml</descriptor>
+              </descriptors>
+              <archive>
+                <manifestEntries>
+                  <Multi-Release>true</Multi-Release>
+                </manifestEntries>
+              </archive>
+            </configuration>
           </execution>
         </executions>
       </plugin>
@@ -125,12 +90,4 @@
       </plugin>
     </plugins>
   </build>
-  <reporting>
-      <plugins>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-javadoc-plugin</artifactId>
-        </plugin>
-      </plugins>
-  </reporting>
 </project>

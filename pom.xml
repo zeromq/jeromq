@@ -4,7 +4,7 @@
   <artifactId>jeromq-pom</artifactId>
   <packaging>pom</packaging>
   <version>0.7.0-SNAPSHOT</version>
-  <name>JeroMQ :: POM</name>
+  <name>JeroMQ</name>
   <description>Pure Java implementation of libzmq</description>
   <url>https://github.com/zeromq/jeromq</url>
   <licenses>
@@ -81,17 +81,6 @@
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-javadoc-plugin</artifactId>
           <version>3.4.1</version>
-          <configuration>
-            <detectJavaApiLink>true</detectJavaApiLink>
-            <source>${maven.compiler.release}</source>
-            <tags>
-              <tag>
-                <name>api.note</name>
-                <placement>a</placement>
-                <head>API Note</head>
-              </tag>
-            </tags>
-          </configuration>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
