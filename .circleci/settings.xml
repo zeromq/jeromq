@@ -11,7 +11,6 @@
             <id>sonar</id>
             <properties>
                 <sonar.host.url>https://sonarcloud.io</sonar.host.url>
-                <sonar.projectKey>${env.SONARCLOUD_KEY}</sonar.projectKey>
                 <sonar.organization>${env.SONARCLOUD_ORG}</sonar.organization>
                 <sonar.login>${env.SONARCLOUD_LOGIN}</sonar.login>
             </properties>

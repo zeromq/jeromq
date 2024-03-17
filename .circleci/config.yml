@@ -35,10 +35,42 @@ jobs:
                 root: /
                 paths:
                     - home/circleci/.m2/repository
-                    - home/circleci/project/target
+                    - home/circleci/project
     testsj21:
         docker:
             - image: cimg/openjdk:21.0
+        steps:
+            - attach_workspace:
+                  at: /tmp/ws
+            - run:
+                  command: |
+                      mv -n /tmp/ws/home/circleci/.m2 /home/circleci/
+                      mv -n /tmp/ws/home/circleci/project/* /home/circleci/project/
+                      mv -n /tmp/ws/home/circleci/project/.??* /home/circleci/project/
+            - run:
+                  command: |
+                      # If no symbolic name, it's a PR, will run sonar
+                      if [ -n "$(git symbolic-ref HEAD 2>/dev/null )" ] ; then
+                          SONAR="jacoco:report sonar:sonar -Psonar -Dsonar.projectKey=$SONARCLOUD_PROJECTKEY"
+                          echo "Doing sonar"
+                      else
+                          SONAR=""
+                      fi
+                      mkdir -p /tmp/$CIRCLE_JOB
+                      mvn -B test $SONAR -Pskip -Darg.line="-Xmx2048m" -Djava.io.tmpdir="/tmp/$CIRCLE_JOB" -s .circleci/settings.xml
+                  environment:
+                      MAVEN_OPTS: "-Xmx1024m"
+            - store_test_results:
+                  path: target/surefire-reports
+            - persist_to_workspace:
+                  root: /
+                  paths:
+                      - home/circleci/.m2/repository
+                      - home/circleci/.sonar/cache
+                      - home/circleci/project
+    testsj17:
+        docker:
+            - image: cimg/openjdk:17.0
         steps:
             - attach_workspace:
                   at: /tmp/ws
@@ -55,38 +87,6 @@ jobs:
                       MAVEN_OPTS: "-Xmx1024m"
             - store_test_results:
                   path: target/surefire-reports
-    testsj17:
-        docker:
-            - image: cimg/openjdk:17.0
-        steps:
-            - attach_workspace:
-                at: /tmp/ws
-            - run:
-                command: |
-                    mv -n /tmp/ws/home/circleci/.m2 /home/circleci/
-                    mv -n /tmp/ws/home/circleci/project/* /home/circleci/project/
-                    mv -n /tmp/ws/home/circleci/project/.??* /home/circleci/project/
-            - run:
-                command: |
-                    # If no symbolic name, it's a PR, will run sonar
-                    if [ -n "$(git symbolic-ref HEAD 2>/dev/null )" ] ; then
-                        SONAR="jacoco:report sonar:sonar -Psonar"
-                        echo "Doing sonar"
-                    else
-                        SONAR=""
-                    fi
-                    mkdir -p /tmp/$CIRCLE_JOB
-                    mvn -B test $SONAR -Pskip -Darg.line="-Xmx2048m" -Djava.io.tmpdir="/tmp/$CIRCLE_JOB" -s .circleci/settings.xml
-                environment:
-                    MAVEN_OPTS: "-Xmx1024m"
-            - store_test_results:
-                path: target/surefire-reports
-            - persist_to_workspace:
-                root: /
-                paths:
-                    - home/circleci/.m2/repository
-                    - home/circleci/.sonar/cache
-                    - home/circleci/project
     testsj11:
         docker:
             - image: cimg/openjdk:11.0

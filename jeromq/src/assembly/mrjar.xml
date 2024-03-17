@@ -1,0 +1,21 @@
+<assembly xmlns="http://maven.apache.org/ASSEMBLY/2.2.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.2.0 https://maven.apache.org/xsd/assembly-2.2.0.xsd">
+    <id>mvjar</id>
+    <formats>
+        <format>jar</format>
+    </formats>
+    <includeBaseDirectory>false</includeBaseDirectory>
+    <moduleSets>
+        <moduleSet>
+            <useAllReactorProjects>true</useAllReactorProjects>
+            <includes>
+                <include>org.zeromq:jeromq-core</include>
+            </includes>
+            <binaries>
+                <unpack>true</unpack>
+                <includeDependencies>false</includeDependencies>
+            </binaries>
+        </moduleSet>
+    </moduleSets>
+</assembly>
