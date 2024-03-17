@@ -35,12 +35,15 @@
             </goals>
             <configuration>
               <appendAssemblyId>false</appendAssemblyId>
+              <mergeManifestMode>merge</mergeManifestMode>
               <descriptors>
                 <descriptor>src/assembly/mrjar.xml</descriptor>
               </descriptors>
               <archive>
                 <manifestEntries>
                   <Multi-Release>true</Multi-Release>
+                  <Bundle-Name>JeroMQ</Bundle-Name>
+                  <Bundle-SymbolicName>org.zeromq.jeromq</Bundle-SymbolicName>
                 </manifestEntries>
               </archive>
             </configuration>
@@ -56,9 +59,6 @@
               <descriptors>
                 <descriptor>src/assembly/mrjarsrc.xml</descriptor>
               </descriptors>
-              <archive>
-                <addMavenDescriptor>true</addMavenDescriptor>
-              </archive>
             </configuration>
           </execution>
         </executions>
