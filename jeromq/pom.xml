@@ -45,6 +45,22 @@
               </archive>
             </configuration>
           </execution>
+          <execution>
+            <id>sources</id>
+            <phase>package</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+            <configuration>
+              <appendAssemblyId>true</appendAssemblyId>
+              <descriptors>
+                <descriptor>src/assembly/mrjarsrc.xml</descriptor>
+              </descriptors>
+              <archive>
+                <addMavenDescriptor>true</addMavenDescriptor>
+              </archive>
+            </configuration>
+          </execution>
         </executions>
       </plugin>
       <plugin>
