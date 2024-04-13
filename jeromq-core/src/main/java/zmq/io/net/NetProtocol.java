@@ -27,7 +27,7 @@ public enum NetProtocol
     tcp(false, false)
     {
         @Override
-        public void resolve(Address paddr, boolean ipv6)
+        public <S extends SocketAddress> void resolve(Address<S> paddr, boolean ipv6)
         {
             paddr.resolve(ipv6);
         }
@@ -35,7 +35,7 @@ public enum NetProtocol
     udp(true, true)
     {
         @Override
-        public void resolve(Address paddr, boolean ipv6)
+        public <S extends SocketAddress> void resolve(Address<S> paddr, boolean ipv6)
         {
             paddr.resolve(ipv6);
         }
@@ -50,7 +50,7 @@ public enum NetProtocol
     ipc(false, false)
     {
         @Override
-        public void resolve(Address paddr, boolean ipv6)
+        public <S extends SocketAddress> void resolve(Address<S> paddr, boolean ipv6)
         {
             paddr.resolve(ipv6);
         }
@@ -58,14 +58,14 @@ public enum NetProtocol
     tipc(false, false)
     {
         @Override
-        public void resolve(Address paddr, boolean ipv6)
+        public <S extends SocketAddress> void resolve(Address<S> paddr, boolean ipv6)
         {
             paddr.resolve(ipv6);
         }
     },
     vmci(true, true);
 
-    private static final Map<NetProtocol, NetworkProtocolProvider> providers = new ConcurrentHashMap<>();
+    private static final Map<NetProtocol, NetworkProtocolProvider<? extends SocketAddress>> providers = new ConcurrentHashMap<>();
 
     /**
      * @param protocol name
@@ -88,6 +88,7 @@ public enum NetProtocol
      * the more generic to the more specific in case of complex hierarchy.
      * @param cl The class loader used to resolve the {@link NetworkProtocolProvider}.
      */
+    @SuppressWarnings("rawtypes, unchecked")
     public static void preloadWithClassLoader(ClassLoader cl)
     {
         ServiceLoader<NetworkProtocolProvider> serviceLoader = ServiceLoader.load(NetworkProtocolProvider.class, cl);
@@ -103,6 +104,7 @@ public enum NetProtocol
                      });
     }
 
+    @SuppressWarnings("rawtypes")
     private static NetworkProtocolProvider resolveProtocol(NetProtocol proto)
     {
         ServiceLoader<NetworkProtocolProvider> serviceLoader = ServiceLoader.load(NetworkProtocolProvider.class);
@@ -120,7 +122,7 @@ public enum NetProtocol
      * @param provider The {@link NetworkProtocolProvider} to be installed.
      * @throws IllegalArgumentException if the provider is not usable for this protocol
      */
-    public static void install(NetProtocol protocol, NetworkProtocolProvider provider)
+    public static <S extends SocketAddress> void install(NetProtocol protocol, NetworkProtocolProvider<S> provider)
     {
         if (provider.isValid() && provider.handleProtocol(protocol)) {
             providers.put(protocol, provider);
@@ -130,9 +132,9 @@ public enum NetProtocol
         }
     }
 
-    public static NetProtocol findByAddress(SocketAddress socketAddress)
+    public static <S extends SocketAddress> NetProtocol findByAddress(S socketAddress)
     {
-        for (Map.Entry<NetProtocol, NetworkProtocolProvider> e : providers.entrySet()) {
+        for (Map.Entry<NetProtocol, NetworkProtocolProvider<? extends SocketAddress>> e : providers.entrySet()) {
             if (e.getValue().handleAdress(socketAddress)) {
                 return e.getKey();
             }
@@ -168,25 +170,28 @@ public enum NetProtocol
         return resolve().getListener(ioThread, socket, options);
     }
 
-    public void resolve(Address paddr, boolean ipv6)
+    public <S extends SocketAddress> void resolve(Address<S> paddr, boolean ipv6)
     {
         // TODO V4 init address for pgm & epgm
     }
 
-    public IZAddress zresolve(String addr, boolean ipv6)
+    @SuppressWarnings("unchecked")
+    public <S extends SocketAddress> IZAddress<S> zresolve(String addr, boolean ipv6)
     {
-        return resolve().zresolve(addr, ipv6);
+        return (IZAddress<S>) resolve().zresolve(addr, ipv6);
     }
 
-    public void startConnecting(Options options, IOThread ioThread, SessionBase session, Address addr,
+    @SuppressWarnings("unchecked")
+    public <S extends SocketAddress> void startConnecting(Options options, IOThread ioThread, SessionBase session, Address<S> addr,
                                          boolean delayedStart, Consumer<Own> launchChild, BiConsumer<SessionBase, IEngine> sendAttach)
     {
-        resolve().startConnecting(options, ioThread, session, addr, delayedStart, launchChild, sendAttach);
+        resolve().startConnecting(options, ioThread, session, (Address<SocketAddress>) addr, delayedStart, launchChild, sendAttach);
     }
 
-    private NetworkProtocolProvider resolve()
+    @SuppressWarnings("unchecked")
+    private <S extends SocketAddress> NetworkProtocolProvider<S> resolve()
     {
-        NetworkProtocolProvider protocolProvider = providers.computeIfAbsent(this, NetProtocol::resolveProtocol);
+        NetworkProtocolProvider<S> protocolProvider = (NetworkProtocolProvider<S>) providers.computeIfAbsent(this, NetProtocol::resolveProtocol);
         if (protocolProvider == null || ! protocolProvider.isValid()) {
             throw new IllegalArgumentException("Unsupported network protocol " + this);
         }

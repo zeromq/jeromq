@@ -1,9 +1,15 @@
 package zmq;
 
-import java.util.UUID;
+import java.nio.file.Path;
+
+import org.junit.Rule;
+import org.junit.rules.TemporaryFolder;
 
 public class TermEndpointIpcTest extends TestTermEndpoint
 {
+    @Rule
+    public TemporaryFolder tempFolder = new TemporaryFolder();
+
     @Override
     protected String endpointWildcard()
     {
@@ -13,6 +19,7 @@ public class TermEndpointIpcTest extends TestTermEndpoint
     @Override
     protected String endpointNormal()
     {
-        return "ipc://" + UUID.randomUUID();
+        Path temp = tempFolder.getRoot().toPath().resolve("zmq-test.sock");
+        return "ipc://" + temp;
     }
 }

@@ -54,6 +54,7 @@
   </properties>
   <modules>
     <module>jeromq-core</module>
+    <module>jeromq-ipcsockets</module>
     <module>jeromq</module>
   </modules>
   <dependencies>

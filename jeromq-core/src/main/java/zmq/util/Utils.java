@@ -162,16 +162,16 @@ public class Utils
 
     /**
      * Resolve the local address of the channel.
-     * @param fd the channel, should be a TCP socket channel
+     * @param fd the channel
      * @return a new {@link Address}
      * @throws ZError.IOException if the channel is closed or an I/O errors occurred
      * @throws IllegalArgumentException if the SocketChannel is not a TCP channel
      */
-    public static Address getLocalIpAddress(SocketChannel fd)
+    public static <S extends SocketAddress> Address<S> getLocalIpAddress(SocketChannel fd)
     {
         try {
-            SocketAddress address = fd.getLocalAddress();
-            return new Address(address);
+            S address = (S) fd.getLocalAddress();
+            return new Address<>(address);
         }
         catch (IOException e) {
             throw new ZError.IOException(e);

@@ -17,5 +17,21 @@
                 <includeDependencies>false</includeDependencies>
             </binaries>
         </moduleSet>
+        <moduleSet>
+            <useAllReactorProjects>true</useAllReactorProjects>
+            <includes>
+                <include>org.zeromq:jeromq-ipcsockets</include>
+            </includes>
+            <binaries>
+                <outputDirectory>META-INF/versions/16</outputDirectory>
+                <unpack>true</unpack>
+                <includeDependencies>false</includeDependencies>
+                <unpackOptions>
+                    <excludes>
+                        <exclude>/META-INF/**</exclude>
+                    </excludes>
+                </unpackOptions>
+            </binaries>
+        </moduleSet>
     </moduleSets>
 </assembly>

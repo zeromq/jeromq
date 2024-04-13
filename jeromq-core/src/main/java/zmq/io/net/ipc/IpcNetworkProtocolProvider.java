@@ -1,5 +1,7 @@
 package zmq.io.net.ipc;
 
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -15,7 +17,7 @@ import zmq.io.net.Listener;
 import zmq.io.net.NetProtocol;
 import zmq.io.net.NetworkProtocolProvider;
 
-public class IpcNetworkProtocolProvider implements NetworkProtocolProvider
+public class IpcNetworkProtocolProvider implements NetworkProtocolProvider<InetSocketAddress>
 {
     @Override
     public boolean handleProtocol(NetProtocol protocol)
@@ -31,14 +33,26 @@ public class IpcNetworkProtocolProvider implements NetworkProtocolProvider
     }
 
     @Override
-    public IZAddress zresolve(String addr, boolean ipv6)
+    public boolean handleAdress(SocketAddress socketAddress)
+    {
+        return socketAddress instanceof InetSocketAddress;
+    }
+
+    @Override
+    public String formatSocketAddress(InetSocketAddress socketAddress)
+    {
+        return socketAddress.getAddress().getHostAddress() + ":" + socketAddress.getPort();
+    }
+
+    @Override
+    public IZAddress<InetSocketAddress> zresolve(String addr, boolean ipv6)
     {
         return new IpcAddress(addr);
     }
 
     @Override
     public void startConnecting(Options options, IOThread ioThread,
-                                SessionBase session, Address addr,
+                                SessionBase session, Address<InetSocketAddress> addr,
                                 boolean delayedStart, Consumer<Own> launchChild,
                                 BiConsumer<SessionBase, IEngine> sendAttach)
     {

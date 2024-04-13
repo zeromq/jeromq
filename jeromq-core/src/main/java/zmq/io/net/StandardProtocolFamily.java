@@ -6,5 +6,6 @@ package zmq.io.net;
 public enum StandardProtocolFamily implements ProtocolFamily
 {
     INET,
-    INET6
+    INET6,
+    UNIX
 }

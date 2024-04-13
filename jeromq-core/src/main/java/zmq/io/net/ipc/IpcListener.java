@@ -12,7 +12,7 @@ public class IpcListener extends TcpListener
 {
     private IpcAddress address;
 
-    public IpcListener(IOThread ioThread, SocketBase socket, final Options options)
+    public IpcListener(IOThread ioThread, SocketBase socket, Options options)
     {
         super(ioThread, socket, options);
 
@@ -22,10 +22,12 @@ public class IpcListener extends TcpListener
     @Override
     public String getAddress()
     {
-        if (((InetSocketAddress) address.address()).getPort() == 0) {
+        if (address.address().getPort() == 0) {
             return address(address);
         }
-        return address.toString();
+        else {
+            return address.toString();
+        }
     }
 
     //  Set address to listen on.
@@ -34,7 +36,7 @@ public class IpcListener extends TcpListener
     {
         address = new IpcAddress(addr);
 
-        InetSocketAddress sock = (InetSocketAddress) address.address();
-        return super.setAddress(sock);
+        InetSocketAddress sock = address.address();
+        return setAddress(sock);
     }
 }

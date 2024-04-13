@@ -56,6 +56,27 @@
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>test-jar</goal>
+            </goals>
+            <configuration>
+              <includes>
+                <include>zmq/TermEndpointIpcTest.class</include>
+                <include>zmq/TestTermEndpoint.class</include>
+                <include>zmq/socket/pair/TestPairIpc.class</include>
+                <include>zmq/socket/reqrep/TestReqrepIpc.class</include>
+                <include>zmq/Helper.class</include>
+                <include>zmq/Helper*.class</include>
+              </includes>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
 </project>

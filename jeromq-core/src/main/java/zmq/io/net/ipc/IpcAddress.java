@@ -16,7 +16,7 @@ import zmq.io.net.StandardProtocolFamily;
 import zmq.io.net.tcp.TcpAddress;
 import zmq.util.Utils;
 
-public class IpcAddress implements Address.IZAddress
+public class IpcAddress implements Address.IZAddress<InetSocketAddress>
 {
     public static class IpcAddressMask extends TcpAddress
     {
@@ -33,7 +33,7 @@ public class IpcAddress implements Address.IZAddress
 
     private String                  name;
     private final InetSocketAddress address;
-    private final SocketAddress     sourceAddress;
+    private final InetSocketAddress sourceAddress;
 
     public IpcAddress(String addr)
     {
@@ -89,7 +89,7 @@ public class IpcAddress implements Address.IZAddress
     }
 
     @Override
-    public SocketAddress address()
+    public InetSocketAddress address()
     {
         return address;
     }
@@ -101,7 +101,7 @@ public class IpcAddress implements Address.IZAddress
     }
 
     @Override
-    public SocketAddress sourceAddress()
+    public InetSocketAddress sourceAddress()
     {
         return sourceAddress;
     }

@@ -14,7 +14,7 @@ import zmq.io.net.Address;
 import zmq.io.net.ProtocolFamily;
 import zmq.io.net.StandardProtocolFamily;
 
-public class TcpAddress implements Address.IZAddress
+public class TcpAddress implements Address.IZAddress<InetSocketAddress>
 {
     public static class TcpAddressMask extends TcpAddress
     {
@@ -30,7 +30,7 @@ public class TcpAddress implements Address.IZAddress
     }
 
     private final InetSocketAddress address;
-    private final SocketAddress     sourceAddress;
+    private final InetSocketAddress sourceAddress;
 
     public TcpAddress(String addr, boolean ipv6)
     {
@@ -171,13 +171,13 @@ public class TcpAddress implements Address.IZAddress
     }
 
     @Override
-    public SocketAddress address()
+    public InetSocketAddress address()
     {
         return address;
     }
 
     @Override
-    public SocketAddress sourceAddress()
+    public InetSocketAddress sourceAddress()
     {
         return sourceAddress;
     }

@@ -1,0 +1,55 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.zeromq</groupId>
+    <artifactId>jeromq-pom</artifactId>
+    <version>0.7.0-SNAPSHOT</version>
+  </parent>
+  <artifactId>jeromq-ipcsockets</artifactId>
+  <packaging>jar</packaging>
+  <name>JeroMQ :: IPC Unix sockets</name>
+  <description>Java 16 IPS Unix sockets for jeromq</description>
+  <url>https://github.com/zeromq/jeromq</url>
+  <properties>
+    <maven.compiler.release>16</maven.compiler.release>
+    <checkstyle.file>${project.basedir}/../src/checkstyle/checks.xml</checkstyle.file>
+    <maven.install.skip>true</maven.install.skip>
+    <maven.javadoc.skip>false</maven.javadoc.skip>
+  </properties>
+  <dependencies>
+    <dependency>
+      <groupId>org.zeromq</groupId>
+      <artifactId>jeromq-core</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.zeromq</groupId>
+      <artifactId>jeromq-core</artifactId>
+      <classifier>tests</classifier>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+  <build>
+    <sourceDirectory>${project.basedir}/src/main/java16</sourceDirectory>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <useSystemClassLoader>false</useSystemClassLoader>
+          <rerunFailingTestsCount>5</rerunFailingTestsCount>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+  <reporting>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-javadoc-plugin</artifactId>
+        </plugin>
+      </plugins>
+  </reporting>
+</project>

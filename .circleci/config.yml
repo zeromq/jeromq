@@ -9,7 +9,8 @@ jobs:
                 key: jeromq-{{ checksum "pom.xml" }}
             - run: mkdir -p /home/circleci/.sonar/cache /home/circleci/.m2/repository
             - run:
-                command: "mvn -B dependency:resolve dependency:resolve-plugins sonar:help jacoco:help checkstyle:help -Psonar,versions,android -s .circleci/settings.xml"
+                command: |
+                    mvn -B dependency:resolve dependency:resolve-plugins sonar:help jacoco:help gpg:help checkstyle:help -Psonar,versions -fn
             - persist_to_workspace:
                 root: /
                 paths:
@@ -28,7 +29,7 @@ jobs:
                     mv -n /tmp/ws/home/circleci/project/* /home/circleci/project/
                     mv -n /tmp/ws/home/circleci/project/.??* /home/circleci/project/
             - run:
-                command: mvn -B clean compile -Pcheckstyle -s .circleci/settings.xml
+                command: mvn -B clean verify -DskipTests -s .circleci/settings.xml
                 environment:
                     MAVEN_OPTS: "-Xmx2048m"
             - persist_to_workspace:
@@ -102,7 +103,9 @@ jobs:
             - run:
                 command: |
                     mkdir -p /tmp/$CIRCLE_JOB
-                    mvn -B test -Pskip -Darg.line="-Xmx2048m" -Djava.io.tmpdir="/tmp/$CIRCLE_JOB" -s .circleci/settings.xml
+                    # only test core module
+                    cd jeromq-core
+                    mvn -B test -Pskip -Darg.line="-Xmx2048m" -Djava.io.tmpdir="/tmp/$CIRCLE_JOB" -s ../.circleci/settings.xml
                 environment:
                     MAVEN_OPTS: "-Xmx512m"
             - store_test_results:
@@ -134,7 +137,7 @@ jobs:
                         PUBLISH="install"
                     fi
                     echo "publishing jobs: $PUBLISH"
-                    mvn -B $PUBLISH -Pskip $GPGSIGN -Dmaven.test.skip=true -Dmaven.javadoc.skip=false -s .circleci/settings.xml
+                    mvn -B $PUBLISH -Pskip $GPGSIGN -DskipTests -Dmaven.javadoc.skip=false -s .circleci/settings.xml
                 environment:
                     MAVEN_OPTS: "-Xmx2048m"
             - store_artifacts:
