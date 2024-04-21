@@ -63,7 +63,7 @@ public class TcpUtils
 
     public static boolean setIpTypeOfService(Channel channel, final int tos)
     {
-        setOption(channel, StandardSocketOptions.SO_SNDBUF, tos);
+        setOption(channel, StandardSocketOptions.IP_TOS, tos);
         return true;
     }
 
