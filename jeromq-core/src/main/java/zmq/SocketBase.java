@@ -1,7 +1,7 @@
 package zmq;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Collection;
@@ -747,7 +747,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
                     endpoint = endpoints.hasValues(resolvedAddress);
                     if (!endpoint) {
                         // no luck, try with local resolution
-                        InetSocketAddress socketAddress = address.resolve(uri.getAddress(), options.ipv6, true);
+                        SocketAddress socketAddress = address.resolve(uri.getAddress(), options.ipv6, true);
                         resolvedAddress = socketAddress.toString();
                     }
                 }

@@ -12,12 +12,12 @@ import zmq.io.IOThread;
 import zmq.io.SessionBase;
 import zmq.io.net.Address.IZAddress;
 
-public interface NetworkProtocolProvider
+public interface NetworkProtocolProvider<SA extends SocketAddress>
 {
     boolean handleProtocol(NetProtocol protocol);
     Listener getListener(IOThread ioThread, SocketBase socket, Options options);
-    IZAddress zresolve(String addr, boolean ipv6);
-    void startConnecting(Options options, IOThread ioThread, SessionBase session, Address addr, boolean delayedStart,
+    IZAddress<SA> zresolve(String addr, boolean ipv6);
+    void startConnecting(Options options, IOThread ioThread, SessionBase session, Address<SA> addr, boolean delayedStart,
             Consumer<Own> launchChild, BiConsumer<SessionBase, IEngine> sendAttach);
     default boolean isValid()
     {
@@ -27,7 +27,7 @@ public interface NetworkProtocolProvider
     {
         return false;
     }
-    default String formatSocketAddress(SocketAddress socketAddress)
+    default String formatSocketAddress(SA socketAddress)
     {
         throw new IllegalArgumentException("Unhandled address protocol " + socketAddress);
     }

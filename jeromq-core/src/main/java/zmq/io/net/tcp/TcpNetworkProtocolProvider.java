@@ -17,7 +17,7 @@ import zmq.io.net.Listener;
 import zmq.io.net.NetProtocol;
 import zmq.io.net.NetworkProtocolProvider;
 
-public class TcpNetworkProtocolProvider implements NetworkProtocolProvider
+public class TcpNetworkProtocolProvider implements NetworkProtocolProvider<InetSocketAddress>
 {
     @Override
     public boolean handleProtocol(NetProtocol protocol)
@@ -33,14 +33,14 @@ public class TcpNetworkProtocolProvider implements NetworkProtocolProvider
     }
 
     @Override
-    public IZAddress zresolve(String addr, boolean ipv6)
+    public IZAddress<InetSocketAddress> zresolve(String addr, boolean ipv6)
     {
         return new TcpAddress(addr, ipv6);
     }
 
     @Override
     public void startConnecting(Options options, IOThread ioThread,
-                                SessionBase session, Address addr,
+                                SessionBase session, Address<InetSocketAddress> addr,
                                 boolean delayedStart, Consumer<Own> launchChild,
                                 BiConsumer<SessionBase, IEngine> sendAttach)
     {
@@ -68,10 +68,9 @@ public class TcpNetworkProtocolProvider implements NetworkProtocolProvider
     }
 
     @Override
-    public String formatSocketAddress(SocketAddress socketAddress)
+    public String formatSocketAddress(InetSocketAddress socketAddress)
     {
-        InetSocketAddress isa = (InetSocketAddress) socketAddress;
-        return isa.getAddress().getHostAddress() + ":" + isa.getPort();
+        return socketAddress.getAddress().getHostAddress() + ":" + socketAddress.getPort();
     }
 
     @Override

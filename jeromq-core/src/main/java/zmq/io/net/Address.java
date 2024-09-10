@@ -1,27 +1,26 @@
 package zmq.io.net;
 
-import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 
-public class Address
+public class Address<S extends SocketAddress>
 {
-    public interface IZAddress
+    public interface IZAddress<SA extends SocketAddress>
     {
         ProtocolFamily family();
 
         String toString(int port);
 
-        InetSocketAddress resolve(String name, boolean ipv6, boolean local);
+        SA resolve(String name, boolean ipv6, boolean local);
 
-        SocketAddress address();
+        SA address();
 
-        SocketAddress sourceAddress();
+        SA sourceAddress();
     }
 
     private final NetProtocol protocol;
     private final String      address;
 
-    private IZAddress resolved;
+    private IZAddress<S> resolved;
 
     /**
      * @param protocol
@@ -91,7 +90,7 @@ public class Address
         return address;
     }
 
-    public IZAddress resolved()
+    public IZAddress<S> resolved()
     {
         return resolved;
     }
@@ -101,7 +100,7 @@ public class Address
         return resolved != null;
     }
 
-    public IZAddress resolve(boolean ipv6)
+    public IZAddress<S> resolve(boolean ipv6)
     {
         resolved = protocol.zresolve(address, ipv6);
         return resolved;

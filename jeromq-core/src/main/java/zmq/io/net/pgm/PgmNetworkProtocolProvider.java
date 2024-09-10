@@ -1,5 +1,6 @@
 package zmq.io.net.pgm;
 
+import java.net.InetSocketAddress;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -16,7 +17,7 @@ import zmq.io.net.Listener;
 import zmq.io.net.NetProtocol;
 import zmq.io.net.NetworkProtocolProvider;
 
-public class PgmNetworkProtocolProvider implements NetworkProtocolProvider
+public class PgmNetworkProtocolProvider implements NetworkProtocolProvider<InetSocketAddress>
 {
     @Override
     public boolean handleProtocol(NetProtocol protocol)
@@ -32,14 +33,14 @@ public class PgmNetworkProtocolProvider implements NetworkProtocolProvider
     }
 
     @Override
-    public IZAddress zresolve(String addr, boolean ipv6)
+    public IZAddress<InetSocketAddress> zresolve(String addr, boolean ipv6)
     {
         return null;
     }
 
     @Override
     public void startConnecting(Options options, IOThread ioThread,
-                                SessionBase session, Address addr,
+                                SessionBase session, Address<InetSocketAddress> addr,
                                 boolean delayedStart, Consumer<Own> launchChild,
                                 BiConsumer<SessionBase, IEngine> sendAttach)
     {

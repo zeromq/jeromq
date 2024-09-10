@@ -13,6 +13,10 @@
                 <includeModuleDirectory>false</includeModuleDirectory>
                 <fileSets>
                     <fileSet>
+                        <outputDirectory>java16</outputDirectory>
+                        <directory>src/main/java16</directory>
+                    </fileSet>
+                    <fileSet>
                         <directory>src/main/java</directory>
                     </fileSet>
                     <fileSet>
