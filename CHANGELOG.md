@@ -2,11 +2,39 @@
 
 ## v0.7.0 (2024-xx-xx)
 
+### Added
+
+* [#998] (https://github.com/zeromq/jeromq/pull/998)
+  Add IPC support for Java 16 and above
+
+* [#974] (https://github.com/zeromq/jeromq/pull/974)
+  Implement `NetworkProtocols` as `ServiceProviders` to decouple protocol from implementation
+
+* [#971] (https://github.com/zeromq/jeromq/pull/971)
+  Attribute core developers in `pom.xml`
+
+### Changed
+
+* [#985] (https://github.com/zeromq/jeromq/pull/985)
+  Correct set option implementation for `IP_TOS` as it was previously set to modify `SO_SNDBUF`. Update various dependency versions
+
+* [#978] (https://github.com/zeromq/jeromq/pull/978)
+  Use multi-module project organization and release
+
+* [#976] (https://github.com/zeromq/jeromq/pull/976)
+  Correct handling of unsupported protocols
+
+* [#973] (https://github.com/zeromq/jeromq/pull/973)
+  Eliminate wrapping of `SO_KEEPALIVE` settings with Java 11
+
+* [#972] (https://github.com/zeromq/jeromq/pull/972)
+  Change the minimum supported Java android version to 11
+
 ## v0.6.0 (2024-02-04)
 
 ### Added
 
-* [#964] https://github.com/zeromq/jeromq/pull/964
+* [#964] (https://github.com/zeromq/jeromq/pull/964)
   Exports all options default values as constant in ZMQ class. This will allow client libraries to use them.
 
 * [#963] (https://github.com/zeromq/jeromq/pull/963)
