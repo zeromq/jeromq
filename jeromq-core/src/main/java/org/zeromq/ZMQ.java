@@ -110,23 +110,53 @@ public class ZMQ
     public static final int DONTWAIT = zmq.ZMQ.ZMQ_DONTWAIT;
     public static final int NOBLOCK  = zmq.ZMQ.ZMQ_DONTWAIT;
 
-    // Socket types, used when creating a Socket. Note that all of the int types here is
+    // Socket types, used when creating a Socket. Note that all the int types here is
     // deprecated, use SocketType instead
 
+    /**
+     * @deprecated use {@link SocketType#PAIR} instead
+     */
     @Deprecated
     public static final int PAIR = zmq.ZMQ.ZMQ_PAIR;
 
+    /**
+     * @deprecated use {@link SocketType#PUB} instead
+     */
     @Deprecated
     public static final int PUB = zmq.ZMQ.ZMQ_PUB;
+    /**
+     * @deprecated use {@link SocketType#SUB} instead
+     */
     @Deprecated
     public static final int SUB = zmq.ZMQ.ZMQ_SUB;
 
+    /**
+     * @deprecated use {@link SocketType#REQ} instead
+     */
     @Deprecated
     public static final int REQ = zmq.ZMQ.ZMQ_REQ;
 
+    /**
+     * @deprecated use {@link SocketType#REP} instead
+     */
     @Deprecated
     public static final int REP = zmq.ZMQ.ZMQ_REP;
 
+    /**
+     * @deprecated use {@link SocketType#DISH} instead
+     */
+    @Deprecated
+    public static final int DISH = zmq.ZMQ.ZMQ_DISH;
+
+    /**
+     * @deprecated use {@link SocketType#RADIO} instead
+     */
+    @Deprecated
+    public static final int RADIO = zmq.ZMQ.ZMQ_RADIO;
+
+    /**
+     * @deprecated use {@link SocketType#DEALER} instead
+     */
     @Deprecated
     public static final int DEALER = zmq.ZMQ.ZMQ_DEALER;
     /**
