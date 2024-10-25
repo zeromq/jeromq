@@ -834,7 +834,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
             //  Compute the time when the timeout should occur.
             //  If the timeout is infinite, don't care.
             int timeout = options.sendTimeout;
-            long end = timeout < 0 ? 0 : (Clock.nowMS() + timeout);
+            long end = timeout < 0 ? 0 : (Clock.nowNS() / 1000000 + timeout);
 
             //  Oops, we couldn't send the message. Wait for the next
             //  command, process it and try to send the message again.
@@ -854,7 +854,7 @@ public abstract class SocketBase extends Own implements IPollEvents, Pipe.IPipeE
                 }
 
                 if (timeout > 0) {
-                    timeout = (int) (end - Clock.nowMS());
+                    timeout = (int) (end - Clock.nowNS() / 1000000);
                     if (timeout <= 0) {
                         errno.set(ZError.EAGAIN);
                         return false;
