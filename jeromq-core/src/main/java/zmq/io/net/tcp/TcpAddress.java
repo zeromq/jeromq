@@ -160,7 +160,7 @@ public class TcpAddress implements Address.IZAddress<InetSocketAddress>
             }
         }
         catch (UnknownHostException e) {
-            throw new ZMQException(e.getMessage(), ZError.EADDRNOTAVAIL, e);
+            throw new ZMQException("failed connecting to " + addrStr + ": " + e.getMessage(), ZError.EADDRNOTAVAIL, e);
         }
 
         if (addrNet == null) {
