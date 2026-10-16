@@ -201,17 +201,53 @@ public final class Poller extends PollerBase implements Runnable
 
             if (retired) {
                 retired = false;
+
+                //  First drop the retired handles and cancel their keys.
+                boolean cancelledKeys = false;
                 Iterator<Handle> iter = fdTable.iterator();
                 while (iter.hasNext()) {
                     Handle handle = iter.next();
-                    SelectionKey key = handle.fd.keyFor(selector);
                     if (handle.cancelled || !handle.fd.isOpen()) {
+                        SelectionKey key = handle.fd.keyFor(selector);
                         if (key != null) {
                             key.cancel();
+                            cancelledKeys = true;
                         }
                         iter.remove();
+                    }
+                }
+
+                //  A cancelled key is deregistered only by the next selection operation.
+                //  Until then keyFor() still returns it for the channel, so a new handle
+                //  for the same channel could be neither registered (CancelledKeyException)
+                //  nor updated (the key is invalid), and it would stay without a key until
+                //  a later pass. That is what happens when a connecter retires its handle
+                //  and the engine adds one for the connected channel in the same pass.
+                //  Flush the cancellations before registering anything.
+                if (cancelledKeys) {
+                    try {
+                        selector.selectNow();
+                    }
+                    catch (ClosedSelectorException e) {
+                        rebuildSelector();
+                        exnotification.uncaughtException(worker, e);
+                        ctx.errno().set(ZError.EINTR);
                         continue;
                     }
+                    catch (IOException e) {
+                        throw new ZError.IOException(e);
+                    }
+                    //  Whatever was ready is still ready and will be reported by the select below.
+                    selector.selectedKeys().clear();
+                    //  selectNow() may have consumed the wakeup sent by stop().
+                    if (stopping.get()) {
+                        break;
+                    }
+                }
+
+                //  Then register the new handles and update the interest set of the others.
+                for (Handle handle : fdTable) {
+                    SelectionKey key = handle.fd.keyFor(selector);
                     if (key == null) {
                         if (handle.fd.isOpen()) {
                             try {
