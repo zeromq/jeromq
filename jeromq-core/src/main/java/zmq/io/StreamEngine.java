@@ -556,7 +556,12 @@ public class StreamEngine implements IEngine, IPollEvents
     @Override
     public void restartInput()
     {
-        assert (inputStopped);
+        //  The pipe can be activated for a new engine that never stopped its input,
+        //  if the previous engine of the session stopped it before a reconnection.
+        //  The pipe is writable again, there is nothing to restart.
+        if (!inputStopped) {
+            return;
+        }
         assert (session != null);
         assert (decoder != null);
 

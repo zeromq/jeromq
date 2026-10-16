@@ -4,13 +4,21 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
+
 import org.junit.Test;
 
 import zmq.Config;
 import zmq.Ctx;
 import zmq.Msg;
+import zmq.Options;
 import zmq.SocketBase;
 import zmq.ZMQ;
+import zmq.io.net.NetProtocol;
 
 public class StreamEngineTest
 {
@@ -51,6 +59,23 @@ public class StreamEngineTest
         ZMQ.close(receiver);
         ZMQ.close(sender);
         ZMQ.term(ctx);
+    }
+
+    // https://github.com/zeromq/jeromq/issues/905
+    // https://github.com/zeromq/jeromq/issues/871
+    // After a reconnection, an ACTIVATE_WRITE for the session pipe can reach a new engine
+    // that never stopped its input and may not even have finished the handshake.
+    @Test
+    public void testRestartInputWhenInputNotStopped() throws IOException
+    {
+        // Loads the tcp provider, needed by the engine to resolve the peer address
+        assertThat(NetProtocol.tcp.isValid(), is(true));
+        try (ServerSocketChannel server = ServerSocketChannel.open().bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
+             SocketChannel fd = SocketChannel.open(server.getLocalAddress());
+             SocketChannel peer = server.accept()) {
+            StreamEngine engine = new StreamEngine(fd, new Options(), "tcp://" + server.getLocalAddress());
+            engine.restartInput();
+        }
     }
 
     private byte[] msg(int length)
