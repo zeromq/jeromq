@@ -8,7 +8,7 @@
   <artifactId>jeromq-ipcsockets</artifactId>
   <packaging>jar</packaging>
   <name>JeroMQ :: IPC Unix sockets</name>
-  <description>Java 16 IPS Unix sockets for jeromq</description>
+  <description>Java 16 IPC over UNIX domain sockets for jeromq</description>
   <url>https://github.com/zeromq/jeromq</url>
   <properties>
     <maven.compiler.release>16</maven.compiler.release>
