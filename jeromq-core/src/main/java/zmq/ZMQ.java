@@ -157,6 +157,7 @@ public class ZMQ
     public static final int ZMQ_MSG_ALLOCATION_HEAP_THRESHOLD = ZMQ_CUSTOM_OPTION + 4;
     public static final int ZMQ_HEARTBEAT_CONTEXT             = ZMQ_CUSTOM_OPTION + 5;
     public static final int ZMQ_SELECTOR_PROVIDERCHOOSER      = ZMQ_CUSTOM_OPTION + 6;
+    public static final int ZMQ_MSG_INITIAL_ALLOCATION_LIMIT  = ZMQ_CUSTOM_OPTION + 7;
 
     /*  Message options                                                           */
     public static final int ZMQ_MORE = 1;
@@ -341,6 +342,11 @@ public class ZMQ
      * Default value for {@link ZMQ#ZMQ_MSG_ALLOCATION_HEAP_THRESHOLD}
      */
     public static final int DEFAULT_ALLOCATION_HEAP_THRESHOLD = Config.MSG_ALLOCATION_HEAP_THRESHOLD.getValue();
+    /**
+     * Default value for {@link ZMQ#ZMQ_MSG_INITIAL_ALLOCATION_LIMIT}: disabled,
+     * incoming messages are allocated with the size announced by peers right away.
+     */
+    public static final int DEFAULT_MSG_INITIAL_ALLOCATION_LIMIT = -1;
     /**
      * Default value for {@link ZMQ#ZMQ_MSG_ALLOCATOR}
      */

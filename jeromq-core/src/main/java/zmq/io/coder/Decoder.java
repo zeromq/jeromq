@@ -1,7 +1,10 @@
 package zmq.io.coder;
 
+import java.nio.ByteBuffer;
+
 import zmq.Msg;
 import zmq.ZError;
+import zmq.ZMQ;
 import zmq.msg.MsgAllocator;
 import zmq.util.Errno;
 
@@ -45,6 +48,15 @@ public abstract class Decoder extends DecoderBase
         }
     }
 
+    private final class GrowMessage implements Step
+    {
+        @Override
+        public Step.Result apply()
+        {
+            return growMessage();
+        }
+    }
+
     private final class OneByteSizeReady implements Step
     {
         @Override
@@ -56,8 +68,24 @@ public abstract class Decoder extends DecoderBase
 
     protected final long maxmsgsize;
 
+    //  If positive, messages larger than this aren't allocated upfront, but
+    //  grown as their content comes in. A peer can't make us allocate more
+    //  than twice the amount of data it actually sent this way, whatever
+    //  the size it announces in a frame header.
+    //  If 0 or negative, messages are allocated with their announced size
+    //  right away.
+    private final int initialAllocationLimit;
+
     // the message decoded so far
     protected Msg inProgress;
+
+    //  Final size of inProgress, if it's still being grown
+    private int expectedSize;
+
+    //  Step to run once inProgress is fully read, if it's still being grown
+    private Step afterGrowth;
+
+    private final Step growMessage = new GrowMessage();
 
     protected final Step oneByteSizeReady   = new OneByteSizeReady();
     protected final Step eightByteSizeReady = new EightByteSizeReady();
@@ -68,9 +96,15 @@ public abstract class Decoder extends DecoderBase
 
     public Decoder(Errno errno, int bufsize, long maxmsgsize, MsgAllocator allocator)
     {
+        this(errno, bufsize, maxmsgsize, allocator, ZMQ.DEFAULT_MSG_INITIAL_ALLOCATION_LIMIT);
+    }
+
+    public Decoder(Errno errno, int bufsize, long maxmsgsize, MsgAllocator allocator, int initialAllocationLimit)
+    {
         super(errno, bufsize);
         this.maxmsgsize = maxmsgsize;
         this.allocator = allocator;
+        this.initialAllocationLimit = initialAllocationLimit;
     }
 
     protected final Step.Result sizeReady(final long size)
@@ -92,8 +126,52 @@ public abstract class Decoder extends DecoderBase
         //  inProgress is initialized at this point so in theory we should
         //  close it before calling init_size, however, it's a 0-byte
         //  message and thus we can treat it as uninitialized.
-        inProgress = allocate((int) size);
+        expectedSize = (int) size;
+        if (initialAllocationLimit > 0) {
+            inProgress = allocate(Math.min(expectedSize, initialAllocationLimit));
+        }
+        else {
+            inProgress = allocate(expectedSize);
+        }
 
+        return Step.Result.MORE_DATA;
+    }
+
+    @Override
+    protected void nextStep(Msg msg, Step next)
+    {
+        if (msg == inProgress && msg.size() < expectedSize) {
+            //  The message isn't fully allocated yet, grow it once it's full
+            afterGrowth = next;
+            super.nextStep(msg, growMessage);
+        }
+        else {
+            super.nextStep(msg, next);
+        }
+    }
+
+    //  Called when the partially allocated inProgress is full:
+    //  allocates a larger message, and copies the data read so far in it.
+    private Step.Result growMessage()
+    {
+        Msg previous = inProgress;
+        int newSize = (int) Math.min(2L * previous.size(), expectedSize);
+
+        Msg grown = allocate(newSize);
+        grown.setFlags(previous.flags());
+
+        ByteBuffer readPos = grown.buf();
+        readPos.put(previous.buf());
+        inProgress = grown;
+
+        if (newSize < expectedSize) {
+            super.nextStep(readPos, growMessage);
+        }
+        else {
+            Step next = afterGrowth;
+            afterGrowth = null;
+            super.nextStep(readPos, next);
+        }
         return Step.Result.MORE_DATA;
     }
 

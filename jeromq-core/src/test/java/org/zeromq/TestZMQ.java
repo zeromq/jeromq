@@ -713,6 +713,53 @@ public class TestZMQ
     }
 
     @Test
+    public void testSocketMsgInitialAllocationLimit()
+    {
+        final Socket socket = ctx.socket(SocketType.STREAM);
+        assertThat(socket, notNullValue());
+
+        assertThat(socket.getMsgInitialAllocationLimit(), is(-1));
+        boolean set = socket.setMsgInitialAllocationLimit(42);
+        assertThat(set, is(true));
+        int rc = socket.getMsgInitialAllocationLimit();
+        assertThat(rc, is(42));
+
+        socket.close();
+    }
+
+    @Test
+    public void testLargeMessagesWithMsgInitialAllocationLimit()
+    {
+        final Socket push = ctx.socket(SocketType.PUSH);
+        final Socket pull = ctx.socket(SocketType.PULL);
+
+        boolean rc = pull.setMsgInitialAllocationLimit(1024);
+        assertThat(rc, is(true));
+        int port = pull.bindToRandomPort("tcp://127.0.0.1");
+        rc = push.connect("tcp://127.0.0.1:" + port);
+        assertThat(rc, is(true));
+
+        byte[] large = new byte[1024 * 1024 + 17];
+        for (int i = 0; i < large.length; i++) {
+            large[i] = (byte) (i * 31);
+        }
+        byte[] small = "small".getBytes(ZMQ.CHARSET);
+
+        rc = push.sendMore(large);
+        assertThat(rc, is(true));
+        rc = push.send(small);
+        assertThat(rc, is(true));
+
+        assertArrayEquals(large, pull.recv());
+        assertThat(pull.hasReceiveMore(), is(true));
+        assertArrayEquals(small, pull.recv());
+        assertThat(pull.hasReceiveMore(), is(false));
+
+        push.close();
+        pull.close();
+    }
+
+    @Test
     public void testSocketMsgAllocator()
     {
         final Socket socket = ctx.socket(SocketType.STREAM);
