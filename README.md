@@ -14,7 +14,9 @@ Pure Java implementation of libzmq (http://zeromq.org).
 * Based on libzmq 4.1.7.
 * ZMTP/3.0 (http://rfc.zeromq.org/spec:23).
 * tcp:// protocol and inproc:// is compatible with zeromq.
-* ipc:// protocol works only between jeromq (uses tcp://127.0.0.1:port internally).
+* ipc:// protocol:
+  * On Java 16 and later, uses real UNIX domain sockets and is compatible with zeromq.
+  * On Java 11 to 15, works only between jeromq (uses tcp://127.0.0.1:port internally).
 
 * Securities
   * [PLAIN](http://rfc.zeromq.org/spec:24).
@@ -29,7 +31,7 @@ Pure Java implementation of libzmq (http://zeromq.org).
 
 ## Unsupported
 
-* ipc:// protocol with zeromq. Java doesn't support UNIX domain socket.
+* ipc:// protocol with zeromq on Java versions before 16, which lack UNIX domain socket support.
 * pgm:// protocol. Cannot find a pgm Java implementation.
 * norm:// protocol. Cannot find a Java implementation.
 * tipc:// protocol. Cannot find a Java implementation.

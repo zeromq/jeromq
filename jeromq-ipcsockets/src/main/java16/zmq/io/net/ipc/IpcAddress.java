@@ -14,7 +14,6 @@ import zmq.io.net.StandardProtocolFamily;
 
 public class IpcAddress implements Address.IZAddress<UnixDomainSocketAddress>
 {
-    private String                        name;
     private final UnixDomainSocketAddress address;
 
     public IpcAddress(String addr)
@@ -25,12 +24,8 @@ public class IpcAddress implements Address.IZAddress<UnixDomainSocketAddress>
     @Override
     public String toString()
     {
-        // TODO possible?
-        if (name == null) {
-            return "";
-        }
-
-        return "ipc://" + address.toString();
+        // Always the resolved path, so a wildcard bind reports the actual socket file
+        return "ipc://" + address.getPath();
     }
 
     @Override
@@ -53,8 +48,6 @@ public class IpcAddress implements Address.IZAddress<UnixDomainSocketAddress>
 
     private UnixDomainSocketAddress resolve(String name)
     {
-        this.name = name;
-
         if (!"*".equals(name)) {
             return UnixDomainSocketAddress.of(name);
         }
@@ -78,6 +71,7 @@ public class IpcAddress implements Address.IZAddress<UnixDomainSocketAddress>
     @Override
     public UnixDomainSocketAddress sourceAddress()
     {
-        return address;
+        // Unix domain sockets have no source address to bind the connecting side to
+        return null;
     }
 }
