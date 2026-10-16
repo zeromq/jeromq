@@ -142,6 +142,11 @@ public class Options
 
     public SelectorProviderChooser selectorChooser = ZMQ.DEFAULT_SELECTOR_CHOOSER;
 
+    //  If positive, maximum size allocated for an incoming message before its
+    //  content is received. Larger messages are grown as their content comes in.
+    //  Set to <= 0 to allocate the announced size of messages upfront.
+    public int msgInitialAllocationLimit = ZMQ.DEFAULT_MSG_INITIAL_ALLOCATION_LIMIT;
+
     // Hello msg to send to peer upon connecting
     public Msg helloMsg = ZMQ.DEFAULT_HELLO_MSG;
     public boolean canSendHelloMsg = false;
@@ -493,6 +498,10 @@ public class Options
             allocator = new MsgAllocatorThreshold(allocationHeapThreshold);
             return true;
 
+        case ZMQ.ZMQ_MSG_INITIAL_ALLOCATION_LIMIT:
+            msgInitialAllocationLimit = (Integer) optval;
+            return true;
+
         case ZMQ.ZMQ_SELECTOR_PROVIDERCHOOSER:
             if (optval instanceof String) {
                 try {
@@ -808,6 +817,9 @@ public class Options
                 return all.threshold;
             }
             return -1;
+
+        case ZMQ.ZMQ_MSG_INITIAL_ALLOCATION_LIMIT:
+            return msgInitialAllocationLimit;
 
         case ZMQ.ZMQ_SELECTOR_PROVIDERCHOOSER:
             return selectorChooser;

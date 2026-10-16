@@ -732,7 +732,7 @@ public class StreamEngine implements IEngine, IPollEvents
             zmtpVersion = Protocol.V0;
 
             encoder = new V1Encoder(errno, outBatchSize);
-            decoder = new V1Decoder(errno, inBatchSize, options.maxMsgSize, options.allocator);
+            decoder = new V1Decoder(errno, inBatchSize, options.maxMsgSize, options.allocator, options.msgInitialAllocationLimit);
 
             //  We have already sent the message header.
             //  Since there is no way to tell the encoder to
@@ -779,7 +779,7 @@ public class StreamEngine implements IEngine, IPollEvents
                 return false;
             }
             encoder = new V1Encoder(errno, outBatchSize);
-            decoder = new V1Decoder(errno, inBatchSize, options.maxMsgSize, options.allocator);
+            decoder = new V1Decoder(errno, inBatchSize, options.maxMsgSize, options.allocator, options.msgInitialAllocationLimit);
 
             decodeDataAfterHandshake(V2_GREETING_SIZE);
         }
@@ -794,7 +794,7 @@ public class StreamEngine implements IEngine, IPollEvents
                 return false;
             }
             encoder = new V2Encoder(errno, outBatchSize);
-            decoder = new V2Decoder(errno, inBatchSize, options.maxMsgSize, options.allocator);
+            decoder = new V2Decoder(errno, inBatchSize, options.maxMsgSize, options.allocator, options.msgInitialAllocationLimit);
 
             decodeDataAfterHandshake(V2_GREETING_SIZE);
         }
@@ -802,7 +802,7 @@ public class StreamEngine implements IEngine, IPollEvents
             zmtpVersion = Protocol.V3;
 
             encoder = new V2Encoder(errno, outBatchSize);
-            decoder = new V2Decoder(errno, inBatchSize, options.maxMsgSize, options.allocator);
+            decoder = new V2Decoder(errno, inBatchSize, options.maxMsgSize, options.allocator, options.msgInitialAllocationLimit);
 
             greetingRecv.position(V2_GREETING_SIZE);
             if (mechanism.isMechanism(greetingRecv)) {

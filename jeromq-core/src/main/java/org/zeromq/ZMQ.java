@@ -2361,6 +2361,44 @@ public class ZMQ
         }
 
         /**
+         * Sets the maximum size allocated for an incoming message before its content is received.
+         * <p>
+         * By default, when a peer announces the size of a message, a buffer of that size is
+         * allocated right away, before its content is received. A peer can then make the socket
+         * allocate up to {@link #getMaxMsgSize()} bytes (or 2 GB if no maximum is set)
+         * per message, whatever the amount of data it actually sends.
+         * <p>
+         * When this option is positive, buffers of at most that size are allocated upfront,
+         * and grown (by doubling their size) as the content of the message comes in.
+         * Memory allocated for a message then stays below about twice the amount of data
+         * received for it, at the cost of copying the content of large messages
+         * a few more times while they're received. A value like 1 MB (1048576) should
+         * make that cost negligible.
+         * <p>
+         * Set to 0 or negative to disable this system (default).
+         * Only applies to connections established after it is set.
+         *
+         * @param limit the maximum size allocated for an incoming message upfront, 0 or negative to disable this system.
+         * @return true if the option was set, otherwise false.
+         * @see #getMsgInitialAllocationLimit()
+         */
+        public boolean setMsgInitialAllocationLimit(int limit)
+        {
+            return setSocketOpt(zmq.ZMQ.ZMQ_MSG_INITIAL_ALLOCATION_LIMIT, limit);
+        }
+
+        /**
+         * Gets the maximum size allocated for an incoming message before its content is received.
+         *
+         * @return the limit, 0 or negative if disabled.
+         * @see #setMsgInitialAllocationLimit(int)
+         */
+        public int getMsgInitialAllocationLimit()
+        {
+            return base.getSocketOpt(zmq.ZMQ.ZMQ_MSG_INITIAL_ALLOCATION_LIMIT);
+        }
+
+        /**
          * Sets a custom message allocator.
          *
          * @param allocator the custom allocator.

@@ -4,6 +4,7 @@ import java.nio.ByteBuffer;
 
 import zmq.Msg;
 import zmq.ZError;
+import zmq.ZMQ;
 import zmq.io.coder.Decoder;
 import zmq.msg.MsgAllocator;
 import zmq.util.Errno;
@@ -16,7 +17,12 @@ public class V2Decoder extends Decoder
 
     public V2Decoder(Errno errno, int bufsize, long maxmsgsize, MsgAllocator allocator)
     {
-        super(errno, bufsize, maxmsgsize, allocator);
+        this(errno, bufsize, maxmsgsize, allocator, ZMQ.DEFAULT_MSG_INITIAL_ALLOCATION_LIMIT);
+    }
+
+    public V2Decoder(Errno errno, int bufsize, long maxmsgsize, MsgAllocator allocator, int initialAllocationLimit)
+    {
+        super(errno, bufsize, maxmsgsize, allocator, initialAllocationLimit);
 
         tmpbuf = ByteBuffer.allocate(8);
         tmpbuf.limit(1);

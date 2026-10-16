@@ -341,5 +341,6 @@ public class OptionsTest
         assertThat(options.getSocketOpt(ZMQ.ZMQ_SELECTOR_PROVIDERCHOOSER), nullValue());
         assertThat(options.getSocketOpt(ZMQ.ZMQ_IDENTITY), is(new byte[0]));
         assertThat(options.getSocketOpt(ZMQ.ZMQ_SELFADDR_PROPERTY_NAME), nullValue());
+        assertThat(options.getSocketOpt(ZMQ.ZMQ_MSG_INITIAL_ALLOCATION_LIMIT), is(-1));
     }
 }
