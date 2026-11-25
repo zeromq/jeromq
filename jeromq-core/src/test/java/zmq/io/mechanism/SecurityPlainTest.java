@@ -1,5 +1,10 @@
 package zmq.io.mechanism;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.Socket;
+import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -8,6 +13,7 @@ import org.junit.Test;
 
 import zmq.SocketBase;
 import zmq.ZMQ;
+import zmq.util.TestUtils;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -159,6 +165,73 @@ public class SecurityPlainTest
         // Unauthenticated messages from a vanilla socket shouldn't be received
         Boolean zapCheck = runTest(false, MechanismTester::testRawSocket);
         assertThat(zapCheck, nullValue());
+    }
+
+    @Test(timeout = 5000)
+    public void testLongCredentials() throws InterruptedException
+    {
+        //  Username and password lengths are unsigned octets
+        Boolean status = runTest(false, tctxt -> {
+            char[] credential = new char[200];
+            Arrays.fill(credential, 'a');
+            tctxt.user = new String(credential);
+            tctxt.password = new String(credential);
+            return runValid(tctxt);
+        });
+        assertThat(status, nullValue());
+    }
+
+    @Test(timeout = 5000)
+    public void testHelloWithoutPassword() throws InterruptedException
+    {
+        //  Empty username, and nothing after it
+        byte[] hello = {0x04, 0x07, 0x05, 'H', 'E', 'L', 'L', 'O', 0x00};
+        Boolean status = runTest(false, tctxt -> rejectHello(tctxt, hello));
+        assertThat(status, nullValue());
+    }
+
+    @Test(timeout = 5000)
+    public void testHelloWithTruncatedUsername() throws InterruptedException
+    {
+        //  Username announced with 128 bytes, and nothing after it
+        byte[] hello = {0x04, 0x07, 0x05, 'H', 'E', 'L', 'L', 'O', (byte) 0x80};
+        Boolean status = runTest(false, tctxt -> rejectHello(tctxt, hello));
+        assertThat(status, nullValue());
+    }
+
+    private boolean rejectHello(PlainTestContext tctxt, byte[] hello)
+    {
+        boolean rc = ZMQ.bind(tctxt.server, tctxt.host);
+        assertThat(rc, is(true));
+        int port = TestUtils.port((String) ZMQ.getSocketOptionExt(tctxt.server, ZMQ.ZMQ_LAST_ENDPOINT));
+
+        ZMQ.closeZeroLinger(tctxt.client);
+        tctxt.client = null;
+
+        //  ZMTP/3.0 greeting announcing the PLAIN mechanism
+        byte[] greeting = new byte[64];
+        greeting[0] = (byte) 0xff;
+        greeting[9] = 0x7f;
+        greeting[10] = 3;
+        System.arraycopy("PLAIN".getBytes(ZMQ.CHARSET), 0, greeting, 12, 5);
+
+        try (Socket sock = new Socket("127.0.0.1", port)) {
+            sock.setSoTimeout(2000);
+            OutputStream out = sock.getOutputStream();
+            out.write(greeting);
+            out.write(hello);
+            out.flush();
+
+            //  The server closes the connection
+            InputStream in = sock.getInputStream();
+            while (in.read() != -1) {
+                //  Skip whatever the server sent
+            }
+        }
+        catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return false;
     }
 
     @Test(expected = IllegalStateException.class)

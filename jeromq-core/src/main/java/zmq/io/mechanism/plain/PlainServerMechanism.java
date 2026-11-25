@@ -124,7 +124,7 @@ public class PlainServerMechanism extends Mechanism
         if (bytesLeft < 1) {
             return ZError.EPROTO;
         }
-        byte length = msg.get(index);
+        int length = msg.get(index) & 0xff;
         bytesLeft -= 1;
         if (bytesLeft < length) {
             return ZError.EPROTO;
@@ -136,7 +136,10 @@ public class PlainServerMechanism extends Mechanism
         bytesLeft -= length;
         index += length;
 
-        length = msg.get(index);
+        if (bytesLeft < 1) {
+            return ZError.EPROTO;
+        }
+        length = msg.get(index) & 0xff;
         bytesLeft -= 1;
         if (bytesLeft < length) {
             return ZError.EPROTO;
